@@ -54,6 +54,26 @@ void main() {
     });
   });
 
+  group('i18n', () {
+    test('returns English and German framework-independent messages', () {
+      expect(
+        LearnAnywhereCatalog.message(
+          LearnAnywhereMessage.desktopShellReady,
+          'en',
+        ),
+        'Desktop shell ready',
+      );
+      expect(
+        LearnAnywhereCatalog.message(
+          LearnAnywhereMessage.desktopShellReady,
+          'de',
+        ),
+        'Desktop-Shell bereit',
+      );
+      expect(LearnAnywhereCatalog.supportedLanguageCodes, <String>['en', 'de']);
+    });
+  });
+
   group('role-driven model helpers', () {
     test('select prompt, answer, and remark fields by direction', () {
       final LearningDeck deck = sampleDeck();

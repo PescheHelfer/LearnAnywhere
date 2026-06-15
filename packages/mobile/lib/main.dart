@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
 void main() {
@@ -14,9 +13,12 @@ final class LearnAnywhereMobileApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Learn Anywhere',
+      onGenerateTitle: (BuildContext context) =>
+          LearnAnywhereLocalizations.of(context).appTitle,
       theme: LearnAnywhereTheme.light(),
       darkTheme: LearnAnywhereTheme.dark(),
+      supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+      localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
       home: const _MobileHome(),
     );
   }
@@ -27,9 +29,12 @@ final class _MobileHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
     return Scaffold(
-      appBar: AppBar(title: const Text('Learn Anywhere')),
-      body: const Center(child: Text('Mobile shell ready: $corePackageName')),
+      appBar: AppBar(title: Text(messages.appTitle)),
+      body: Center(child: Text(messages.mobileShellReady)),
     );
   }
 }

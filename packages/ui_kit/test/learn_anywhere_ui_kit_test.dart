@@ -19,6 +19,23 @@ void main() {
     });
   });
 
+  group('localizations', () {
+    testWidgets('resolves German shell messages', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          locale: Locale('de'),
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          home: _LocalizationProbe(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Desktop-Shell bereit'), findsOneWidget);
+    });
+  });
+
   group('rich text renderer', () {
     test('renders plain values as a single text span', () {
       final TextSpan span = LearnAnywhereRichTextRenderer.spanForFieldValue(
@@ -67,4 +84,13 @@ void main() {
       expect(richText.text.toPlainText(), 'visible');
     });
   });
+}
+
+final class _LocalizationProbe extends StatelessWidget {
+  const _LocalizationProbe();
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(LearnAnywhereLocalizations.of(context).desktopShellReady);
+  }
 }
