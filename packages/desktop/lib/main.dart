@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
+import 'src/mask_editor/mask_editor_page.dart';
+
 void main() {
   runApp(const LearnAnywhereDesktopApp());
 }
@@ -78,6 +80,7 @@ final class _DesktopHome extends StatefulWidget {
 
 final class _DesktopHomeState extends State<_DesktopHome> {
   _DesktopRoute _route = _DesktopRoute.home;
+  LearningMask _mask = _defaultMask();
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +117,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
               child: MenuBar(children: _menuChildren(messages)),
             ),
           ),
-          Expanded(child: _RoutePlaceholder(route: _route)),
+          Expanded(child: _contentForRoute()),
           _HintBar(text: messages.message(LearnAnywhereMessage.desktopHintBar)),
         ],
       ),
@@ -241,6 +244,55 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   void _selectRoute(_DesktopRoute route) {
     setState(() => _route = route);
   }
+
+  Widget _contentForRoute() {
+    return switch (_route) {
+      _DesktopRoute.maskEditor => MaskEditorPage(
+        mask: _mask,
+        onChanged: (LearningMask value) {
+          setState(() => _mask = value);
+        },
+      ),
+      _ => _RoutePlaceholder(route: _route),
+    };
+  }
+}
+
+LearningMask _defaultMask() {
+  return const LearningMask(
+    name: 'Untitled mask',
+    direction1Label: 'Direction 1',
+    direction2Label: 'Direction 2',
+    categories: <CategoryDefinition>[
+      CategoryDefinition(
+        id: 1,
+        name: 'Category 1',
+        fields: <FieldDefinition>[
+          FieldDefinition(
+            name: 'Question',
+            length: 40,
+            equalGroup: 0,
+            role1: FieldRole.question,
+            role2: FieldRole.answer,
+          ),
+          FieldDefinition(
+            name: 'Answer',
+            length: 40,
+            equalGroup: 0,
+            role1: FieldRole.answer,
+            role2: FieldRole.question,
+          ),
+          FieldDefinition(
+            name: 'Remark',
+            length: 40,
+            equalGroup: 0,
+            role1: FieldRole.remark,
+            role2: FieldRole.remark,
+          ),
+        ],
+      ),
+    ],
+  );
 }
 
 final class _MenuSeparator extends StatelessWidget {

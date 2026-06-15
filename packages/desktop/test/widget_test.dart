@@ -33,12 +33,40 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Mask Editor'), findsWidgets);
-    expect(
-      find.text(
-        'The integrated mask editor will be implemented in Phase 2 Step 2.',
-      ),
-      findsOneWidget,
+    expect(find.text('Mask name'), findsOneWidget);
+    expect(find.text('Direction 1 label'), findsOneWidget);
+    expect(find.text('Direction 2 label'), findsOneWidget);
+    expect(find.text('Categories: 1/20'), findsOneWidget);
+    expect(find.text('Fields: 3/20'), findsOneWidget);
+  });
+
+  testWidgets('mask editor edits mask metadata and adds schema items', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Mask Editor'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('mask-name-field')),
+      'Spanish verbs',
     );
+    await tester.pumpAndSettle();
+    expect(find.text('Spanish verbs'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey<String>('add-category-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('Categories: 2/20'), findsOneWidget);
+    expect(find.text('Category 2'), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('add-field-button')),
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('add-field-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('Fields: 1/20'), findsOneWidget);
   });
 
   testWidgets('file menu commands route to file operations placeholder', (

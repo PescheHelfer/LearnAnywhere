@@ -177,6 +177,60 @@ enum LearnAnywhereMessage {
 
   /// Desktop bottom shortcut hint bar text.
   desktopHintBar,
+
+  /// Mask name field label.
+  maskEditorMaskName,
+
+  /// Direction 1 field label.
+  maskEditorDirection1,
+
+  /// Direction 2 field label.
+  maskEditorDirection2,
+
+  /// Categories section title.
+  maskEditorCategories,
+
+  /// Add category action.
+  maskEditorAddCategory,
+
+  /// Delete category action.
+  maskEditorDeleteCategory,
+
+  /// Category name field label.
+  maskEditorCategoryName,
+
+  /// Fields section title.
+  maskEditorFields,
+
+  /// Add field action.
+  maskEditorAddField,
+
+  /// Delete field action.
+  maskEditorDeleteField,
+
+  /// Field name column label.
+  maskEditorFieldName,
+
+  /// Field length column label.
+  maskEditorFieldLength,
+
+  /// Equal-group column label.
+  maskEditorEqualGroup,
+
+  /// Role direction 1 column label.
+  maskEditorRole1,
+
+  /// Role direction 2 column label.
+  maskEditorRole2,
+
+  /// Category count helper text.
+  maskEditorCategoryCount,
+
+  /// Field count helper text.
+  maskEditorFieldCount,
+
+  /// Limit reached text.
+  maskEditorLimitReached,
 }
 
 /// Localized message catalog for framework-independent strings.
@@ -248,6 +302,24 @@ final class LearnAnywhereCatalog {
           'Learn Anywhere is a modern conversion of Lern PC plus.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
+      LearnAnywhereMessage.maskEditorMaskName: 'Mask name',
+      LearnAnywhereMessage.maskEditorDirection1: 'Direction 1 label',
+      LearnAnywhereMessage.maskEditorDirection2: 'Direction 2 label',
+      LearnAnywhereMessage.maskEditorCategories: 'Categories',
+      LearnAnywhereMessage.maskEditorAddCategory: 'Add category',
+      LearnAnywhereMessage.maskEditorDeleteCategory: 'Delete category',
+      LearnAnywhereMessage.maskEditorCategoryName: 'Category name',
+      LearnAnywhereMessage.maskEditorFields: 'Fields',
+      LearnAnywhereMessage.maskEditorAddField: 'Add field',
+      LearnAnywhereMessage.maskEditorDeleteField: 'Delete field',
+      LearnAnywhereMessage.maskEditorFieldName: 'Field name',
+      LearnAnywhereMessage.maskEditorFieldLength: 'Length',
+      LearnAnywhereMessage.maskEditorEqualGroup: 'Equal group',
+      LearnAnywhereMessage.maskEditorRole1: 'Role dir 1',
+      LearnAnywhereMessage.maskEditorRole2: 'Role dir 2',
+      LearnAnywhereMessage.maskEditorCategoryCount: 'Categories: {count}/20',
+      LearnAnywhereMessage.maskEditorFieldCount: 'Fields: {count}/20',
+      LearnAnywhereMessage.maskEditorLimitReached: 'Limit reached',
     },
     LearnAnywhereLanguage.german: <LearnAnywhereMessage, String>{
       LearnAnywhereMessage.appTitle: 'Learn Anywhere',
@@ -313,6 +385,24 @@ final class LearnAnywhereCatalog {
           'Learn Anywhere ist eine moderne Umsetzung von Lern PC plus.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurueck   F3 Weiter   F5 Suche   F6 Sprung   F7 Loeschen   F8 Einfuegen   F10 Fertig   Esc Abbruch',
+      LearnAnywhereMessage.maskEditorMaskName: 'Maskenname',
+      LearnAnywhereMessage.maskEditorDirection1: 'Abfrage 1',
+      LearnAnywhereMessage.maskEditorDirection2: 'Abfrage 2',
+      LearnAnywhereMessage.maskEditorCategories: 'Kategorien',
+      LearnAnywhereMessage.maskEditorAddCategory: 'Kategorie hinzufuegen',
+      LearnAnywhereMessage.maskEditorDeleteCategory: 'Kategorie loeschen',
+      LearnAnywhereMessage.maskEditorCategoryName: 'Kategoriename',
+      LearnAnywhereMessage.maskEditorFields: 'Felder',
+      LearnAnywhereMessage.maskEditorAddField: 'Feld hinzufuegen',
+      LearnAnywhereMessage.maskEditorDeleteField: 'Feld loeschen',
+      LearnAnywhereMessage.maskEditorFieldName: 'Feldname',
+      LearnAnywhereMessage.maskEditorFieldLength: 'Laenge',
+      LearnAnywhereMessage.maskEditorEqualGroup: 'Gleich-Gruppe',
+      LearnAnywhereMessage.maskEditorRole1: 'Rolle 1',
+      LearnAnywhereMessage.maskEditorRole2: 'Rolle 2',
+      LearnAnywhereMessage.maskEditorCategoryCount: 'Kategorien: {count}/20',
+      LearnAnywhereMessage.maskEditorFieldCount: 'Felder: {count}/20',
+      LearnAnywhereMessage.maskEditorLimitReached: 'Grenze erreicht',
     },
   };
 
