@@ -1,0 +1,29 @@
+name: learn_anywhere
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.2
+
+workspace:
+  - packages/core
+  - packages/ui_kit
+  - packages/desktop
+  - packages/mobile
+
+dev_dependencies:
+  melos: ^7.8.2
+
+melos:
+  command:
+    bootstrap:
+      usePubspecOverrides: true
+  scripts:
+    analyze:
+      run: melos exec -- dart analyze .
+      description: Analyze every package in the workspace.
+    test:core:
+      run: melos exec --scope=learn_anywhere_core -- dart test
+      description: Run pure Dart core tests.
+    format:
+      run: dart format .
+      description: Format the workspace.

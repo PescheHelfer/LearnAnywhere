@@ -1,0 +1,31 @@
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    missing_required_param: error
+    missing_return: error
+
+linter:
+  rules:
+    always_declare_return_types: true
+    avoid_dynamic_calls: true
+    avoid_print: true
+    cancel_subscriptions: true
+    close_sinks: true
+    collection_methods_unrelated_type: true
+    comment_references: true
+    directives_ordering: true
+    no_adjacent_strings_in_list: true
+    no_runtimeType_toString: true
+    only_throw_errors: true
+    package_prefixed_library_names: true
+    prefer_final_fields: true
+    prefer_final_in_for_each: true
+    prefer_final_locals: true
+    prefer_relative_imports: true
+    public_member_api_docs: true
+    test_types_in_equals: true
+    throw_in_finally: true
+    unawaited_futures: true
