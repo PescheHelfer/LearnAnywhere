@@ -36,6 +36,147 @@ enum LearnAnywhereMessage {
 
   /// Super-query completion message.
   superQueryCompleted,
+
+  /// Home route title.
+  desktopHomeTitle,
+
+  /// Home route body.
+  desktopHomeBody,
+
+  /// File menu label.
+  menuFile,
+
+  /// New deck command.
+  fileNewDeck,
+
+  /// Open deck command.
+  fileOpenDeck,
+
+  /// Add or merge deck command.
+  fileAddMergeDeck,
+
+  /// Save command.
+  fileSave,
+
+  /// Save as command.
+  fileSaveAs,
+
+  /// Clear units command.
+  fileClearUnits,
+
+  /// Load mask command.
+  fileLoadMask,
+
+  /// Save mask command.
+  fileSaveMask,
+
+  /// Exit command.
+  fileExit,
+
+  /// Edit menu label.
+  menuEdit,
+
+  /// Mask editor menu label.
+  menuMaskEditor,
+
+  /// Learn menu label.
+  menuLearn,
+
+  /// Query options menu label.
+  menuQueryOptions,
+
+  /// Statistics menu label.
+  menuStatistics,
+
+  /// Lexicon menu label.
+  menuLexicon,
+
+  /// List menu label.
+  menuList,
+
+  /// Help menu label.
+  menuHelp,
+
+  /// About command.
+  helpAbout,
+
+  /// Theme control label.
+  themeLabel,
+
+  /// System theme option.
+  themeSystem,
+
+  /// Light theme option.
+  themeLight,
+
+  /// Dark theme option.
+  themeDark,
+
+  /// Language control label.
+  languageLabel,
+
+  /// English language option.
+  languageEnglish,
+
+  /// German language option.
+  languageGerman,
+
+  /// File operations placeholder title.
+  routeFileOperationsTitle,
+
+  /// File operations placeholder body.
+  routeFileOperationsBody,
+
+  /// Editor placeholder title.
+  routeEditorTitle,
+
+  /// Editor placeholder body.
+  routeEditorBody,
+
+  /// Mask editor placeholder title.
+  routeMaskEditorTitle,
+
+  /// Mask editor placeholder body.
+  routeMaskEditorBody,
+
+  /// Learn placeholder title.
+  routeLearnTitle,
+
+  /// Learn placeholder body.
+  routeLearnBody,
+
+  /// Query options placeholder title.
+  routeQueryOptionsTitle,
+
+  /// Query options placeholder body.
+  routeQueryOptionsBody,
+
+  /// Statistics placeholder title.
+  routeStatisticsTitle,
+
+  /// Statistics placeholder body.
+  routeStatisticsBody,
+
+  /// Lexicon placeholder title.
+  routeLexiconTitle,
+
+  /// Lexicon placeholder body.
+  routeLexiconBody,
+
+  /// List placeholder title.
+  routeListTitle,
+
+  /// List placeholder body.
+  routeListBody,
+
+  /// About placeholder title.
+  routeAboutTitle,
+
+  /// About placeholder body.
+  routeAboutBody,
+
+  /// Desktop bottom shortcut hint bar text.
+  desktopHintBar,
 }
 
 /// Localized message catalog for framework-independent strings.
@@ -50,6 +191,63 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.mobileShellReady: 'Mobile shell ready',
       LearnAnywhereMessage.superQueryCompleted:
           'You have now mastered all learning units in the selected range. Congratulations!',
+      LearnAnywhereMessage.desktopHomeTitle: 'Workspace',
+      LearnAnywhereMessage.desktopHomeBody: 'Desktop shell ready',
+      LearnAnywhereMessage.menuFile: 'File',
+      LearnAnywhereMessage.fileNewDeck: 'New deck',
+      LearnAnywhereMessage.fileOpenDeck: 'Open deck...',
+      LearnAnywhereMessage.fileAddMergeDeck: 'Add/merge deck...',
+      LearnAnywhereMessage.fileSave: 'Save',
+      LearnAnywhereMessage.fileSaveAs: 'Save As...',
+      LearnAnywhereMessage.fileClearUnits: 'Clear units in memory...',
+      LearnAnywhereMessage.fileLoadMask: 'Load mask...',
+      LearnAnywhereMessage.fileSaveMask: 'Save mask...',
+      LearnAnywhereMessage.fileExit: 'Exit',
+      LearnAnywhereMessage.menuEdit: 'Edit',
+      LearnAnywhereMessage.menuMaskEditor: 'Mask Editor',
+      LearnAnywhereMessage.menuLearn: 'Learn',
+      LearnAnywhereMessage.menuQueryOptions: 'Query Options',
+      LearnAnywhereMessage.menuStatistics: 'Statistics',
+      LearnAnywhereMessage.menuLexicon: 'Lexicon',
+      LearnAnywhereMessage.menuList: 'List',
+      LearnAnywhereMessage.menuHelp: 'Help',
+      LearnAnywhereMessage.helpAbout: 'About',
+      LearnAnywhereMessage.themeLabel: 'Theme',
+      LearnAnywhereMessage.themeSystem: 'System',
+      LearnAnywhereMessage.themeLight: 'Light',
+      LearnAnywhereMessage.themeDark: 'Dark',
+      LearnAnywhereMessage.languageLabel: 'Language',
+      LearnAnywhereMessage.languageEnglish: 'English',
+      LearnAnywhereMessage.languageGerman: 'German',
+      LearnAnywhereMessage.routeFileOperationsTitle: 'File operations',
+      LearnAnywhereMessage.routeFileOperationsBody:
+          'File commands are ready to be wired in the next Phase 2 steps.',
+      LearnAnywhereMessage.routeEditorTitle: 'Editor',
+      LearnAnywhereMessage.routeEditorBody:
+          'The deck/unit editor will be implemented in Phase 2 Step 4.',
+      LearnAnywhereMessage.routeMaskEditorTitle: 'Mask Editor',
+      LearnAnywhereMessage.routeMaskEditorBody:
+          'The integrated mask editor will be implemented in Phase 2 Step 2.',
+      LearnAnywhereMessage.routeLearnTitle: 'Learn',
+      LearnAnywhereMessage.routeLearnBody:
+          'Practice and super-query sessions will be implemented in Phase 2 Step 5.',
+      LearnAnywhereMessage.routeQueryOptionsTitle: 'Query Options',
+      LearnAnywhereMessage.routeQueryOptionsBody:
+          'Learning option toggles will be implemented with the session screen.',
+      LearnAnywhereMessage.routeStatisticsTitle: 'Statistics',
+      LearnAnywhereMessage.routeStatisticsBody:
+          'Statistics tables and charts will be implemented in Phase 2 Step 6.',
+      LearnAnywhereMessage.routeLexiconTitle: 'Lexicon',
+      LearnAnywhereMessage.routeLexiconBody:
+          'Memory and file-oriented search will be implemented in Phase 2 Step 7.',
+      LearnAnywhereMessage.routeListTitle: 'List',
+      LearnAnywhereMessage.routeListBody:
+          'Printer-friendly lists are deferred to a later version.',
+      LearnAnywhereMessage.routeAboutTitle: 'About',
+      LearnAnywhereMessage.routeAboutBody:
+          'Learn Anywhere is a modern conversion of Lern PC plus.',
+      LearnAnywhereMessage.desktopHintBar:
+          'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
     },
     LearnAnywhereLanguage.german: <LearnAnywhereMessage, String>{
       LearnAnywhereMessage.appTitle: 'Learn Anywhere',
@@ -57,6 +255,64 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.mobileShellReady: 'Mobile-Shell bereit',
       LearnAnywhereMessage.superQueryCompleted:
           'Sie beherrschen nun alle Lerneinheiten im gewaehlten Bereich! Herzlichen Glueckwunsch!',
+      LearnAnywhereMessage.desktopHomeTitle: 'Arbeitsbereich',
+      LearnAnywhereMessage.desktopHomeBody: 'Desktop-Shell bereit',
+      LearnAnywhereMessage.menuFile: 'Datei',
+      LearnAnywhereMessage.fileNewDeck: 'Neue Lern-Datei',
+      LearnAnywhereMessage.fileOpenDeck: 'Lern-Datei laden...',
+      LearnAnywhereMessage.fileAddMergeDeck: 'Lern-Datei hinzuladen...',
+      LearnAnywhereMessage.fileSave: 'Speichern',
+      LearnAnywhereMessage.fileSaveAs: 'Speichern unter...',
+      LearnAnywhereMessage.fileClearUnits:
+          'Lerneinheiten im Speicher loeschen...',
+      LearnAnywhereMessage.fileLoadMask: 'Neue Masken-Datei laden...',
+      LearnAnywhereMessage.fileSaveMask: 'Masken-Datei speichern...',
+      LearnAnywhereMessage.fileExit: 'Beenden',
+      LearnAnywhereMessage.menuEdit: 'Edit',
+      LearnAnywhereMessage.menuMaskEditor: 'Mask Editor',
+      LearnAnywhereMessage.menuLearn: 'Lern',
+      LearnAnywhereMessage.menuQueryOptions: 'Abfrage',
+      LearnAnywhereMessage.menuStatistics: 'Statistik',
+      LearnAnywhereMessage.menuLexicon: 'Lexikon',
+      LearnAnywhereMessage.menuList: 'Liste',
+      LearnAnywhereMessage.menuHelp: 'Hilfe',
+      LearnAnywhereMessage.helpAbout: 'Programminfo',
+      LearnAnywhereMessage.themeLabel: 'Darstellung',
+      LearnAnywhereMessage.themeSystem: 'System',
+      LearnAnywhereMessage.themeLight: 'Hell',
+      LearnAnywhereMessage.themeDark: 'Dunkel',
+      LearnAnywhereMessage.languageLabel: 'Sprache',
+      LearnAnywhereMessage.languageEnglish: 'Englisch',
+      LearnAnywhereMessage.languageGerman: 'Deutsch',
+      LearnAnywhereMessage.routeFileOperationsTitle: 'Dateioperationen',
+      LearnAnywhereMessage.routeFileOperationsBody:
+          'Die Datei-Befehle werden in den naechsten Phase-2-Schritten verdrahtet.',
+      LearnAnywhereMessage.routeEditorTitle: 'Editor',
+      LearnAnywhereMessage.routeEditorBody:
+          'Der Lerneinheiten-Editor wird in Phase 2 Schritt 4 implementiert.',
+      LearnAnywhereMessage.routeMaskEditorTitle: 'Mask Editor',
+      LearnAnywhereMessage.routeMaskEditorBody:
+          'Der integrierte Masken-Editor wird in Phase 2 Schritt 2 implementiert.',
+      LearnAnywhereMessage.routeLearnTitle: 'Lern',
+      LearnAnywhereMessage.routeLearnBody:
+          'Ueben und Super-Abfrage werden in Phase 2 Schritt 5 implementiert.',
+      LearnAnywhereMessage.routeQueryOptionsTitle: 'Abfrage',
+      LearnAnywhereMessage.routeQueryOptionsBody:
+          'Abfrageoptionen werden mit der Lernsitzung implementiert.',
+      LearnAnywhereMessage.routeStatisticsTitle: 'Statistik',
+      LearnAnywhereMessage.routeStatisticsBody:
+          'Statistiktabellen und Diagramme werden in Phase 2 Schritt 6 implementiert.',
+      LearnAnywhereMessage.routeLexiconTitle: 'Lexikon',
+      LearnAnywhereMessage.routeLexiconBody:
+          'Speicher- und Datei-Suche werden in Phase 2 Schritt 7 implementiert.',
+      LearnAnywhereMessage.routeListTitle: 'Liste',
+      LearnAnywhereMessage.routeListBody:
+          'Druckfreundliche Listen sind fuer eine spaetere Version vorgesehen.',
+      LearnAnywhereMessage.routeAboutTitle: 'Programminfo',
+      LearnAnywhereMessage.routeAboutBody:
+          'Learn Anywhere ist eine moderne Umsetzung von Lern PC plus.',
+      LearnAnywhereMessage.desktopHintBar:
+          'F1 Hilfe   F2 Zurueck   F3 Weiter   F5 Suche   F6 Sprung   F7 Loeschen   F8 Einfuegen   F10 Fertig   Esc Abbruch',
     },
   };
 
