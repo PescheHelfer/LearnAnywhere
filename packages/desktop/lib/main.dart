@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
+import 'src/file_operations/desktop_document.dart';
+import 'src/file_operations/desktop_file_service.dart';
 import 'src/mask_editor/mask_editor_page.dart';
 
 void main() {
@@ -79,8 +82,10 @@ final class _DesktopHome extends StatefulWidget {
 }
 
 final class _DesktopHomeState extends State<_DesktopHome> {
+  final DesktopFileService _fileService = const DesktopFileService();
   _DesktopRoute _route = _DesktopRoute.home;
-  LearningMask _mask = _defaultMask();
+  DesktopDocument _document = DesktopDocument.empty(_defaultMask());
+  String? _lastFileStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +221,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     LearnAnywhereMessage message,
   ) {
     return MenuItemButton(
-      onPressed: () => _selectRoute(_DesktopRoute.fileOperations),
+      onPressed: () => _runFileCommand(message),
       child: Text(messages.message(message)),
     );
   }
@@ -247,15 +252,274 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   Widget _contentForRoute() {
     return switch (_route) {
+      _DesktopRoute.fileOperations => _FileOperationsStatus(
+        document: _document,
+        status: _lastFileStatus,
+      ),
       _DesktopRoute.maskEditor => MaskEditorPage(
-        mask: _mask,
+        mask: _document.mask,
         onChanged: (LearningMask value) {
-          setState(() => _mask = value);
+          final LearningDeck deck = LearningDeck(
+            mask: value,
+            units: _document.deck.units,
+          );
+          setState(() => _document = _document.copyWith(deck: deck));
         },
       ),
       _ => _RoutePlaceholder(route: _route),
     };
   }
+
+  Future<void> _runFileCommand(LearnAnywhereMessage command) async {
+    switch (command) {
+      case LearnAnywhereMessage.fileNewDeck:
+        await _newDeck();
+      case LearnAnywhereMessage.fileOpenDeck:
+        await _openDeck();
+      case LearnAnywhereMessage.fileAddMergeDeck:
+        await _mergeDeck();
+      case LearnAnywhereMessage.fileSave:
+        await _saveDeck(saveAs: false);
+      case LearnAnywhereMessage.fileSaveAs:
+        await _saveDeck(saveAs: true);
+      case LearnAnywhereMessage.fileClearUnits:
+        await _clearUnits();
+      case LearnAnywhereMessage.fileLoadMask:
+        await _loadMask();
+      case LearnAnywhereMessage.fileSaveMask:
+        await _saveMask();
+      case LearnAnywhereMessage.fileExit:
+        await _exit();
+      default:
+        _selectRoute(_DesktopRoute.fileOperations);
+    }
+  }
+
+  Future<void> _newDeck() async {
+    final bool confirmed = await _confirm(LearnAnywhereMessage.confirmNewDeck);
+    if (!confirmed) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      _document = await _fileService.newDeck(_document);
+      _selectRoute(_DesktopRoute.fileOperations);
+      _setFileStatus(LearnAnywhereMessage.fileNewDeckDone);
+    });
+  }
+
+  Future<void> _openDeck() async {
+    final String? path = await _askPath(
+      suggestedPath: _document.deckPath ?? 'learn_anywhere.vok',
+    );
+    if (path == null) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      _document = await _fileService.openDeck(_document, path);
+      _selectRoute(_DesktopRoute.fileOperations);
+      _setFileStatus(LearnAnywhereMessage.fileOpenDeckDone);
+    });
+  }
+
+  Future<void> _mergeDeck() async {
+    final String? path = await _askPath(suggestedPath: 'merge.vok');
+    if (path == null) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      _document = await _fileService.mergeDeck(_document, path);
+      _selectRoute(_DesktopRoute.fileOperations);
+      _setFileStatus(LearnAnywhereMessage.fileMergeDeckDone);
+    });
+  }
+
+  Future<void> _saveDeck({required bool saveAs}) async {
+    String? path = saveAs ? null : _document.deckPath;
+    if (path == null) {
+      path = await _askPath(
+        suggestedPath: _document.deckPath ?? 'learn_anywhere.vok',
+      );
+      if (path == null) {
+        return;
+      }
+      path = _ensureExtension(path, 'vok');
+    }
+    await _guardedFileOperation(() async {
+      _document = await _fileService.saveDeck(_document, path: path);
+      _selectRoute(_DesktopRoute.fileOperations);
+      _setFileStatus(LearnAnywhereMessage.fileSaveDeckDone);
+    });
+  }
+
+  Future<void> _clearUnits() async {
+    final bool confirmed = await _confirm(
+      LearnAnywhereMessage.confirmClearUnits,
+    );
+    if (!confirmed) {
+      return;
+    }
+    setState(() {
+      _document = _fileService.clearUnits(_document);
+      _route = _DesktopRoute.fileOperations;
+    });
+    _setFileStatus(LearnAnywhereMessage.fileClearUnitsDone);
+  }
+
+  Future<void> _loadMask() async {
+    final bool confirmed = await _confirm(LearnAnywhereMessage.confirmLoadMask);
+    if (!confirmed) {
+      return;
+    }
+    final String? path = await _askPath(suggestedPath: 'learn_anywhere.inf');
+    if (path == null) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      _document = await _fileService.loadMask(_document, path);
+      _selectRoute(_DesktopRoute.fileOperations);
+      _setFileStatus(LearnAnywhereMessage.fileLoadMaskDone);
+    });
+  }
+
+  Future<void> _saveMask() async {
+    final String? path = await _askPath(suggestedPath: 'learn_anywhere.inf');
+    if (path == null) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      await _fileService.saveMask(
+        _document.mask,
+        _ensureExtension(path, 'inf'),
+      );
+      _selectRoute(_DesktopRoute.fileOperations);
+      _setFileStatus(LearnAnywhereMessage.fileSaveMaskDone);
+    });
+  }
+
+  Future<void> _exit() async {
+    await _guardedFileOperation(() async {
+      await _fileService.autoSaveStatistics(_document);
+      _setFileStatus(LearnAnywhereMessage.fileExitRequested);
+      await SystemNavigator.pop();
+    });
+  }
+
+  Future<void> _guardedFileOperation(Future<void> Function() operation) async {
+    try {
+      await operation();
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+        context,
+      );
+      setState(() {
+        _lastFileStatus =
+            '${messages.message(LearnAnywhereMessage.fileOperationFailed)}: $error';
+        _route = _DesktopRoute.fileOperations;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_lastFileStatus!)));
+    }
+  }
+
+  Future<bool> _confirm(LearnAnywhereMessage message) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
+          content: Text(messages.message(message)),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionContinue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Future<String?> _askPath({required String suggestedPath}) async {
+    final TextEditingController controller = TextEditingController(
+      text: suggestedPath,
+    );
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final String? result = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.fileStatusDeck)),
+          content: TextField(
+            autofocus: true,
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: messages.message(LearnAnywhereMessage.fileStatusDeck),
+            ),
+            onSubmitted: (String value) {
+              Navigator.of(context).pop(value.trim());
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionContinue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (result == null || result.isEmpty) {
+      return null;
+    }
+    return result;
+  }
+
+  void _setFileStatus(LearnAnywhereMessage message) {
+    if (!mounted) {
+      return;
+    }
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    setState(() {
+      _lastFileStatus = messages.message(message);
+      _route = _DesktopRoute.fileOperations;
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(_lastFileStatus!)));
+  }
+}
+
+String _ensureExtension(String path, String extension) {
+  final String normalizedExtension = '.$extension';
+  return path.toLowerCase().endsWith(normalizedExtension)
+      ? path
+      : '$path$normalizedExtension';
 }
 
 LearningMask _defaultMask() {
@@ -392,6 +656,67 @@ final class _RouteCopy {
 
   final String title;
   final String body;
+}
+
+final class _FileOperationsStatus extends StatelessWidget {
+  const _FileOperationsStatus({required this.document, required this.status});
+
+  final DesktopDocument document;
+  final String? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final String unsaved = messages.message(
+      LearnAnywhereMessage.fileStatusUnsaved,
+    );
+    return Padding(
+      padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            messages.message(LearnAnywhereMessage.routeFileOperationsTitle),
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapMedium),
+          _StatusLine(
+            label: messages.message(LearnAnywhereMessage.fileStatusDeck),
+            value: document.deckPath ?? unsaved,
+          ),
+          _StatusLine(
+            label: messages.message(LearnAnywhereMessage.fileStatusStats),
+            value: document.statisticsPath ?? unsaved,
+          ),
+          _StatusLine(
+            label: messages.message(LearnAnywhereMessage.fileStatusUnits),
+            value: document.deck.units.length.toString(),
+          ),
+          if (status != null) ...<Widget>[
+            const SizedBox(height: LearnAnywhereTokens.gapMedium),
+            Text(status!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+final class _StatusLine extends StatelessWidget {
+  const _StatusLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapSmall),
+      child: Text('$label: $value'),
+    );
+  }
 }
 
 final class _HintBar extends StatelessWidget {

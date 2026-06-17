@@ -69,7 +69,7 @@ void main() {
     expect(find.text('Fields: 1/20'), findsOneWidget);
   });
 
-  testWidgets('file menu commands route to file operations placeholder', (
+  testWidgets('file menu clear units asks for confirmation and shows status', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const LearnAnywhereDesktopApp());
@@ -77,16 +77,16 @@ void main() {
 
     await tester.tap(find.text('File'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Open deck...'));
+    await tester.tap(find.text('Clear units in memory...'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Please confirm'), findsOneWidget);
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
     expect(find.text('File operations'), findsOneWidget);
-    expect(
-      find.text(
-        'File commands are ready to be wired in the next Phase 2 steps.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Units: 0'), findsOneWidget);
+    expect(find.text('Units cleared.'), findsWidgets);
   });
 
   testWidgets('desktop shell switches language at runtime', (

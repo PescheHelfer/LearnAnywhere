@@ -231,6 +231,69 @@ enum LearnAnywhereMessage {
 
   /// Limit reached text.
   maskEditorLimitReached,
+
+  /// Current deck path label.
+  fileStatusDeck,
+
+  /// Current statistics path label.
+  fileStatusStats,
+
+  /// No file path placeholder.
+  fileStatusUnsaved,
+
+  /// Unit count label.
+  fileStatusUnits,
+
+  /// Confirm destructive action title.
+  confirmTitle,
+
+  /// Confirm new deck message.
+  confirmNewDeck,
+
+  /// Confirm clear units message.
+  confirmClearUnits,
+
+  /// Confirm load mask message.
+  confirmLoadMask,
+
+  /// Cancel action.
+  actionCancel,
+
+  /// Continue action.
+  actionContinue,
+
+  /// File operation success title.
+  fileOperationDone,
+
+  /// File operation failure title.
+  fileOperationFailed,
+
+  /// New deck success message.
+  fileNewDeckDone,
+
+  /// Open deck success message.
+  fileOpenDeckDone,
+
+  /// Merge deck success message.
+  fileMergeDeckDone,
+
+  /// Save deck success message.
+  fileSaveDeckDone,
+
+  /// Clear units success message.
+  fileClearUnitsDone,
+
+  /// Load mask success message.
+  fileLoadMaskDone,
+
+  /// Save mask success message.
+  fileSaveMaskDone,
+
+  /// Auto-loaded statistics message.
+  fileAutoLoadedStats,
+
+  /// Exit request message.
+  fileExitRequested,
 }
 
 /// Localized message catalog for framework-independent strings.
@@ -320,6 +383,30 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorCategoryCount: 'Categories: {count}/20',
       LearnAnywhereMessage.maskEditorFieldCount: 'Fields: {count}/20',
       LearnAnywhereMessage.maskEditorLimitReached: 'Limit reached',
+      LearnAnywhereMessage.fileStatusDeck: 'Deck',
+      LearnAnywhereMessage.fileStatusStats: 'Statistics',
+      LearnAnywhereMessage.fileStatusUnsaved: 'Unsaved',
+      LearnAnywhereMessage.fileStatusUnits: 'Units',
+      LearnAnywhereMessage.confirmTitle: 'Please confirm',
+      LearnAnywhereMessage.confirmNewDeck:
+          'Create a new deck? Current in-memory units will be cleared.',
+      LearnAnywhereMessage.confirmClearUnits:
+          'Clear all units in memory? This does not delete any file.',
+      LearnAnywhereMessage.confirmLoadMask:
+          'Load a new mask? Current in-memory units will be cleared.',
+      LearnAnywhereMessage.actionCancel: 'Cancel',
+      LearnAnywhereMessage.actionContinue: 'Continue',
+      LearnAnywhereMessage.fileOperationDone: 'Done',
+      LearnAnywhereMessage.fileOperationFailed: 'File operation failed',
+      LearnAnywhereMessage.fileNewDeckDone: 'New deck created.',
+      LearnAnywhereMessage.fileOpenDeckDone: 'Deck opened.',
+      LearnAnywhereMessage.fileMergeDeckDone: 'Deck merged.',
+      LearnAnywhereMessage.fileSaveDeckDone: 'Deck saved.',
+      LearnAnywhereMessage.fileClearUnitsDone: 'Units cleared.',
+      LearnAnywhereMessage.fileLoadMaskDone: 'Mask loaded.',
+      LearnAnywhereMessage.fileSaveMaskDone: 'Mask saved.',
+      LearnAnywhereMessage.fileAutoLoadedStats: 'Statistics sidecar loaded.',
+      LearnAnywhereMessage.fileExitRequested: 'Exit requested.',
     },
     LearnAnywhereLanguage.german: <LearnAnywhereMessage, String>{
       LearnAnywhereMessage.appTitle: 'Learn Anywhere',
@@ -403,6 +490,30 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorCategoryCount: 'Kategorien: {count}/20',
       LearnAnywhereMessage.maskEditorFieldCount: 'Felder: {count}/20',
       LearnAnywhereMessage.maskEditorLimitReached: 'Grenze erreicht',
+      LearnAnywhereMessage.fileStatusDeck: 'Lern-Datei',
+      LearnAnywhereMessage.fileStatusStats: 'Statistik',
+      LearnAnywhereMessage.fileStatusUnsaved: 'Ungespeichert',
+      LearnAnywhereMessage.fileStatusUnits: 'Lerneinheiten',
+      LearnAnywhereMessage.confirmTitle: 'Bitte bestaetigen',
+      LearnAnywhereMessage.confirmNewDeck:
+          'Neue Lern-Datei erstellen? Aktuelle Lerneinheiten im Speicher werden geloescht.',
+      LearnAnywhereMessage.confirmClearUnits:
+          'Alle Lerneinheiten im Speicher loeschen? Es wird keine Datei geloescht.',
+      LearnAnywhereMessage.confirmLoadMask:
+          'Neue Maske laden? Aktuelle Lerneinheiten im Speicher werden geloescht.',
+      LearnAnywhereMessage.actionCancel: 'Abbruch',
+      LearnAnywhereMessage.actionContinue: 'Weiter',
+      LearnAnywhereMessage.fileOperationDone: 'Fertig',
+      LearnAnywhereMessage.fileOperationFailed: 'Dateioperation fehlgeschlagen',
+      LearnAnywhereMessage.fileNewDeckDone: 'Neue Lern-Datei erstellt.',
+      LearnAnywhereMessage.fileOpenDeckDone: 'Lern-Datei geladen.',
+      LearnAnywhereMessage.fileMergeDeckDone: 'Lern-Datei hinzugefuegt.',
+      LearnAnywhereMessage.fileSaveDeckDone: 'Lern-Datei gespeichert.',
+      LearnAnywhereMessage.fileClearUnitsDone: 'Lerneinheiten geloescht.',
+      LearnAnywhereMessage.fileLoadMaskDone: 'Maske geladen.',
+      LearnAnywhereMessage.fileSaveMaskDone: 'Maske gespeichert.',
+      LearnAnywhereMessage.fileAutoLoadedStats: 'Statistik-Datei geladen.',
+      LearnAnywhereMessage.fileExitRequested: 'Beenden angefordert.',
     },
   };
 
