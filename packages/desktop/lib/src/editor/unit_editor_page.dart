@@ -1,0 +1,1046 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:learn_anywhere_core/core.dart';
+import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
+
+/// Desktop deck/unit editor with legacy shortcut parity.
+final class UnitEditorPage extends StatefulWidget {
+  /// Creates a unit editor for [deck].
+  const UnitEditorPage({
+    required this.deck,
+    required this.onChanged,
+    required this.onDone,
+    required this.onCancel,
+    super.key,
+  });
+
+  /// Current in-memory deck.
+  final LearningDeck deck;
+
+  /// Called whenever the deck units change.
+  final ValueChanged<LearningDeck> onChanged;
+
+  /// Called when the user closes the editor.
+  final VoidCallback onDone;
+
+  /// Called when the user cancels the editor.
+  final VoidCallback onCancel;
+
+  @override
+  State<UnitEditorPage> createState() => _UnitEditorPageState();
+}
+
+final class _UnitEditorPageState extends State<UnitEditorPage> {
+  int _currentIndex = 0;
+
+  @override
+  void didUpdateWidget(UnitEditorPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _clampCurrentIndex();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Shortcuts(
+      shortcuts: <ShortcutActivator, Intent>{
+        const SingleActivator(LogicalKeyboardKey.f1): const _HelpIntent(),
+        const SingleActivator(LogicalKeyboardKey.f2): const _PreviousIntent(),
+        const SingleActivator(LogicalKeyboardKey.f3): const _NextIntent(),
+        const SingleActivator(LogicalKeyboardKey.f5): const _SearchIntent(),
+        const SingleActivator(LogicalKeyboardKey.f6): const _JumpIntent(),
+        const SingleActivator(LogicalKeyboardKey.f7): const _DeleteIntent(),
+        const SingleActivator(LogicalKeyboardKey.f8): const _InsertIntent(),
+        const SingleActivator(LogicalKeyboardKey.f10): const _DoneIntent(),
+        const SingleActivator(LogicalKeyboardKey.escape): const _CancelIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _HelpIntent: CallbackAction<_HelpIntent>(
+            onInvoke: (_) {
+              _showHelp();
+              return null;
+            },
+          ),
+          _PreviousIntent: CallbackAction<_PreviousIntent>(
+            onInvoke: (_) {
+              _previous();
+              return null;
+            },
+          ),
+          _NextIntent: CallbackAction<_NextIntent>(
+            onInvoke: (_) {
+              _next();
+              return null;
+            },
+          ),
+          _SearchIntent: CallbackAction<_SearchIntent>(
+            onInvoke: (_) {
+              _search();
+              return null;
+            },
+          ),
+          _JumpIntent: CallbackAction<_JumpIntent>(
+            onInvoke: (_) {
+              _jump();
+              return null;
+            },
+          ),
+          _DeleteIntent: CallbackAction<_DeleteIntent>(
+            onInvoke: (_) {
+              _delete();
+              return null;
+            },
+          ),
+          _InsertIntent: CallbackAction<_InsertIntent>(
+            onInvoke: (_) {
+              _insertBefore();
+              return null;
+            },
+          ),
+          _DoneIntent: CallbackAction<_DoneIntent>(
+            onInvoke: (_) {
+              widget.onDone();
+              return null;
+            },
+          ),
+          _CancelIntent: CallbackAction<_CancelIntent>(
+            onInvoke: (_) {
+              widget.onCancel();
+              return null;
+            },
+          ),
+        },
+        child: Focus(
+          autofocus: true,
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.surface,
+            child: widget.deck.units.isEmpty
+                ? _EmptyEditor(onInsert: _appendUnit)
+                : _EditorBody(
+                    deck: widget.deck,
+                    currentIndex: _currentIndex,
+                    onFieldChanged: _updateCurrentUnitField,
+                    onPrevious: _previous,
+                    onNext: _next,
+                    onJump: _jump,
+                    onInsertBefore: _insertBefore,
+                    onDelete: _delete,
+                    onSearch: _search,
+                    onDone: widget.onDone,
+                    onCancel: widget.onCancel,
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _clampCurrentIndex() {
+    final int count = widget.deck.units.length;
+    if (count == 0) {
+      _currentIndex = 0;
+      return;
+    }
+    _currentIndex = _currentIndex.clamp(0, count - 1);
+  }
+
+  Future<void> _appendUnit() async {
+    final CategoryDefinition? category = await _chooseCategory();
+    if (category == null) {
+      return;
+    }
+    final List<LearningUnit> units = widget.deck.units.toList();
+    units.add(_newUnitFor(category));
+    _replaceUnits(units);
+    setState(() => _currentIndex = units.length - 1);
+  }
+
+  Future<void> _insertBefore() async {
+    if (widget.deck.units.isEmpty) {
+      await _appendUnit();
+      return;
+    }
+    final CategoryDefinition? category = await _chooseCategory();
+    if (category == null) {
+      return;
+    }
+    final List<LearningUnit> units = widget.deck.units.toList();
+    units.insert(_currentIndex, _newUnitFor(category));
+    _replaceUnits(units);
+    setState(() => _currentIndex = _currentIndex.clamp(0, units.length - 1));
+  }
+
+  void _previous() {
+    if (_currentIndex > 0) {
+      setState(() => _currentIndex -= 1);
+    }
+  }
+
+  Future<void> _next() async {
+    if (widget.deck.units.isEmpty ||
+        _currentIndex == widget.deck.units.length - 1) {
+      await _appendUnit();
+      return;
+    }
+    setState(() => _currentIndex += 1);
+  }
+
+  Future<void> _jump() async {
+    if (widget.deck.units.isEmpty) {
+      return;
+    }
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final TextEditingController controller = TextEditingController(
+      text: (_currentIndex + 1).toString(),
+    );
+    final int? target = await showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.editorJumpTitle)),
+          content: TextField(
+            autofocus: true,
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            decoration: InputDecoration(
+              labelText: messages.message(LearnAnywhereMessage.editorJumpLabel),
+            ),
+            onSubmitted: (String value) {
+              Navigator.of(context).pop(int.tryParse(value));
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(int.tryParse(controller.text)),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionContinue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (target == null) {
+      return;
+    }
+    setState(() {
+      _currentIndex = (target - 1).clamp(0, widget.deck.units.length - 1);
+    });
+  }
+
+  Future<void> _delete() async {
+    if (widget.deck.units.isEmpty) {
+      return;
+    }
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
+          content: Text(
+            messages.message(LearnAnywhereMessage.editorDeleteConfirm),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(messages.message(LearnAnywhereMessage.editorDelete)),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) {
+      return;
+    }
+    final List<LearningUnit> units = widget.deck.units.toList()
+      ..removeAt(_currentIndex);
+    _replaceUnits(units);
+    setState(() {
+      if (units.isEmpty) {
+        _currentIndex = 0;
+      } else {
+        _currentIndex = _currentIndex.clamp(0, units.length - 1);
+      }
+    });
+  }
+
+  Future<void> _search() async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final TextEditingController controller = TextEditingController();
+    final String? query = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.editorSearchTitle)),
+          content: TextField(
+            autofocus: true,
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: messages.message(
+                LearnAnywhereMessage.editorSearchQuery,
+              ),
+            ),
+            onSubmitted: (String value) {
+              Navigator.of(context).pop(value.trim());
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
+              child: Text(messages.message(LearnAnywhereMessage.editorSearch)),
+            ),
+          ],
+        );
+      },
+    );
+    if (query == null || query.isEmpty) {
+      return;
+    }
+
+    final List<SearchResult> results = searchDeck(
+      deck: widget.deck,
+      query: query,
+    );
+    if (results.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(messages.message(LearnAnywhereMessage.editorNoMatches)),
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+    final int? selectedIndex = await showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            messages.message(LearnAnywhereMessage.editorSearchResults),
+          ),
+          content: SizedBox(
+            width: 520,
+            height: 360,
+            child: ListView.builder(
+              itemCount: results.length,
+              itemBuilder: (BuildContext context, int index) {
+                final SearchResult result = results[index];
+                final CategoryDefinition? category = widget.deck.mask
+                    .categoryById(result.categoryId);
+                return ListTile(
+                  title: Text(
+                    _unitHeader(
+                      messages,
+                      result.unitIndex,
+                      widget.deck.units.length,
+                      category?.name ?? result.categoryId.toString(),
+                    ),
+                  ),
+                  subtitle: Text(result.matchedFieldNames.join(', ')),
+                  onTap: () => Navigator.of(context).pop(result.unitIndex - 1),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+    if (selectedIndex != null) {
+      setState(() => _currentIndex = selectedIndex);
+    }
+  }
+
+  Future<CategoryDefinition?> _chooseCategory() async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    if (widget.deck.mask.categories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            messages.message(LearnAnywhereMessage.editorNoCategories),
+          ),
+        ),
+      );
+      return null;
+    }
+    return showDialog<CategoryDefinition>(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text(
+            messages.message(LearnAnywhereMessage.editorChooseCategoryTitle),
+          ),
+          children: widget.deck.mask.categories
+              .map((CategoryDefinition category) {
+                return SimpleDialogOption(
+                  onPressed: () => Navigator.of(context).pop(category),
+                  child: Text(category.name),
+                );
+              })
+              .toList(growable: false),
+        );
+      },
+    );
+  }
+
+  void _showHelp() {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.editorHelpTitle)),
+          content: Text(messages.message(LearnAnywhereMessage.desktopHintBar)),
+          actions: <Widget>[
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionContinue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _updateCurrentUnitField(String fieldName, FieldValue value) {
+    final LearningUnit unit = widget.deck.units[_currentIndex];
+    final Map<String, FieldValue> fields = Map<String, FieldValue>.from(
+      unit.fields,
+    );
+    fields[fieldName] = value;
+    final LearningUnit updated = LearningUnit(
+      categoryId: unit.categoryId,
+      fields: Map<String, FieldValue>.unmodifiable(fields),
+    );
+    final List<LearningUnit> units = widget.deck.units.toList();
+    units[_currentIndex] = updated;
+    _replaceUnits(units);
+  }
+
+  LearningUnit _newUnitFor(CategoryDefinition category) {
+    return LearningUnit(
+      categoryId: category.id,
+      fields: <String, FieldValue>{
+        for (final FieldDefinition field in category.fields)
+          if (!field.isHidden) field.name: FieldValue.empty,
+      },
+    );
+  }
+
+  void _replaceUnits(List<LearningUnit> units) {
+    widget.onChanged(
+      LearningDeck(
+        mask: widget.deck.mask,
+        units: List<LearningUnit>.unmodifiable(units),
+      ),
+    );
+  }
+}
+
+final class _EmptyEditor extends StatelessWidget {
+  const _EmptyEditor({required this.onInsert});
+
+  final VoidCallback onInsert;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return Padding(
+      padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            messages.message(LearnAnywhereMessage.editorEmptyTitle),
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapSmall),
+          Text(messages.message(LearnAnywhereMessage.editorEmptyBody)),
+          const SizedBox(height: LearnAnywhereTokens.gapMedium),
+          FilledButton.icon(
+            onPressed: onInsert,
+            icon: const Icon(Icons.add),
+            label: Text(
+              messages.message(LearnAnywhereMessage.editorInsertBefore),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final class _EditorBody extends StatelessWidget {
+  const _EditorBody({
+    required this.deck,
+    required this.currentIndex,
+    required this.onFieldChanged,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onJump,
+    required this.onInsertBefore,
+    required this.onDelete,
+    required this.onSearch,
+    required this.onDone,
+    required this.onCancel,
+  });
+
+  final LearningDeck deck;
+  final int currentIndex;
+  final void Function(String fieldName, FieldValue value) onFieldChanged;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onJump;
+  final VoidCallback onInsertBefore;
+  final VoidCallback onDelete;
+  final VoidCallback onSearch;
+  final VoidCallback onDone;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final LearningUnit unit = deck.units[currentIndex];
+    final CategoryDefinition category = deck.categoryForUnit(unit);
+    final List<FieldDefinition> fields = category.fields
+        .where((FieldDefinition field) => !field.isHidden)
+        .toList(growable: false);
+
+    return Padding(
+      padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            _unitHeader(
+              messages,
+              currentIndex + 1,
+              deck.units.length,
+              category.name,
+            ),
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapMedium),
+          Wrap(
+            spacing: LearnAnywhereTokens.gapSmall,
+            runSpacing: LearnAnywhereTokens.gapSmall,
+            children: <Widget>[
+              _ActionButton(
+                icon: Icons.arrow_back,
+                label: messages.message(LearnAnywhereMessage.editorPrevious),
+                onPressed: currentIndex == 0 ? null : onPrevious,
+              ),
+              _ActionButton(
+                icon: Icons.arrow_forward,
+                label: messages.message(LearnAnywhereMessage.editorNext),
+                onPressed: onNext,
+              ),
+              _ActionButton(
+                icon: Icons.numbers,
+                label: messages.message(LearnAnywhereMessage.editorJump),
+                onPressed: onJump,
+              ),
+              _ActionButton(
+                icon: Icons.add,
+                label: messages.message(
+                  LearnAnywhereMessage.editorInsertBefore,
+                ),
+                onPressed: onInsertBefore,
+              ),
+              _ActionButton(
+                icon: Icons.delete_outline,
+                label: messages.message(LearnAnywhereMessage.editorDelete),
+                onPressed: onDelete,
+              ),
+              _ActionButton(
+                icon: Icons.search,
+                label: messages.message(LearnAnywhereMessage.editorSearch),
+                onPressed: onSearch,
+              ),
+              _ActionButton(
+                icon: Icons.check,
+                label: messages.message(LearnAnywhereMessage.editorDone),
+                onPressed: onDone,
+              ),
+              _ActionButton(
+                icon: Icons.close,
+                label: messages.message(LearnAnywhereMessage.editorCancel),
+                onPressed: onCancel,
+              ),
+            ],
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapLarge),
+          Expanded(
+            child: ListView.separated(
+              itemCount: fields.length,
+              separatorBuilder: (BuildContext context, int index) =>
+                  const SizedBox(height: LearnAnywhereTokens.gapMedium),
+              itemBuilder: (BuildContext context, int index) {
+                final FieldDefinition field = fields[index];
+                return _FieldValueEditor(
+                  key: ValueKey<String>(
+                    'editor-field-${currentIndex}-${index}-${field.name}',
+                  ),
+                  field: field,
+                  value: unit.valueForField(field.name),
+                  onChanged: (FieldValue value) {
+                    onFieldChanged(field.name, value);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final class _FieldValueEditor extends StatefulWidget {
+  const _FieldValueEditor({
+    required this.field,
+    required this.value,
+    required this.onChanged,
+    super.key,
+  });
+
+  final FieldDefinition field;
+  final FieldValue value;
+  final ValueChanged<FieldValue> onChanged;
+
+  @override
+  State<_FieldValueEditor> createState() => _FieldValueEditorState();
+}
+
+final class _FieldValueEditorState extends State<_FieldValueEditor> {
+  late final TextEditingController _controller;
+  late _FormattingState _formatting;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value.plainText);
+    _formatting = _FormattingState.fromValue(widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_FieldValueEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final String text = widget.value.plainText;
+    if (_controller.text != text) {
+      _controller.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+    }
+    _formatting = _FormattingState.fromValue(widget.value);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final double width = math.min(
+      780,
+      math.max(260, widget.field.length * 12 + 32),
+    );
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: colors.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(LearnAnywhereTokens.gapMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              widget.field.name,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapSmall),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: LearnAnywhereTokens.gapSmall,
+              runSpacing: LearnAnywhereTokens.gapSmall,
+              children: <Widget>[
+                Text(messages.message(LearnAnywhereMessage.editorFormatting)),
+                _FormatIconButton(
+                  tooltip: messages.message(LearnAnywhereMessage.editorBold),
+                  icon: Icons.format_bold,
+                  selected: _formatting.bold,
+                  onPressed: () {
+                    _toggle(_formatting.copyWith(bold: !_formatting.bold));
+                  },
+                ),
+                _FormatIconButton(
+                  tooltip: messages.message(LearnAnywhereMessage.editorItalic),
+                  icon: Icons.format_italic,
+                  selected: _formatting.italic,
+                  onPressed: () {
+                    _toggle(_formatting.copyWith(italic: !_formatting.italic));
+                  },
+                ),
+                _FormatIconButton(
+                  tooltip: messages.message(
+                    LearnAnywhereMessage.editorUnderline,
+                  ),
+                  icon: Icons.format_underline,
+                  selected: _formatting.underline,
+                  onPressed: () {
+                    _toggle(
+                      _formatting.copyWith(underline: !_formatting.underline),
+                    );
+                  },
+                ),
+                _ColorButton(
+                  tooltip: messages.message(LearnAnywhereMessage.editorColor),
+                  color: const Color(0xFFB00020),
+                  selected: _formatting.color == '#B00020',
+                  onPressed: () {
+                    _toggle(
+                      _formatting.withColor(
+                        _formatting.color == '#B00020' ? null : '#B00020',
+                      ),
+                    );
+                  },
+                ),
+                _ColorButton(
+                  tooltip: messages.message(
+                    LearnAnywhereMessage.editorHighlight,
+                  ),
+                  color: const Color(0xFFFFE066),
+                  selected: _formatting.highlight == '#FFE066',
+                  onPressed: () {
+                    _toggle(
+                      _formatting.withHighlight(
+                        _formatting.highlight == '#FFE066' ? null : '#FFE066',
+                      ),
+                    );
+                  },
+                ),
+                _FormatIconButton(
+                  tooltip: messages.message(
+                    LearnAnywhereMessage.editorClearFormatting,
+                  ),
+                  icon: Icons.format_clear,
+                  selected: false,
+                  onPressed: () {
+                    _toggle(const _FormattingState());
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapSmall),
+            SizedBox(
+              width: width,
+              child: TextField(
+                key: ValueKey<String>('editor-input-${widget.field.name}'),
+                controller: _controller,
+                maxLines: 1,
+                inputFormatters: <TextInputFormatter>[
+                  LengthLimitingTextInputFormatter(widget.field.length),
+                ],
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
+                  fontWeight: _formatting.bold
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                  fontStyle: _formatting.italic
+                      ? FontStyle.italic
+                      : FontStyle.normal,
+                  decoration: _formatting.underline
+                      ? TextDecoration.underline
+                      : TextDecoration.none,
+                  color: _hexColor(_formatting.color),
+                  backgroundColor: _hexColor(_formatting.highlight),
+                ),
+                decoration: InputDecoration(
+                  counterText:
+                      '${_controller.text.length}/${widget.field.length}',
+                ),
+                onChanged: (String value) {
+                  setState(() {});
+                  widget.onChanged(_formatting.valueFor(value));
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _toggle(_FormattingState formatting) {
+    setState(() => _formatting = formatting);
+    widget.onChanged(_formatting.valueFor(_controller.text));
+  }
+}
+
+final class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.tonalIcon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+    );
+  }
+}
+
+final class _FormatIconButton extends StatelessWidget {
+  const _FormatIconButton({
+    required this.tooltip,
+    required this.icon,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      isSelected: selected,
+      onPressed: onPressed,
+      icon: Icon(icon),
+      selectedIcon: Icon(icon),
+    );
+  }
+}
+
+final class _ColorButton extends StatelessWidget {
+  const _ColorButton({
+    required this.tooltip,
+    required this.color,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final Color color;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        isSelected: selected,
+        onPressed: onPressed,
+        icon: DecoratedBox(
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.outline,
+              width: selected ? 3 : 1,
+            ),
+          ),
+          child: const SizedBox(width: 18, height: 18),
+        ),
+      ),
+    );
+  }
+}
+
+final class _FormattingState {
+  const _FormattingState({
+    this.bold = false,
+    this.italic = false,
+    this.underline = false,
+    this.color,
+    this.highlight,
+  });
+
+  factory _FormattingState.fromValue(FieldValue value) {
+    return switch (value) {
+      RichFieldValue(:final List<RichTextRun> runs) when runs.isNotEmpty =>
+        _FormattingState(
+          bold: runs.first.bold,
+          italic: runs.first.italic,
+          underline: runs.first.underline,
+          color: runs.first.color,
+          highlight: runs.first.highlight,
+        ),
+      _ => const _FormattingState(),
+    };
+  }
+
+  final bool bold;
+  final bool italic;
+  final bool underline;
+  final String? color;
+  final String? highlight;
+
+  bool get hasFormatting =>
+      bold || italic || underline || color != null || highlight != null;
+
+  _FormattingState copyWith({bool? bold, bool? italic, bool? underline}) {
+    return _FormattingState(
+      bold: bold ?? this.bold,
+      italic: italic ?? this.italic,
+      underline: underline ?? this.underline,
+      color: color,
+      highlight: highlight,
+    );
+  }
+
+  _FormattingState withColor(String? value) {
+    return _FormattingState(
+      bold: bold,
+      italic: italic,
+      underline: underline,
+      color: value,
+      highlight: highlight,
+    );
+  }
+
+  _FormattingState withHighlight(String? value) {
+    return _FormattingState(
+      bold: bold,
+      italic: italic,
+      underline: underline,
+      color: color,
+      highlight: value,
+    );
+  }
+
+  FieldValue valueFor(String text) {
+    if (!hasFormatting) {
+      return FieldValue.plain(text);
+    }
+    return FieldValue.rich(<RichTextRun>[
+      RichTextRun(
+        text: text,
+        bold: bold,
+        italic: italic,
+        underline: underline,
+        color: color,
+        highlight: highlight,
+      ),
+    ]);
+  }
+}
+
+String _unitHeader(
+  LearnAnywhereLocalizations messages,
+  int index,
+  int total,
+  String category,
+) {
+  return messages
+      .message(LearnAnywhereMessage.editorUnitHeader)
+      .replaceAll('{index}', index.toString())
+      .replaceAll('{total}', total.toString())
+      .replaceAll('{category}', category);
+}
+
+Color? _hexColor(String? value) {
+  if (value == null) {
+    return null;
+  }
+  return Color(int.parse('FF${value.substring(1)}', radix: 16));
+}
+
+final class _HelpIntent extends Intent {
+  const _HelpIntent();
+}
+
+final class _PreviousIntent extends Intent {
+  const _PreviousIntent();
+}
+
+final class _NextIntent extends Intent {
+  const _NextIntent();
+}
+
+final class _SearchIntent extends Intent {
+  const _SearchIntent();
+}
+
+final class _JumpIntent extends Intent {
+  const _JumpIntent();
+}
+
+final class _DeleteIntent extends Intent {
+  const _DeleteIntent();
+}
+
+final class _InsertIntent extends Intent {
+  const _InsertIntent();
+}
+
+final class _DoneIntent extends Intent {
+  const _DoneIntent();
+}
+
+final class _CancelIntent extends Intent {
+  const _CancelIntent();
+}

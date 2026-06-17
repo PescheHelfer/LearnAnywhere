@@ -40,6 +40,86 @@ void main() {
     expect(find.text('Fields: 3/20'), findsOneWidget);
   });
 
+  testWidgets('editor inserts units and edits length-limited fields', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No learning units'), findsOneWidget);
+    await tester.tap(find.text('Insert before'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Category 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unit 1 of 1 - Category 1'), findsOneWidget);
+    expect(find.text('Question'), findsOneWidget);
+    expect(find.text('Answer'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Bold').first);
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('editor-input-Question')),
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+      findsNothing,
+    );
+  });
+
+  testWidgets('editor search shows selectable all-match results', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Insert before'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Category 1'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('editor-input-Question')),
+      'rabbit',
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Category 1'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('editor-input-Question')),
+      'turtle',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unit 2 of 2 - Category 1'), findsOneWidget);
+    await tester.tap(find.text('Search'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'rabbit');
+    await tester.tap(find.text('Search').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search results'), findsOneWidget);
+    expect(find.text('Unit 1 of 2 - Category 1'), findsOneWidget);
+    expect(find.text('Question'), findsWidgets);
+    await tester.tap(find.text('Unit 1 of 2 - Category 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unit 1 of 2 - Category 1'), findsOneWidget);
+  });
+
   testWidgets('mask editor edits mask metadata and adds schema items', (
     WidgetTester tester,
   ) async {

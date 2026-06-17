@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
+import 'src/editor/unit_editor_page.dart';
 import 'src/file_operations/desktop_document.dart';
 import 'src/file_operations/desktop_file_service.dart';
 import 'src/mask_editor/mask_editor_page.dart';
@@ -256,6 +257,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         document: _document,
         status: _lastFileStatus,
       ),
+      _DesktopRoute.editor => UnitEditorPage(
+        deck: _document.deck,
+        onChanged: _updateDeckFromEditor,
+        onDone: () => _selectRoute(_DesktopRoute.home),
+        onCancel: () => _selectRoute(_DesktopRoute.home),
+      ),
       _DesktopRoute.maskEditor => MaskEditorPage(
         mask: _document.mask,
         onChanged: (LearningMask value) {
@@ -268,6 +275,16 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       ),
       _ => _RoutePlaceholder(route: _route),
     };
+  }
+
+  void _updateDeckFromEditor(LearningDeck deck) {
+    final List<UnitStats> statistics =
+        deck.units.length == _document.deck.units.length
+        ? _document.statistics
+        : clearStatistics(deck);
+    setState(() {
+      _document = _document.copyWith(deck: deck, statistics: statistics);
+    });
   }
 
   Future<void> _runFileCommand(LearnAnywhereMessage command) async {

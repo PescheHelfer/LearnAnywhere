@@ -178,6 +178,90 @@ enum LearnAnywhereMessage {
   /// Desktop bottom shortcut hint bar text.
   desktopHintBar,
 
+  /// Unit editor empty-state title.
+  editorEmptyTitle,
+
+  /// Unit editor empty-state body.
+  editorEmptyBody,
+
+  /// Unit editor unit header.
+  editorUnitHeader,
+
+  /// Unit editor formatting toolbar label.
+  editorFormatting,
+
+  /// Unit editor previous action.
+  editorPrevious,
+
+  /// Unit editor next action.
+  editorNext,
+
+  /// Unit editor jump action.
+  editorJump,
+
+  /// Unit editor insert-before action.
+  editorInsertBefore,
+
+  /// Unit editor delete action.
+  editorDelete,
+
+  /// Unit editor search action.
+  editorSearch,
+
+  /// Unit editor done action.
+  editorDone,
+
+  /// Unit editor cancel action.
+  editorCancel,
+
+  /// Unit editor bold action.
+  editorBold,
+
+  /// Unit editor italic action.
+  editorItalic,
+
+  /// Unit editor underline action.
+  editorUnderline,
+
+  /// Unit editor foreground color action.
+  editorColor,
+
+  /// Unit editor highlight action.
+  editorHighlight,
+
+  /// Unit editor clear formatting action.
+  editorClearFormatting,
+
+  /// Unit editor category chooser title.
+  editorChooseCategoryTitle,
+
+  /// Unit editor jump dialog title.
+  editorJumpTitle,
+
+  /// Unit editor jump input label.
+  editorJumpLabel,
+
+  /// Unit editor search dialog title.
+  editorSearchTitle,
+
+  /// Unit editor search input label.
+  editorSearchQuery,
+
+  /// Unit editor search results title.
+  editorSearchResults,
+
+  /// Unit editor no matches message.
+  editorNoMatches,
+
+  /// Unit editor delete confirmation message.
+  editorDeleteConfirm,
+
+  /// Unit editor help title.
+  editorHelpTitle,
+
+  /// Unit editor missing categories message.
+  editorNoCategories,
+
   /// Mask name field label.
   maskEditorMaskName,
 
@@ -365,6 +449,38 @@ final class LearnAnywhereCatalog {
           'Learn Anywhere is a modern conversion of Lern PC plus.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
+      LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
+      LearnAnywhereMessage.editorEmptyBody:
+          'Insert a unit to begin editing this deck.',
+      LearnAnywhereMessage.editorUnitHeader:
+          'Unit {index} of {total} - {category}',
+      LearnAnywhereMessage.editorFormatting: 'Formatting',
+      LearnAnywhereMessage.editorPrevious: 'Previous',
+      LearnAnywhereMessage.editorNext: 'Next',
+      LearnAnywhereMessage.editorJump: 'Jump',
+      LearnAnywhereMessage.editorInsertBefore: 'Insert before',
+      LearnAnywhereMessage.editorDelete: 'Delete',
+      LearnAnywhereMessage.editorSearch: 'Search',
+      LearnAnywhereMessage.editorDone: 'Done',
+      LearnAnywhereMessage.editorCancel: 'Cancel',
+      LearnAnywhereMessage.editorBold: 'Bold',
+      LearnAnywhereMessage.editorItalic: 'Italic',
+      LearnAnywhereMessage.editorUnderline: 'Underline',
+      LearnAnywhereMessage.editorColor: 'Text color',
+      LearnAnywhereMessage.editorHighlight: 'Highlight',
+      LearnAnywhereMessage.editorClearFormatting: 'Clear formatting',
+      LearnAnywhereMessage.editorChooseCategoryTitle: 'Choose category',
+      LearnAnywhereMessage.editorJumpTitle: 'Jump to unit',
+      LearnAnywhereMessage.editorJumpLabel: 'Unit number',
+      LearnAnywhereMessage.editorSearchTitle: 'Search units',
+      LearnAnywhereMessage.editorSearchQuery: 'Search text',
+      LearnAnywhereMessage.editorSearchResults: 'Search results',
+      LearnAnywhereMessage.editorNoMatches: 'No matching units found.',
+      LearnAnywhereMessage.editorDeleteConfirm:
+          'Delete the current learning unit?',
+      LearnAnywhereMessage.editorHelpTitle: 'Editor shortcuts',
+      LearnAnywhereMessage.editorNoCategories:
+          'The current mask has no categories.',
       LearnAnywhereMessage.maskEditorMaskName: 'Mask name',
       LearnAnywhereMessage.maskEditorDirection1: 'Direction 1 label',
       LearnAnywhereMessage.maskEditorDirection2: 'Direction 2 label',
@@ -472,6 +588,39 @@ final class LearnAnywhereCatalog {
           'Learn Anywhere ist eine moderne Umsetzung von Lern PC plus.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurueck   F3 Weiter   F5 Suche   F6 Sprung   F7 Loeschen   F8 Einfuegen   F10 Fertig   Esc Abbruch',
+      LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
+      LearnAnywhereMessage.editorEmptyBody:
+          'Fuegen Sie eine Lerneinheit ein, um diese Lern-Datei zu bearbeiten.',
+      LearnAnywhereMessage.editorUnitHeader:
+          'Einheit {index} von {total} - {category}',
+      LearnAnywhereMessage.editorFormatting: 'Formatierung',
+      LearnAnywhereMessage.editorPrevious: 'Zurueck',
+      LearnAnywhereMessage.editorNext: 'Weiter',
+      LearnAnywhereMessage.editorJump: 'Sprung',
+      LearnAnywhereMessage.editorInsertBefore: 'Einfuegen',
+      LearnAnywhereMessage.editorDelete: 'Loeschen',
+      LearnAnywhereMessage.editorSearch: 'Suche',
+      LearnAnywhereMessage.editorDone: 'Fertig',
+      LearnAnywhereMessage.editorCancel: 'Abbruch',
+      LearnAnywhereMessage.editorBold: 'Fett',
+      LearnAnywhereMessage.editorItalic: 'Kursiv',
+      LearnAnywhereMessage.editorUnderline: 'Unterstrichen',
+      LearnAnywhereMessage.editorColor: 'Textfarbe',
+      LearnAnywhereMessage.editorHighlight: 'Markierung',
+      LearnAnywhereMessage.editorClearFormatting: 'Formatierung loeschen',
+      LearnAnywhereMessage.editorChooseCategoryTitle: 'Kategorie waehlen',
+      LearnAnywhereMessage.editorJumpTitle: 'Zu Einheit springen',
+      LearnAnywhereMessage.editorJumpLabel: 'Einheitsnummer',
+      LearnAnywhereMessage.editorSearchTitle: 'Lerneinheiten suchen',
+      LearnAnywhereMessage.editorSearchQuery: 'Suchtext',
+      LearnAnywhereMessage.editorSearchResults: 'Suchergebnisse',
+      LearnAnywhereMessage.editorNoMatches:
+          'Keine passenden Lerneinheiten gefunden.',
+      LearnAnywhereMessage.editorDeleteConfirm:
+          'Aktuelle Lerneinheit loeschen?',
+      LearnAnywhereMessage.editorHelpTitle: 'Editor-Tasten',
+      LearnAnywhereMessage.editorNoCategories:
+          'Die aktuelle Maske hat keine Kategorien.',
       LearnAnywhereMessage.maskEditorMaskName: 'Maskenname',
       LearnAnywhereMessage.maskEditorDirection1: 'Abfrage 1',
       LearnAnywhereMessage.maskEditorDirection2: 'Abfrage 2',
