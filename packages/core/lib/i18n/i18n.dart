@@ -34,6 +34,30 @@ enum LearnAnywhereMessage {
   /// Mobile shell readiness text.
   mobileShellReady,
 
+  /// Mobile open deck action.
+  mobileOpenDeck,
+
+  /// Mobile no-deck title.
+  mobileNoDeckTitle,
+
+  /// Mobile no-deck body.
+  mobileNoDeckBody,
+
+  /// Mobile deck loaded status.
+  mobileDeckLoaded,
+
+  /// Mobile deck load failure status.
+  mobileDeckLoadFailed,
+
+  /// Mobile unit count label.
+  mobileUnits,
+
+  /// Mobile next action.
+  mobileNext,
+
+  /// Mobile rating prompt.
+  mobileRatePrompt,
+
   /// Super-query completion message.
   superQueryCompleted,
 
@@ -705,6 +729,15 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.appTitle: 'Learn Anywhere',
       LearnAnywhereMessage.desktopShellReady: 'Desktop shell ready',
       LearnAnywhereMessage.mobileShellReady: 'Mobile shell ready',
+      LearnAnywhereMessage.mobileOpenDeck: 'Open deck',
+      LearnAnywhereMessage.mobileNoDeckTitle: 'No deck loaded',
+      LearnAnywhereMessage.mobileNoDeckBody:
+          'Open a .vok deck to start a read-only learning session.',
+      LearnAnywhereMessage.mobileDeckLoaded: 'Deck loaded.',
+      LearnAnywhereMessage.mobileDeckLoadFailed: 'Deck could not be opened.',
+      LearnAnywhereMessage.mobileUnits: 'Units',
+      LearnAnywhereMessage.mobileNext: 'Next',
+      LearnAnywhereMessage.mobileRatePrompt: 'How did it go?',
       LearnAnywhereMessage.superQueryCompleted:
           'You have now mastered all learning units in the selected range. Congratulations!',
       LearnAnywhereMessage.desktopHomeTitle: 'Workspace',
@@ -963,6 +996,16 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.appTitle: 'Learn Anywhere',
       LearnAnywhereMessage.desktopShellReady: 'Desktop-Shell bereit',
       LearnAnywhereMessage.mobileShellReady: 'Mobile-Shell bereit',
+      LearnAnywhereMessage.mobileOpenDeck: 'Lern-Datei laden',
+      LearnAnywhereMessage.mobileNoDeckTitle: 'Keine Lern-Datei geladen',
+      LearnAnywhereMessage.mobileNoDeckBody:
+          'Laden Sie eine .vok-Lern-Datei, um eine reine Lern-Sitzung zu starten.',
+      LearnAnywhereMessage.mobileDeckLoaded: 'Lern-Datei geladen.',
+      LearnAnywhereMessage.mobileDeckLoadFailed:
+          'Lern-Datei konnte nicht geoeffnet werden.',
+      LearnAnywhereMessage.mobileUnits: 'Einheiten',
+      LearnAnywhereMessage.mobileNext: 'Weiter',
+      LearnAnywhereMessage.mobileRatePrompt: 'Wie lief es?',
       LearnAnywhereMessage.superQueryCompleted:
           'Sie beherrschen nun alle Lerneinheiten im gewaehlten Bereich! Herzlichen Glueckwunsch!',
       LearnAnywhereMessage.desktopHomeTitle: 'Arbeitsbereich',
