@@ -262,6 +262,153 @@ enum LearnAnywhereMessage {
   /// Unit editor missing categories message.
   editorNoCategories,
 
+  /// Learn empty-state title.
+  learnEmptyTitle,
+
+  /// Learn empty-state body.
+  learnEmptyBody,
+
+  /// Learn setup title.
+  learnSetupTitle,
+
+  /// Learn direction selection label.
+  learnDirection,
+
+  /// Learn direction 1 option.
+  learnDirection1,
+
+  /// Learn direction 2 option.
+  learnDirection2,
+
+  /// Learn both directions option.
+  learnBothDirections,
+
+  /// Learn start range label.
+  learnRangeStart,
+
+  /// Learn end range label.
+  learnRangeEnd,
+
+  /// Learn mode label.
+  learnMode,
+
+  /// Practice mode label.
+  learnModePractice,
+
+  /// Super-query mode label.
+  learnModeSuperQuery,
+
+  /// Practice each-once option.
+  learnPracticeEachOnce,
+
+  /// Super status threshold label.
+  learnSuperThreshold,
+
+  /// Start or resume session action.
+  learnStartSession,
+
+  /// Prompt section label.
+  learnPrompt,
+
+  /// Your answer section label.
+  learnYourAnswer,
+
+  /// Solution section label.
+  learnSolution,
+
+  /// Remarks section label.
+  learnRemarks,
+
+  /// Reveal answer action.
+  learnReveal,
+
+  /// Check answer action.
+  learnCheckAnswer,
+
+  /// Continue session action.
+  learnContinue,
+
+  /// Correct answer message.
+  learnCorrectMessage,
+
+  /// Wrong answer message.
+  learnWrongMessage,
+
+  /// Rating correct option.
+  learnRatingCorrect,
+
+  /// Rating wrong option.
+  learnRatingWrong,
+
+  /// Rating actually correct option.
+  learnRatingActuallyCorrect,
+
+  /// Rating actually wrong option.
+  learnRatingActuallyWrong,
+
+  /// Rating no-count option.
+  learnRatingNoCount,
+
+  /// Think-only knew-it option.
+  learnRatingKnewIt,
+
+  /// Think-only did-not-know option.
+  learnRatingDidNotKnow,
+
+  /// Live mastered count label.
+  learnLiveMastered,
+
+  /// Live remaining count label.
+  learnLiveRemaining,
+
+  /// Live accuracy label.
+  learnLiveAccuracy,
+
+  /// Current unit header.
+  learnUnitHeader,
+
+  /// Completion extend action.
+  learnExtendSession,
+
+  /// Return to setup action.
+  learnBackToSetup,
+
+  /// Query options title.
+  queryOptionsTitle,
+
+  /// Wrong input correctable option.
+  queryOptionWrongInputCorrectable,
+
+  /// Complete input required option.
+  queryOptionCompleteInputRequired,
+
+  /// Case sensitive option.
+  queryOptionCaseSensitive,
+
+  /// Accent sensitive option.
+  queryOptionAccentSensitive,
+
+  /// Show clock option.
+  queryOptionShowClock,
+
+  /// Time limit option.
+  queryOptionTimeLimit,
+
+  /// With answer input option.
+  queryOptionWithAnswerInput,
+
+  /// Minimum-attempts guard option.
+  queryOptionMinimumAttemptsGuard,
+
+  /// Minimum attempts value option.
+  queryOptionMinimumAttempts,
+
+  /// Wrong-answer ceiling option.
+  queryOptionWrongAnswerCeiling,
+
+  /// Wrong-answer ceiling value option.
+  queryOptionWrongAnswerCeilingValue,
+
   /// Mask name field label.
   maskEditorMaskName,
 
@@ -481,6 +628,64 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorHelpTitle: 'Editor shortcuts',
       LearnAnywhereMessage.editorNoCategories:
           'The current mask has no categories.',
+      LearnAnywhereMessage.learnEmptyTitle: 'No learning units',
+      LearnAnywhereMessage.learnEmptyBody:
+          'Create or open a deck with learning units before starting a session.',
+      LearnAnywhereMessage.learnSetupTitle: 'Practice setup',
+      LearnAnywhereMessage.learnDirection: 'Direction',
+      LearnAnywhereMessage.learnDirection1: 'Direction 1',
+      LearnAnywhereMessage.learnDirection2: 'Direction 2',
+      LearnAnywhereMessage.learnBothDirections: 'Both',
+      LearnAnywhereMessage.learnRangeStart: 'Start unit',
+      LearnAnywhereMessage.learnRangeEnd: 'End unit',
+      LearnAnywhereMessage.learnMode: 'Mode',
+      LearnAnywhereMessage.learnModePractice: 'Practice',
+      LearnAnywhereMessage.learnModeSuperQuery: 'Super-query',
+      LearnAnywhereMessage.learnPracticeEachOnce: 'Each unit exactly once',
+      LearnAnywhereMessage.learnSuperThreshold: 'Super status threshold (%)',
+      LearnAnywhereMessage.learnStartSession: 'Start session',
+      LearnAnywhereMessage.learnPrompt: 'Prompt',
+      LearnAnywhereMessage.learnYourAnswer: 'Your answer',
+      LearnAnywhereMessage.learnSolution: 'Solution',
+      LearnAnywhereMessage.learnRemarks: 'Remarks',
+      LearnAnywhereMessage.learnReveal: 'Reveal',
+      LearnAnywhereMessage.learnCheckAnswer: 'Check',
+      LearnAnywhereMessage.learnContinue: 'Continue',
+      LearnAnywhereMessage.learnCorrectMessage:
+          'Your answer is correct. Congratulations!',
+      LearnAnywhereMessage.learnWrongMessage:
+          'The answer is unfortunately wrong.',
+      LearnAnywhereMessage.learnRatingCorrect: 'Correct',
+      LearnAnywhereMessage.learnRatingWrong: 'Wrong',
+      LearnAnywhereMessage.learnRatingActuallyCorrect: 'Actually correct',
+      LearnAnywhereMessage.learnRatingActuallyWrong: 'Actually wrong',
+      LearnAnywhereMessage.learnRatingNoCount: 'No count',
+      LearnAnywhereMessage.learnRatingKnewIt: 'Knew it',
+      LearnAnywhereMessage.learnRatingDidNotKnow: "Didn't know",
+      LearnAnywhereMessage.learnLiveMastered: 'Mastered',
+      LearnAnywhereMessage.learnLiveRemaining: 'Remaining',
+      LearnAnywhereMessage.learnLiveAccuracy: 'Accuracy',
+      LearnAnywhereMessage.learnUnitHeader:
+          'Unit {index} of {total} - {category} - {direction}',
+      LearnAnywhereMessage.learnExtendSession: 'Extend session',
+      LearnAnywhereMessage.learnBackToSetup: 'Back to setup',
+      LearnAnywhereMessage.queryOptionsTitle: 'Query Options',
+      LearnAnywhereMessage.queryOptionWrongInputCorrectable:
+          'Wrong input correctable',
+      LearnAnywhereMessage.queryOptionCompleteInputRequired:
+          'Complete input required',
+      LearnAnywhereMessage.queryOptionCaseSensitive: 'Case sensitive',
+      LearnAnywhereMessage.queryOptionAccentSensitive: 'Accent sensitive',
+      LearnAnywhereMessage.queryOptionShowClock: 'Show clock',
+      LearnAnywhereMessage.queryOptionTimeLimit: 'Time limit (seconds)',
+      LearnAnywhereMessage.queryOptionWithAnswerInput: 'With answer input',
+      LearnAnywhereMessage.queryOptionMinimumAttemptsGuard:
+          'Minimum-attempts guard',
+      LearnAnywhereMessage.queryOptionMinimumAttempts: 'Minimum attempts',
+      LearnAnywhereMessage.queryOptionWrongAnswerCeiling:
+          'Wrong-answer ceiling',
+      LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue:
+          'Wrong-answer ceiling value',
       LearnAnywhereMessage.maskEditorMaskName: 'Mask name',
       LearnAnywhereMessage.maskEditorDirection1: 'Direction 1 label',
       LearnAnywhereMessage.maskEditorDirection2: 'Direction 2 label',
@@ -621,6 +826,65 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorHelpTitle: 'Editor-Tasten',
       LearnAnywhereMessage.editorNoCategories:
           'Die aktuelle Maske hat keine Kategorien.',
+      LearnAnywhereMessage.learnEmptyTitle: 'Keine Lerneinheiten',
+      LearnAnywhereMessage.learnEmptyBody:
+          'Erstellen oder laden Sie eine Lern-Datei mit Lerneinheiten, bevor Sie eine Sitzung starten.',
+      LearnAnywhereMessage.learnSetupTitle: 'Uebung einrichten',
+      LearnAnywhereMessage.learnDirection: 'Richtung',
+      LearnAnywhereMessage.learnDirection1: 'Richtung 1',
+      LearnAnywhereMessage.learnDirection2: 'Richtung 2',
+      LearnAnywhereMessage.learnBothDirections: 'Beide',
+      LearnAnywhereMessage.learnRangeStart: 'Erste Einheit',
+      LearnAnywhereMessage.learnRangeEnd: 'Letzte Einheit',
+      LearnAnywhereMessage.learnMode: 'Modus',
+      LearnAnywhereMessage.learnModePractice: 'Ueben',
+      LearnAnywhereMessage.learnModeSuperQuery: 'Super-Abfrage',
+      LearnAnywhereMessage.learnPracticeEachOnce: 'Jede Einheit genau einmal',
+      LearnAnywhereMessage.learnSuperThreshold: 'Super-Status (%)',
+      LearnAnywhereMessage.learnStartSession: 'Sitzung starten',
+      LearnAnywhereMessage.learnPrompt: 'Frage',
+      LearnAnywhereMessage.learnYourAnswer: 'Ihre Antwort',
+      LearnAnywhereMessage.learnSolution: 'Loesung',
+      LearnAnywhereMessage.learnRemarks: 'Bemerkungen',
+      LearnAnywhereMessage.learnReveal: 'Anzeigen',
+      LearnAnywhereMessage.learnCheckAnswer: 'Pruefen',
+      LearnAnywhereMessage.learnContinue: 'Weiter',
+      LearnAnywhereMessage.learnCorrectMessage:
+          'Die Eingabe ist richtig! Glueckwunsch!',
+      LearnAnywhereMessage.learnWrongMessage:
+          'Die Eingabe ist leider falsch! Schade!',
+      LearnAnywhereMessage.learnRatingCorrect: 'Richtig',
+      LearnAnywhereMessage.learnRatingWrong: 'Falsch',
+      LearnAnywhereMessage.learnRatingActuallyCorrect: 'Eigentlich richtig',
+      LearnAnywhereMessage.learnRatingActuallyWrong: 'Eigentlich falsch',
+      LearnAnywhereMessage.learnRatingNoCount: 'Nicht zaehlen',
+      LearnAnywhereMessage.learnRatingKnewIt: 'Gewusst',
+      LearnAnywhereMessage.learnRatingDidNotKnow: 'Nicht gewusst',
+      LearnAnywhereMessage.learnLiveMastered: 'Beherrscht',
+      LearnAnywhereMessage.learnLiveRemaining: 'Uebrig',
+      LearnAnywhereMessage.learnLiveAccuracy: 'Treffer',
+      LearnAnywhereMessage.learnUnitHeader:
+          'Einheit {index} von {total} - {category} - {direction}',
+      LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
+      LearnAnywhereMessage.learnBackToSetup: 'Zur Einrichtung',
+      LearnAnywhereMessage.queryOptionsTitle: 'Abfrageoptionen',
+      LearnAnywhereMessage.queryOptionWrongInputCorrectable:
+          'Falsche Eingabe korrigierbar',
+      LearnAnywhereMessage.queryOptionCompleteInputRequired:
+          'Vollstaendige Eingabe erforderlich',
+      LearnAnywhereMessage.queryOptionCaseSensitive:
+          'Gross-/Kleinschreibung beachten',
+      LearnAnywhereMessage.queryOptionAccentSensitive: 'Akzente beachten',
+      LearnAnywhereMessage.queryOptionShowClock: 'Uhr anzeigen',
+      LearnAnywhereMessage.queryOptionTimeLimit: 'Zeitlimit (Sekunden)',
+      LearnAnywhereMessage.queryOptionWithAnswerInput: 'Mit Antwort-Eingabe',
+      LearnAnywhereMessage.queryOptionMinimumAttemptsGuard:
+          'Mindestabfragen beachten',
+      LearnAnywhereMessage.queryOptionMinimumAttempts: 'Mindestabfragen',
+      LearnAnywhereMessage.queryOptionWrongAnswerCeiling:
+          'Falsch-Antworten begrenzen',
+      LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue:
+          'Grenze fuer falsche Antworten',
       LearnAnywhereMessage.maskEditorMaskName: 'Maskenname',
       LearnAnywhereMessage.maskEditorDirection1: 'Abfrage 1',
       LearnAnywhereMessage.maskEditorDirection2: 'Abfrage 2',

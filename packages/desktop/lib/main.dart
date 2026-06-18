@@ -6,6 +6,9 @@ import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import 'src/editor/unit_editor_page.dart';
 import 'src/file_operations/desktop_document.dart';
 import 'src/file_operations/desktop_file_service.dart';
+import 'src/learn/desktop_query_options.dart';
+import 'src/learn/learn_session_page.dart';
+import 'src/learn/query_options_page.dart';
 import 'src/mask_editor/mask_editor_page.dart';
 
 void main() {
@@ -86,6 +89,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   final DesktopFileService _fileService = const DesktopFileService();
   _DesktopRoute _route = _DesktopRoute.home;
   DesktopDocument _document = DesktopDocument.empty(_defaultMask());
+  DesktopQueryOptions _queryOptions = const DesktopQueryOptions();
+  SessionParameters _learnParameters = const SessionParameters();
+  int _learnSessionAttempts = 0;
+  int _learnSessionCorrect = 0;
   String? _lastFileStatus;
 
   @override
@@ -271,6 +278,33 @@ final class _DesktopHomeState extends State<_DesktopHome> {
             units: _document.deck.units,
           );
           setState(() => _document = _document.copyWith(deck: deck));
+        },
+      ),
+      _DesktopRoute.learn => LearnSessionPage(
+        deck: _document.deck,
+        statistics: _document.statistics,
+        options: _queryOptions,
+        parameters: _learnParameters,
+        sessionAttempts: _learnSessionAttempts,
+        sessionCorrect: _learnSessionCorrect,
+        onParametersChanged: (SessionParameters value) {
+          setState(() => _learnParameters = value);
+        },
+        onStatisticsChanged: (List<UnitStats> value) {
+          setState(() => _document = _document.copyWith(statistics: value));
+        },
+        onSessionProgressChanged: (int attempts, int correct) {
+          setState(() {
+            _learnSessionAttempts = attempts;
+            _learnSessionCorrect = correct;
+          });
+        },
+        onOpenEditor: () => _selectRoute(_DesktopRoute.editor),
+      ),
+      _DesktopRoute.queryOptions => QueryOptionsPage(
+        options: _queryOptions,
+        onChanged: (DesktopQueryOptions value) {
+          setState(() => _queryOptions = value);
         },
       ),
       _ => _RoutePlaceholder(route: _route),

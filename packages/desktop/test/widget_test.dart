@@ -120,6 +120,88 @@ void main() {
     expect(find.text('Unit 1 of 2 - Category 1'), findsOneWidget);
   });
 
+  testWidgets('query options route exposes learning toggles', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Query Options'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Query Options'), findsWidgets);
+    expect(find.text('Wrong input correctable'), findsOneWidget);
+    expect(find.text('Complete input required'), findsOneWidget);
+    expect(find.text('Case sensitive'), findsOneWidget);
+    expect(find.text('With answer input'), findsOneWidget);
+
+    await tester.tap(find.text('With answer input'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('With answer input'), findsOneWidget);
+  });
+
+  testWidgets('learn session checks answers and records live accuracy', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Insert before'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Category 1'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('editor-input-Question')),
+      'hello',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('editor-input-Answer')),
+      'bonjour',
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(MenuItemButton, 'Learn'));
+    await tester.pumpAndSettle();
+    expect(find.text('Practice setup'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start session'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, 500));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Unit 1 of 1 - Category 1'), findsOneWidget);
+    if (tester.any(find.text('hello', findRichText: true))) {
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('learn-answer-Answer')),
+        'bonjour',
+      );
+    } else {
+      expect(find.text('bonjour', findRichText: true), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('learn-answer-Question')),
+        'hello',
+      );
+    }
+    await tester.tap(find.text('Check'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Your answer is correct. Congratulations!'),
+      findsOneWidget,
+    );
+    expect(find.text('Correct'), findsOneWidget);
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Accuracy: 100%'), findsOneWidget);
+  });
+
   testWidgets('mask editor edits mask metadata and adds schema items', (
     WidgetTester tester,
   ) async {
