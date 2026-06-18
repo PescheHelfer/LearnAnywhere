@@ -175,6 +175,21 @@ enum LearnAnywhereMessage {
   /// About placeholder body.
   routeAboutBody,
 
+  /// About page introduction.
+  aboutIntro,
+
+  /// About page original program credit.
+  aboutOriginalCredit,
+
+  /// About page conversion credit.
+  aboutConversionCredit,
+
+  /// About page version history heading.
+  aboutVersionHistory,
+
+  /// About page current version history entry.
+  aboutVersionCurrent,
+
   /// Desktop bottom shortcut hint bar text.
   desktopHintBar,
 
@@ -747,6 +762,15 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.routeAboutTitle: 'About',
       LearnAnywhereMessage.routeAboutBody:
           'Learn Anywhere is a modern conversion of Lern PC plus.',
+      LearnAnywhereMessage.aboutIntro:
+          'Learn Anywhere is a modern conversion of Lern PC plus.',
+      LearnAnywhereMessage.aboutOriginalCredit:
+          'Lern PC plus — Universal-Lernprogramm, © 1990/92 by Ulrich Veigel Softwareservice (UVS)',
+      LearnAnywhereMessage.aboutConversionCredit:
+          'Modern conversion: SbitFire Software',
+      LearnAnywhereMessage.aboutVersionHistory: 'Version history',
+      LearnAnywhereMessage.aboutVersionCurrent:
+          '0.1.0 - Phase 2 desktop foundation: file operations, editor, learning, statistics, lexicon, and program info.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -997,6 +1021,15 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.routeAboutTitle: 'Programminfo',
       LearnAnywhereMessage.routeAboutBody:
           'Learn Anywhere ist eine moderne Umsetzung von Lern PC plus.',
+      LearnAnywhereMessage.aboutIntro:
+          'Learn Anywhere ist eine moderne Umsetzung von Lern PC plus.',
+      LearnAnywhereMessage.aboutOriginalCredit:
+          'Lern PC plus — Universal-Lernprogramm, © 1990/92 by Ulrich Veigel Softwareservice (UVS)',
+      LearnAnywhereMessage.aboutConversionCredit:
+          'Moderne Umsetzung: SbitFire Software',
+      LearnAnywhereMessage.aboutVersionHistory: 'Versionsgeschichte',
+      LearnAnywhereMessage.aboutVersionCurrent:
+          '0.1.0 - Phase-2-Desktop-Grundlage: Dateioperationen, Editor, Lernen, Statistik, Lexikon und Programminfo.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurueck   F3 Weiter   F5 Suche   F6 Sprung   F7 Loeschen   F8 Einfuegen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

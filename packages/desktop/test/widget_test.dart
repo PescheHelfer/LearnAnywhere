@@ -40,6 +40,32 @@ void main() {
     expect(find.text('Fields: 3/20'), findsOneWidget);
   });
 
+  testWidgets('help about shows legacy and conversion credits', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Help'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('About'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('About'), findsWidgets);
+    expect(find.textContaining('Lern PC plus'), findsWidgets);
+    expect(
+      find.textContaining('Ulrich Veigel Softwareservice'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('SbitFire Software'), findsOneWidget);
+    expect(find.text('Version history'), findsOneWidget);
+  });
+
   testWidgets('editor inserts units and edits length-limited fields', (
     WidgetTester tester,
   ) async {

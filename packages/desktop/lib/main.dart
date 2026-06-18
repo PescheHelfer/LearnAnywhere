@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
+import 'src/about/about_page.dart';
 import 'src/editor/unit_editor_page.dart';
 import 'src/file_operations/desktop_document.dart';
 import 'src/file_operations/desktop_file_service.dart';
@@ -326,6 +327,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         loadDecksByPattern: _fileService.loadDecksByPattern,
         onLoadFoundDeck: _loadFoundLexiconDeck,
       ),
+      _DesktopRoute.about => const AboutPage(),
       _ => _RoutePlaceholder(route: _route),
     };
   }
