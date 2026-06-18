@@ -146,6 +146,34 @@ void main() {
 
       await temp.delete(recursive: true);
     });
+
+    test('loads decks matching a file mask pattern', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_pattern_ops',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <String, FieldValue>{'Question': FieldValue.plain('Q')},
+          ),
+        ],
+      );
+      final String deckPath = '${temp.path}${Platform.pathSeparator}one.vok';
+      final String ignoredPath = '${temp.path}${Platform.pathSeparator}one.txt';
+      await File(deckPath).writeAsString(encodeDeckJson(deck));
+      await File(ignoredPath).writeAsString('ignored');
+
+      final Map<String, LearningDeck> loaded = await service.loadDecksByPattern(
+        '${temp.path}${Platform.pathSeparator}*.vok',
+      );
+
+      expect(loaded.keys, contains(deckPath));
+      expect(loaded[deckPath]!.units, hasLength(1));
+      await temp.delete(recursive: true);
+    });
   });
 }
 

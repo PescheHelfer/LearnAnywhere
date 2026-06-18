@@ -91,6 +91,30 @@ final class DesktopFileService {
     await File(path).writeAsString(encodeDeckJson(deck));
   }
 
+  /// Loads all `.vok` decks matching a simple file glob pattern.
+  Future<Map<String, LearningDeck>> loadDecksByPattern(String pattern) async {
+    final _DeckPattern parsed = _DeckPattern.parse(pattern);
+    final Directory directory = Directory(parsed.directoryPath);
+    if (!await directory.exists()) {
+      throw FileOperationException(
+        'Search directory does not exist: ${parsed.directoryPath}',
+      );
+    }
+    final RegExp fileNamePattern = parsed.fileNameRegex;
+    final Map<String, LearningDeck> decks = <String, LearningDeck>{};
+    await for (final FileSystemEntity entity in directory.list()) {
+      if (entity is! File) {
+        continue;
+      }
+      final String fileName = _fileName(entity.path);
+      if (!fileNamePattern.hasMatch(fileName)) {
+        continue;
+      }
+      decks[entity.path] = decodeDeckJson(await entity.readAsString());
+    }
+    return decks;
+  }
+
   /// Clears units in memory without deleting files.
   DesktopDocument clearUnits(DesktopDocument current) {
     final LearningDeck deck = LearningDeck(
@@ -206,4 +230,57 @@ final class FileOperationException implements Exception {
 
   @override
   String toString() => message;
+}
+
+final class _DeckPattern {
+  const _DeckPattern({
+    required this.directoryPath,
+    required this.fileNamePattern,
+  });
+
+  final String directoryPath;
+  final String fileNamePattern;
+
+  RegExp get fileNameRegex {
+    final StringBuffer buffer = StringBuffer('^');
+    for (var index = 0; index < fileNamePattern.length; index += 1) {
+      final String character = fileNamePattern[index];
+      if (character == '*') {
+        buffer.write('.*');
+      } else if (character == '?') {
+        buffer.write('.');
+      } else {
+        buffer.write(RegExp.escape(character));
+      }
+    }
+    buffer.write(r'$');
+    return RegExp(buffer.toString(), caseSensitive: false);
+  }
+
+  static _DeckPattern parse(String pattern) {
+    final String trimmed = pattern.trim();
+    if (trimmed.isEmpty) {
+      throw const FileOperationException('No search pattern was provided.');
+    }
+    final int slash = trimmed.lastIndexOf('/');
+    final int backslash = trimmed.lastIndexOf(r'\');
+    final int separator = slash > backslash ? slash : backslash;
+    final String directoryPath = separator < 0
+        ? Directory.current.path
+        : trimmed.substring(0, separator);
+    final String fileNamePattern = separator < 0
+        ? trimmed
+        : trimmed.substring(separator + 1);
+    if (fileNamePattern.isEmpty) {
+      throw const FileOperationException(
+        'Search pattern must include a file mask.',
+      );
+    }
+    return _DeckPattern(
+      directoryPath: directoryPath.isEmpty
+          ? Directory.current.path
+          : directoryPath,
+      fileNamePattern: fileNamePattern,
+    );
+  }
 }

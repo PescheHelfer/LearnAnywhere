@@ -514,6 +514,54 @@ enum LearnAnywhereMessage {
   /// Not yet queried hit-rate bucket.
   statisticsBucketNotYetQueried,
 
+  /// Lexicon page title.
+  lexiconTitle,
+
+  /// Lexicon search text label.
+  lexiconSearchText,
+
+  /// Lexicon category scope label.
+  lexiconCategoryScope,
+
+  /// Any category option.
+  lexiconAnyCategory,
+
+  /// Memory search action.
+  lexiconMemorySearch,
+
+  /// File search action.
+  lexiconFileSearch,
+
+  /// File search pattern label.
+  lexiconFilePattern,
+
+  /// Display only file search mode.
+  lexiconDisplayOnly,
+
+  /// Load found units mode.
+  lexiconLoadFoundUnits,
+
+  /// Load found units warning.
+  lexiconLoadWarning,
+
+  /// Lexicon result count label.
+  lexiconResults,
+
+  /// Lexicon no results message.
+  lexiconNoResults,
+
+  /// Lexicon source file label.
+  lexiconSourceFile,
+
+  /// Lexicon matched fields label.
+  lexiconMatchedFields,
+
+  /// Lexicon load results action.
+  lexiconLoadResults,
+
+  /// Lexicon loaded results status.
+  lexiconLoadedResults,
+
   /// Mask name field label.
   maskEditorMaskName,
 
@@ -826,6 +874,24 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsBucketVeryUnsure: 'Very unsure',
       LearnAnywhereMessage.statisticsBucketNeverKnown: 'Never known',
       LearnAnywhereMessage.statisticsBucketNotYetQueried: 'Not yet queried',
+      LearnAnywhereMessage.lexiconTitle: 'Lexicon',
+      LearnAnywhereMessage.lexiconSearchText: 'Search text',
+      LearnAnywhereMessage.lexiconCategoryScope: 'Category',
+      LearnAnywhereMessage.lexiconAnyCategory: 'Any category',
+      LearnAnywhereMessage.lexiconMemorySearch: 'Search memory',
+      LearnAnywhereMessage.lexiconFileSearch: 'Search files',
+      LearnAnywhereMessage.lexiconFilePattern: 'File mask',
+      LearnAnywhereMessage.lexiconDisplayOnly: 'Display only',
+      LearnAnywhereMessage.lexiconLoadFoundUnits: 'Load found units',
+      LearnAnywhereMessage.lexiconLoadWarning:
+          'Load found units? Current in-memory units will be discarded.',
+      LearnAnywhereMessage.lexiconResults: 'Results',
+      LearnAnywhereMessage.lexiconNoResults: 'No matches found.',
+      LearnAnywhereMessage.lexiconSourceFile: 'Source file',
+      LearnAnywhereMessage.lexiconMatchedFields: 'Matched fields',
+      LearnAnywhereMessage.lexiconLoadResults: 'Load results',
+      LearnAnywhereMessage.lexiconLoadedResults:
+          'Found units loaded into memory.',
       LearnAnywhereMessage.maskEditorMaskName: 'Mask name',
       LearnAnywhereMessage.maskEditorDirection1: 'Direction 1 label',
       LearnAnywhereMessage.maskEditorDirection2: 'Direction 2 label',
@@ -1064,6 +1130,24 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsBucketNeverKnown: 'Nie gewusst',
       LearnAnywhereMessage.statisticsBucketNotYetQueried:
           'Noch nicht abgefragt',
+      LearnAnywhereMessage.lexiconTitle: 'Lexikon',
+      LearnAnywhereMessage.lexiconSearchText: 'Suchtext',
+      LearnAnywhereMessage.lexiconCategoryScope: 'Kategorie',
+      LearnAnywhereMessage.lexiconAnyCategory: 'Alle Kategorien',
+      LearnAnywhereMessage.lexiconMemorySearch: 'Speicher durchsuchen',
+      LearnAnywhereMessage.lexiconFileSearch: 'Dateien durchsuchen',
+      LearnAnywhereMessage.lexiconFilePattern: 'Dateimaske',
+      LearnAnywhereMessage.lexiconDisplayOnly: 'Nur anzeigen',
+      LearnAnywhereMessage.lexiconLoadFoundUnits: 'Gefundene Einheiten laden',
+      LearnAnywhereMessage.lexiconLoadWarning:
+          'Gefundene Einheiten laden? Aktuelle Lerneinheiten im Speicher werden verworfen.',
+      LearnAnywhereMessage.lexiconResults: 'Ergebnisse',
+      LearnAnywhereMessage.lexiconNoResults: 'Keine Treffer gefunden.',
+      LearnAnywhereMessage.lexiconSourceFile: 'Quelldatei',
+      LearnAnywhereMessage.lexiconMatchedFields: 'Trefferfelder',
+      LearnAnywhereMessage.lexiconLoadResults: 'Treffer laden',
+      LearnAnywhereMessage.lexiconLoadedResults:
+          'Gefundene Einheiten in den Speicher geladen.',
       LearnAnywhereMessage.maskEditorMaskName: 'Maskenname',
       LearnAnywhereMessage.maskEditorDirection1: 'Abfrage 1',
       LearnAnywhereMessage.maskEditorDirection2: 'Abfrage 2',

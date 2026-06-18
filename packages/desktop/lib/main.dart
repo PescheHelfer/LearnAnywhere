@@ -9,6 +9,7 @@ import 'src/file_operations/desktop_file_service.dart';
 import 'src/learn/desktop_query_options.dart';
 import 'src/learn/learn_session_page.dart';
 import 'src/learn/query_options_page.dart';
+import 'src/lexicon/lexicon_page.dart';
 import 'src/mask_editor/mask_editor_page.dart';
 import 'src/statistics/statistics_page.dart';
 
@@ -316,6 +317,15 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         onClearStatistics: _clearStatistics,
         onSaveSelectedUnits: _saveSelectedUnits,
       ),
+      _DesktopRoute.lexicon => LexiconPage(
+        deck: _document.deck,
+        textOptions: TextMatchOptions(
+          caseSensitive: _queryOptions.caseSensitive,
+          accentSensitive: _queryOptions.accentSensitive,
+        ),
+        loadDecksByPattern: _fileService.loadDecksByPattern,
+        onLoadFoundDeck: _loadFoundLexiconDeck,
+      ),
       _ => _RoutePlaceholder(route: _route),
     };
   }
@@ -527,6 +537,17 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         _ensureExtension(path, 'vok'),
       );
       _showStatus(LearnAnywhereMessage.statisticsSelectedSaved);
+    });
+  }
+
+  void _loadFoundLexiconDeck(LearningDeck deck) {
+    setState(() {
+      _document = _document.copyWith(
+        deck: deck,
+        statistics: clearStatistics(deck),
+        clearDeckPath: true,
+        clearStatisticsPath: true,
+      );
     });
   }
 
