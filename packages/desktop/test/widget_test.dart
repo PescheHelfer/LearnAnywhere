@@ -43,14 +43,14 @@ void main() {
   testWidgets('help about shows legacy and conversion credits', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1400, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
     await tester.pumpWidget(const LearnAnywhereDesktopApp());
     await tester.pumpAndSettle();
 
+    await tester.drag(
+      find.byType(SingleChildScrollView).first,
+      const Offset(-600, 0),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Help'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('About'));

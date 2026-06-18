@@ -90,6 +90,7 @@ final class _DesktopHome extends StatefulWidget {
 
 final class _DesktopHomeState extends State<_DesktopHome> {
   final DesktopFileService _fileService = const DesktopFileService();
+  final ScrollController _menuScrollController = ScrollController();
   _DesktopRoute _route = _DesktopRoute.home;
   DesktopDocument _document = DesktopDocument.empty(_defaultMask());
   DesktopQueryOptions _queryOptions = const DesktopQueryOptions();
@@ -97,6 +98,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   int _learnSessionAttempts = 0;
   int _learnSessionCorrect = 0;
   String? _lastFileStatus;
+
+  @override
+  void dispose() {
+    _menuScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,9 +135,14 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         children: <Widget>[
           Material(
             color: Theme.of(context).colorScheme.surfaceContainer,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: MenuBar(children: _menuChildren(messages)),
+            child: Scrollbar(
+              controller: _menuScrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _menuScrollController,
+                scrollDirection: Axis.horizontal,
+                child: MenuBar(children: _menuChildren(messages)),
+              ),
             ),
           ),
           Expanded(child: _contentForRoute()),

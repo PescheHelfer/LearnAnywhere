@@ -145,46 +145,46 @@ enum LearnAnywhereMessage {
   /// German language option.
   languageGerman,
 
-  /// File operations placeholder title.
+  /// File operations route title.
   routeFileOperationsTitle,
 
-  /// File operations placeholder body.
+  /// File operations route body.
   routeFileOperationsBody,
 
-  /// Editor placeholder title.
+  /// Editor route title.
   routeEditorTitle,
 
-  /// Editor placeholder body.
+  /// Editor route body.
   routeEditorBody,
 
-  /// Mask editor placeholder title.
+  /// Mask editor route title.
   routeMaskEditorTitle,
 
-  /// Mask editor placeholder body.
+  /// Mask editor route body.
   routeMaskEditorBody,
 
-  /// Learn placeholder title.
+  /// Learn route title.
   routeLearnTitle,
 
-  /// Learn placeholder body.
+  /// Learn route body.
   routeLearnBody,
 
-  /// Query options placeholder title.
+  /// Query options route title.
   routeQueryOptionsTitle,
 
-  /// Query options placeholder body.
+  /// Query options route body.
   routeQueryOptionsBody,
 
-  /// Statistics placeholder title.
+  /// Statistics route title.
   routeStatisticsTitle,
 
-  /// Statistics placeholder body.
+  /// Statistics route body.
   routeStatisticsBody,
 
-  /// Lexicon placeholder title.
+  /// Lexicon route title.
   routeLexiconTitle,
 
-  /// Lexicon placeholder body.
+  /// Lexicon route body.
   routeLexiconBody,
 
   /// List placeholder title.
@@ -770,25 +770,25 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.languageGerman: 'German',
       LearnAnywhereMessage.routeFileOperationsTitle: 'File operations',
       LearnAnywhereMessage.routeFileOperationsBody:
-          'File commands are ready to be wired in the next Phase 2 steps.',
+          'Create, open, merge, save, and review deck and statistics files.',
       LearnAnywhereMessage.routeEditorTitle: 'Editor',
       LearnAnywhereMessage.routeEditorBody:
-          'The deck/unit editor will be implemented in Phase 2 Step 4.',
+          'Edit learning units, navigate the deck, search all matches, and maintain rich-text fields.',
       LearnAnywhereMessage.routeMaskEditorTitle: 'Mask Editor',
       LearnAnywhereMessage.routeMaskEditorBody:
-          'The integrated mask editor will be implemented in Phase 2 Step 2.',
+          'Define categories, fields, roles, lengths, and direction labels for a deck.',
       LearnAnywhereMessage.routeLearnTitle: 'Learn',
       LearnAnywhereMessage.routeLearnBody:
-          'Practice and super-query sessions will be implemented in Phase 2 Step 5.',
+          'Run practice and super-query sessions with answer entry or think-only review.',
       LearnAnywhereMessage.routeQueryOptionsTitle: 'Query Options',
       LearnAnywhereMessage.routeQueryOptionsBody:
-          'Learning option toggles will be implemented with the session screen.',
+          'Tune directions, answer checking, timing, thresholds, and rating rules.',
       LearnAnywhereMessage.routeStatisticsTitle: 'Statistics',
       LearnAnywhereMessage.routeStatisticsBody:
-          'Statistics tables and charts will be implemented in Phase 2 Step 6.',
+          'Review buckets, detailed hit rates, chart summaries, and selected-unit exports.',
       LearnAnywhereMessage.routeLexiconTitle: 'Lexicon',
       LearnAnywhereMessage.routeLexiconBody:
-          'Memory and file-oriented search will be implemented in Phase 2 Step 7.',
+          'Search the current deck or matching deck files and load found units.',
       LearnAnywhereMessage.routeListTitle: 'List',
       LearnAnywhereMessage.routeListBody:
           'Printer-friendly lists are deferred to a later version.',
@@ -1039,25 +1039,25 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.languageGerman: 'Deutsch',
       LearnAnywhereMessage.routeFileOperationsTitle: 'Dateioperationen',
       LearnAnywhereMessage.routeFileOperationsBody:
-          'Die Datei-Befehle werden in den naechsten Phase-2-Schritten verdrahtet.',
+          'Lern- und Statistikdateien erstellen, laden, hinzufuegen, speichern und pruefen.',
       LearnAnywhereMessage.routeEditorTitle: 'Editor',
       LearnAnywhereMessage.routeEditorBody:
-          'Der Lerneinheiten-Editor wird in Phase 2 Schritt 4 implementiert.',
+          'Lerneinheiten bearbeiten, durch die Datei navigieren, alle Treffer suchen und Rich-Text-Felder pflegen.',
       LearnAnywhereMessage.routeMaskEditorTitle: 'Mask Editor',
       LearnAnywhereMessage.routeMaskEditorBody:
-          'Der integrierte Masken-Editor wird in Phase 2 Schritt 2 implementiert.',
+          'Kategorien, Felder, Rollen, Laengen und Richtungsnamen fuer eine Lern-Datei definieren.',
       LearnAnywhereMessage.routeLearnTitle: 'Lern',
       LearnAnywhereMessage.routeLearnBody:
-          'Ueben und Super-Abfrage werden in Phase 2 Schritt 5 implementiert.',
+          'Uebungs- und Super-Abfrage-Sitzungen mit Eingabe oder reinem Denken starten.',
       LearnAnywhereMessage.routeQueryOptionsTitle: 'Abfrage',
       LearnAnywhereMessage.routeQueryOptionsBody:
-          'Abfrageoptionen werden mit der Lernsitzung implementiert.',
+          'Richtungen, Antwortpruefung, Zeit, Schwellenwerte und Bewertungsregeln einstellen.',
       LearnAnywhereMessage.routeStatisticsTitle: 'Statistik',
       LearnAnywhereMessage.routeStatisticsBody:
-          'Statistiktabellen und Diagramme werden in Phase 2 Schritt 6 implementiert.',
+          'Bereiche, Detailquoten, Diagramme und Exporte ausgewaehlter Einheiten ansehen.',
       LearnAnywhereMessage.routeLexiconTitle: 'Lexikon',
       LearnAnywhereMessage.routeLexiconBody:
-          'Speicher- und Datei-Suche werden in Phase 2 Schritt 7 implementiert.',
+          'In der aktuellen Lern-Datei oder passenden Dateien suchen und gefundene Einheiten laden.',
       LearnAnywhereMessage.routeListTitle: 'Liste',
       LearnAnywhereMessage.routeListBody:
           'Druckfreundliche Listen sind fuer eine spaetere Version vorgesehen.',

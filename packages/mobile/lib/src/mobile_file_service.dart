@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -46,7 +47,7 @@ class MobileFileService {
     final PlatformFile picked = result.files.single;
     final String source = picked.path != null
         ? await File(picked.path!).readAsString()
-        : String.fromCharCodes(picked.bytes ?? const <int>[]);
+        : utf8.decode(picked.bytes ?? const <int>[]);
     final LearningDeck deck = decodeDeckJson(source);
     final String? path = picked.path;
     return MobileDeckDocument(
