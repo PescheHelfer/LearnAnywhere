@@ -94,6 +94,58 @@ void main() {
       expect(merged.deck.units, hasLength(1));
       await temp.delete(recursive: true);
     });
+
+    test('loads saves clears and exports statistics-related files', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_stats_ops',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String statsPath = '${temp.path}${Platform.pathSeparator}deck.sta';
+      final String selectedPath =
+          '${temp.path}${Platform.pathSeparator}selected.vok';
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <String, FieldValue>{'Question': FieldValue.plain('Q')},
+          ),
+        ],
+      );
+      final DesktopDocument document = DesktopDocument(
+        deck: deck,
+        statistics: const <UnitStats>[
+          UnitStats(
+            index: 1,
+            direction1: DirectionStats(attempts: 3, correct: 2),
+          ),
+        ],
+      );
+
+      final DesktopDocument saved = await service.saveStatistics(
+        document,
+        statsPath,
+      );
+      expect(await File(statsPath).exists(), isTrue);
+      expect(saved.statisticsPath, statsPath);
+
+      final DesktopDocument cleared = service.clearStatisticsInMemory(saved);
+      expect(cleared.statistics.single.direction1.attempts, 0);
+
+      final DesktopDocument loaded = await service.loadStatistics(
+        cleared,
+        statsPath,
+      );
+      expect(loaded.statistics.single.direction1.correct, 2);
+
+      await service.saveDeckSnapshot(deck, selectedPath);
+      expect(
+        decodeDeckJson(await File(selectedPath).readAsString()).units,
+        hasLength(1),
+      );
+
+      await temp.delete(recursive: true);
+    });
   });
 }
 

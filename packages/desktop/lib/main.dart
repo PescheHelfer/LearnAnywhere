@@ -10,6 +10,7 @@ import 'src/learn/desktop_query_options.dart';
 import 'src/learn/learn_session_page.dart';
 import 'src/learn/query_options_page.dart';
 import 'src/mask_editor/mask_editor_page.dart';
+import 'src/statistics/statistics_page.dart';
 
 void main() {
   runApp(const LearnAnywhereDesktopApp());
@@ -307,6 +308,14 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           setState(() => _queryOptions = value);
         },
       ),
+      _DesktopRoute.statistics => StatisticsPage(
+        deck: _document.deck,
+        statistics: _document.statistics,
+        onLoadStatistics: _loadStatistics,
+        onSaveStatistics: _saveStatistics,
+        onClearStatistics: _clearStatistics,
+        onSaveSelectedUnits: _saveSelectedUnits,
+      ),
       _ => _RoutePlaceholder(route: _route),
     };
   }
@@ -447,6 +456,80 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     });
   }
 
+  Future<void> _loadStatistics() async {
+    final String? path = await _askPath(
+      suggestedPath:
+          _document.statisticsPath ??
+          (_document.deckPath == null
+              ? 'learn_anywhere.sta'
+              : _fileService.statisticsSidecarPath(_document.deckPath!)),
+    );
+    if (path == null) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      _document = await _fileService.loadStatistics(_document, path);
+      _showStatus(LearnAnywhereMessage.statisticsLoaded);
+    });
+  }
+
+  Future<void> _saveStatistics() async {
+    final String? path = await _askPath(
+      suggestedPath:
+          _document.statisticsPath ??
+          (_document.deckPath == null
+              ? 'learn_anywhere.sta'
+              : _fileService.statisticsSidecarPath(_document.deckPath!)),
+    );
+    if (path == null) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      _document = await _fileService.saveStatistics(
+        _document,
+        _ensureExtension(path, 'sta'),
+      );
+      _showStatus(LearnAnywhereMessage.statisticsSaved);
+    });
+  }
+
+  Future<void> _clearStatistics() async {
+    final bool confirmed = await _confirm(LearnAnywhereMessage.statisticsClear);
+    if (!confirmed) {
+      return;
+    }
+    setState(() {
+      _document = _fileService.clearStatisticsInMemory(_document);
+    });
+    _showStatus(LearnAnywhereMessage.statisticsCleared);
+  }
+
+  Future<void> _saveSelectedUnits(List<int> unitIndices) async {
+    if (unitIndices.isEmpty) {
+      _showStatus(LearnAnywhereMessage.statisticsNoSelection);
+      return;
+    }
+    final String? path = await _askPath(suggestedPath: 'selected_units.vok');
+    if (path == null) {
+      return;
+    }
+    final Set<int> selected = unitIndices.toSet();
+    final LearningDeck selectedDeck = LearningDeck(
+      mask: _document.mask,
+      units: <LearningUnit>[
+        for (var index = 0; index < _document.deck.units.length; index += 1)
+          if (selected.contains(index + 1)) _document.deck.units[index],
+      ],
+    );
+    await _guardedFileOperation(() async {
+      await _fileService.saveDeckSnapshot(
+        selectedDeck,
+        _ensureExtension(path, 'vok'),
+      );
+      _showStatus(LearnAnywhereMessage.statisticsSelectedSaved);
+    });
+  }
+
   Future<void> _exit() async {
     await _guardedFileOperation(() async {
       await _fileService.autoSaveStatistics(_document);
@@ -563,6 +646,18 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(_lastFileStatus!)));
+  }
+
+  void _showStatus(LearnAnywhereMessage message) {
+    if (!mounted) {
+      return;
+    }
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final String status = messages.message(message);
+    setState(() => _lastFileStatus = status);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status)));
   }
 }
 

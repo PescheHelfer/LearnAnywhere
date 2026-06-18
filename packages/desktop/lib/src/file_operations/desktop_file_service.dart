@@ -86,6 +86,11 @@ final class DesktopFileService {
     return saved;
   }
 
+  /// Saves [deck] to [path] without changing the current desktop document.
+  Future<void> saveDeckSnapshot(LearningDeck deck, String path) async {
+    await File(path).writeAsString(encodeDeckJson(deck));
+  }
+
   /// Clears units in memory without deleting files.
   DesktopDocument clearUnits(DesktopDocument current) {
     final LearningDeck deck = LearningDeck(
@@ -108,6 +113,43 @@ final class DesktopFileService {
   /// Saves the current embedded mask as a standalone `.inf`.
   Future<void> saveMask(LearningMask mask, String path) async {
     await File(path).writeAsString(encodeMaskJson(mask));
+  }
+
+  /// Loads a `.sta` statistics file into the current document.
+  Future<DesktopDocument> loadStatistics(
+    DesktopDocument current,
+    String path,
+  ) async {
+    final StatisticsFile statistics = decodeStatisticsJson(
+      await File(path).readAsString(),
+    );
+    return current.copyWith(
+      statistics: _resizeStats(statistics.perUnit, current.deck),
+      statisticsPath: path,
+    );
+  }
+
+  /// Saves current statistics to [path].
+  Future<DesktopDocument> saveStatistics(
+    DesktopDocument current,
+    String path,
+  ) async {
+    await File(path).writeAsString(
+      encodeStatisticsJson(
+        StatisticsFile(
+          deckRef: current.deckPath == null
+              ? 'unsaved.vok'
+              : _fileName(current.deckPath!),
+          perUnit: current.statistics,
+        ),
+      ),
+    );
+    return current.copyWith(statisticsPath: path);
+  }
+
+  /// Clears all current statistics.
+  DesktopDocument clearStatisticsInMemory(DesktopDocument current) {
+    return current.copyWith(statistics: clearStatistics(current.deck));
   }
 
   /// Auto-saves statistics for [document] when configured and a deck path exists.

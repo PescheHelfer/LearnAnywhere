@@ -409,6 +409,111 @@ enum LearnAnywhereMessage {
   /// Wrong-answer ceiling value option.
   queryOptionWrongAnswerCeilingValue,
 
+  /// Statistics page title.
+  statisticsTitle,
+
+  /// Statistics keep-practicing tab.
+  statisticsKeepPracticing,
+
+  /// Statistics detailed tab.
+  statisticsDetailed,
+
+  /// Statistics chart tab.
+  statisticsChart,
+
+  /// Statistics direction view label.
+  statisticsDirectionView,
+
+  /// Combined direction view label.
+  statisticsCombined,
+
+  /// Direction 1 statistics view label.
+  statisticsDirection1,
+
+  /// Direction 2 statistics view label.
+  statisticsDirection2,
+
+  /// Statistics total units label.
+  statisticsTotalUnits,
+
+  /// Statistics queried units label.
+  statisticsQueriedUnits,
+
+  /// Statistics bucket column label.
+  statisticsBucket,
+
+  /// Statistics count column label.
+  statisticsCount,
+
+  /// Statistics percentage of all column label.
+  statisticsPercentAll,
+
+  /// Statistics percentage of queried column label.
+  statisticsPercentQueried,
+
+  /// Statistics unit column label.
+  statisticsUnit,
+
+  /// Statistics category column label.
+  statisticsCategory,
+
+  /// Statistics hit rate column label.
+  statisticsHitRate,
+
+  /// Select all visible statistics units action.
+  statisticsSelectAll,
+
+  /// Clear selected statistics units action.
+  statisticsClearSelection,
+
+  /// Save selected units action.
+  statisticsSaveSelected,
+
+  /// Load statistics action.
+  statisticsLoad,
+
+  /// Save statistics action.
+  statisticsSave,
+
+  /// Clear statistics action.
+  statisticsClear,
+
+  /// Statistics loaded status.
+  statisticsLoaded,
+
+  /// Statistics saved status.
+  statisticsSaved,
+
+  /// Statistics cleared status.
+  statisticsCleared,
+
+  /// Selected units saved status.
+  statisticsSelectedSaved,
+
+  /// No selected units message.
+  statisticsNoSelection,
+
+  /// Perfect hit-rate bucket.
+  statisticsBucketPerfect,
+
+  /// Good hit-rate bucket.
+  statisticsBucketGood,
+
+  /// Fair hit-rate bucket.
+  statisticsBucketFair,
+
+  /// Unsure hit-rate bucket.
+  statisticsBucketUnsure,
+
+  /// Very unsure hit-rate bucket.
+  statisticsBucketVeryUnsure,
+
+  /// Never known hit-rate bucket.
+  statisticsBucketNeverKnown,
+
+  /// Not yet queried hit-rate bucket.
+  statisticsBucketNotYetQueried,
+
   /// Mask name field label.
   maskEditorMaskName,
 
@@ -686,6 +791,41 @@ final class LearnAnywhereCatalog {
           'Wrong-answer ceiling',
       LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue:
           'Wrong-answer ceiling value',
+      LearnAnywhereMessage.statisticsTitle: 'Statistics',
+      LearnAnywhereMessage.statisticsKeepPracticing: 'Keep practicing',
+      LearnAnywhereMessage.statisticsDetailed: 'Detailed',
+      LearnAnywhereMessage.statisticsChart: 'Chart',
+      LearnAnywhereMessage.statisticsDirectionView: 'View',
+      LearnAnywhereMessage.statisticsCombined: 'Combined',
+      LearnAnywhereMessage.statisticsDirection1: 'Direction 1',
+      LearnAnywhereMessage.statisticsDirection2: 'Direction 2',
+      LearnAnywhereMessage.statisticsTotalUnits: 'Total units',
+      LearnAnywhereMessage.statisticsQueriedUnits: 'Queried units',
+      LearnAnywhereMessage.statisticsBucket: 'Bucket',
+      LearnAnywhereMessage.statisticsCount: 'Count',
+      LearnAnywhereMessage.statisticsPercentAll: '% of all',
+      LearnAnywhereMessage.statisticsPercentQueried: '% of queried',
+      LearnAnywhereMessage.statisticsUnit: 'Unit',
+      LearnAnywhereMessage.statisticsCategory: 'Category',
+      LearnAnywhereMessage.statisticsHitRate: 'Hit rate',
+      LearnAnywhereMessage.statisticsSelectAll: 'Select visible',
+      LearnAnywhereMessage.statisticsClearSelection: 'Clear selection',
+      LearnAnywhereMessage.statisticsSaveSelected: 'Save selected units',
+      LearnAnywhereMessage.statisticsLoad: 'Load stats',
+      LearnAnywhereMessage.statisticsSave: 'Save stats',
+      LearnAnywhereMessage.statisticsClear: 'Clear stats',
+      LearnAnywhereMessage.statisticsLoaded: 'Statistics loaded.',
+      LearnAnywhereMessage.statisticsSaved: 'Statistics saved.',
+      LearnAnywhereMessage.statisticsCleared: 'Statistics cleared.',
+      LearnAnywhereMessage.statisticsSelectedSaved: 'Selected units saved.',
+      LearnAnywhereMessage.statisticsNoSelection: 'No units selected.',
+      LearnAnywhereMessage.statisticsBucketPerfect: 'Perfect',
+      LearnAnywhereMessage.statisticsBucketGood: 'Good',
+      LearnAnywhereMessage.statisticsBucketFair: 'Fair',
+      LearnAnywhereMessage.statisticsBucketUnsure: 'Unsure',
+      LearnAnywhereMessage.statisticsBucketVeryUnsure: 'Very unsure',
+      LearnAnywhereMessage.statisticsBucketNeverKnown: 'Never known',
+      LearnAnywhereMessage.statisticsBucketNotYetQueried: 'Not yet queried',
       LearnAnywhereMessage.maskEditorMaskName: 'Mask name',
       LearnAnywhereMessage.maskEditorDirection1: 'Direction 1 label',
       LearnAnywhereMessage.maskEditorDirection2: 'Direction 2 label',
@@ -885,6 +1025,45 @@ final class LearnAnywhereCatalog {
           'Falsch-Antworten begrenzen',
       LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue:
           'Grenze fuer falsche Antworten',
+      LearnAnywhereMessage.statisticsTitle: 'Statistik',
+      LearnAnywhereMessage.statisticsKeepPracticing: 'Weiter ueben',
+      LearnAnywhereMessage.statisticsDetailed: 'Detailliert',
+      LearnAnywhereMessage.statisticsChart: 'Diagramm',
+      LearnAnywhereMessage.statisticsDirectionView: 'Ansicht',
+      LearnAnywhereMessage.statisticsCombined: 'Kombiniert',
+      LearnAnywhereMessage.statisticsDirection1: 'Richtung 1',
+      LearnAnywhereMessage.statisticsDirection2: 'Richtung 2',
+      LearnAnywhereMessage.statisticsTotalUnits: 'Lerneinheiten gesamt',
+      LearnAnywhereMessage.statisticsQueriedUnits: 'Abgefragte Einheiten',
+      LearnAnywhereMessage.statisticsBucket: 'Bereich',
+      LearnAnywhereMessage.statisticsCount: 'Anzahl',
+      LearnAnywhereMessage.statisticsPercentAll: '% von allen',
+      LearnAnywhereMessage.statisticsPercentQueried: '% der abgefragten',
+      LearnAnywhereMessage.statisticsUnit: 'Einheit',
+      LearnAnywhereMessage.statisticsCategory: 'Kategorie',
+      LearnAnywhereMessage.statisticsHitRate: 'Trefferquote',
+      LearnAnywhereMessage.statisticsSelectAll: 'Sichtbare auswaehlen',
+      LearnAnywhereMessage.statisticsClearSelection: 'Auswahl leeren',
+      LearnAnywhereMessage.statisticsSaveSelected:
+          'Ausgewaehlte Einheiten speichern',
+      LearnAnywhereMessage.statisticsLoad: 'Statistik laden',
+      LearnAnywhereMessage.statisticsSave: 'Statistik speichern',
+      LearnAnywhereMessage.statisticsClear: 'Statistik loeschen',
+      LearnAnywhereMessage.statisticsLoaded: 'Statistik geladen.',
+      LearnAnywhereMessage.statisticsSaved: 'Statistik gespeichert.',
+      LearnAnywhereMessage.statisticsCleared: 'Statistik geloescht.',
+      LearnAnywhereMessage.statisticsSelectedSaved:
+          'Ausgewaehlte Einheiten gespeichert.',
+      LearnAnywhereMessage.statisticsNoSelection:
+          'Keine Einheiten ausgewaehlt.',
+      LearnAnywhereMessage.statisticsBucketPerfect: 'Perfekt',
+      LearnAnywhereMessage.statisticsBucketGood: 'Gut',
+      LearnAnywhereMessage.statisticsBucketFair: 'Mittel',
+      LearnAnywhereMessage.statisticsBucketUnsure: 'Unsicher',
+      LearnAnywhereMessage.statisticsBucketVeryUnsure: 'Sehr unsicher',
+      LearnAnywhereMessage.statisticsBucketNeverKnown: 'Nie gewusst',
+      LearnAnywhereMessage.statisticsBucketNotYetQueried:
+          'Noch nicht abgefragt',
       LearnAnywhereMessage.maskEditorMaskName: 'Maskenname',
       LearnAnywhereMessage.maskEditorDirection1: 'Abfrage 1',
       LearnAnywhereMessage.maskEditorDirection2: 'Abfrage 2',
