@@ -91,6 +91,10 @@ final class _DesktopHome extends StatefulWidget {
 final class _DesktopHomeState extends State<_DesktopHome> {
   final DesktopFileService _fileService = const DesktopFileService();
   final ScrollController _menuScrollController = ScrollController();
+  final MenuController _fileMenuController = MenuController();
+  final MenuController _editMenuController = MenuController();
+  final MenuController _learnMenuController = MenuController();
+  final MenuController _helpMenuController = MenuController();
   _DesktopRoute _route = _DesktopRoute.home;
   DesktopDocument _document = DesktopDocument.empty(_defaultMask());
   DesktopQueryOptions _queryOptions = const DesktopQueryOptions();
@@ -100,9 +104,183 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   String? _lastFileStatus;
 
   @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_onKeyEvent);
+  }
+
+  @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onKeyEvent);
     _menuScrollController.dispose();
     super.dispose();
+  }
+
+  bool _onKeyEvent(KeyEvent event) {
+    if (!mounted) return false;
+    if (event is! KeyDownEvent) return false;
+    if (_isModifierKey(event.logicalKey)) return false;
+    final ModalRoute<Object?>? route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return false;
+    final bool altPressed = HardwareKeyboard.instance.isAltPressed;
+    if (altPressed) {
+      return _handleAltMnemonic(event.logicalKey);
+    }
+    if (_fileMenuController.isOpen) {
+      return _handleFileMenuMnemonic(event.character);
+    }
+    if (_editMenuController.isOpen) {
+      return _handleEditMenuMnemonic(event.character);
+    }
+    if (_learnMenuController.isOpen) {
+      return _handleLearnMenuMnemonic(event.character);
+    }
+    if (_helpMenuController.isOpen) {
+      return _handleHelpMenuMnemonic(event.character);
+    }
+    return false;
+  }
+
+  static bool _isModifierKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.altLeft ||
+        key == LogicalKeyboardKey.altRight ||
+        key == LogicalKeyboardKey.shift ||
+        key == LogicalKeyboardKey.shiftLeft ||
+        key == LogicalKeyboardKey.shiftRight ||
+        key == LogicalKeyboardKey.control ||
+        key == LogicalKeyboardKey.controlLeft ||
+        key == LogicalKeyboardKey.controlRight ||
+        key == LogicalKeyboardKey.meta ||
+        key == LogicalKeyboardKey.metaLeft ||
+        key == LogicalKeyboardKey.metaRight;
+  }
+
+  bool _handleAltMnemonic(LogicalKeyboardKey key) {
+    final bool german = widget.locale.languageCode == 'de';
+    if (key == (german ? LogicalKeyboardKey.keyD : LogicalKeyboardKey.keyF)) {
+      _fileMenuController.open();
+      return true;
+    }
+    if (key == LogicalKeyboardKey.keyE) {
+      _editMenuController.open();
+      return true;
+    }
+    if (key == LogicalKeyboardKey.keyM) {
+      _selectRoute(_DesktopRoute.maskEditor);
+      return true;
+    }
+    if (key == LogicalKeyboardKey.keyL) {
+      _learnMenuController.open();
+      return true;
+    }
+    if (key == LogicalKeyboardKey.keyS) {
+      _selectRoute(_DesktopRoute.statistics);
+      return true;
+    }
+    if (key == LogicalKeyboardKey.keyX) {
+      _selectRoute(_DesktopRoute.lexicon);
+      return true;
+    }
+    if (key == LogicalKeyboardKey.keyI) {
+      _selectRoute(_DesktopRoute.list);
+      return true;
+    }
+    if (key == LogicalKeyboardKey.keyH) {
+      _helpMenuController.open();
+      return true;
+    }
+    return false;
+  }
+
+  bool _handleFileMenuMnemonic(String? character) {
+    if (character == null) return false;
+    final bool german = widget.locale.languageCode == 'de';
+    final String ch = character.toLowerCase();
+    final Map<String, LearnAnywhereMessage> mapping = german
+        ? const <String, LearnAnywhereMessage>{
+            'n': LearnAnywhereMessage.fileNewDeck,
+            'l': LearnAnywhereMessage.fileOpenDeck,
+            'h': LearnAnywhereMessage.fileAddMergeDeck,
+            's': LearnAnywhereMessage.fileSave,
+            'u': LearnAnywhereMessage.fileSaveAs,
+            'i': LearnAnywhereMessage.fileClearUnits,
+            'm': LearnAnywhereMessage.fileLoadMask,
+            'd': LearnAnywhereMessage.fileSaveMask,
+            'b': LearnAnywhereMessage.fileExit,
+          }
+        : const <String, LearnAnywhereMessage>{
+            'n': LearnAnywhereMessage.fileNewDeck,
+            'o': LearnAnywhereMessage.fileOpenDeck,
+            'a': LearnAnywhereMessage.fileAddMergeDeck,
+            's': LearnAnywhereMessage.fileSave,
+            'v': LearnAnywhereMessage.fileSaveAs,
+            'c': LearnAnywhereMessage.fileClearUnits,
+            'l': LearnAnywhereMessage.fileLoadMask,
+            'm': LearnAnywhereMessage.fileSaveMask,
+            'e': LearnAnywhereMessage.fileExit,
+          };
+    final LearnAnywhereMessage? command = mapping[ch];
+    if (command != null) {
+      _runFileCommand(command);
+      return true;
+    }
+    return false;
+  }
+
+  bool _handleEditMenuMnemonic(String? character) {
+    if (character == null) return false;
+    final bool german = widget.locale.languageCode == 'de';
+    final String ch = character.toLowerCase();
+    final Set<String> chars =
+        german ? const <String>{'e', 's', 'n'} : const <String>{'u', 's', 'j'};
+    if (chars.contains(ch)) {
+      _editMenuController.close();
+      _selectRoute(_DesktopRoute.editor);
+      return true;
+    }
+    return false;
+  }
+
+  bool _handleLearnMenuMnemonic(String? character) {
+    if (character == null) return false;
+    final bool german = widget.locale.languageCode == 'de';
+    final String ch = character.toLowerCase();
+    if (!german) {
+      if (ch == 'p') {
+        _learnMenuController.close();
+        _selectRoute(_DesktopRoute.learn);
+        return true;
+      }
+      if (ch == 'a') {
+        _learnMenuController.close();
+        _selectRoute(_DesktopRoute.queryOptions);
+        return true;
+      }
+    } else {
+      if (ch == 'ü') {
+        _learnMenuController.close();
+        _selectRoute(_DesktopRoute.learn);
+        return true;
+      }
+      if (ch == 'e') {
+        _learnMenuController.close();
+        _selectRoute(_DesktopRoute.queryOptions);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _handleHelpMenuMnemonic(String? character) {
+    if (character == null) return false;
+    final bool german = widget.locale.languageCode == 'de';
+    final String ch = character.toLowerCase();
+    if (ch == (german ? 'p' : 'a')) {
+      _helpMenuController.close();
+      _selectRoute(_DesktopRoute.about);
+      return true;
+    }
+    return false;
   }
 
   @override
@@ -153,34 +331,69 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   List<Widget> _menuChildren(LearnAnywhereLocalizations messages) {
+    final bool german = widget.locale.languageCode == 'de';
     return <Widget>[
       SubmenuButton(
+        controller: _fileMenuController,
         menuChildren: <Widget>[
-          _commandItem(messages, LearnAnywhereMessage.fileNewDeck),
-          _commandItem(messages, LearnAnywhereMessage.fileOpenDeck),
-          _commandItem(messages, LearnAnywhereMessage.fileAddMergeDeck),
+          _commandItem(messages, LearnAnywhereMessage.fileNewDeck,
+              englishMnemonic: 'N', germanMnemonic: 'N'),
+          _commandItem(messages, LearnAnywhereMessage.fileOpenDeck,
+              englishMnemonic: 'O', germanMnemonic: 'L'),
+          _commandItem(messages, LearnAnywhereMessage.fileAddMergeDeck,
+              englishMnemonic: 'A', germanMnemonic: 'H'),
           const _MenuSeparator(),
-          _commandItem(messages, LearnAnywhereMessage.fileSave),
-          _commandItem(messages, LearnAnywhereMessage.fileSaveAs),
+          _commandItem(messages, LearnAnywhereMessage.fileSave,
+              englishMnemonic: 'S', germanMnemonic: 'S'),
+          _commandItem(messages, LearnAnywhereMessage.fileSaveAs,
+              englishMnemonic: 'V', germanMnemonic: 'U'),
           const _MenuSeparator(),
-          _commandItem(messages, LearnAnywhereMessage.fileClearUnits),
+          _commandItem(messages, LearnAnywhereMessage.fileClearUnits,
+              englishMnemonic: 'C', germanMnemonic: 'I'),
           const _MenuSeparator(),
-          _commandItem(messages, LearnAnywhereMessage.fileLoadMask),
-          _commandItem(messages, LearnAnywhereMessage.fileSaveMask),
+          _commandItem(messages, LearnAnywhereMessage.fileLoadMask,
+              englishMnemonic: 'L', germanMnemonic: 'M'),
+          _commandItem(messages, LearnAnywhereMessage.fileSaveMask,
+              englishMnemonic: 'M', germanMnemonic: 'D'),
           const _MenuSeparator(),
-          _commandItem(messages, LearnAnywhereMessage.fileExit),
+          _commandItem(messages, LearnAnywhereMessage.fileExit,
+              englishMnemonic: 'E', germanMnemonic: 'B'),
         ],
         child: _MnemonicText(
           label: messages.message(LearnAnywhereMessage.menuFile),
-          mnemonic: _mnemonicFor(context, english: 'F', german: 'D'),
+          mnemonic: german ? 'D' : 'F',
         ),
       ),
-      _routeMenu(
-        messages,
-        LearnAnywhereMessage.menuEdit,
-        _DesktopRoute.editor,
-        englishMnemonic: 'E',
-        germanMnemonic: 'E',
+      SubmenuButton(
+        controller: _editMenuController,
+        menuChildren: <Widget>[
+          MenuItemButton(
+            onPressed: () => _selectRoute(_DesktopRoute.editor),
+            child: _MnemonicText(
+              label: messages.message(LearnAnywhereMessage.menuEditUnitEditor),
+              mnemonic: german ? 'E' : 'U',
+            ),
+          ),
+          MenuItemButton(
+            onPressed: () => _selectRoute(_DesktopRoute.editor),
+            child: _MnemonicText(
+              label: messages.message(LearnAnywhereMessage.menuEditSearchUnit),
+              mnemonic: 'S',
+            ),
+          ),
+          MenuItemButton(
+            onPressed: () => _selectRoute(_DesktopRoute.editor),
+            child: _MnemonicText(
+              label:
+                  messages.message(LearnAnywhereMessage.menuEditJumpToNumber),
+              mnemonic: german ? 'N' : 'J',
+            ),
+          ),
+        ],
+        child: _MnemonicText(
+          label: messages.message(LearnAnywhereMessage.menuEdit),
+          mnemonic: 'E',
+        ),
       ),
       _routeMenu(
         messages,
@@ -189,19 +402,29 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         englishMnemonic: 'M',
         germanMnemonic: 'M',
       ),
-      _routeMenu(
-        messages,
-        LearnAnywhereMessage.menuLearn,
-        _DesktopRoute.learn,
-        englishMnemonic: 'L',
-        germanMnemonic: 'L',
-      ),
-      _routeMenu(
-        messages,
-        LearnAnywhereMessage.menuQueryOptions,
-        _DesktopRoute.queryOptions,
-        englishMnemonic: 'Q',
-        germanMnemonic: 'A',
+      SubmenuButton(
+        controller: _learnMenuController,
+        menuChildren: <Widget>[
+          MenuItemButton(
+            onPressed: () => _selectRoute(_DesktopRoute.learn),
+            child: _MnemonicText(
+              label: messages.message(LearnAnywhereMessage.menuLearnPractice),
+              mnemonic: german ? 'Ü' : 'P',
+            ),
+          ),
+          MenuItemButton(
+            onPressed: () => _selectRoute(_DesktopRoute.queryOptions),
+            child: _MnemonicText(
+              label: messages
+                  .message(LearnAnywhereMessage.menuLearnAdvancedOptions),
+              mnemonic: german ? 'E' : 'A',
+            ),
+          ),
+        ],
+        child: _MnemonicText(
+          label: messages.message(LearnAnywhereMessage.menuLearn),
+          mnemonic: 'L',
+        ),
       ),
       _routeMenu(
         messages,
@@ -215,7 +438,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         LearnAnywhereMessage.menuLexicon,
         _DesktopRoute.lexicon,
         englishMnemonic: 'X',
-        germanMnemonic: 'L',
+        germanMnemonic: 'X',
       ),
       _routeMenu(
         messages,
@@ -225,15 +448,19 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         germanMnemonic: 'I',
       ),
       SubmenuButton(
+        controller: _helpMenuController,
         menuChildren: <Widget>[
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.about),
-            child: Text(messages.message(LearnAnywhereMessage.helpAbout)),
+            child: _MnemonicText(
+              label: messages.message(LearnAnywhereMessage.helpAbout),
+              mnemonic: german ? 'P' : 'A',
+            ),
           ),
         ],
         child: _MnemonicText(
           label: messages.message(LearnAnywhereMessage.menuHelp),
-          mnemonic: _mnemonicFor(context, english: 'H', german: 'H'),
+          mnemonic: 'H',
         ),
       ),
     ];
@@ -241,11 +468,22 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   MenuItemButton _commandItem(
     LearnAnywhereLocalizations messages,
-    LearnAnywhereMessage message,
-  ) {
+    LearnAnywhereMessage message, {
+    String? englishMnemonic,
+    String? germanMnemonic,
+  }) {
+    final String? mnemonic = englishMnemonic == null
+        ? null
+        : _mnemonicFor(
+            context,
+            english: englishMnemonic,
+            german: germanMnemonic ?? englishMnemonic,
+          );
     return MenuItemButton(
       onPressed: () => _runFileCommand(message),
-      child: Text(messages.message(message)),
+      child: mnemonic != null
+          ? _MnemonicText(label: messages.message(message), mnemonic: mnemonic)
+          : Text(messages.message(message)),
     );
   }
 
@@ -275,6 +513,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   Widget _contentForRoute() {
     return switch (_route) {
+      _DesktopRoute.home => _HomeScreen(document: _document),
       _DesktopRoute.fileOperations => _FileOperationsStatus(
         document: _document,
         status: _lastFileStatus,
@@ -315,6 +554,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           });
         },
         onOpenEditor: () => _selectRoute(_DesktopRoute.editor),
+        onExit: () => _selectRoute(_DesktopRoute.home),
       ),
       _DesktopRoute.queryOptions => QueryOptionsPage(
         options: _queryOptions,
@@ -738,6 +978,99 @@ LearningMask _defaultMask() {
       ),
     ],
   );
+}
+
+final class _HomeScreen extends StatelessWidget {
+  const _HomeScreen({required this.document});
+
+  final DesktopDocument document;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages =
+        LearnAnywhereLocalizations.of(context);
+    final bool hasContent =
+        document.deckPath != null || document.deck.units.isNotEmpty;
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              messages.message(LearnAnywhereMessage.desktopHomeTitle),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapMedium),
+            if (!hasContent)
+              Text(messages.message(LearnAnywhereMessage.homeNoFileLoaded))
+            else ...<Widget>[
+              _StatusLine(
+                label: messages.message(LearnAnywhereMessage.fileStatusDeck),
+                value: document.deckPath ??
+                    messages.message(LearnAnywhereMessage.fileStatusUnsaved),
+              ),
+              _StatusLine(
+                label: messages.message(LearnAnywhereMessage.homeMaskName),
+                value: document.mask.name,
+              ),
+              _StatusLine(
+                label: messages.message(LearnAnywhereMessage.fileStatusUnits),
+                value: document.deck.units.length.toString(),
+              ),
+              _HomeStatsSummary(
+                unitCount: document.deck.units.length,
+                statistics: document.statistics,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _HomeStatsSummary extends StatelessWidget {
+  const _HomeStatsSummary({
+    required this.unitCount,
+    required this.statistics,
+  });
+
+  final int unitCount;
+  final List<UnitStats> statistics;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages =
+        LearnAnywhereLocalizations.of(context);
+    if (unitCount == 0) return const SizedBox.shrink();
+    final StatisticsSummary summary = aggregateStatistics(
+      unitCount: unitCount,
+      statistics: statistics,
+    );
+    final int mastered = summary.buckets
+        .where(
+          (BucketSummary b) =>
+              b.bucket == HitRateBucket.perfect ||
+              b.bucket == HitRateBucket.good,
+        )
+        .fold(0, (int sum, BucketSummary b) => sum + b.count);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _StatusLine(
+          label:
+              messages.message(LearnAnywhereMessage.statisticsQueriedUnits),
+          value: summary.queriedUnits.toString(),
+        ),
+        _StatusLine(
+          label: messages.message(LearnAnywhereMessage.learnLiveMastered),
+          value: mastered.toString(),
+        ),
+      ],
+    );
+  }
 }
 
 final class _MenuSeparator extends StatelessWidget {

@@ -25,6 +25,7 @@ final class LearnSessionPage extends StatefulWidget {
     required this.onStatisticsChanged,
     required this.onSessionProgressChanged,
     required this.onOpenEditor,
+    this.onExit,
     super.key,
   });
 
@@ -57,6 +58,9 @@ final class LearnSessionPage extends StatefulWidget {
 
   /// Called when the user wants to interrupt and edit the deck.
   final VoidCallback onOpenEditor;
+
+  /// Called when the user exits the learn session back to the home screen.
+  final VoidCallback? onExit;
 
   @override
   State<LearnSessionPage> createState() => _LearnSessionPageState();
@@ -154,10 +158,14 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
           ),
           _LearnSetupIntent: CallbackAction<_LearnSetupIntent>(
             onInvoke: (_) {
-              setState(() {
-                _currentItem = null;
-                _completed = false;
-              });
+              if (_currentItem == null && !_completed) {
+                widget.onExit?.call();
+              } else {
+                setState(() {
+                  _currentItem = null;
+                  _completed = false;
+                });
+              }
               return null;
             },
           ),

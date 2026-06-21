@@ -67,6 +67,12 @@ enum LearnAnywhereMessage {
   /// Home route body.
   desktopHomeBody,
 
+  /// Home screen: no file loaded message.
+  homeNoFileLoaded,
+
+  /// Home screen: mask name label.
+  homeMaskName,
+
   /// File menu label.
   menuFile,
 
@@ -100,11 +106,26 @@ enum LearnAnywhereMessage {
   /// Edit menu label.
   menuEdit,
 
+  /// Edit submenu: unit editor entry.
+  menuEditUnitEditor,
+
+  /// Edit submenu: search unit entry.
+  menuEditSearchUnit,
+
+  /// Edit submenu: jump to number entry.
+  menuEditJumpToNumber,
+
   /// Mask editor menu label.
   menuMaskEditor,
 
   /// Learn menu label.
   menuLearn,
+
+  /// Learn submenu: practice entry.
+  menuLearnPractice,
+
+  /// Learn submenu: advanced practice options entry.
+  menuLearnAdvancedOptions,
 
   /// Learning options menu label.
   menuQueryOptions,
@@ -745,6 +766,8 @@ final class LearnAnywhereCatalog {
           'You have now mastered all learning units in the selected range. Congratulations!',
       LearnAnywhereMessage.desktopHomeTitle: 'Workspace',
       LearnAnywhereMessage.desktopHomeBody: 'Desktop shell ready',
+      LearnAnywhereMessage.homeNoFileLoaded: 'No file loaded',
+      LearnAnywhereMessage.homeMaskName: 'Mask',
       LearnAnywhereMessage.menuFile: 'File',
       LearnAnywhereMessage.fileNewDeck: 'New deck',
       LearnAnywhereMessage.fileOpenDeck: 'Open deck...',
@@ -756,8 +779,13 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSaveMask: 'Save mask...',
       LearnAnywhereMessage.fileExit: 'Exit',
       LearnAnywhereMessage.menuEdit: 'Edit',
+      LearnAnywhereMessage.menuEditUnitEditor: 'Unit editor',
+      LearnAnywhereMessage.menuEditSearchUnit: 'Search unit',
+      LearnAnywhereMessage.menuEditJumpToNumber: 'Jump to number...',
       LearnAnywhereMessage.menuMaskEditor: 'Mask Editor',
       LearnAnywhereMessage.menuLearn: 'Learn',
+      LearnAnywhereMessage.menuLearnPractice: 'Practice',
+      LearnAnywhereMessage.menuLearnAdvancedOptions: 'Advanced practice options',
       LearnAnywhereMessage.menuQueryOptions: 'Learning Options',
       LearnAnywhereMessage.menuStatistics: 'Statistics',
       LearnAnywhereMessage.menuLexicon: 'Lexicon',
@@ -1014,6 +1042,8 @@ final class LearnAnywhereCatalog {
           'Sie beherrschen nun alle Lerneinheiten im gewählten Bereich! Herzlichen Glückwunsch!',
       LearnAnywhereMessage.desktopHomeTitle: 'Arbeitsbereich',
       LearnAnywhereMessage.desktopHomeBody: 'Desktop-Shell bereit',
+      LearnAnywhereMessage.homeNoFileLoaded: 'Keine Datei geladen',
+      LearnAnywhereMessage.homeMaskName: 'Maske',
       LearnAnywhereMessage.menuFile: 'Datei',
       LearnAnywhereMessage.fileNewDeck: 'Neue Lern-Datei',
       LearnAnywhereMessage.fileOpenDeck: 'Lern-Datei laden...',
@@ -1026,8 +1056,13 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSaveMask: 'Masken-Datei speichern...',
       LearnAnywhereMessage.fileExit: 'Beenden',
       LearnAnywhereMessage.menuEdit: 'Edit',
+      LearnAnywhereMessage.menuEditUnitEditor: 'Eingabe-Maske',
+      LearnAnywhereMessage.menuEditSearchUnit: 'Suchen einer Lerneinheit',
+      LearnAnywhereMessage.menuEditJumpToNumber: 'Springe zu bestimmter Nummer',
       LearnAnywhereMessage.menuMaskEditor: 'Mask Editor',
       LearnAnywhereMessage.menuLearn: 'Lern',
+      LearnAnywhereMessage.menuLearnPractice: 'Üben',
+      LearnAnywhereMessage.menuLearnAdvancedOptions: 'Erweiterte Abfrageoptionen',
       LearnAnywhereMessage.menuQueryOptions: 'Abfrage',
       LearnAnywhereMessage.menuStatistics: 'Statistik',
       LearnAnywhereMessage.menuLexicon: 'Lexikon',
