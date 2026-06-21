@@ -106,7 +106,7 @@ enum LearnAnywhereMessage {
   /// Learn menu label.
   menuLearn,
 
-  /// Query options menu label.
+  /// Learning options menu label.
   menuQueryOptions,
 
   /// Statistics menu label.
@@ -169,10 +169,10 @@ enum LearnAnywhereMessage {
   /// Learn route body.
   routeLearnBody,
 
-  /// Query options route title.
+  /// Learning options route title.
   routeQueryOptionsTitle,
 
-  /// Query options route body.
+  /// Learning options route body.
   routeQueryOptionsBody,
 
   /// Statistics route title.
@@ -240,6 +240,9 @@ enum LearnAnywhereMessage {
 
   /// Unit editor insert-before action.
   editorInsertBefore,
+
+  /// Unit editor empty-deck insert action.
+  editorInsertUnit,
 
   /// Unit editor delete action.
   editorDelete,
@@ -331,10 +334,10 @@ enum LearnAnywhereMessage {
   /// Learn mode label.
   learnMode,
 
-  /// Practice mode label.
+  /// Endless mode label.
   learnModePractice,
 
-  /// Super-query mode label.
+  /// Drill mode label.
   learnModeSuperQuery,
 
   /// Practice each-once option.
@@ -412,7 +415,7 @@ enum LearnAnywhereMessage {
   /// Return to setup action.
   learnBackToSetup,
 
-  /// Query options title.
+  /// Learning options title.
   queryOptionsTitle,
 
   /// Wrong input correctable option.
@@ -433,7 +436,7 @@ enum LearnAnywhereMessage {
   /// Time limit option.
   queryOptionTimeLimit,
 
-  /// With answer input option.
+  /// Require typed answers option.
   queryOptionWithAnswerInput,
 
   /// Minimum-attempts guard option.
@@ -475,7 +478,7 @@ enum LearnAnywhereMessage {
   /// Statistics total units label.
   statisticsTotalUnits,
 
-  /// Statistics queried units label.
+  /// Statistics practiced units label.
   statisticsQueriedUnits,
 
   /// Statistics bucket column label.
@@ -487,7 +490,7 @@ enum LearnAnywhereMessage {
   /// Statistics percentage of all column label.
   statisticsPercentAll,
 
-  /// Statistics percentage of queried column label.
+  /// Statistics percentage of practiced column label.
   statisticsPercentQueried,
 
   /// Statistics unit column label.
@@ -550,7 +553,7 @@ enum LearnAnywhereMessage {
   /// Never known hit-rate bucket.
   statisticsBucketNeverKnown,
 
-  /// Not yet queried hit-rate bucket.
+  /// Not yet practiced hit-rate bucket.
   statisticsBucketNotYetQueried,
 
   /// Lexicon page title.
@@ -755,7 +758,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuEdit: 'Edit',
       LearnAnywhereMessage.menuMaskEditor: 'Mask Editor',
       LearnAnywhereMessage.menuLearn: 'Learn',
-      LearnAnywhereMessage.menuQueryOptions: 'Query Options',
+      LearnAnywhereMessage.menuQueryOptions: 'Learning Options',
       LearnAnywhereMessage.menuStatistics: 'Statistics',
       LearnAnywhereMessage.menuLexicon: 'Lexicon',
       LearnAnywhereMessage.menuList: 'List',
@@ -779,8 +782,8 @@ final class LearnAnywhereCatalog {
           'Define categories, fields, roles, lengths, and direction labels for a deck.',
       LearnAnywhereMessage.routeLearnTitle: 'Learn',
       LearnAnywhereMessage.routeLearnBody:
-          'Run practice and super-query sessions with answer entry or think-only review.',
-      LearnAnywhereMessage.routeQueryOptionsTitle: 'Query Options',
+          'Run endless mode and drill mode sessions with answer entry or think-only review.',
+      LearnAnywhereMessage.routeQueryOptionsTitle: 'Learning Options',
       LearnAnywhereMessage.routeQueryOptionsBody:
           'Tune directions, answer checking, timing, thresholds, and rating rules.',
       LearnAnywhereMessage.routeStatisticsTitle: 'Statistics',
@@ -816,6 +819,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorNext: 'Next',
       LearnAnywhereMessage.editorJump: 'Jump',
       LearnAnywhereMessage.editorInsertBefore: 'Insert before',
+      LearnAnywhereMessage.editorInsertUnit: 'Insert unit',
       LearnAnywhereMessage.editorDelete: 'Delete',
       LearnAnywhereMessage.editorSearch: 'Search',
       LearnAnywhereMessage.editorDone: 'Done',
@@ -849,8 +853,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnRangeStart: 'Start unit',
       LearnAnywhereMessage.learnRangeEnd: 'End unit',
       LearnAnywhereMessage.learnMode: 'Mode',
-      LearnAnywhereMessage.learnModePractice: 'Practice',
-      LearnAnywhereMessage.learnModeSuperQuery: 'Super-query',
+      LearnAnywhereMessage.learnModePractice: 'Endless mode',
+      LearnAnywhereMessage.learnModeSuperQuery: 'Drill mode',
       LearnAnywhereMessage.learnPracticeEachOnce: 'Each unit exactly once',
       LearnAnywhereMessage.learnSuperThreshold: 'Super status threshold (%)',
       LearnAnywhereMessage.learnStartSession: 'Start session',
@@ -879,7 +883,7 @@ final class LearnAnywhereCatalog {
           'Unit {index} of {total} - {category} - {direction}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
       LearnAnywhereMessage.learnBackToSetup: 'Back to setup',
-      LearnAnywhereMessage.queryOptionsTitle: 'Query Options',
+      LearnAnywhereMessage.queryOptionsTitle: 'Learning Options',
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Wrong input correctable',
       LearnAnywhereMessage.queryOptionCompleteInputRequired:
@@ -888,7 +892,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.queryOptionAccentSensitive: 'Accent sensitive',
       LearnAnywhereMessage.queryOptionShowClock: 'Show clock',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Time limit (seconds)',
-      LearnAnywhereMessage.queryOptionWithAnswerInput: 'With answer input',
+      LearnAnywhereMessage.queryOptionWithAnswerInput: 'Require typed answers',
       LearnAnywhereMessage.queryOptionMinimumAttemptsGuard:
           'Minimum-attempts guard',
       LearnAnywhereMessage.queryOptionMinimumAttempts: 'Minimum attempts',
@@ -905,11 +909,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsDirection1: 'Direction 1',
       LearnAnywhereMessage.statisticsDirection2: 'Direction 2',
       LearnAnywhereMessage.statisticsTotalUnits: 'Total units',
-      LearnAnywhereMessage.statisticsQueriedUnits: 'Queried units',
+      LearnAnywhereMessage.statisticsQueriedUnits: 'Practiced units',
       LearnAnywhereMessage.statisticsBucket: 'Bucket',
       LearnAnywhereMessage.statisticsCount: 'Count',
       LearnAnywhereMessage.statisticsPercentAll: '% of all',
-      LearnAnywhereMessage.statisticsPercentQueried: '% of queried',
+      LearnAnywhereMessage.statisticsPercentQueried: '% of practiced',
       LearnAnywhereMessage.statisticsUnit: 'Unit',
       LearnAnywhereMessage.statisticsCategory: 'Category',
       LearnAnywhereMessage.statisticsHitRate: 'Hit rate',
@@ -930,7 +934,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsBucketUnsure: 'Unsure',
       LearnAnywhereMessage.statisticsBucketVeryUnsure: 'Very unsure',
       LearnAnywhereMessage.statisticsBucketNeverKnown: 'Never known',
-      LearnAnywhereMessage.statisticsBucketNotYetQueried: 'Not yet queried',
+      LearnAnywhereMessage.statisticsBucketNotYetQueried: 'Not yet practiced',
       LearnAnywhereMessage.lexiconTitle: 'Lexicon',
       LearnAnywhereMessage.lexiconSearchText: 'Search text',
       LearnAnywhereMessage.lexiconCategoryScope: 'Category',
@@ -1002,12 +1006,12 @@ final class LearnAnywhereCatalog {
           'Laden Sie eine .vok-Lern-Datei, um eine reine Lern-Sitzung zu starten.',
       LearnAnywhereMessage.mobileDeckLoaded: 'Lern-Datei geladen.',
       LearnAnywhereMessage.mobileDeckLoadFailed:
-          'Lern-Datei konnte nicht geoeffnet werden.',
+          'Lern-Datei konnte nicht geöffnet werden.',
       LearnAnywhereMessage.mobileUnits: 'Einheiten',
       LearnAnywhereMessage.mobileNext: 'Weiter',
       LearnAnywhereMessage.mobileRatePrompt: 'Wie lief es?',
       LearnAnywhereMessage.superQueryCompleted:
-          'Sie beherrschen nun alle Lerneinheiten im gewaehlten Bereich! Herzlichen Glueckwunsch!',
+          'Sie beherrschen nun alle Lerneinheiten im gewählten Bereich! Herzlichen Glückwunsch!',
       LearnAnywhereMessage.desktopHomeTitle: 'Arbeitsbereich',
       LearnAnywhereMessage.desktopHomeBody: 'Desktop-Shell bereit',
       LearnAnywhereMessage.menuFile: 'Datei',
@@ -1017,7 +1021,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSave: 'Speichern',
       LearnAnywhereMessage.fileSaveAs: 'Speichern unter...',
       LearnAnywhereMessage.fileClearUnits:
-          'Lerneinheiten im Speicher loeschen...',
+          'Lerneinheiten im Speicher löschen...',
       LearnAnywhereMessage.fileLoadMask: 'Neue Masken-Datei laden...',
       LearnAnywhereMessage.fileSaveMask: 'Masken-Datei speichern...',
       LearnAnywhereMessage.fileExit: 'Beenden',
@@ -1039,28 +1043,28 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.languageGerman: 'Deutsch',
       LearnAnywhereMessage.routeFileOperationsTitle: 'Dateioperationen',
       LearnAnywhereMessage.routeFileOperationsBody:
-          'Lern- und Statistikdateien erstellen, laden, hinzufuegen, speichern und pruefen.',
+          'Lern- und Statistikdateien erstellen, laden, hinzufügen, speichern und prüfen.',
       LearnAnywhereMessage.routeEditorTitle: 'Editor',
       LearnAnywhereMessage.routeEditorBody:
           'Lerneinheiten bearbeiten, durch die Datei navigieren, alle Treffer suchen und Rich-Text-Felder pflegen.',
       LearnAnywhereMessage.routeMaskEditorTitle: 'Mask Editor',
       LearnAnywhereMessage.routeMaskEditorBody:
-          'Kategorien, Felder, Rollen, Laengen und Richtungsnamen fuer eine Lern-Datei definieren.',
+          'Kategorien, Felder, Rollen, Längen und Richtungsnamen für eine Lern-Datei definieren.',
       LearnAnywhereMessage.routeLearnTitle: 'Lern',
       LearnAnywhereMessage.routeLearnBody:
-          'Uebungs- und Super-Abfrage-Sitzungen mit Eingabe oder reinem Denken starten.',
+          'Endlos-Modus- und Super-Abfrage-Sitzungen mit Eingabe oder reinem Denken starten.',
       LearnAnywhereMessage.routeQueryOptionsTitle: 'Abfrage',
       LearnAnywhereMessage.routeQueryOptionsBody:
-          'Richtungen, Antwortpruefung, Zeit, Schwellenwerte und Bewertungsregeln einstellen.',
+          'Richtungen, Antwortprüfung, Zeit, Schwellenwerte und Bewertungsregeln einstellen.',
       LearnAnywhereMessage.routeStatisticsTitle: 'Statistik',
       LearnAnywhereMessage.routeStatisticsBody:
-          'Bereiche, Detailquoten, Diagramme und Exporte ausgewaehlter Einheiten ansehen.',
+          'Bereiche, Detailquoten, Diagramme und Exporte ausgewählter Einheiten ansehen.',
       LearnAnywhereMessage.routeLexiconTitle: 'Lexikon',
       LearnAnywhereMessage.routeLexiconBody:
           'In der aktuellen Lern-Datei oder passenden Dateien suchen und gefundene Einheiten laden.',
       LearnAnywhereMessage.routeListTitle: 'Liste',
       LearnAnywhereMessage.routeListBody:
-          'Druckfreundliche Listen sind fuer eine spaetere Version vorgesehen.',
+          'Druckfreundliche Listen sind für eine spätere Version vorgesehen.',
       LearnAnywhereMessage.routeAboutTitle: 'Programminfo',
       LearnAnywhereMessage.routeAboutBody:
           'Learn Anywhere ist eine moderne Umsetzung von Lern PC plus.',
@@ -1074,18 +1078,19 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutVersionCurrent:
           '0.1.0 - Phase-2-Desktop-Grundlage: Dateioperationen, Editor, Lernen, Statistik, Lexikon und Programminfo.',
       LearnAnywhereMessage.desktopHintBar:
-          'F1 Hilfe   F2 Zurueck   F3 Weiter   F5 Suche   F6 Sprung   F7 Loeschen   F8 Einfuegen   F10 Fertig   Esc Abbruch',
+          'F1 Hilfe   F2 Zurück   F3 Weiter   F5 Suche   F6 Springen   F7 Löschen   F8 Einfügen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
       LearnAnywhereMessage.editorEmptyBody:
-          'Fuegen Sie eine Lerneinheit ein, um diese Lern-Datei zu bearbeiten.',
+          'Fügen Sie eine Lerneinheit ein, um diese Lern-Datei zu bearbeiten.',
       LearnAnywhereMessage.editorUnitHeader:
           'Einheit {index} von {total} - {category}',
       LearnAnywhereMessage.editorFormatting: 'Formatierung',
-      LearnAnywhereMessage.editorPrevious: 'Zurueck',
+      LearnAnywhereMessage.editorPrevious: 'Zurück',
       LearnAnywhereMessage.editorNext: 'Weiter',
-      LearnAnywhereMessage.editorJump: 'Sprung',
-      LearnAnywhereMessage.editorInsertBefore: 'Einfuegen',
-      LearnAnywhereMessage.editorDelete: 'Loeschen',
+      LearnAnywhereMessage.editorJump: 'Springen',
+      LearnAnywhereMessage.editorInsertBefore: 'Einfügen',
+      LearnAnywhereMessage.editorInsertUnit: 'Einfügen',
+      LearnAnywhereMessage.editorDelete: 'Löschen',
       LearnAnywhereMessage.editorSearch: 'Suche',
       LearnAnywhereMessage.editorDone: 'Fertig',
       LearnAnywhereMessage.editorCancel: 'Abbruch',
@@ -1094,8 +1099,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorUnderline: 'Unterstrichen',
       LearnAnywhereMessage.editorColor: 'Textfarbe',
       LearnAnywhereMessage.editorHighlight: 'Markierung',
-      LearnAnywhereMessage.editorClearFormatting: 'Formatierung loeschen',
-      LearnAnywhereMessage.editorChooseCategoryTitle: 'Kategorie waehlen',
+      LearnAnywhereMessage.editorClearFormatting: 'Formatierung löschen',
+      LearnAnywhereMessage.editorChooseCategoryTitle: 'Kategorie wählen',
       LearnAnywhereMessage.editorJumpTitle: 'Zu Einheit springen',
       LearnAnywhereMessage.editorJumpLabel: 'Einheitsnummer',
       LearnAnywhereMessage.editorSearchTitle: 'Lerneinheiten suchen',
@@ -1104,14 +1109,14 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorNoMatches:
           'Keine passenden Lerneinheiten gefunden.',
       LearnAnywhereMessage.editorDeleteConfirm:
-          'Aktuelle Lerneinheit loeschen?',
+          'Aktuelle Lerneinheit löschen?',
       LearnAnywhereMessage.editorHelpTitle: 'Editor-Tasten',
       LearnAnywhereMessage.editorNoCategories:
           'Die aktuelle Maske hat keine Kategorien.',
       LearnAnywhereMessage.learnEmptyTitle: 'Keine Lerneinheiten',
       LearnAnywhereMessage.learnEmptyBody:
           'Erstellen oder laden Sie eine Lern-Datei mit Lerneinheiten, bevor Sie eine Sitzung starten.',
-      LearnAnywhereMessage.learnSetupTitle: 'Uebung einrichten',
+      LearnAnywhereMessage.learnSetupTitle: 'Übung einrichten',
       LearnAnywhereMessage.learnDirection: 'Richtung',
       LearnAnywhereMessage.learnDirection1: 'Richtung 1',
       LearnAnywhereMessage.learnDirection2: 'Richtung 2',
@@ -1119,31 +1124,31 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnRangeStart: 'Erste Einheit',
       LearnAnywhereMessage.learnRangeEnd: 'Letzte Einheit',
       LearnAnywhereMessage.learnMode: 'Modus',
-      LearnAnywhereMessage.learnModePractice: 'Ueben',
+      LearnAnywhereMessage.learnModePractice: 'Endlos-Modus',
       LearnAnywhereMessage.learnModeSuperQuery: 'Super-Abfrage',
       LearnAnywhereMessage.learnPracticeEachOnce: 'Jede Einheit genau einmal',
       LearnAnywhereMessage.learnSuperThreshold: 'Super-Status (%)',
       LearnAnywhereMessage.learnStartSession: 'Sitzung starten',
       LearnAnywhereMessage.learnPrompt: 'Frage',
       LearnAnywhereMessage.learnYourAnswer: 'Ihre Antwort',
-      LearnAnywhereMessage.learnSolution: 'Loesung',
+      LearnAnywhereMessage.learnSolution: 'Lösung',
       LearnAnywhereMessage.learnRemarks: 'Bemerkungen',
       LearnAnywhereMessage.learnReveal: 'Anzeigen',
-      LearnAnywhereMessage.learnCheckAnswer: 'Pruefen',
+      LearnAnywhereMessage.learnCheckAnswer: 'Prüfen',
       LearnAnywhereMessage.learnContinue: 'Weiter',
       LearnAnywhereMessage.learnCorrectMessage:
-          'Die Eingabe ist richtig! Glueckwunsch!',
+          'Die Eingabe ist richtig! Glückwunsch!',
       LearnAnywhereMessage.learnWrongMessage:
           'Die Eingabe ist leider falsch! Schade!',
       LearnAnywhereMessage.learnRatingCorrect: 'Richtig',
       LearnAnywhereMessage.learnRatingWrong: 'Falsch',
       LearnAnywhereMessage.learnRatingActuallyCorrect: 'Eigentlich richtig',
       LearnAnywhereMessage.learnRatingActuallyWrong: 'Eigentlich falsch',
-      LearnAnywhereMessage.learnRatingNoCount: 'Nicht zaehlen',
+      LearnAnywhereMessage.learnRatingNoCount: 'Nicht zählen',
       LearnAnywhereMessage.learnRatingKnewIt: 'Gewusst',
       LearnAnywhereMessage.learnRatingDidNotKnow: 'Nicht gewusst',
       LearnAnywhereMessage.learnLiveMastered: 'Beherrscht',
-      LearnAnywhereMessage.learnLiveRemaining: 'Uebrig',
+      LearnAnywhereMessage.learnLiveRemaining: 'Übrig',
       LearnAnywhereMessage.learnLiveAccuracy: 'Treffer',
       LearnAnywhereMessage.learnUnitHeader:
           'Einheit {index} von {total} - {category} - {direction}',
@@ -1153,22 +1158,23 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Falsche Eingabe korrigierbar',
       LearnAnywhereMessage.queryOptionCompleteInputRequired:
-          'Vollstaendige Eingabe erforderlich',
+          'Vollständige Eingabe erforderlich',
       LearnAnywhereMessage.queryOptionCaseSensitive:
-          'Gross-/Kleinschreibung beachten',
+          'Groß-/Kleinschreibung beachten',
       LearnAnywhereMessage.queryOptionAccentSensitive: 'Akzente beachten',
       LearnAnywhereMessage.queryOptionShowClock: 'Uhr anzeigen',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Zeitlimit (Sekunden)',
-      LearnAnywhereMessage.queryOptionWithAnswerInput: 'Mit Antwort-Eingabe',
+      LearnAnywhereMessage.queryOptionWithAnswerInput:
+          'Mit Eingabe der Antwort',
       LearnAnywhereMessage.queryOptionMinimumAttemptsGuard:
           'Mindestabfragen beachten',
       LearnAnywhereMessage.queryOptionMinimumAttempts: 'Mindestabfragen',
       LearnAnywhereMessage.queryOptionWrongAnswerCeiling:
           'Falsch-Antworten begrenzen',
       LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue:
-          'Grenze fuer falsche Antworten',
+          'Grenze für falsche Antworten',
       LearnAnywhereMessage.statisticsTitle: 'Statistik',
-      LearnAnywhereMessage.statisticsKeepPracticing: 'Weiter ueben',
+      LearnAnywhereMessage.statisticsKeepPracticing: 'Weiter üben',
       LearnAnywhereMessage.statisticsDetailed: 'Detailliert',
       LearnAnywhereMessage.statisticsChart: 'Diagramm',
       LearnAnywhereMessage.statisticsDirectionView: 'Ansicht',
@@ -1184,20 +1190,20 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsUnit: 'Einheit',
       LearnAnywhereMessage.statisticsCategory: 'Kategorie',
       LearnAnywhereMessage.statisticsHitRate: 'Trefferquote',
-      LearnAnywhereMessage.statisticsSelectAll: 'Sichtbare auswaehlen',
+      LearnAnywhereMessage.statisticsSelectAll: 'Sichtbare auswählen',
       LearnAnywhereMessage.statisticsClearSelection: 'Auswahl leeren',
       LearnAnywhereMessage.statisticsSaveSelected:
-          'Ausgewaehlte Einheiten speichern',
+          'Ausgewählte Einheiten speichern',
       LearnAnywhereMessage.statisticsLoad: 'Statistik laden',
       LearnAnywhereMessage.statisticsSave: 'Statistik speichern',
-      LearnAnywhereMessage.statisticsClear: 'Statistik loeschen',
+      LearnAnywhereMessage.statisticsClear: 'Statistik löschen',
       LearnAnywhereMessage.statisticsLoaded: 'Statistik geladen.',
       LearnAnywhereMessage.statisticsSaved: 'Statistik gespeichert.',
-      LearnAnywhereMessage.statisticsCleared: 'Statistik geloescht.',
+      LearnAnywhereMessage.statisticsCleared: 'Statistik gelöscht.',
       LearnAnywhereMessage.statisticsSelectedSaved:
-          'Ausgewaehlte Einheiten gespeichert.',
+          'Ausgewählte Einheiten gespeichert.',
       LearnAnywhereMessage.statisticsNoSelection:
-          'Keine Einheiten ausgewaehlt.',
+          'Keine Einheiten ausgewählt.',
       LearnAnywhereMessage.statisticsBucketPerfect: 'Perfekt',
       LearnAnywhereMessage.statisticsBucketGood: 'Gut',
       LearnAnywhereMessage.statisticsBucketFair: 'Mittel',
@@ -1228,14 +1234,14 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorDirection1: 'Abfrage 1',
       LearnAnywhereMessage.maskEditorDirection2: 'Abfrage 2',
       LearnAnywhereMessage.maskEditorCategories: 'Kategorien',
-      LearnAnywhereMessage.maskEditorAddCategory: 'Kategorie hinzufuegen',
-      LearnAnywhereMessage.maskEditorDeleteCategory: 'Kategorie loeschen',
+      LearnAnywhereMessage.maskEditorAddCategory: 'Kategorie hinzufügen',
+      LearnAnywhereMessage.maskEditorDeleteCategory: 'Kategorie löschen',
       LearnAnywhereMessage.maskEditorCategoryName: 'Kategoriename',
       LearnAnywhereMessage.maskEditorFields: 'Felder',
-      LearnAnywhereMessage.maskEditorAddField: 'Feld hinzufuegen',
-      LearnAnywhereMessage.maskEditorDeleteField: 'Feld loeschen',
+      LearnAnywhereMessage.maskEditorAddField: 'Feld hinzufügen',
+      LearnAnywhereMessage.maskEditorDeleteField: 'Feld löschen',
       LearnAnywhereMessage.maskEditorFieldName: 'Feldname',
-      LearnAnywhereMessage.maskEditorFieldLength: 'Laenge',
+      LearnAnywhereMessage.maskEditorFieldLength: 'Länge',
       LearnAnywhereMessage.maskEditorEqualGroup: 'Gleich-Gruppe',
       LearnAnywhereMessage.maskEditorRole1: 'Rolle 1',
       LearnAnywhereMessage.maskEditorRole2: 'Rolle 2',
@@ -1246,22 +1252,22 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileStatusStats: 'Statistik',
       LearnAnywhereMessage.fileStatusUnsaved: 'Ungespeichert',
       LearnAnywhereMessage.fileStatusUnits: 'Lerneinheiten',
-      LearnAnywhereMessage.confirmTitle: 'Bitte bestaetigen',
+      LearnAnywhereMessage.confirmTitle: 'Bitte bestätigen',
       LearnAnywhereMessage.confirmNewDeck:
-          'Neue Lern-Datei erstellen? Aktuelle Lerneinheiten im Speicher werden geloescht.',
+          'Neue Lern-Datei erstellen? Aktuelle Lerneinheiten im Speicher werden gelöscht.',
       LearnAnywhereMessage.confirmClearUnits:
-          'Alle Lerneinheiten im Speicher loeschen? Es wird keine Datei geloescht.',
+          'Alle Lerneinheiten im Speicher löschen? Es wird keine Datei gelöscht.',
       LearnAnywhereMessage.confirmLoadMask:
-          'Neue Maske laden? Aktuelle Lerneinheiten im Speicher werden geloescht.',
+          'Neue Maske laden? Aktuelle Lerneinheiten im Speicher werden gelöscht.',
       LearnAnywhereMessage.actionCancel: 'Abbruch',
       LearnAnywhereMessage.actionContinue: 'Weiter',
       LearnAnywhereMessage.fileOperationDone: 'Fertig',
       LearnAnywhereMessage.fileOperationFailed: 'Dateioperation fehlgeschlagen',
       LearnAnywhereMessage.fileNewDeckDone: 'Neue Lern-Datei erstellt.',
       LearnAnywhereMessage.fileOpenDeckDone: 'Lern-Datei geladen.',
-      LearnAnywhereMessage.fileMergeDeckDone: 'Lern-Datei hinzugefuegt.',
+      LearnAnywhereMessage.fileMergeDeckDone: 'Lern-Datei hinzugefügt.',
       LearnAnywhereMessage.fileSaveDeckDone: 'Lern-Datei gespeichert.',
-      LearnAnywhereMessage.fileClearUnitsDone: 'Lerneinheiten geloescht.',
+      LearnAnywhereMessage.fileClearUnitsDone: 'Lerneinheiten gelöscht.',
       LearnAnywhereMessage.fileLoadMaskDone: 'Maske geladen.',
       LearnAnywhereMessage.fileSaveMaskDone: 'Maske gespeichert.',
       LearnAnywhereMessage.fileAutoLoadedStats: 'Statistik-Datei geladen.',
