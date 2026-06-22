@@ -102,6 +102,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   int _learnSessionAttempts = 0;
   int _learnSessionCorrect = 0;
   String? _lastFileStatus;
+  int? _editorInitialIndex;
 
   @override
   void initState() {
@@ -231,11 +232,17 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     if (character == null) return false;
     final bool german = widget.locale.languageCode == 'de';
     final String ch = character.toLowerCase();
-    final Set<String> chars =
-        german ? const <String>{'e', 's', 'n'} : const <String>{'u', 's', 'j'};
-    if (chars.contains(ch)) {
-      _editMenuController.close();
+    _editMenuController.close();
+    if (ch == (german ? 'e' : 'u')) {
       _selectRoute(_DesktopRoute.editor);
+      return true;
+    }
+    if (ch == 's') {
+      _openEditorSearch();
+      return true;
+    }
+    if (ch == (german ? 'n' : 'j')) {
+      _openEditorJump();
       return true;
     }
     return false;
@@ -375,14 +382,14 @@ final class _DesktopHomeState extends State<_DesktopHome> {
             ),
           ),
           MenuItemButton(
-            onPressed: () => _selectRoute(_DesktopRoute.editor),
+            onPressed: _openEditorSearch,
             child: _MnemonicText(
               label: messages.message(LearnAnywhereMessage.menuEditSearchUnit),
               mnemonic: 'S',
             ),
           ),
           MenuItemButton(
-            onPressed: () => _selectRoute(_DesktopRoute.editor),
+            onPressed: _openEditorJump,
             child: _MnemonicText(
               label:
                   messages.message(LearnAnywhereMessage.menuEditJumpToNumber),
@@ -508,7 +515,38 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   void _selectRoute(_DesktopRoute route) {
-    setState(() => _route = route);
+    setState(() {
+      _editorInitialIndex = null;
+      _route = route;
+    });
+  }
+
+  Future<void> _openEditorSearch() async {
+    if (_document.deck.units.isEmpty) return;
+    final int? index = await UnitEditorPage.openSearchDialog(
+      context,
+      _document.deck,
+    );
+    if (index != null && mounted) {
+      setState(() {
+        _editorInitialIndex = index;
+        _route = _DesktopRoute.editor;
+      });
+    }
+  }
+
+  Future<void> _openEditorJump() async {
+    if (_document.deck.units.isEmpty) return;
+    final int? index = await UnitEditorPage.openJumpDialog(
+      context,
+      _document.deck,
+    );
+    if (index != null && mounted) {
+      setState(() {
+        _editorInitialIndex = index;
+        _route = _DesktopRoute.editor;
+      });
+    }
   }
 
   Widget _contentForRoute() {
@@ -520,6 +558,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       ),
       _DesktopRoute.editor => UnitEditorPage(
         deck: _document.deck,
+        initialIndex: _editorInitialIndex,
         onChanged: _updateDeckFromEditor,
         onDone: () => _selectRoute(_DesktopRoute.home),
         onCancel: () => _selectRoute(_DesktopRoute.home),

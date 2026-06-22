@@ -13,6 +13,7 @@ final class UnitEditorPage extends StatefulWidget {
     required this.onChanged,
     required this.onDone,
     required this.onCancel,
+    this.initialIndex,
     super.key,
   });
 
@@ -28,6 +29,157 @@ final class UnitEditorPage extends StatefulWidget {
   /// Called when the user cancels the editor.
   final VoidCallback onCancel;
 
+  /// If non-null, the editor opens at this 0-based unit index on construction
+  /// and whenever the value changes. Clamped to the valid range automatically.
+  final int? initialIndex;
+
+  /// Shows the jump-to-unit dialog and returns the selected 0-based index, or
+  /// null if cancelled. [currentIndex] pre-fills the unit-number input.
+  static Future<int?> openJumpDialog(
+    BuildContext context,
+    LearningDeck deck, {
+    int currentIndex = 0,
+  }) async {
+    if (deck.units.isEmpty) return null;
+    final LearnAnywhereLocalizations messages =
+        LearnAnywhereLocalizations.of(context);
+    final TextEditingController controller = TextEditingController(
+      text: (currentIndex + 1).toString(),
+    );
+    final int? target = await showDialog<int>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.editorJumpTitle)),
+          content: TextField(
+            autofocus: true,
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            decoration: InputDecoration(
+              labelText: messages.message(
+                LearnAnywhereMessage.editorJumpLabel,
+              ),
+            ),
+            onSubmitted: (String value) =>
+                Navigator.of(ctx).pop(int.tryParse(value)),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(ctx).pop(int.tryParse(controller.text)),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionContinue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (target == null) return null;
+    return (target - 1).clamp(0, deck.units.length - 1);
+  }
+
+  /// Shows the search dialog (and a results dialog on match) and returns the
+  /// selected 0-based unit index, or null if cancelled or no result chosen.
+  static Future<int?> openSearchDialog(
+    BuildContext context,
+    LearningDeck deck,
+  ) async {
+    final LearnAnywhereLocalizations messages =
+        LearnAnywhereLocalizations.of(context);
+    final TextEditingController controller = TextEditingController();
+    final String? query = await showDialog<String>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: Text(
+            messages.message(LearnAnywhereMessage.editorSearchTitle),
+          ),
+          content: TextField(
+            autofocus: true,
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: messages.message(
+                LearnAnywhereMessage.editorSearchQuery,
+              ),
+            ),
+            onSubmitted: (String value) =>
+                Navigator.of(ctx).pop(value.trim()),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(ctx).pop(controller.text.trim()),
+              child: Text(messages.message(LearnAnywhereMessage.editorSearch)),
+            ),
+          ],
+        );
+      },
+    );
+    if (query == null || query.isEmpty) return null;
+
+    final List<SearchResult> results = searchDeck(deck: deck, query: query);
+    if (results.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              messages.message(LearnAnywhereMessage.editorNoMatches),
+            ),
+          ),
+        );
+      }
+      return null;
+    }
+
+    if (!context.mounted) return null;
+    return showDialog<int>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: Text(
+            messages.message(LearnAnywhereMessage.editorSearchResults),
+          ),
+          content: SizedBox(
+            width: 520,
+            height: 360,
+            child: ListView.builder(
+              itemCount: results.length,
+              itemBuilder: (BuildContext _, int index) {
+                final SearchResult result = results[index];
+                final CategoryDefinition? category =
+                    deck.mask.categoryById(result.categoryId);
+                return ListTile(
+                  title: Text(
+                    _unitHeader(
+                      messages,
+                      result.unitIndex,
+                      deck.units.length,
+                      category?.name ?? result.categoryId.toString(),
+                    ),
+                  ),
+                  subtitle: Text(result.matchedFieldNames.join(', ')),
+                  onTap: () => Navigator.of(ctx).pop(result.unitIndex - 1),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   State<UnitEditorPage> createState() => _UnitEditorPageState();
 }
@@ -36,9 +188,28 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
   int _currentIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialIndex != null) {
+      _currentIndex = widget.initialIndex!.clamp(
+        0,
+        math.max(0, widget.deck.units.length - 1),
+      );
+    }
+  }
+
+  @override
   void didUpdateWidget(UnitEditorPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _clampCurrentIndex();
+    if (widget.initialIndex != null &&
+        widget.initialIndex != oldWidget.initialIndex) {
+      _currentIndex = widget.initialIndex!.clamp(
+        0,
+        math.max(0, widget.deck.units.length - 1),
+      );
+    } else {
+      _clampCurrentIndex();
+    }
   }
 
   @override
@@ -188,56 +359,15 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
   }
 
   Future<void> _jump() async {
-    if (widget.deck.units.isEmpty) {
-      return;
-    }
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+    if (widget.deck.units.isEmpty) return;
+    final int? index = await UnitEditorPage.openJumpDialog(
       context,
+      widget.deck,
+      currentIndex: _currentIndex,
     );
-    final TextEditingController controller = TextEditingController(
-      text: (_currentIndex + 1).toString(),
-    );
-    final int? target = await showDialog<int>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(messages.message(LearnAnywhereMessage.editorJumpTitle)),
-          content: TextField(
-            autofocus: true,
-            controller: controller,
-            keyboardType: TextInputType.number,
-            inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.digitsOnly,
-            ],
-            decoration: InputDecoration(
-              labelText: messages.message(LearnAnywhereMessage.editorJumpLabel),
-            ),
-            onSubmitted: (String value) {
-              Navigator.of(context).pop(int.tryParse(value));
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(int.tryParse(controller.text)),
-              child: Text(
-                messages.message(LearnAnywhereMessage.actionContinue),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-    if (target == null) {
-      return;
+    if (index != null && mounted) {
+      setState(() => _currentIndex = index);
     }
-    setState(() {
-      _currentIndex = (target - 1).clamp(0, widget.deck.units.length - 1);
-    });
   }
 
   Future<void> _delete() async {
@@ -284,100 +414,12 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
   }
 
   Future<void> _search() async {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+    final int? index = await UnitEditorPage.openSearchDialog(
       context,
+      widget.deck,
     );
-    final TextEditingController controller = TextEditingController();
-    final String? query = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(messages.message(LearnAnywhereMessage.editorSearchTitle)),
-          content: TextField(
-            autofocus: true,
-            controller: controller,
-            decoration: InputDecoration(
-              labelText: messages.message(
-                LearnAnywhereMessage.editorSearchQuery,
-              ),
-            ),
-            onSubmitted: (String value) {
-              Navigator.of(context).pop(value.trim());
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim()),
-              child: Text(messages.message(LearnAnywhereMessage.editorSearch)),
-            ),
-          ],
-        );
-      },
-    );
-    if (query == null || query.isEmpty) {
-      return;
-    }
-
-    final List<SearchResult> results = searchDeck(
-      deck: widget.deck,
-      query: query,
-    );
-    if (results.isEmpty) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(messages.message(LearnAnywhereMessage.editorNoMatches)),
-        ),
-      );
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-    final int? selectedIndex = await showDialog<int>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            messages.message(LearnAnywhereMessage.editorSearchResults),
-          ),
-          content: SizedBox(
-            width: 520,
-            height: 360,
-            child: ListView.builder(
-              itemCount: results.length,
-              itemBuilder: (BuildContext context, int index) {
-                final SearchResult result = results[index];
-                final CategoryDefinition? category = widget.deck.mask
-                    .categoryById(result.categoryId);
-                return ListTile(
-                  title: Text(
-                    _unitHeader(
-                      messages,
-                      result.unitIndex,
-                      widget.deck.units.length,
-                      category?.name ?? result.categoryId.toString(),
-                    ),
-                  ),
-                  subtitle: Text(result.matchedFieldNames.join(', ')),
-                  onTap: () => Navigator.of(context).pop(result.unitIndex - 1),
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
-    if (selectedIndex != null) {
-      setState(() => _currentIndex = selectedIndex);
+    if (index != null && mounted) {
+      setState(() => _currentIndex = index);
     }
   }
 
@@ -499,7 +541,7 @@ final class _EmptyEditor extends StatelessWidget {
             onPressed: onInsert,
             icon: const Icon(Icons.add),
             label: Text(
-              messages.message(LearnAnywhereMessage.editorInsertBefore),
+              messages.message(LearnAnywhereMessage.editorInsertUnit),
             ),
           ),
         ],
