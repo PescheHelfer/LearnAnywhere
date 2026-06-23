@@ -768,30 +768,30 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.desktopHomeBody: 'Desktop shell ready',
       LearnAnywhereMessage.homeNoFileLoaded: 'No file loaded',
       LearnAnywhereMessage.homeMaskName: 'Mask',
-      LearnAnywhereMessage.menuFile: 'File',
-      LearnAnywhereMessage.fileNewDeck: 'New deck',
-      LearnAnywhereMessage.fileOpenDeck: 'Open deck...',
-      LearnAnywhereMessage.fileAddMergeDeck: 'Add/merge deck...',
-      LearnAnywhereMessage.fileSave: 'Save',
-      LearnAnywhereMessage.fileSaveAs: 'Save As...',
-      LearnAnywhereMessage.fileClearUnits: 'Clear units in memory...',
-      LearnAnywhereMessage.fileLoadMask: 'Load mask...',
-      LearnAnywhereMessage.fileSaveMask: 'Save mask...',
-      LearnAnywhereMessage.fileExit: 'Exit',
-      LearnAnywhereMessage.menuEdit: 'Edit',
-      LearnAnywhereMessage.menuEditUnitEditor: 'Unit editor',
-      LearnAnywhereMessage.menuEditSearchUnit: 'Search unit',
-      LearnAnywhereMessage.menuEditJumpToNumber: 'Jump to number...',
-      LearnAnywhereMessage.menuMaskEditor: 'Mask Editor',
-      LearnAnywhereMessage.menuLearn: 'Learn',
-      LearnAnywhereMessage.menuLearnPractice: 'Practice',
-      LearnAnywhereMessage.menuLearnAdvancedOptions: 'Advanced practice options',
+      LearnAnywhereMessage.menuFile: '&File', // top-bar F
+      LearnAnywhereMessage.fileNewDeck: '&New deck', // N
+      LearnAnywhereMessage.fileOpenDeck: '&Open deck...', // O
+      LearnAnywhereMessage.fileAddMergeDeck: '&Add/merge deck...', // A
+      LearnAnywhereMessage.fileSave: '&Save', // S
+      LearnAnywhereMessage.fileSaveAs: 'Sa&ve As...', // V
+      LearnAnywhereMessage.fileClearUnits: '&Clear units in memory...', // C
+      LearnAnywhereMessage.fileLoadMask: '&Load mask...', // L
+      LearnAnywhereMessage.fileSaveMask: 'Save &mask...', // M
+      LearnAnywhereMessage.fileExit: '&Exit', // E
+      LearnAnywhereMessage.menuEdit: '&Edit', // top-bar E
+      LearnAnywhereMessage.menuEditUnitEditor: '&Unit editor', // U
+      LearnAnywhereMessage.menuEditSearchUnit: '&Search unit', // S
+      LearnAnywhereMessage.menuEditJumpToNumber: '&Jump to number...', // J
+      LearnAnywhereMessage.menuMaskEditor: '&Mask Editor', // top-bar M
+      LearnAnywhereMessage.menuLearn: '&Learn', // top-bar L
+      LearnAnywhereMessage.menuLearnPractice: '&Practice', // P
+      LearnAnywhereMessage.menuLearnAdvancedOptions: '&Advanced practice options', // A
       LearnAnywhereMessage.menuQueryOptions: 'Learning Options',
-      LearnAnywhereMessage.menuStatistics: 'Statistics',
-      LearnAnywhereMessage.menuLexicon: 'Lexicon',
-      LearnAnywhereMessage.menuList: 'List',
-      LearnAnywhereMessage.menuHelp: 'Help',
-      LearnAnywhereMessage.helpAbout: 'About',
+      LearnAnywhereMessage.menuStatistics: '&Statistics', // top-bar S
+      LearnAnywhereMessage.menuLexicon: 'Le&xicon', // top-bar X
+      LearnAnywhereMessage.menuList: 'L&ist', // top-bar I
+      LearnAnywhereMessage.menuHelp: '&Help', // top-bar H
+      LearnAnywhereMessage.helpAbout: '&About', // A
       LearnAnywhereMessage.themeLabel: 'Theme',
       LearnAnywhereMessage.themeSystem: 'System',
       LearnAnywhereMessage.themeLight: 'Light',
@@ -1044,31 +1044,33 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.desktopHomeBody: 'Desktop-Shell bereit',
       LearnAnywhereMessage.homeNoFileLoaded: 'Keine Datei geladen',
       LearnAnywhereMessage.homeMaskName: 'Maske',
-      LearnAnywhereMessage.menuFile: 'Datei',
-      LearnAnywhereMessage.fileNewDeck: 'Neue Lern-Datei',
-      LearnAnywhereMessage.fileOpenDeck: 'Lern-Datei laden...',
-      LearnAnywhereMessage.fileAddMergeDeck: 'Lern-Datei hinzuladen...',
-      LearnAnywhereMessage.fileSave: 'Speichern',
-      LearnAnywhereMessage.fileSaveAs: 'Speichern unter...',
+      LearnAnywhereMessage.menuFile: '&Datei', // top-bar D
+      LearnAnywhereMessage.fileNewDeck: '&Neue Lern-Datei', // N
+      LearnAnywhereMessage.fileOpenDeck: '&Lern-Datei laden...', // L
+      LearnAnywhereMessage.fileAddMergeDeck: 'Lern-Datei &hinzuladen...', // H
+      LearnAnywhereMessage.fileSave: '&Speichern', // S
+      LearnAnywhereMessage.fileSaveAs: 'Speichern &unter...', // U
       LearnAnywhereMessage.fileClearUnits:
-          'Lerneinheiten im Speicher löschen...',
-      LearnAnywhereMessage.fileLoadMask: 'Neue Masken-Datei laden...',
-      LearnAnywhereMessage.fileSaveMask: 'Masken-Datei speichern...',
-      LearnAnywhereMessage.fileExit: 'Beenden',
-      LearnAnywhereMessage.menuEdit: 'Edit',
-      LearnAnywhereMessage.menuEditUnitEditor: 'Eingabe-Maske',
-      LearnAnywhereMessage.menuEditSearchUnit: 'Suchen einer Lerneinheit',
-      LearnAnywhereMessage.menuEditJumpToNumber: 'Springe zu bestimmter Nummer',
-      LearnAnywhereMessage.menuMaskEditor: 'Mask Editor',
-      LearnAnywhereMessage.menuLearn: 'Lern',
-      LearnAnywhereMessage.menuLearnPractice: 'Üben',
-      LearnAnywhereMessage.menuLearnAdvancedOptions: 'Erweiterte Abfrageoptionen',
+          'Lerneinheiten &im Speicher löschen...', // I
+      LearnAnywhereMessage.fileLoadMask: 'Neue &Masken-Datei laden...', // M
+      LearnAnywhereMessage.fileSaveMask: 'Masken-&Datei speichern...', // D
+      LearnAnywhereMessage.fileExit: '&Beenden', // B
+      LearnAnywhereMessage.menuEdit: '&Edit', // top-bar E
+      LearnAnywhereMessage.menuEditUnitEditor: '&Eingabe-Maske', // E
+      LearnAnywhereMessage.menuEditSearchUnit: '&Suchen einer Lerneinheit', // S
+      LearnAnywhereMessage.menuEditJumpToNumber:
+          'Springe zu bestimmter &Nummer', // N (avoids S conflict with Suchen)
+      LearnAnywhereMessage.menuMaskEditor: '&Mask Editor', // top-bar M
+      LearnAnywhereMessage.menuLearn: '&Lern', // top-bar L
+      LearnAnywhereMessage.menuLearnPractice: '&Üben', // Ü
+      LearnAnywhereMessage.menuLearnAdvancedOptions:
+          '&Erweiterte Abfrageoptionen', // E
       LearnAnywhereMessage.menuQueryOptions: 'Abfrage',
-      LearnAnywhereMessage.menuStatistics: 'Statistik',
-      LearnAnywhereMessage.menuLexicon: 'Lexikon',
-      LearnAnywhereMessage.menuList: 'Liste',
-      LearnAnywhereMessage.menuHelp: 'Hilfe',
-      LearnAnywhereMessage.helpAbout: 'Programminfo',
+      LearnAnywhereMessage.menuStatistics: '&Statistik', // top-bar S
+      LearnAnywhereMessage.menuLexicon: 'Le&xikon', // top-bar X
+      LearnAnywhereMessage.menuList: 'L&iste', // top-bar I
+      LearnAnywhereMessage.menuHelp: '&Hilfe', // top-bar H
+      LearnAnywhereMessage.helpAbout: '&Programminfo', // P
       LearnAnywhereMessage.themeLabel: 'Darstellung',
       LearnAnywhereMessage.themeSystem: 'System',
       LearnAnywhereMessage.themeLight: 'Hell',

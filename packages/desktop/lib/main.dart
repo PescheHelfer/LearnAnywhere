@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
@@ -91,10 +91,6 @@ final class _DesktopHome extends StatefulWidget {
 final class _DesktopHomeState extends State<_DesktopHome> {
   final DesktopFileService _fileService = const DesktopFileService();
   final ScrollController _menuScrollController = ScrollController();
-  final MenuController _fileMenuController = MenuController();
-  final MenuController _editMenuController = MenuController();
-  final MenuController _learnMenuController = MenuController();
-  final MenuController _helpMenuController = MenuController();
   _DesktopRoute _route = _DesktopRoute.home;
   DesktopDocument _document = DesktopDocument.empty(_defaultMask());
   DesktopQueryOptions _queryOptions = const DesktopQueryOptions();
@@ -105,189 +101,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   int? _editorInitialIndex;
 
   @override
-  void initState() {
-    super.initState();
-    HardwareKeyboard.instance.addHandler(_onKeyEvent);
-  }
-
-  @override
   void dispose() {
-    HardwareKeyboard.instance.removeHandler(_onKeyEvent);
     _menuScrollController.dispose();
     super.dispose();
-  }
-
-  bool _onKeyEvent(KeyEvent event) {
-    if (!mounted) return false;
-    if (event is! KeyDownEvent) return false;
-    if (_isModifierKey(event.logicalKey)) return false;
-    final ModalRoute<Object?>? route = ModalRoute.of(context);
-    if (route != null && !route.isCurrent) return false;
-    final bool altPressed = HardwareKeyboard.instance.isAltPressed;
-    if (altPressed) {
-      return _handleAltMnemonic(event.logicalKey);
-    }
-    if (_fileMenuController.isOpen) {
-      return _handleFileMenuMnemonic(event.character);
-    }
-    if (_editMenuController.isOpen) {
-      return _handleEditMenuMnemonic(event.character);
-    }
-    if (_learnMenuController.isOpen) {
-      return _handleLearnMenuMnemonic(event.character);
-    }
-    if (_helpMenuController.isOpen) {
-      return _handleHelpMenuMnemonic(event.character);
-    }
-    return false;
-  }
-
-  static bool _isModifierKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.altLeft ||
-        key == LogicalKeyboardKey.altRight ||
-        key == LogicalKeyboardKey.shift ||
-        key == LogicalKeyboardKey.shiftLeft ||
-        key == LogicalKeyboardKey.shiftRight ||
-        key == LogicalKeyboardKey.control ||
-        key == LogicalKeyboardKey.controlLeft ||
-        key == LogicalKeyboardKey.controlRight ||
-        key == LogicalKeyboardKey.meta ||
-        key == LogicalKeyboardKey.metaLeft ||
-        key == LogicalKeyboardKey.metaRight;
-  }
-
-  bool _handleAltMnemonic(LogicalKeyboardKey key) {
-    final bool german = widget.locale.languageCode == 'de';
-    if (key == (german ? LogicalKeyboardKey.keyD : LogicalKeyboardKey.keyF)) {
-      _fileMenuController.open();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyE) {
-      _editMenuController.open();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyM) {
-      _selectRoute(_DesktopRoute.maskEditor);
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyL) {
-      _learnMenuController.open();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyS) {
-      _selectRoute(_DesktopRoute.statistics);
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyX) {
-      _selectRoute(_DesktopRoute.lexicon);
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyI) {
-      _selectRoute(_DesktopRoute.list);
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyH) {
-      _helpMenuController.open();
-      return true;
-    }
-    return false;
-  }
-
-  bool _handleFileMenuMnemonic(String? character) {
-    if (character == null) return false;
-    final bool german = widget.locale.languageCode == 'de';
-    final String ch = character.toLowerCase();
-    final Map<String, LearnAnywhereMessage> mapping = german
-        ? const <String, LearnAnywhereMessage>{
-            'n': LearnAnywhereMessage.fileNewDeck,
-            'l': LearnAnywhereMessage.fileOpenDeck,
-            'h': LearnAnywhereMessage.fileAddMergeDeck,
-            's': LearnAnywhereMessage.fileSave,
-            'u': LearnAnywhereMessage.fileSaveAs,
-            'i': LearnAnywhereMessage.fileClearUnits,
-            'm': LearnAnywhereMessage.fileLoadMask,
-            'd': LearnAnywhereMessage.fileSaveMask,
-            'b': LearnAnywhereMessage.fileExit,
-          }
-        : const <String, LearnAnywhereMessage>{
-            'n': LearnAnywhereMessage.fileNewDeck,
-            'o': LearnAnywhereMessage.fileOpenDeck,
-            'a': LearnAnywhereMessage.fileAddMergeDeck,
-            's': LearnAnywhereMessage.fileSave,
-            'v': LearnAnywhereMessage.fileSaveAs,
-            'c': LearnAnywhereMessage.fileClearUnits,
-            'l': LearnAnywhereMessage.fileLoadMask,
-            'm': LearnAnywhereMessage.fileSaveMask,
-            'e': LearnAnywhereMessage.fileExit,
-          };
-    final LearnAnywhereMessage? command = mapping[ch];
-    if (command != null) {
-      _runFileCommand(command);
-      return true;
-    }
-    return false;
-  }
-
-  bool _handleEditMenuMnemonic(String? character) {
-    if (character == null) return false;
-    final bool german = widget.locale.languageCode == 'de';
-    final String ch = character.toLowerCase();
-    _editMenuController.close();
-    if (ch == (german ? 'e' : 'u')) {
-      _selectRoute(_DesktopRoute.editor);
-      return true;
-    }
-    if (ch == 's') {
-      _openEditorSearch();
-      return true;
-    }
-    if (ch == (german ? 'n' : 'j')) {
-      _openEditorJump();
-      return true;
-    }
-    return false;
-  }
-
-  bool _handleLearnMenuMnemonic(String? character) {
-    if (character == null) return false;
-    final bool german = widget.locale.languageCode == 'de';
-    final String ch = character.toLowerCase();
-    if (!german) {
-      if (ch == 'p') {
-        _learnMenuController.close();
-        _selectRoute(_DesktopRoute.learn);
-        return true;
-      }
-      if (ch == 'a') {
-        _learnMenuController.close();
-        _selectRoute(_DesktopRoute.queryOptions);
-        return true;
-      }
-    } else {
-      if (ch == 'ü') {
-        _learnMenuController.close();
-        _selectRoute(_DesktopRoute.learn);
-        return true;
-      }
-      if (ch == 'e') {
-        _learnMenuController.close();
-        _selectRoute(_DesktopRoute.queryOptions);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool _handleHelpMenuMnemonic(String? character) {
-    if (character == null) return false;
-    final bool german = widget.locale.languageCode == 'de';
-    final String ch = character.toLowerCase();
-    if (ch == (german ? 'p' : 'a')) {
-      _helpMenuController.close();
-      _selectRoute(_DesktopRoute.about);
-      return true;
-    }
-    return false;
   }
 
   @override
@@ -337,137 +153,114 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     );
   }
 
+  // Access letters activate on Alt+letter (hold-Alt model throughout).
   List<Widget> _menuChildren(LearnAnywhereLocalizations messages) {
-    final bool german = widget.locale.languageCode == 'de';
     return <Widget>[
       SubmenuButton(
-        controller: _fileMenuController,
         menuChildren: <Widget>[
-          _commandItem(messages, LearnAnywhereMessage.fileNewDeck,
-              englishMnemonic: 'N', germanMnemonic: 'N'),
-          _commandItem(messages, LearnAnywhereMessage.fileOpenDeck,
-              englishMnemonic: 'O', germanMnemonic: 'L'),
-          _commandItem(messages, LearnAnywhereMessage.fileAddMergeDeck,
-              englishMnemonic: 'A', germanMnemonic: 'H'),
+          _commandItem(messages, LearnAnywhereMessage.fileNewDeck),
+          _commandItem(messages, LearnAnywhereMessage.fileOpenDeck),
+          _commandItem(messages, LearnAnywhereMessage.fileAddMergeDeck),
           const _MenuSeparator(),
-          _commandItem(messages, LearnAnywhereMessage.fileSave,
-              englishMnemonic: 'S', germanMnemonic: 'S'),
-          _commandItem(messages, LearnAnywhereMessage.fileSaveAs,
-              englishMnemonic: 'V', germanMnemonic: 'U'),
+          _commandItem(messages, LearnAnywhereMessage.fileSave),
+          _commandItem(messages, LearnAnywhereMessage.fileSaveAs),
           const _MenuSeparator(),
-          _commandItem(messages, LearnAnywhereMessage.fileClearUnits,
-              englishMnemonic: 'C', germanMnemonic: 'I'),
+          _commandItem(messages, LearnAnywhereMessage.fileClearUnits),
           const _MenuSeparator(),
-          _commandItem(messages, LearnAnywhereMessage.fileLoadMask,
-              englishMnemonic: 'L', germanMnemonic: 'M'),
-          _commandItem(messages, LearnAnywhereMessage.fileSaveMask,
-              englishMnemonic: 'M', germanMnemonic: 'D'),
+          _commandItem(messages, LearnAnywhereMessage.fileLoadMask),
+          _commandItem(messages, LearnAnywhereMessage.fileSaveMask),
           const _MenuSeparator(),
-          _commandItem(messages, LearnAnywhereMessage.fileExit,
-              englishMnemonic: 'E', germanMnemonic: 'B'),
+          _commandItem(messages, LearnAnywhereMessage.fileExit),
         ],
-        child: _MnemonicText(
-          label: messages.message(LearnAnywhereMessage.menuFile),
-          mnemonic: german ? 'D' : 'F',
+        child: MenuAcceleratorLabel(
+          messages.message(LearnAnywhereMessage.menuFile),
+          builder: menuAcceleratorBuilder,
         ),
       ),
       SubmenuButton(
-        controller: _editMenuController,
         menuChildren: <Widget>[
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.editor),
-            child: _MnemonicText(
-              label: messages.message(LearnAnywhereMessage.menuEditUnitEditor),
-              mnemonic: german ? 'E' : 'U',
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuEditUnitEditor),
+              builder: menuAcceleratorBuilder,
             ),
           ),
           MenuItemButton(
             onPressed: _openEditorSearch,
-            child: _MnemonicText(
-              label: messages.message(LearnAnywhereMessage.menuEditSearchUnit),
-              mnemonic: 'S',
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuEditSearchUnit),
+              builder: menuAcceleratorBuilder,
             ),
           ),
           MenuItemButton(
             onPressed: _openEditorJump,
-            child: _MnemonicText(
-              label:
-                  messages.message(LearnAnywhereMessage.menuEditJumpToNumber),
-              mnemonic: german ? 'N' : 'J',
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuEditJumpToNumber),
+              builder: menuAcceleratorBuilder,
             ),
           ),
         ],
-        child: _MnemonicText(
-          label: messages.message(LearnAnywhereMessage.menuEdit),
-          mnemonic: 'E',
+        child: MenuAcceleratorLabel(
+          messages.message(LearnAnywhereMessage.menuEdit),
+          builder: menuAcceleratorBuilder,
         ),
       ),
       _routeMenu(
         messages,
         LearnAnywhereMessage.menuMaskEditor,
         _DesktopRoute.maskEditor,
-        englishMnemonic: 'M',
-        germanMnemonic: 'M',
       ),
       SubmenuButton(
-        controller: _learnMenuController,
         menuChildren: <Widget>[
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.learn),
-            child: _MnemonicText(
-              label: messages.message(LearnAnywhereMessage.menuLearnPractice),
-              mnemonic: german ? 'Ü' : 'P',
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuLearnPractice),
+              builder: menuAcceleratorBuilder,
             ),
           ),
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.queryOptions),
-            child: _MnemonicText(
-              label: messages
-                  .message(LearnAnywhereMessage.menuLearnAdvancedOptions),
-              mnemonic: german ? 'E' : 'A',
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuLearnAdvancedOptions),
+              builder: menuAcceleratorBuilder,
             ),
           ),
         ],
-        child: _MnemonicText(
-          label: messages.message(LearnAnywhereMessage.menuLearn),
-          mnemonic: 'L',
+        child: MenuAcceleratorLabel(
+          messages.message(LearnAnywhereMessage.menuLearn),
+          builder: menuAcceleratorBuilder,
         ),
       ),
       _routeMenu(
         messages,
         LearnAnywhereMessage.menuStatistics,
         _DesktopRoute.statistics,
-        englishMnemonic: 'S',
-        germanMnemonic: 'S',
       ),
       _routeMenu(
         messages,
         LearnAnywhereMessage.menuLexicon,
         _DesktopRoute.lexicon,
-        englishMnemonic: 'X',
-        germanMnemonic: 'X',
       ),
       _routeMenu(
         messages,
         LearnAnywhereMessage.menuList,
         _DesktopRoute.list,
-        englishMnemonic: 'I',
-        germanMnemonic: 'I',
       ),
       SubmenuButton(
-        controller: _helpMenuController,
         menuChildren: <Widget>[
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.about),
-            child: _MnemonicText(
-              label: messages.message(LearnAnywhereMessage.helpAbout),
-              mnemonic: german ? 'P' : 'A',
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.helpAbout),
+              builder: menuAcceleratorBuilder,
             ),
           ),
         ],
-        child: _MnemonicText(
-          label: messages.message(LearnAnywhereMessage.menuHelp),
-          mnemonic: 'H',
+        child: MenuAcceleratorLabel(
+          messages.message(LearnAnywhereMessage.menuHelp),
+          builder: menuAcceleratorBuilder,
         ),
       ),
     ];
@@ -475,42 +268,22 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   MenuItemButton _commandItem(
     LearnAnywhereLocalizations messages,
-    LearnAnywhereMessage message, {
-    String? englishMnemonic,
-    String? germanMnemonic,
-  }) {
-    final String? mnemonic = englishMnemonic == null
-        ? null
-        : _mnemonicFor(
-            context,
-            english: englishMnemonic,
-            german: germanMnemonic ?? englishMnemonic,
-          );
+    LearnAnywhereMessage message,
+  ) {
     return MenuItemButton(
       onPressed: () => _runFileCommand(message),
-      child: mnemonic != null
-          ? _MnemonicText(label: messages.message(message), mnemonic: mnemonic)
-          : Text(messages.message(message)),
+      child: MenuAcceleratorLabel(messages.message(message), builder: menuAcceleratorBuilder),
     );
   }
 
   MenuItemButton _routeMenu(
     LearnAnywhereLocalizations messages,
     LearnAnywhereMessage message,
-    _DesktopRoute route, {
-    required String englishMnemonic,
-    required String germanMnemonic,
-  }) {
+    _DesktopRoute route,
+  ) {
     return MenuItemButton(
       onPressed: () => _selectRoute(route),
-      child: _MnemonicText(
-        label: messages.message(message),
-        mnemonic: _mnemonicFor(
-          context,
-          english: englishMnemonic,
-          german: germanMnemonic,
-        ),
-      ),
+      child: MenuAcceleratorLabel(messages.message(message), builder: menuAcceleratorBuilder),
     );
   }
 
@@ -1375,41 +1148,3 @@ final class _LanguageMenu extends StatelessWidget {
   }
 }
 
-final class _MnemonicText extends StatelessWidget {
-  const _MnemonicText({required this.label, required this.mnemonic});
-
-  final String label;
-  final String mnemonic;
-
-  @override
-  Widget build(BuildContext context) {
-    final int index = label.toLowerCase().indexOf(mnemonic.toLowerCase());
-    if (index < 0) {
-      return Text(label);
-    }
-    final TextStyle? style = DefaultTextStyle.of(context).style;
-    return Text.rich(
-      TextSpan(
-        children: <InlineSpan>[
-          TextSpan(text: label.substring(0, index)),
-          TextSpan(
-            text: label.substring(index, index + 1),
-            style: style?.copyWith(decoration: TextDecoration.underline),
-          ),
-          TextSpan(text: label.substring(index + 1)),
-        ],
-      ),
-    );
-  }
-}
-
-String _mnemonicFor(
-  BuildContext context, {
-  required String english,
-  required String german,
-}) {
-  final String languageCode = LearnAnywhereLocalizations.of(
-    context,
-  ).locale.languageCode;
-  return languageCode == 'de' ? german : english;
-}
