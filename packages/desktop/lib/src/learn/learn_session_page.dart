@@ -67,6 +67,15 @@ final class LearnSessionPage extends StatefulWidget {
 }
 
 final class _LearnSessionPageState extends State<LearnSessionPage> {
+  static const Map<ShortcutActivator, Intent> _kShortcuts =
+      <ShortcutActivator, Intent>{
+    SingleActivator(LogicalKeyboardKey.f1): _LearnHelpIntent(),
+    SingleActivator(LogicalKeyboardKey.f3): _LearnContinueIntent(),
+    SingleActivator(LogicalKeyboardKey.enter): _LearnContinueIntent(),
+    SingleActivator(LogicalKeyboardKey.f10): _LearnRevealIntent(),
+    SingleActivator(LogicalKeyboardKey.escape): _LearnSetupIntent(),
+  };
+
   final Random _random = Random(1);
   final Set<SessionItem> _seenPracticeItems = <SessionItem>{};
   final Map<String, TextEditingController> _answerControllers =
@@ -125,17 +134,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   @override
   Widget build(BuildContext context) {
     return Shortcuts(
-      shortcuts: <ShortcutActivator, Intent>{
-        const SingleActivator(LogicalKeyboardKey.f1): const _LearnHelpIntent(),
-        const SingleActivator(LogicalKeyboardKey.f3):
-            const _LearnContinueIntent(),
-        const SingleActivator(LogicalKeyboardKey.enter):
-            const _LearnContinueIntent(),
-        const SingleActivator(LogicalKeyboardKey.f10):
-            const _LearnRevealIntent(),
-        const SingleActivator(LogicalKeyboardKey.escape):
-            const _LearnSetupIntent(),
-      },
+      shortcuts: _kShortcuts,
       child: Actions(
         actions: <Type, Action<Intent>>{
           _LearnHelpIntent: CallbackAction<_LearnHelpIntent>(

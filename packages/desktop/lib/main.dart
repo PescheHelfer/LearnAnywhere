@@ -99,6 +99,15 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   int _learnSessionCorrect = 0;
   String? _lastFileStatus;
   int? _editorInitialIndex;
+  List<Widget>? _cachedMenuChildren;
+
+  @override
+  void didUpdateWidget(_DesktopHome oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.locale != oldWidget.locale) {
+      _cachedMenuChildren = null;
+    }
+  }
 
   @override
   void dispose() {
@@ -153,8 +162,18 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     );
   }
 
-  // Access letters activate on Alt+letter (hold-Alt model throughout).
+  // Each build() would create new widget objects, causing _MenuAnchorState
+  // .didUpdateWidget to fire on every unrelated setState (route changes, session
+  // progress, clock ticks, etc.) and cascade through all MenuAcceleratorLabel
+  // instances. Flutter's fast-path (skip update when child.widget == newWidget)
+  // is never reached, so the resulting churn competes with
+  // _MenuAcceleratorLabelState._listenToKeyEvent and causes intermittent ~1 s
+  // delays before Alt-key underlines appear. Caching restores the fast-path.
   List<Widget> _menuChildren(LearnAnywhereLocalizations messages) {
+    return _cachedMenuChildren ??= _buildMenuChildren(messages);
+  }
+
+  List<Widget> _buildMenuChildren(LearnAnywhereLocalizations messages) {
     return <Widget>[
       SubmenuButton(
         menuChildren: <Widget>[

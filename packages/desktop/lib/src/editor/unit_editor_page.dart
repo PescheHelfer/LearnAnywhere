@@ -185,6 +185,19 @@ final class UnitEditorPage extends StatefulWidget {
 }
 
 final class _UnitEditorPageState extends State<UnitEditorPage> {
+  static const Map<ShortcutActivator, Intent> _kShortcuts =
+      <ShortcutActivator, Intent>{
+    SingleActivator(LogicalKeyboardKey.f1): _HelpIntent(),
+    SingleActivator(LogicalKeyboardKey.f2): _PreviousIntent(),
+    SingleActivator(LogicalKeyboardKey.f3): _NextIntent(),
+    SingleActivator(LogicalKeyboardKey.f5): _SearchIntent(),
+    SingleActivator(LogicalKeyboardKey.f6): _JumpIntent(),
+    SingleActivator(LogicalKeyboardKey.f7): _DeleteIntent(),
+    SingleActivator(LogicalKeyboardKey.f8): _InsertIntent(),
+    SingleActivator(LogicalKeyboardKey.f10): _DoneIntent(),
+    SingleActivator(LogicalKeyboardKey.escape): _CancelIntent(),
+  };
+
   int _currentIndex = 0;
 
   @override
@@ -215,17 +228,7 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
   @override
   Widget build(BuildContext context) {
     return Shortcuts(
-      shortcuts: <ShortcutActivator, Intent>{
-        const SingleActivator(LogicalKeyboardKey.f1): const _HelpIntent(),
-        const SingleActivator(LogicalKeyboardKey.f2): const _PreviousIntent(),
-        const SingleActivator(LogicalKeyboardKey.f3): const _NextIntent(),
-        const SingleActivator(LogicalKeyboardKey.f5): const _SearchIntent(),
-        const SingleActivator(LogicalKeyboardKey.f6): const _JumpIntent(),
-        const SingleActivator(LogicalKeyboardKey.f7): const _DeleteIntent(),
-        const SingleActivator(LogicalKeyboardKey.f8): const _InsertIntent(),
-        const SingleActivator(LogicalKeyboardKey.f10): const _DoneIntent(),
-        const SingleActivator(LogicalKeyboardKey.escape): const _CancelIntent(),
-      },
+      shortcuts: _kShortcuts,
       child: Actions(
         actions: <Type, Action<Intent>>{
           _HelpIntent: CallbackAction<_HelpIntent>(

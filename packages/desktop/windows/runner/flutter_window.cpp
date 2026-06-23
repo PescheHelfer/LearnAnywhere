@@ -62,6 +62,15 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   }
 
   switch (message) {
+    case WM_SYSCOMMAND:
+      if (wparam == SC_KEYMENU) {
+        // Disable ALT application menu (SC_KEYMENU) so Windows does not
+        // intercept the Alt keypress before Flutter's key event system sees it.
+        // Without this, MenuAcceleratorLabel highlights appear with ~1s delay.
+        // See: https://github.com/flutter/flutter/issues/177822
+        return 0;
+      }
+      break;
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;
