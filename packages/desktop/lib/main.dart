@@ -30,25 +30,40 @@ final class LearnAnywhereDesktopApp extends StatefulWidget {
 
 final class _LearnAnywhereDesktopAppState
     extends State<LearnAnywhereDesktopApp> {
-  ThemeMode _themeMode = ThemeMode.system;
+  _AppTheme _appTheme = _AppTheme.system;
   Locale _locale = const Locale('en');
+
+  ThemeData get _lightTheme => _appTheme == _AppTheme.lightBlue
+      ? LearnAnywhereTheme.lightBlue()
+      : LearnAnywhereTheme.light();
+
+  ThemeData get _darkTheme => _appTheme == _AppTheme.darkBlue
+      ? LearnAnywhereTheme.darkBlue()
+      : LearnAnywhereTheme.dark();
+
+  ThemeMode get _themeMode => switch (_appTheme) {
+        _AppTheme.system => ThemeMode.system,
+        _AppTheme.light => ThemeMode.light,
+        _AppTheme.dark || _AppTheme.darkBlue => ThemeMode.dark,
+        _AppTheme.lightBlue => ThemeMode.light,
+      };
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       onGenerateTitle: (BuildContext context) =>
           LearnAnywhereLocalizations.of(context).appTitle,
-      theme: LearnAnywhereTheme.light(),
-      darkTheme: LearnAnywhereTheme.dark(),
+      theme: _lightTheme,
+      darkTheme: _darkTheme,
       themeMode: _themeMode,
       locale: _locale,
       supportedLocales: LearnAnywhereLocalizations.supportedLocales,
       localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
       home: _DesktopHome(
-        themeMode: _themeMode,
+        appTheme: _appTheme,
         locale: _locale,
-        onThemeModeChanged: (ThemeMode value) {
-          setState(() => _themeMode = value);
+        onAppThemeChanged: (_AppTheme value) {
+          setState(() => _appTheme = value);
         },
         onLocaleChanged: (Locale value) {
           setState(() => _locale = value);
@@ -57,6 +72,8 @@ final class _LearnAnywhereDesktopAppState
     );
   }
 }
+
+enum _AppTheme { system, light, dark, darkBlue, lightBlue }
 
 enum _DesktopRoute {
   home,
@@ -73,15 +90,15 @@ enum _DesktopRoute {
 
 final class _DesktopHome extends StatefulWidget {
   const _DesktopHome({
-    required this.themeMode,
+    required this.appTheme,
     required this.locale,
-    required this.onThemeModeChanged,
+    required this.onAppThemeChanged,
     required this.onLocaleChanged,
   });
 
-  final ThemeMode themeMode;
+  final _AppTheme appTheme;
   final Locale locale;
-  final ValueChanged<ThemeMode> onThemeModeChanged;
+  final ValueChanged<_AppTheme> onAppThemeChanged;
   final ValueChanged<Locale> onLocaleChanged;
 
   @override
@@ -128,8 +145,8 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           Text(messages.message(LearnAnywhereMessage.themeLabel)),
           const SizedBox(width: LearnAnywhereTokens.gapSmall),
           _ThemeModeMenu(
-            themeMode: widget.themeMode,
-            onChanged: widget.onThemeModeChanged,
+            appTheme: widget.appTheme,
+            onChanged: widget.onAppThemeChanged,
           ),
           const SizedBox(width: LearnAnywhereTokens.gapSmall),
           Text(messages.message(LearnAnywhereMessage.languageLabel)),
@@ -1068,10 +1085,10 @@ final class _StatusLine extends StatelessWidget {
 }
 
 final class _ThemeModeMenu extends StatelessWidget {
-  const _ThemeModeMenu({required this.themeMode, required this.onChanged});
+  const _ThemeModeMenu({required this.appTheme, required this.onChanged});
 
-  final ThemeMode themeMode;
-  final ValueChanged<ThemeMode> onChanged;
+  final _AppTheme appTheme;
+  final ValueChanged<_AppTheme> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1079,23 +1096,31 @@ final class _ThemeModeMenu extends StatelessWidget {
       context,
     );
     return DropdownButtonHideUnderline(
-      child: DropdownButton<ThemeMode>(
-        value: themeMode,
-        items: <DropdownMenuItem<ThemeMode>>[
-          DropdownMenuItem<ThemeMode>(
-            value: ThemeMode.system,
+      child: DropdownButton<_AppTheme>(
+        value: appTheme,
+        items: <DropdownMenuItem<_AppTheme>>[
+          DropdownMenuItem<_AppTheme>(
+            value: _AppTheme.system,
             child: Text(messages.message(LearnAnywhereMessage.themeSystem)),
           ),
-          DropdownMenuItem<ThemeMode>(
-            value: ThemeMode.light,
+          DropdownMenuItem<_AppTheme>(
+            value: _AppTheme.light,
             child: Text(messages.message(LearnAnywhereMessage.themeLight)),
           ),
-          DropdownMenuItem<ThemeMode>(
-            value: ThemeMode.dark,
+          DropdownMenuItem<_AppTheme>(
+            value: _AppTheme.dark,
             child: Text(messages.message(LearnAnywhereMessage.themeDark)),
           ),
+          DropdownMenuItem<_AppTheme>(
+            value: _AppTheme.darkBlue,
+            child: Text(messages.message(LearnAnywhereMessage.themeDarkBlue)),
+          ),
+          DropdownMenuItem<_AppTheme>(
+            value: _AppTheme.lightBlue,
+            child: Text(messages.message(LearnAnywhereMessage.themeLightBlue)),
+          ),
         ],
-        onChanged: (ThemeMode? value) {
+        onChanged: (_AppTheme? value) {
           if (value != null) {
             onChanged(value);
           }

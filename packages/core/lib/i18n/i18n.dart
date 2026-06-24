@@ -157,6 +157,12 @@ enum LearnAnywhereMessage {
   /// Dark theme option.
   themeDark,
 
+  /// Dark Blue theme option.
+  themeDarkBlue,
+
+  /// Light Blue theme option.
+  themeLightBlue,
+
   /// Language control label.
   languageLabel,
 
@@ -844,6 +850,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.themeSystem: 'System',
       LearnAnywhereMessage.themeLight: 'Light',
       LearnAnywhereMessage.themeDark: 'Dark',
+      LearnAnywhereMessage.themeDarkBlue: 'Dark Blue',
+      LearnAnywhereMessage.themeLightBlue: 'Light Blue',
       LearnAnywhereMessage.languageLabel: 'Language',
       LearnAnywhereMessage.languageEnglish: 'English',
       LearnAnywhereMessage.languageGerman: 'German',
@@ -1139,6 +1147,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.themeSystem: 'System',
       LearnAnywhereMessage.themeLight: 'Hell',
       LearnAnywhereMessage.themeDark: 'Dunkel',
+      LearnAnywhereMessage.themeDarkBlue: 'Dunkelblau',
+      LearnAnywhereMessage.themeLightBlue: 'Hellblau',
       LearnAnywhereMessage.languageLabel: 'Sprache',
       LearnAnywhereMessage.languageEnglish: 'Englisch',
       LearnAnywhereMessage.languageGerman: 'Deutsch',
