@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 
+import 'learn_anywhere_palette.dart';
+
 /// Builds Flutter text spans from Learn Anywhere portable rich-text values.
 final class LearnAnywhereRichTextRenderer {
   const LearnAnywhereRichTextRenderer._();
 
   /// Converts a stored [FieldValue] into a [TextSpan].
-  static TextSpan spanForFieldValue(FieldValue value, {TextStyle? baseStyle}) {
+  ///
+  /// [brightness] selects how stored highlight colors are mapped so they stay
+  /// readable: light-mode highlights (including legacy plain yellow) are
+  /// remapped to dark equivalents when [brightness] is [Brightness.dark].
+  static TextSpan spanForFieldValue(
+    FieldValue value, {
+    TextStyle? baseStyle,
+    Brightness brightness = Brightness.light,
+  }) {
     return switch (value) {
       PlainFieldValue(:final String text) => TextSpan(
         text: text,
@@ -14,13 +24,31 @@ final class LearnAnywhereRichTextRenderer {
       ),
       RichFieldValue(:final List<RichTextRun> runs) => TextSpan(
         style: baseStyle,
-        children: runs.map(spanForRun).toList(growable: false),
+        children: runs
+            .map(
+              (RichTextRun run) => spanForRun(
+                run,
+                brightness: brightness,
+                fallbackDecorationColor: baseStyle?.color,
+              ),
+            )
+            .toList(growable: false),
       ),
     };
   }
 
   /// Converts a single rich-text run into a [TextSpan].
-  static TextSpan spanForRun(RichTextRun run) {
+  ///
+  /// [fallbackDecorationColor] is used as the underline colour when the run
+  /// carries no explicit text colour. Pass the parent span's resolved text
+  /// colour so the decoration follows the inherited foreground instead of
+  /// defaulting to black.
+  static TextSpan spanForRun(
+    RichTextRun run, {
+    Brightness brightness = Brightness.light,
+    Color? fallbackDecorationColor,
+  }) {
+    final Color? explicitColor = _colorFromHex(run.color);
     return TextSpan(
       text: run.text,
       style: TextStyle(
@@ -29,8 +57,9 @@ final class LearnAnywhereRichTextRenderer {
         decoration: run.underline
             ? TextDecoration.underline
             : TextDecoration.none,
-        color: _colorFromHex(run.color),
-        backgroundColor: _colorFromHex(run.highlight),
+        decorationColor: explicitColor ?? fallbackDecorationColor,
+        color: explicitColor,
+        backgroundColor: _highlightColor(run.highlight, brightness),
       ),
     );
   }
@@ -39,8 +68,16 @@ final class LearnAnywhereRichTextRenderer {
     if (value == null) {
       return null;
     }
-    final String hex = value.substring(1);
-    return Color(int.parse('FF$hex', radix: 16));
+    return colorFromHex(value);
+  }
+
+  static Color? _highlightColor(String? value, Brightness brightness) {
+    if (value == null) {
+      return null;
+    }
+    return colorFromHex(
+      LearnAnywherePalette.highlightForBrightness(value, brightness),
+    );
   }
 }
 
@@ -73,10 +110,13 @@ final class LearnAnywhereRichText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final TextStyle effectiveStyle =
+        style ?? DefaultTextStyle.of(context).style;
     return RichText(
       text: LearnAnywhereRichTextRenderer.spanForFieldValue(
         value,
-        baseStyle: style ?? DefaultTextStyle.of(context).style,
+        baseStyle: effectiveStyle,
+        brightness: Theme.of(context).brightness,
       ),
       textAlign: textAlign ?? TextAlign.start,
       maxLines: maxLines,

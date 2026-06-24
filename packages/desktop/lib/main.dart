@@ -99,6 +99,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   int _learnSessionCorrect = 0;
   String? _lastFileStatus;
   int? _editorInitialIndex;
+  int? _editorLastIndex;
   List<Widget>? _cachedMenuChildren;
 
   @override
@@ -156,7 +157,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
             ),
           ),
           Expanded(child: _contentForRoute()),
-          _HintBar(text: messages.message(LearnAnywhereMessage.desktopHintBar)),
         ],
       ),
     );
@@ -350,10 +350,13 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       ),
       _DesktopRoute.editor => UnitEditorPage(
         deck: _document.deck,
-        initialIndex: _editorInitialIndex,
+        initialIndex: _editorInitialIndex ?? _editorLastIndex,
         onChanged: _updateDeckFromEditor,
         onDone: () => _selectRoute(_DesktopRoute.home),
         onCancel: () => _selectRoute(_DesktopRoute.home),
+        onCurrentIndexChanged: (int index) {
+          _editorLastIndex = index;
+        },
       ),
       _DesktopRoute.maskEditor => MaskEditorPage(
         mask: _document.mask,
@@ -1060,37 +1063,6 @@ final class _StatusLine extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapSmall),
       child: Text('$label: $value'),
-    );
-  }
-}
-
-final class _HintBar extends StatelessWidget {
-  const _HintBar({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        border: Border(
-          top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: LearnAnywhereTokens.gapMedium,
-          vertical: LearnAnywhereTokens.gapSmall,
-        ),
-        child: Text(
-          text,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
-          ),
-        ),
-      ),
     );
   }
 }

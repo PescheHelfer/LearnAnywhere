@@ -355,6 +355,179 @@ void main() {
       await tempDir.delete(recursive: true);
     });
   });
+
+  group('rich text ops', () {
+    test('normalizeRuns merges adjacent equal runs and drops empties', () {
+      final List<RichTextRun> runs = normalizeRuns(<RichTextRun>[
+        const RichTextRun(text: 'foo', bold: true),
+        const RichTextRun(text: '', bold: true),
+        const RichTextRun(text: 'bar', bold: true),
+        const RichTextRun(text: 'baz'),
+      ]);
+
+      expect(runs, hasLength(2));
+      expect(runs[0], const RichTextRun(text: 'foobar', bold: true));
+      expect(runs[1], const RichTextRun(text: 'baz'));
+    });
+
+    test('splitRunsAt creates a boundary at the requested offset', () {
+      final List<RichTextRun> runs = splitRunsAt(<RichTextRun>[
+        const RichTextRun(text: 'abcdef', bold: true),
+      ], 2);
+
+      expect(runs, hasLength(2));
+      expect(runs[0].text, 'ab');
+      expect(runs[1].text, 'cdef');
+      expect(runs.every((RichTextRun r) => r.bold), isTrue);
+    });
+
+    test('splitRunsAt is a no-op on an existing boundary or the ends', () {
+      const List<RichTextRun> source = <RichTextRun>[
+        RichTextRun(text: 'ab'),
+        RichTextRun(text: 'cd', italic: true),
+      ];
+      expect(normalizeRuns(splitRunsAt(source, 2)), source);
+      expect(normalizeRuns(splitRunsAt(source, 0)), source);
+      expect(normalizeRuns(splitRunsAt(source, 4)), source);
+    });
+
+    test('applyFormatToRange only formats the selected characters', () {
+      final List<RichTextRun> runs = applyFormatToRange(
+        <RichTextRun>[const RichTextRun(text: 'abcdef')],
+        2,
+        4,
+        (RunFormat f) => f.copyWith(bold: true),
+      );
+
+      expect(runs, <RichTextRun>[
+        const RichTextRun(text: 'ab'),
+        const RichTextRun(text: 'cd', bold: true),
+        const RichTextRun(text: 'ef'),
+      ]);
+    });
+
+    test('applyFormatToRange can set and clear nullable colors per range', () {
+      final List<RichTextRun> colored = applyFormatToRange(
+        <RichTextRun>[const RichTextRun(text: 'hello')],
+        0,
+        3,
+        (RunFormat f) => f.withColor('#1565C0'),
+      );
+      expect(colored.first, const RichTextRun(text: 'hel', color: '#1565C0'));
+
+      final List<RichTextRun> cleared = applyFormatToRange(
+        colored,
+        1,
+        2,
+        (RunFormat f) => f.withColor(null),
+      );
+      expect(runsText(cleared), 'hello');
+      expect(formatAt(cleared, 2).color, isNull);
+      expect(formatAt(cleared, 1).color, '#1565C0');
+    });
+
+    test('applyFormatToRange returns a normalized copy for empty ranges', () {
+      const List<RichTextRun> source = <RichTextRun>[
+        RichTextRun(text: 'abc', italic: true),
+      ];
+      expect(
+        applyFormatToRange(source, 3, 3, (RunFormat f) => f.copyWith(bold: true)),
+        source,
+      );
+    });
+
+    test('formatAt inherits the preceding character, or the first when at 0', () {
+      final List<RichTextRun> runs = <RichTextRun>[
+        const RichTextRun(text: 'ab'),
+        const RichTextRun(text: 'cd', bold: true),
+      ];
+      expect(formatAt(runs, 0).bold, isFalse);
+      expect(formatAt(runs, 2).bold, isFalse);
+      expect(formatAt(runs, 3).bold, isTrue);
+      expect(formatAt(runs, 4).bold, isTrue);
+      expect(formatAt(const <RichTextRun>[], 0), RunFormat.none);
+    });
+
+    test('reconcileRuns keeps surrounding formatting on insertion', () {
+      final List<RichTextRun> runs = <RichTextRun>[
+        const RichTextRun(text: 'ab', bold: true),
+        const RichTextRun(text: 'cd'),
+      ];
+      // Insert "XY" between "ab" and "cd" with no active formatting.
+      final List<RichTextRun> result = reconcileRuns(
+        runs: runs,
+        oldText: 'abcd',
+        newText: 'abXYcd',
+        insertedFormat: RunFormat.none,
+      );
+
+      expect(runsText(result), 'abXYcd');
+      expect(result, <RichTextRun>[
+        const RichTextRun(text: 'ab', bold: true),
+        const RichTextRun(text: 'XYcd'),
+      ]);
+    });
+
+    test('reconcileRuns applies the active format to typed characters', () {
+      final List<RichTextRun> result = reconcileRuns(
+        runs: <RichTextRun>[const RichTextRun(text: 'ab')],
+        oldText: 'ab',
+        newText: 'abc',
+        insertedFormat: const RunFormat(italic: true),
+      );
+
+      expect(result, <RichTextRun>[
+        const RichTextRun(text: 'ab'),
+        const RichTextRun(text: 'c', italic: true),
+      ]);
+    });
+
+    test('reconcileRuns preserves formatting across deletions', () {
+      final List<RichTextRun> runs = <RichTextRun>[
+        const RichTextRun(text: 'ab', bold: true),
+        const RichTextRun(text: 'cd', italic: true),
+      ];
+      // Delete "bc" from the middle.
+      final List<RichTextRun> result = reconcileRuns(
+        runs: runs,
+        oldText: 'abcd',
+        newText: 'ad',
+        insertedFormat: RunFormat.none,
+      );
+
+      expect(result, <RichTextRun>[
+        const RichTextRun(text: 'a', bold: true),
+        const RichTextRun(text: 'd', italic: true),
+      ]);
+    });
+
+    test('rich text survives a serialization round-trip with mixed runs', () {
+      final FieldValue value = FieldValue.rich(applyFormatToRange(
+        applyFormatToRange(
+          <RichTextRun>[const RichTextRun(text: 'mixed format')],
+          0,
+          5,
+          (RunFormat f) => f.copyWith(bold: true).withColor('#B00020'),
+        ),
+        6,
+        12,
+        (RunFormat f) => f.withHighlight('#FFE066'),
+      ));
+
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <String, FieldValue>{'DE': value},
+          ),
+        ],
+      );
+
+      final LearningDeck restored = decodeDeckJson(encodeDeckJson(deck));
+      expect(restored.units.single.fields['DE'], value);
+    });
+  });
 }
 
 LearningMask sampleMask() {

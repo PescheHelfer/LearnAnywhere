@@ -295,6 +295,51 @@ enum LearnAnywhereMessage {
   /// Unit editor clear formatting action.
   editorClearFormatting,
 
+  /// Default (inherited) text color option label.
+  colorDefault,
+
+  /// No highlight option label.
+  colorNone,
+
+  /// Red color label.
+  colorRed,
+
+  /// Blue color label.
+  colorBlue,
+
+  /// Green color label.
+  colorGreen,
+
+  /// Orange color label.
+  colorOrange,
+
+  /// Purple color label.
+  colorPurple,
+
+  /// Black color label.
+  colorBlack,
+
+  /// White color label.
+  colorWhite,
+
+  /// Yellow color label.
+  colorYellow,
+
+  /// Cyan color label.
+  colorCyan,
+
+  /// Lime color label.
+  colorLime,
+
+  /// Pink color label.
+  colorPink,
+
+  /// Amber color label.
+  colorAmber,
+
+  /// Teal color label.
+  colorTeal,
+
   /// Unit editor category chooser title.
   editorChooseCategoryTitle,
 
@@ -435,6 +480,9 @@ enum LearnAnywhereMessage {
 
   /// Return to setup action.
   learnBackToSetup,
+
+  /// Confirm cancel learn session.
+  learnCancelConfirm,
 
   /// Learning options title.
   queryOptionsTitle,
@@ -858,6 +906,21 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorColor: 'Text color',
       LearnAnywhereMessage.editorHighlight: 'Highlight',
       LearnAnywhereMessage.editorClearFormatting: 'Clear formatting',
+      LearnAnywhereMessage.colorDefault: 'Default',
+      LearnAnywhereMessage.colorNone: 'None',
+      LearnAnywhereMessage.colorRed: 'Red',
+      LearnAnywhereMessage.colorBlue: 'Blue',
+      LearnAnywhereMessage.colorGreen: 'Green',
+      LearnAnywhereMessage.colorOrange: 'Orange',
+      LearnAnywhereMessage.colorPurple: 'Purple',
+      LearnAnywhereMessage.colorBlack: 'Black',
+      LearnAnywhereMessage.colorWhite: 'White',
+      LearnAnywhereMessage.colorYellow: 'Yellow',
+      LearnAnywhereMessage.colorCyan: 'Cyan',
+      LearnAnywhereMessage.colorLime: 'Lime',
+      LearnAnywhereMessage.colorPink: 'Pink',
+      LearnAnywhereMessage.colorAmber: 'Amber',
+      LearnAnywhereMessage.colorTeal: 'Teal',
       LearnAnywhereMessage.editorChooseCategoryTitle: 'Choose category',
       LearnAnywhereMessage.editorJumpTitle: 'Jump to unit',
       LearnAnywhereMessage.editorJumpLabel: 'Unit number',
@@ -911,6 +974,7 @@ final class LearnAnywhereCatalog {
           'Unit {index} of {total} - {category} - {direction}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
       LearnAnywhereMessage.learnBackToSetup: 'Back to setup',
+      LearnAnywhereMessage.learnCancelConfirm: 'Cancel the current session?',
       LearnAnywhereMessage.queryOptionsTitle: 'Learning Options',
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Wrong input correctable',
@@ -1137,6 +1201,21 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorColor: 'Textfarbe',
       LearnAnywhereMessage.editorHighlight: 'Markierung',
       LearnAnywhereMessage.editorClearFormatting: 'Formatierung löschen',
+      LearnAnywhereMessage.colorDefault: 'Standard',
+      LearnAnywhereMessage.colorNone: 'Keine',
+      LearnAnywhereMessage.colorRed: 'Rot',
+      LearnAnywhereMessage.colorBlue: 'Blau',
+      LearnAnywhereMessage.colorGreen: 'Grün',
+      LearnAnywhereMessage.colorOrange: 'Orange',
+      LearnAnywhereMessage.colorPurple: 'Violett',
+      LearnAnywhereMessage.colorBlack: 'Schwarz',
+      LearnAnywhereMessage.colorWhite: 'Weiß',
+      LearnAnywhereMessage.colorYellow: 'Gelb',
+      LearnAnywhereMessage.colorCyan: 'Cyan',
+      LearnAnywhereMessage.colorLime: 'Hellgrün',
+      LearnAnywhereMessage.colorPink: 'Rosa',
+      LearnAnywhereMessage.colorAmber: 'Bernstein',
+      LearnAnywhereMessage.colorTeal: 'Blaugrün',
       LearnAnywhereMessage.editorChooseCategoryTitle: 'Kategorie wählen',
       LearnAnywhereMessage.editorJumpTitle: 'Zu Einheit springen',
       LearnAnywhereMessage.editorJumpLabel: 'Einheitsnummer',
@@ -1191,6 +1270,7 @@ final class LearnAnywhereCatalog {
           'Einheit {index} von {total} - {category} - {direction}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
       LearnAnywhereMessage.learnBackToSetup: 'Zur Einrichtung',
+      LearnAnywhereMessage.learnCancelConfirm: 'Aktuelle Sitzung abbrechen?',
       LearnAnywhereMessage.queryOptionsTitle: 'Abfrageoptionen',
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Falsche Eingabe korrigierbar',

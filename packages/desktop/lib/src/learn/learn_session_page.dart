@@ -215,6 +215,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
           setState(() => _thresholdPercent = value.clamp(1, 100).toInt());
         },
         onStartSession: _startSession,
+        onCancel: _cancelSession,
       );
     }
     return _SessionView(
@@ -234,6 +235,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         setState(() => _selectedRating = value);
       },
       onContinue: _continueAfterRating,
+      onCancel: _cancelSession,
     );
   }
 
@@ -456,6 +458,42 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       ),
     );
   }
+
+  Future<void> _cancelSession() async {
+    if (_currentItem == null && !_completed) {
+      widget.onExit?.call();
+      return;
+    }
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
+          content: Text(
+            messages.message(LearnAnywhereMessage.learnCancelConfirm),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionContinue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed == true && mounted) {
+      widget.onExit?.call();
+    }
+  }
 }
 
 final class _EmptyLearnState extends StatelessWidget {
@@ -505,6 +543,7 @@ final class _SetupView extends StatelessWidget {
     required this.onEndChanged,
     required this.onThresholdChanged,
     required this.onStartSession,
+    required this.onCancel,
   });
 
   final LearningDeck deck;
@@ -519,6 +558,7 @@ final class _SetupView extends StatelessWidget {
   final ValueChanged<int> onEndChanged;
   final ValueChanged<int> onThresholdChanged;
   final VoidCallback onStartSession;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -600,15 +640,32 @@ final class _SetupView extends StatelessWidget {
           onChanged: onThresholdChanged,
         ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
-            onPressed: onStartSession,
-            icon: const Icon(Icons.play_arrow),
-            label: Text(
-              messages.message(LearnAnywhereMessage.learnStartSession),
+        Wrap(
+          spacing: LearnAnywhereTokens.gapSmall,
+          children: <Widget>[
+            FilledButton.icon(
+              onPressed: onStartSession,
+              icon: const Icon(Icons.play_arrow),
+              label: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(messages.message(LearnAnywhereMessage.learnStartSession)),
+                  const Text('F3', style: TextStyle(fontSize: 10)),
+                ],
+              ),
             ),
-          ),
+            FilledButton.tonalIcon(
+              onPressed: onCancel,
+              icon: const Icon(Icons.close),
+              label: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(messages.message(LearnAnywhereMessage.actionCancel)),
+                  const Text('Esc', style: TextStyle(fontSize: 10)),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -631,6 +688,7 @@ final class _SessionView extends StatelessWidget {
     required this.onReveal,
     required this.onRatingChanged,
     required this.onContinue,
+    required this.onCancel,
   });
 
   final LearningDeck deck;
@@ -647,6 +705,7 @@ final class _SessionView extends StatelessWidget {
   final VoidCallback onReveal;
   final ValueChanged<AttemptRating> onRatingChanged;
   final VoidCallback onContinue;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -678,6 +737,21 @@ final class _SessionView extends StatelessWidget {
           elapsedSeconds: options.showClock ? elapsedSeconds : null,
           timeLimitSeconds: options.timeLimitSeconds,
         ),
+        const SizedBox(height: LearnAnywhereTokens.gapSmall),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.tonalIcon(
+            onPressed: onCancel,
+            icon: const Icon(Icons.close),
+            label: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(messages.message(LearnAnywhereMessage.actionCancel)),
+                const Text('Esc', style: TextStyle(fontSize: 10)),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
         _FieldGroup(
           title: messages.message(LearnAnywhereMessage.learnPrompt),
@@ -695,12 +769,18 @@ final class _SessionView extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: onReveal,
               icon: Icon(parameters.withInput ? Icons.check : Icons.visibility),
-              label: Text(
-                messages.message(
-                  parameters.withInput
-                      ? LearnAnywhereMessage.learnCheckAnswer
-                      : LearnAnywhereMessage.learnReveal,
-                ),
+              label: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    messages.message(
+                      parameters.withInput
+                          ? LearnAnywhereMessage.learnCheckAnswer
+                          : LearnAnywhereMessage.learnReveal,
+                    ),
+                  ),
+                  const Text('F10', style: TextStyle(fontSize: 10)),
+                ],
               ),
             ),
           )
@@ -885,7 +965,13 @@ final class _RevealPanel extends StatelessWidget {
         FilledButton.icon(
           onPressed: onContinue,
           icon: const Icon(Icons.arrow_forward),
-          label: Text(messages.message(LearnAnywhereMessage.learnContinue)),
+          label: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(messages.message(LearnAnywhereMessage.learnContinue)),
+              const Text('F3', style: TextStyle(fontSize: 10)),
+            ],
+          ),
         ),
       ],
     );
