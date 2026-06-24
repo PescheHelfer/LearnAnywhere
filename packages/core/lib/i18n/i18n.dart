@@ -73,6 +73,12 @@ enum LearnAnywhereMessage {
   /// Home screen: mask name label.
   homeMaskName,
 
+  /// Home screen: last loaded deck path label.
+  homeLastDeck,
+
+  /// Home screen: last loaded mask path label.
+  homeLastMask,
+
   /// File menu label.
   menuFile,
 
@@ -412,8 +418,14 @@ enum LearnAnywhereMessage {
   /// Drill mode label.
   learnModeSuperQuery,
 
+  /// Once-through mode label.
+  learnModeOnceThrough,
+
   /// Practice each-once option.
   learnPracticeEachOnce,
+
+  /// Shuffle units option.
+  learnShuffleUnits,
 
   /// Super status threshold label.
   learnSuperThreshold,
@@ -822,6 +834,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.desktopHomeBody: 'Desktop shell ready',
       LearnAnywhereMessage.homeNoFileLoaded: 'No file loaded',
       LearnAnywhereMessage.homeMaskName: 'Mask',
+      LearnAnywhereMessage.homeLastDeck: 'Last deck',
+      LearnAnywhereMessage.homeLastMask: 'Last mask',
       LearnAnywhereMessage.menuFile: '&File', // top-bar F
       LearnAnywhereMessage.fileNewDeck: '&New deck', // N
       LearnAnywhereMessage.fileOpenDeck: '&Open deck...', // O
@@ -954,7 +968,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnMode: 'Mode',
       LearnAnywhereMessage.learnModePractice: 'Endless mode',
       LearnAnywhereMessage.learnModeSuperQuery: 'Drill mode',
+      LearnAnywhereMessage.learnModeOnceThrough: 'Once through',
       LearnAnywhereMessage.learnPracticeEachOnce: 'Each unit exactly once',
+      LearnAnywhereMessage.learnShuffleUnits: 'Shuffle units',
       LearnAnywhereMessage.learnSuperThreshold: 'Super status threshold (%)',
       LearnAnywhereMessage.learnStartSession: 'Start session',
       LearnAnywhereMessage.learnPrompt: 'Prompt',
@@ -1116,6 +1132,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.desktopHomeBody: 'Desktop-Shell bereit',
       LearnAnywhereMessage.homeNoFileLoaded: 'Keine Datei geladen',
       LearnAnywhereMessage.homeMaskName: 'Maske',
+      LearnAnywhereMessage.homeLastDeck: 'Letzte Lern-Datei',
+      LearnAnywhereMessage.homeLastMask: 'Letzte Masken-Datei',
       LearnAnywhereMessage.menuFile: '&Datei', // top-bar D
       LearnAnywhereMessage.fileNewDeck: '&Neue Lern-Datei', // N
       LearnAnywhereMessage.fileOpenDeck: '&Lern-Datei laden...', // L
@@ -1251,8 +1269,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnRangeEnd: 'Letzte Einheit',
       LearnAnywhereMessage.learnMode: 'Modus',
       LearnAnywhereMessage.learnModePractice: 'Endlos-Modus',
-      LearnAnywhereMessage.learnModeSuperQuery: 'Super-Abfrage',
+      LearnAnywhereMessage.learnModeSuperQuery: 'Drill-Modus',
+      LearnAnywhereMessage.learnModeOnceThrough: 'Einmal durchgehen',
       LearnAnywhereMessage.learnPracticeEachOnce: 'Jede Einheit genau einmal',
+      LearnAnywhereMessage.learnShuffleUnits: 'Einheiten mischen',
       LearnAnywhereMessage.learnSuperThreshold: 'Super-Status (%)',
       LearnAnywhereMessage.learnStartSession: 'Sitzung starten',
       LearnAnywhereMessage.learnPrompt: 'Frage',

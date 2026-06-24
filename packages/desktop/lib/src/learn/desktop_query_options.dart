@@ -10,7 +10,6 @@ final class DesktopQueryOptions {
     this.accentSensitive = false,
     this.showClock = false,
     this.timeLimitSeconds = 0,
-    this.withAnswerInput = true,
     this.minimumAttemptsGuardEnabled = false,
     this.minAttempts = 2,
     this.wrongAnswerCeilingEnabled = false,
@@ -34,9 +33,6 @@ final class DesktopQueryOptions {
 
   /// Warning time limit in seconds. Zero disables the warning.
   final int timeLimitSeconds;
-
-  /// Whether the user types answers before reveal.
-  final bool withAnswerInput;
 
   /// Whether mastery requires a minimum number of attempts.
   final bool minimumAttemptsGuardEnabled;
@@ -75,7 +71,6 @@ final class DesktopQueryOptions {
     bool? accentSensitive,
     bool? showClock,
     int? timeLimitSeconds,
-    bool? withAnswerInput,
     bool? minimumAttemptsGuardEnabled,
     int? minAttempts,
     bool? wrongAnswerCeilingEnabled,
@@ -90,7 +85,6 @@ final class DesktopQueryOptions {
       accentSensitive: accentSensitive ?? this.accentSensitive,
       showClock: showClock ?? this.showClock,
       timeLimitSeconds: timeLimitSeconds ?? this.timeLimitSeconds,
-      withAnswerInput: withAnswerInput ?? this.withAnswerInput,
       minimumAttemptsGuardEnabled:
           minimumAttemptsGuardEnabled ?? this.minimumAttemptsGuardEnabled,
       minAttempts: minAttempts ?? this.minAttempts,

@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
@@ -112,12 +114,29 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   DesktopDocument _document = DesktopDocument.empty(_defaultMask());
   DesktopQueryOptions _queryOptions = const DesktopQueryOptions();
   SessionParameters _learnParameters = const SessionParameters();
+  LearnAnywhereSettings _settings = const LearnAnywhereSettings();
+  UnitRangeSelection _range = const UnitRangeSelection(
+    startUnit: 1,
+    endUnit: 1,
+  );
+  String _settingsPath = '';
+  String? _lastMaskPath;
   int _learnSessionAttempts = 0;
   int _learnSessionCorrect = 0;
   String? _lastFileStatus;
   int? _editorInitialIndex;
   int? _editorLastIndex;
   List<Widget>? _cachedMenuChildren;
+
+  @override
+  void initState() {
+    super.initState();
+    _settingsPath = _fileService.settingsFilePath();
+    _range = resetUnitRange(_document.deck.units.length);
+    _queryOptions = _optionsFromSettings(_settings);
+    _learnParameters = _parametersFromSettings(_settings);
+    unawaited(_loadSettings());
+  }
 
   @override
   void didUpdateWidget(_DesktopHome oldWidget) {
@@ -131,6 +150,91 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   void dispose() {
     _menuScrollController.dispose();
     super.dispose();
+  }
+
+  // --- Settings persistence -------------------------------------------------
+
+  DesktopQueryOptions _optionsFromSettings(LearnAnywhereSettings settings) {
+    return DesktopQueryOptions(
+      wrongInputCorrectable: settings.wrongInputCorrectable,
+      completeInputRequired: settings.completeInputRequired,
+      caseSensitive: settings.caseSensitive,
+      accentSensitive: settings.accentSensitive,
+      showClock: settings.showClock,
+      timeLimitSeconds: settings.timeLimitSeconds,
+      minimumAttemptsGuardEnabled: settings.minimumAttemptsGuardEnabled,
+      minAttempts: settings.minAttempts,
+      wrongAnswerCeilingEnabled: settings.wrongAnswerCeilingEnabled,
+      wrongAnswerCeiling: settings.wrongAnswerCeiling,
+    );
+  }
+
+  SessionParameters _parametersFromSettings(LearnAnywhereSettings settings) {
+    return SessionParameters(
+      directionSelection: settings.direction,
+      withInput: settings.requireTypedAnswers,
+      mode: settings.mode,
+      shuffle: settings.shuffle,
+      superStatusThreshold: settings.superStatusThreshold,
+      startIndex: _range.startUnit,
+      endIndex: _range.endUnit,
+    );
+  }
+
+  Future<void> _loadSettings() async {
+    final LearnAnywhereSettings loaded = await readSettingsFile(_settingsPath);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _settings = loaded;
+      _lastMaskPath = loaded.lastMaskPath;
+      _queryOptions = _optionsFromSettings(loaded);
+      _learnParameters = _parametersFromSettings(loaded);
+    });
+  }
+
+  Future<void> _saveSettings() async {
+    final LearnAnywhereSettings next = LearnAnywhereSettings(
+      wrongInputCorrectable: _queryOptions.wrongInputCorrectable,
+      completeInputRequired: _queryOptions.completeInputRequired,
+      caseSensitive: _queryOptions.caseSensitive,
+      accentSensitive: _queryOptions.accentSensitive,
+      showClock: _queryOptions.showClock,
+      timeLimitSeconds: _queryOptions.timeLimitSeconds,
+      minimumAttemptsGuardEnabled: _queryOptions.minimumAttemptsGuardEnabled,
+      minAttempts: _queryOptions.minAttempts,
+      wrongAnswerCeilingEnabled: _queryOptions.wrongAnswerCeilingEnabled,
+      wrongAnswerCeiling: _queryOptions.wrongAnswerCeiling,
+      mode: _learnParameters.mode,
+      direction: _learnParameters.directionSelection,
+      shuffle: _learnParameters.shuffle,
+      requireTypedAnswers: _learnParameters.withInput,
+      superStatusThreshold: _learnParameters.superStatusThreshold,
+      lastDeckPath: _document.deckPath ?? _settings.lastDeckPath,
+      lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
+    );
+    _settings = next;
+    await writeSettingsFile(_settingsPath, next);
+  }
+
+  // --- Per-file unit range --------------------------------------------------
+
+  UnitRangeSelection _clampRange(UnitRangeSelection range, int unitCount) {
+    final int maximum = unitCount < 1 ? 1 : unitCount;
+    return range.copyWith(
+      startUnit: range.startUnit.clamp(1, maximum).toInt(),
+      endUnit: range.endUnit.clamp(1, maximum).toInt(),
+    );
+  }
+
+  /// Resets Start/End to the full range when a new or different file is loaded.
+  void _resetRangeForDeck() {
+    _range = resetUnitRange(_document.deck.units.length);
+    _learnParameters = _learnParameters.copyWith(
+      startIndex: _range.startUnit,
+      endIndex: _range.endUnit,
+    );
   }
 
   @override
@@ -360,7 +464,11 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   Widget _contentForRoute() {
     return switch (_route) {
-      _DesktopRoute.home => _HomeScreen(document: _document),
+      _DesktopRoute.home => _HomeScreen(
+        document: _document,
+        lastDeckPath: _settings.lastDeckPath,
+        lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
+      ),
       _DesktopRoute.fileOperations => _FileOperationsStatus(
         document: _document,
         status: _lastFileStatus,
@@ -394,6 +502,29 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         sessionCorrect: _learnSessionCorrect,
         onParametersChanged: (SessionParameters value) {
           setState(() => _learnParameters = value);
+          unawaited(_saveSettings());
+        },
+        onStartUnitChanged: (int value) {
+          setState(() {
+            _range = _clampRange(
+              _range.copyWith(startUnit: value),
+              _document.deck.units.length,
+            );
+            _learnParameters = _learnParameters.copyWith(
+              startIndex: _range.startUnit,
+            );
+          });
+        },
+        onEndUnitChanged: (int value) {
+          setState(() {
+            _range = _clampRange(
+              _range.copyWith(endUnit: value, endManuallySet: true),
+              _document.deck.units.length,
+            );
+            _learnParameters = _learnParameters.copyWith(
+              endIndex: _range.endUnit,
+            );
+          });
         },
         onStatisticsChanged: (List<UnitStats> value) {
           setState(() => _document = _document.copyWith(statistics: value));
@@ -411,6 +542,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         options: _queryOptions,
         onChanged: (DesktopQueryOptions value) {
           setState(() => _queryOptions = value);
+          unawaited(_saveSettings());
         },
       ),
       _DesktopRoute.statistics => StatisticsPage(
@@ -436,12 +568,25 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   void _updateDeckFromEditor(LearningDeck deck) {
-    final List<UnitStats> statistics =
-        deck.units.length == _document.deck.units.length
+    final int previousCount = _document.deck.units.length;
+    final int newCount = deck.units.length;
+    final List<UnitStats> statistics = newCount == previousCount
         ? _document.statistics
         : clearStatistics(deck);
     setState(() {
       _document = _document.copyWith(deck: deck, statistics: statistics);
+      _range = _clampRange(
+        autoExpandEndUnit(
+          _range,
+          previousCount: previousCount,
+          newCount: newCount,
+        ),
+        newCount,
+      );
+      _learnParameters = _learnParameters.copyWith(
+        startIndex: _range.startUnit,
+        endIndex: _range.endUnit,
+      );
     });
   }
 
@@ -477,8 +622,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     }
     await _guardedFileOperation(() async {
       _document = await _fileService.newDeck(_document);
+      _resetRangeForDeck();
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileNewDeckDone);
+      unawaited(_saveSettings());
     });
   }
 
@@ -491,8 +638,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     }
     await _guardedFileOperation(() async {
       _document = await _fileService.openDeck(_document, path);
+      _resetRangeForDeck();
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileOpenDeckDone);
+      unawaited(_saveSettings());
     });
   }
 
@@ -501,8 +650,22 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     if (path == null) {
       return;
     }
+    final int previousCount = _document.deck.units.length;
     await _guardedFileOperation(() async {
       _document = await _fileService.mergeDeck(_document, path);
+      final int newCount = _document.deck.units.length;
+      _range = _clampRange(
+        autoExpandEndUnit(
+          _range,
+          previousCount: previousCount,
+          newCount: newCount,
+        ),
+        newCount,
+      );
+      _learnParameters = _learnParameters.copyWith(
+        startIndex: _range.startUnit,
+        endIndex: _range.endUnit,
+      );
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileMergeDeckDone);
     });
@@ -523,6 +686,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       _document = await _fileService.saveDeck(_document, path: path);
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileSaveDeckDone);
+      unawaited(_saveSettings());
     });
   }
 
@@ -535,6 +699,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     }
     setState(() {
       _document = _fileService.clearUnits(_document);
+      _resetRangeForDeck();
       _route = _DesktopRoute.fileOperations;
     });
     _setFileStatus(LearnAnywhereMessage.fileClearUnitsDone);
@@ -551,8 +716,11 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     }
     await _guardedFileOperation(() async {
       _document = await _fileService.loadMask(_document, path);
+      _lastMaskPath = path;
+      _resetRangeForDeck();
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileLoadMaskDone);
+      unawaited(_saveSettings());
     });
   }
 
@@ -562,12 +730,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       return;
     }
     await _guardedFileOperation(() async {
-      await _fileService.saveMask(
-        _document.mask,
-        _ensureExtension(path, 'inf'),
-      );
+      final String maskPath = _ensureExtension(path, 'inf');
+      await _fileService.saveMask(_document.mask, maskPath);
+      _lastMaskPath = maskPath;
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileSaveMaskDone);
+      unawaited(_saveSettings());
     });
   }
 
@@ -653,6 +821,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         clearDeckPath: true,
         clearStatisticsPath: true,
       );
+      _resetRangeForDeck();
     });
   }
 
@@ -832,9 +1001,15 @@ LearningMask _defaultMask() {
 }
 
 final class _HomeScreen extends StatelessWidget {
-  const _HomeScreen({required this.document});
+  const _HomeScreen({
+    required this.document,
+    this.lastDeckPath,
+    this.lastMaskPath,
+  });
 
   final DesktopDocument document;
+  final String? lastDeckPath;
+  final String? lastMaskPath;
 
   @override
   Widget build(BuildContext context) {
@@ -854,9 +1029,19 @@ final class _HomeScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
-            if (!hasContent)
-              Text(messages.message(LearnAnywhereMessage.homeNoFileLoaded))
-            else ...<Widget>[
+            if (!hasContent) ...<Widget>[
+              Text(messages.message(LearnAnywhereMessage.homeNoFileLoaded)),
+              if (lastDeckPath != null)
+                _StatusLine(
+                  label: messages.message(LearnAnywhereMessage.homeLastDeck),
+                  value: lastDeckPath!,
+                ),
+              if (lastMaskPath != null)
+                _StatusLine(
+                  label: messages.message(LearnAnywhereMessage.homeLastMask),
+                  value: lastMaskPath!,
+                ),
+            ] else ...<Widget>[
               _StatusLine(
                 label: messages.message(LearnAnywhereMessage.fileStatusDeck),
                 value: document.deckPath ??

@@ -6,3 +6,4 @@ export 'i18n/i18n.dart';
 export 'models/models.dart';
 export 'rich_text/rich_text_ops.dart';
 export 'serialization/serialization.dart';
+export 'settings/settings.dart';

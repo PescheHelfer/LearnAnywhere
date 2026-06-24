@@ -74,7 +74,7 @@ final class _MobileHomeState extends State<MobileHome> {
   final Set<SessionItem> _seenItems = <SessionItem>{};
   final SessionParameters _parameters = const SessionParameters(
     withInput: false,
-    practiceEachOnce: true,
+    mode: SessionMode.onceThrough,
   );
 
   MobileDeckDocument? _document;

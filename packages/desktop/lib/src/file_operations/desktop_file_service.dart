@@ -193,6 +193,32 @@ final class DesktopFileService {
     );
   }
 
+  /// Returns the platform-appropriate path of the user settings file.
+  ///
+  /// On Windows this lives under `%APPDATA%`, elsewhere under
+  /// `$XDG_CONFIG_HOME` or `$HOME/.config`, always inside a `LearnAnywhere`
+  /// folder. The path is resolved here (in the app layer) and handed to the
+  /// pure-Dart settings serializer in core.
+  String settingsFilePath() {
+    final Map<String, String> env = Platform.environment;
+    final String sep = Platform.pathSeparator;
+    final String base;
+    if (Platform.isWindows) {
+      base = env['APPDATA'] ?? Directory.current.path;
+    } else {
+      final String? xdg = env['XDG_CONFIG_HOME'];
+      if (xdg != null && xdg.isNotEmpty) {
+        base = xdg;
+      } else {
+        final String? home = env['HOME'];
+        base = home != null && home.isNotEmpty
+            ? '$home$sep.config'
+            : Directory.current.path;
+      }
+    }
+    return '$base${sep}LearnAnywhere$sep$settingsFileName';
+  }
+
   /// Returns the conventional `.sta` sidecar path for [deckPath].
   String statisticsSidecarPath(String deckPath) {
     final int separator = deckPath.lastIndexOf(Platform.pathSeparator);

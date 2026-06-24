@@ -87,15 +87,6 @@ final class QueryOptionsPage extends StatelessWidget {
           ),
           _SwitchOption(
             title: messages.message(
-              LearnAnywhereMessage.queryOptionWithAnswerInput,
-            ),
-            value: options.withAnswerInput,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(withAnswerInput: value));
-            },
-          ),
-          _SwitchOption(
-            title: messages.message(
               LearnAnywhereMessage.queryOptionMinimumAttemptsGuard,
             ),
             value: options.minimumAttemptsGuardEnabled,

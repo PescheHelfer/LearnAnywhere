@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:learn_anywhere_core/core.dart';
 import 'package:test/test.dart';
@@ -526,6 +527,148 @@ void main() {
 
       final LearningDeck restored = decodeDeckJson(encodeDeckJson(deck));
       expect(restored.units.single.fields['DE'], value);
+    });
+  });
+
+  group('session item ordering', () {
+    test('returns in-scope items in file order when shuffle is off', () {
+      final LearningDeck deck = sampleDeck();
+      const SessionParameters parameters = SessionParameters(
+        directionSelection: DirectionSelection.direction1,
+      );
+      final List<SessionItem> order = sessionItemOrder(
+        deck: deck,
+        parameters: parameters,
+        random: Random(0),
+      );
+      expect(order, itemsInScope(deck, parameters));
+    });
+
+    test('shuffle keeps the same items but can reorder them', () {
+      final LearningDeck deck = sampleDeck();
+      const SessionParameters parameters = SessionParameters(
+        directionSelection: DirectionSelection.both,
+        shuffle: true,
+      );
+      final List<SessionItem> ordered = itemsInScope(deck, parameters);
+      final List<SessionItem> shuffled = sessionItemOrder(
+        deck: deck,
+        parameters: parameters,
+        random: Random(1),
+      );
+      expect(shuffled.toSet(), ordered.toSet());
+      expect(shuffled, hasLength(ordered.length));
+    });
+
+    test('once-through serves every item once, then stops', () {
+      final LearningDeck deck = sampleDeck();
+      const SessionParameters parameters = SessionParameters(
+        directionSelection: DirectionSelection.direction1,
+        mode: SessionMode.onceThrough,
+      );
+      final Random random = Random(3);
+      final Set<SessionItem> seen = <SessionItem>{};
+      SessionItem? next;
+      while ((next = pickPracticeItem(
+            deck: deck,
+            parameters: parameters,
+            random: random,
+            seenItems: seen,
+          )) !=
+          null) {
+        expect(seen.add(next!), isTrue);
+      }
+      expect(seen, itemsInScope(deck, parameters).toSet());
+    });
+  });
+
+  group('settings and unit range', () {
+    test('round-trips settings through JSON serialization', () {
+      const LearnAnywhereSettings settings = LearnAnywhereSettings(
+        wrongInputCorrectable: false,
+        completeInputRequired: false,
+        caseSensitive: true,
+        accentSensitive: true,
+        showClock: true,
+        timeLimitSeconds: 90,
+        minimumAttemptsGuardEnabled: true,
+        minAttempts: 4,
+        wrongAnswerCeilingEnabled: true,
+        wrongAnswerCeiling: 7,
+        mode: SessionMode.onceThrough,
+        direction: DirectionSelection.direction2,
+        shuffle: true,
+        requireTypedAnswers: false,
+        superStatusThreshold: 0.6,
+        lastDeckPath: '/decks/french1.vok',
+        lastMaskPath: '/masks/french.inf',
+      );
+
+      final LearnAnywhereSettings restored = decodeSettingsJson(
+        encodeSettingsJson(settings),
+      );
+      expect(restored, settings);
+    });
+
+    test('decodes partial settings with defaults and ignores corruption', () {
+      const LearnAnywhereSettings defaults = LearnAnywhereSettings();
+      final LearnAnywhereSettings partial = decodeSettings(<String, Object?>{
+        'shuffle': true,
+        'mode': 'practice',
+      });
+      expect(partial.shuffle, isTrue);
+      expect(partial.mode, SessionMode.practice);
+      expect(partial.direction, defaults.direction);
+      expect(partial.minAttempts, defaults.minAttempts);
+
+      // Unknown enum names and wrong types fall back to defaults.
+      final LearnAnywhereSettings broken = decodeSettings(<String, Object?>{
+        'mode': 'bogus',
+        'minAttempts': 'not-an-int',
+      });
+      expect(broken.mode, defaults.mode);
+      expect(broken.minAttempts, defaults.minAttempts);
+    });
+
+    test('resets the unit range when a file is loaded', () {
+      final UnitRangeSelection range = resetUnitRange(12);
+      expect(range.startUnit, 1);
+      expect(range.endUnit, 12);
+      expect(range.endManuallySet, isFalse);
+      // Empty decks still produce a usable 1..1 range.
+      expect(resetUnitRange(0).endUnit, 1);
+    });
+
+    test('auto-expands the end unit only without a manual override', () {
+      const UnitRangeSelection full = UnitRangeSelection(
+        startUnit: 1,
+        endUnit: 10,
+      );
+      expect(
+        autoExpandEndUnit(full, previousCount: 10, newCount: 15).endUnit,
+        15,
+      );
+
+      const UnitRangeSelection restricted = UnitRangeSelection(
+        startUnit: 1,
+        endUnit: 6,
+        endManuallySet: true,
+      );
+      expect(
+        autoExpandEndUnit(restricted, previousCount: 10, newCount: 15).endUnit,
+        6,
+      );
+
+      // A user who left the range full but typed the same value is respected.
+      const UnitRangeSelection manualFull = UnitRangeSelection(
+        startUnit: 1,
+        endUnit: 10,
+        endManuallySet: true,
+      );
+      expect(
+        autoExpandEndUnit(manualFull, previousCount: 10, newCount: 15).endUnit,
+        10,
+      );
     });
   });
 }

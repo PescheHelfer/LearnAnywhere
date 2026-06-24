@@ -1,0 +1,72 @@
+{
+  "format": "learn-anywhere/lessons",
+  "version": 1,
+  "mask": {
+    "name": "Untitled mask",
+    "direction1Label": "Direction 1",
+    "direction2Label": "Direction 2",
+    "categories": [
+      {
+        "id": 1,
+        "name": "Category 1",
+        "fields": [
+          {
+            "name": "Question",
+            "length": 40,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A"
+          },
+          {
+            "name": "Answer",
+            "length": 40,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q"
+          },
+          {
+            "name": "Remark",
+            "length": 40,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      }
+    ]
+  },
+  "units": [
+    {
+      "categoryId": 1,
+      "fields": {
+        "Question": "das Haus",
+        "Answer": "la maison",
+        "Remark": ""
+      }
+    },
+    {
+      "categoryId": 1,
+      "fields": {
+        "Question": "die Tür",
+        "Answer": "la porte",
+        "Remark": ""
+      }
+    },
+    {
+      "categoryId": 1,
+      "fields": {
+        "Question": "der Mond",
+        "Answer": [
+          {
+            "text": "la",
+            "color": "#B00020"
+          },
+          {
+            "text": " lune"
+          }
+        ],
+        "Remark": ""
+      }
+    }
+  ]
+}

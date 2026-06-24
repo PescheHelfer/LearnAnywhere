@@ -329,14 +329,18 @@ List<SessionItem> activeSuperQueryPool({
 }
 
 /// Selects a random practice item, or `null` when the each-once set is exhausted.
+///
+/// In [SessionMode.onceThrough] each item is served at most once, so the result
+/// is `null` once every in-scope item has been seen.
 SessionItem? pickPracticeItem({
   required LearningDeck deck,
   required SessionParameters parameters,
   required Random random,
   Set<SessionItem> seenItems = const <SessionItem>{},
 }) {
-  final List<SessionItem> candidates = _allItemsInScope(deck, parameters);
-  final List<SessionItem> available = parameters.practiceEachOnce
+  final List<SessionItem> candidates = itemsInScope(deck, parameters);
+  final List<SessionItem> available =
+      parameters.mode == SessionMode.onceThrough
       ? candidates
             .where((SessionItem item) => !seenItems.contains(item))
             .toList(growable: false)
@@ -345,6 +349,33 @@ SessionItem? pickPracticeItem({
     return null;
   }
   return available[random.nextInt(available.length)];
+}
+
+/// Returns every in-scope item for [parameters] in deck (file) order.
+///
+/// Items follow the unit order stored in the deck; each in-scope unit yields one
+/// item per selected direction.
+List<SessionItem> itemsInScope(
+  LearningDeck deck,
+  SessionParameters parameters,
+) {
+  return List<SessionItem>.unmodifiable(_allItemsInScope(deck, parameters));
+}
+
+/// Returns the in-scope items in presentation order for a session.
+///
+/// When [SessionParameters.shuffle] is `true` the items are returned in a
+/// random permutation (driven by [random]); otherwise they follow deck order.
+List<SessionItem> sessionItemOrder({
+  required LearningDeck deck,
+  required SessionParameters parameters,
+  required Random random,
+}) {
+  final List<SessionItem> items = _allItemsInScope(deck, parameters);
+  if (parameters.shuffle) {
+    items.shuffle(random);
+  }
+  return List<SessionItem>.unmodifiable(items);
 }
 
 /// Aggregates hit-rate buckets for a unit scope and direction view.

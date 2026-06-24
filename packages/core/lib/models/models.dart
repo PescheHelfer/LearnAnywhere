@@ -498,8 +498,11 @@ enum SessionMode {
   /// Endless random practice.
   practice,
 
-  /// Mastery-loop super-query.
+  /// Mastery-loop super-query (drill mode).
   superQuery,
+
+  /// Present every in-scope item exactly once, then finish.
+  onceThrough,
 }
 
 /// Learning session parameters retained for interrupt and resume.
@@ -511,7 +514,7 @@ final class SessionParameters {
     this.endIndex,
     this.withInput = true,
     this.mode = SessionMode.practice,
-    this.practiceEachOnce = false,
+    this.shuffle = false,
     this.superStatusThreshold = 0.4,
     this.minimumAttemptsGuardEnabled = false,
     this.minAttempts = 2,
@@ -532,8 +535,10 @@ final class SessionParameters {
   /// Session mode.
   final SessionMode mode;
 
-  /// Whether practice should stop after each item has appeared once.
-  final bool practiceEachOnce;
+  /// Whether in-scope units are presented in random order.
+  ///
+  /// When `false`, units are presented in the order they are stored in the deck.
+  final bool shuffle;
 
   /// Required hit rate for super-query mastery.
   final double superStatusThreshold;
@@ -543,4 +548,30 @@ final class SessionParameters {
 
   /// Minimum attempts required when the guard is enabled.
   final int minAttempts;
+
+  /// Returns a copy with selected fields changed.
+  SessionParameters copyWith({
+    DirectionSelection? directionSelection,
+    int? startIndex,
+    int? endIndex,
+    bool? withInput,
+    SessionMode? mode,
+    bool? shuffle,
+    double? superStatusThreshold,
+    bool? minimumAttemptsGuardEnabled,
+    int? minAttempts,
+  }) {
+    return SessionParameters(
+      directionSelection: directionSelection ?? this.directionSelection,
+      startIndex: startIndex ?? this.startIndex,
+      endIndex: endIndex ?? this.endIndex,
+      withInput: withInput ?? this.withInput,
+      mode: mode ?? this.mode,
+      shuffle: shuffle ?? this.shuffle,
+      superStatusThreshold: superStatusThreshold ?? this.superStatusThreshold,
+      minimumAttemptsGuardEnabled:
+          minimumAttemptsGuardEnabled ?? this.minimumAttemptsGuardEnabled,
+      minAttempts: minAttempts ?? this.minAttempts,
+    );
+  }
 }

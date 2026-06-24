@@ -25,6 +25,8 @@ final class LearnSessionPage extends StatefulWidget {
     required this.onStatisticsChanged,
     required this.onSessionProgressChanged,
     required this.onOpenEditor,
+    this.onStartUnitChanged,
+    this.onEndUnitChanged,
     this.onExit,
     super.key,
   });
@@ -59,6 +61,12 @@ final class LearnSessionPage extends StatefulWidget {
   /// Called when the user wants to interrupt and edit the deck.
   final VoidCallback onOpenEditor;
 
+  /// Called when the user changes the start unit on the setup screen.
+  final ValueChanged<int>? onStartUnitChanged;
+
+  /// Called when the user manually changes the end unit on the setup screen.
+  final ValueChanged<int>? onEndUnitChanged;
+
   /// Called when the user exits the learn session back to the home screen.
   final VoidCallback? onExit;
 
@@ -77,7 +85,6 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   };
 
   final Random _random = Random(1);
-  final Set<SessionItem> _seenPracticeItems = <SessionItem>{};
   final Map<String, TextEditingController> _answerControllers =
       <String, TextEditingController>{};
 
@@ -85,6 +92,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   late int _startIndex;
   late int _endIndex;
   late int _thresholdPercent;
+
+  List<SessionItem> _order = const <SessionItem>[];
+  int _orderPosition = 0;
+  Map<String, String> _lastEntered = <String, String>{};
 
   SessionItem? _currentItem;
   AnswerEvaluation? _evaluation;
@@ -157,14 +168,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
           ),
           _LearnSetupIntent: CallbackAction<_LearnSetupIntent>(
             onInvoke: (_) {
-              if (_currentItem == null && !_completed) {
-                widget.onExit?.call();
-              } else {
-                setState(() {
-                  _currentItem = null;
-                  _completed = false;
-                });
-              }
+              // Esc exits learning mode back to the home screen. A confirmation
+              // is shown only mid-session, when live stats would be lost.
+              _cancelSession();
               return null;
             },
           ),
@@ -195,24 +201,28 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         endIndex: _endIndex,
         thresholdPercent: _thresholdPercent,
         onDirectionChanged: (DirectionSelection value) {
-          setState(() => _draftParameters = _parametersWith(direction: value));
+          _applyDraft(_parametersWith(direction: value));
         },
         onModeChanged: (SessionMode value) {
-          setState(() => _draftParameters = _parametersWith(mode: value));
+          _applyDraft(_parametersWith(mode: value));
         },
-        onPracticeEachOnceChanged: (bool value) {
-          setState(() {
-            _draftParameters = _parametersWith(practiceEachOnce: value);
-          });
+        onShuffleChanged: (bool value) {
+          _applyDraft(_parametersWith(shuffle: value));
+        },
+        onWithInputChanged: (bool value) {
+          _applyDraft(_parametersWith(withInput: value));
         },
         onStartChanged: (int value) {
           setState(() => _startIndex = value);
+          widget.onStartUnitChanged?.call(value);
         },
         onEndChanged: (int value) {
           setState(() => _endIndex = value);
+          widget.onEndUnitChanged?.call(value);
         },
         onThresholdChanged: (int value) {
           setState(() => _thresholdPercent = value.clamp(1, 100).toInt());
+          _applyDraft(_parametersWith(threshold: _thresholdPercent / 100));
         },
         onStartSession: _startSession,
         onCancel: _cancelSession,
@@ -227,6 +237,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       evaluation: _evaluation,
       selectedRating: _selectedRating,
       answerControllers: _answerControllers,
+      enteredAnswers: _lastEntered,
       elapsedSeconds: _elapsedSeconds,
       sessionAttempts: widget.sessionAttempts,
       sessionCorrect: widget.sessionCorrect,
@@ -249,7 +260,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       threshold: _thresholdPercent / 100,
     );
     widget.onParametersChanged(_draftParameters);
-    _seenPracticeItems.clear();
+    _order = sessionItemOrder(
+      deck: widget.deck,
+      parameters: _draftParameters,
+      random: _random,
+    );
+    _orderPosition = 0;
     _selectNextItem();
   }
 
@@ -260,15 +276,16 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     });
   }
 
+  /// Stores the edited draft and pushes it to the shell so it is persisted.
+  void _applyDraft(SessionParameters next) {
+    setState(() => _draftParameters = next);
+    widget.onParametersChanged(next);
+  }
+
   void _selectNextItem() {
     final SessionItem? next = switch (_draftParameters.mode) {
-      SessionMode.practice => pickPracticeItem(
-        deck: widget.deck,
-        parameters: _draftParameters,
-        random: _random,
-        seenItems: _seenPracticeItems,
-      ),
       SessionMode.superQuery => _firstSuperQueryItem(),
+      SessionMode.practice || SessionMode.onceThrough => _nextOrderedItem(),
     };
     if (next == null) {
       setState(() {
@@ -278,9 +295,6 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       });
       return;
     }
-    if (_draftParameters.practiceEachOnce) {
-      _seenPracticeItems.add(next);
-    }
     _resetAnswerControllers(next);
     setState(() {
       _currentItem = next;
@@ -288,6 +302,25 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _selectedRating = AttemptRating.noCount;
       _elapsedSeconds = 0;
     });
+  }
+
+  /// Returns the next item from the precomputed presentation order.
+  ///
+  /// In once-through mode each item is served once, then `null` ends the
+  /// session; in endless mode the order repeats indefinitely.
+  SessionItem? _nextOrderedItem() {
+    if (_order.isEmpty) {
+      return null;
+    }
+    if (_draftParameters.mode == SessionMode.onceThrough) {
+      if (_orderPosition >= _order.length) {
+        return null;
+      }
+      return _order[_orderPosition++];
+    }
+    final SessionItem item = _order[_orderPosition % _order.length];
+    _orderPosition += 1;
+    return item;
   }
 
   SessionItem? _firstSuperQueryItem() {
@@ -327,15 +360,21 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       return;
     }
     final LearningUnit unit = widget.deck.units[item.unitIndex - 1];
+    // Capture the raw typed text so the result screen can show it back to the
+    // user alongside the correct answer.
+    final Map<String, String> entered = <String, String>{
+      for (final MapEntry<String, TextEditingController> e
+          in _answerControllers.entries)
+        e.key: e.value.text,
+    };
     final AnswerEvaluation? evaluation = _draftParameters.withInput
         ? evaluateAnswer(
             deck: widget.deck,
             unit: unit,
             direction: item.direction,
             enteredValues: <String, FieldValue>{
-              for (final MapEntry<String, TextEditingController> entry
-                  in _answerControllers.entries)
-                entry.key: FieldValue.plain(entry.value.text),
+              for (final MapEntry<String, String> entry in entered.entries)
+                entry.key: FieldValue.plain(entry.value),
             },
             options: widget.options.evaluationOptions,
           )
@@ -344,6 +383,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         ? (evaluation!.correct ? AttemptRating.correct : AttemptRating.wrong)
         : AttemptRating.correct;
     setState(() {
+      _lastEntered = entered;
       _evaluation =
           evaluation ??
           const AnswerEvaluation(correct: true, fields: <FieldEvaluation>[]);
@@ -403,15 +443,13 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     );
   }
 
+  /// Overlays the advanced-options mastery guard onto setup [parameters].
+  ///
+  /// The "require typed answers" toggle now lives on the practice-setup screen,
+  /// so [SessionParameters.withInput] is taken from the parameters, while the
+  /// minimum-attempts guard still comes from the advanced options.
   SessionParameters _optionsApplied(SessionParameters parameters) {
-    return SessionParameters(
-      directionSelection: parameters.directionSelection,
-      startIndex: parameters.startIndex,
-      endIndex: parameters.endIndex,
-      withInput: widget.options.withAnswerInput,
-      mode: parameters.mode,
-      practiceEachOnce: parameters.practiceEachOnce,
-      superStatusThreshold: parameters.superStatusThreshold,
+    return parameters.copyWith(
       minimumAttemptsGuardEnabled: widget.options.minimumAttemptsGuardEnabled,
       minAttempts: widget.options.minAttempts,
     );
@@ -423,16 +461,16 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     int? endIndex,
     bool? withInput,
     SessionMode? mode,
-    bool? practiceEachOnce,
+    bool? shuffle,
     double? threshold,
   }) {
     return SessionParameters(
       directionSelection: direction ?? _draftParameters.directionSelection,
       startIndex: startIndex ?? _draftParameters.startIndex,
       endIndex: endIndex ?? _draftParameters.endIndex,
-      withInput: withInput ?? widget.options.withAnswerInput,
+      withInput: withInput ?? _draftParameters.withInput,
       mode: mode ?? _draftParameters.mode,
-      practiceEachOnce: practiceEachOnce ?? _draftParameters.practiceEachOnce,
+      shuffle: shuffle ?? _draftParameters.shuffle,
       superStatusThreshold: threshold ?? _draftParameters.superStatusThreshold,
       minimumAttemptsGuardEnabled: widget.options.minimumAttemptsGuardEnabled,
       minAttempts: widget.options.minAttempts,
@@ -460,7 +498,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   }
 
   Future<void> _cancelSession() async {
-    if (_currentItem == null && !_completed) {
+    // On the setup or completion screens there are no live stats to lose, so
+    // exit straight to the home screen without a confirmation prompt.
+    if (_currentItem == null) {
       widget.onExit?.call();
       return;
     }
@@ -538,7 +578,8 @@ final class _SetupView extends StatelessWidget {
     required this.thresholdPercent,
     required this.onDirectionChanged,
     required this.onModeChanged,
-    required this.onPracticeEachOnceChanged,
+    required this.onShuffleChanged,
+    required this.onWithInputChanged,
     required this.onStartChanged,
     required this.onEndChanged,
     required this.onThresholdChanged,
@@ -553,7 +594,8 @@ final class _SetupView extends StatelessWidget {
   final int thresholdPercent;
   final ValueChanged<DirectionSelection> onDirectionChanged;
   final ValueChanged<SessionMode> onModeChanged;
-  final ValueChanged<bool> onPracticeEachOnceChanged;
+  final ValueChanged<bool> onShuffleChanged;
+  final ValueChanged<bool> onWithInputChanged;
   final ValueChanged<int> onStartChanged;
   final ValueChanged<int> onEndChanged;
   final ValueChanged<int> onThresholdChanged;
@@ -571,73 +613,6 @@ final class _SetupView extends StatelessWidget {
         Text(
           messages.message(LearnAnywhereMessage.learnSetupTitle),
           style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        _DropdownRow<DirectionSelection>(
-          label: messages.message(LearnAnywhereMessage.learnDirection),
-          value: parameters.directionSelection,
-          items: <DropdownMenuItem<DirectionSelection>>[
-            DropdownMenuItem<DirectionSelection>(
-              value: DirectionSelection.direction1,
-              child: Text(deck.mask.direction1Label),
-            ),
-            DropdownMenuItem<DirectionSelection>(
-              value: DirectionSelection.direction2,
-              child: Text(deck.mask.direction2Label),
-            ),
-            DropdownMenuItem<DirectionSelection>(
-              value: DirectionSelection.both,
-              child: Text(
-                messages.message(LearnAnywhereMessage.learnBothDirections),
-              ),
-            ),
-          ],
-          onChanged: onDirectionChanged,
-        ),
-        _DropdownRow<SessionMode>(
-          label: messages.message(LearnAnywhereMessage.learnMode),
-          value: parameters.mode,
-          items: <DropdownMenuItem<SessionMode>>[
-            DropdownMenuItem<SessionMode>(
-              value: SessionMode.practice,
-              child: Text(
-                messages.message(LearnAnywhereMessage.learnModePractice),
-              ),
-            ),
-            DropdownMenuItem<SessionMode>(
-              value: SessionMode.superQuery,
-              child: Text(
-                messages.message(LearnAnywhereMessage.learnModeSuperQuery),
-              ),
-            ),
-          ],
-          onChanged: onModeChanged,
-        ),
-        _NumberRow(
-          label: messages.message(LearnAnywhereMessage.learnRangeStart),
-          value: startIndex,
-          minimum: 1,
-          onChanged: onStartChanged,
-        ),
-        _NumberRow(
-          label: messages.message(LearnAnywhereMessage.learnRangeEnd),
-          value: endIndex,
-          minimum: 1,
-          onChanged: onEndChanged,
-        ),
-        SwitchListTile(
-          title: Text(
-            messages.message(LearnAnywhereMessage.learnPracticeEachOnce),
-          ),
-          value: parameters.practiceEachOnce,
-          onChanged: onPracticeEachOnceChanged,
-        ),
-        _NumberRow(
-          label: messages.message(LearnAnywhereMessage.learnSuperThreshold),
-          value: thresholdPercent,
-          minimum: 1,
-          maximum: 100,
-          onChanged: onThresholdChanged,
         ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
         Wrap(
@@ -667,6 +642,92 @@ final class _SetupView extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: LearnAnywhereTokens.gapMedium),
+        _DropdownRow<DirectionSelection>(
+          label: messages.message(LearnAnywhereMessage.learnDirection),
+          value: parameters.directionSelection,
+          items: <DropdownMenuItem<DirectionSelection>>[
+            DropdownMenuItem<DirectionSelection>(
+              value: DirectionSelection.direction1,
+              child: Text(deck.mask.direction1Label),
+            ),
+            DropdownMenuItem<DirectionSelection>(
+              value: DirectionSelection.direction2,
+              child: Text(deck.mask.direction2Label),
+            ),
+            DropdownMenuItem<DirectionSelection>(
+              value: DirectionSelection.both,
+              child: Text(
+                messages.message(LearnAnywhereMessage.learnBothDirections),
+              ),
+            ),
+          ],
+          onChanged: onDirectionChanged,
+        ),
+        _DropdownRow<SessionMode>(
+          label: messages.message(LearnAnywhereMessage.learnMode),
+          value: parameters.mode,
+          items: <DropdownMenuItem<SessionMode>>[
+            DropdownMenuItem<SessionMode>(
+              value: SessionMode.superQuery,
+              child: Text(
+                messages.message(LearnAnywhereMessage.learnModeSuperQuery),
+              ),
+            ),
+            DropdownMenuItem<SessionMode>(
+              value: SessionMode.practice,
+              child: Text(
+                messages.message(LearnAnywhereMessage.learnModePractice),
+              ),
+            ),
+            DropdownMenuItem<SessionMode>(
+              value: SessionMode.onceThrough,
+              child: Text(
+                messages.message(LearnAnywhereMessage.learnModeOnceThrough),
+              ),
+            ),
+          ],
+          onChanged: onModeChanged,
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            _NumberRow(
+              label: messages.message(LearnAnywhereMessage.learnRangeStart),
+              value: startIndex,
+              minimum: 1,
+              onChanged: onStartChanged,
+            ),
+            const SizedBox(width: LearnAnywhereTokens.gapMedium),
+            _NumberRow(
+              label: messages.message(LearnAnywhereMessage.learnRangeEnd),
+              value: endIndex,
+              minimum: 1,
+              onChanged: onEndChanged,
+            ),
+          ],
+        ),
+        SwitchListTile(
+          title: Text(
+            messages.message(LearnAnywhereMessage.queryOptionWithAnswerInput),
+          ),
+          value: parameters.withInput,
+          onChanged: onWithInputChanged,
+        ),
+        SwitchListTile(
+          title: Text(
+            messages.message(LearnAnywhereMessage.learnShuffleUnits),
+          ),
+          value: parameters.shuffle,
+          onChanged: onShuffleChanged,
+        ),
+        _NumberRow(
+          label: messages.message(LearnAnywhereMessage.learnSuperThreshold),
+          value: thresholdPercent,
+          minimum: 1,
+          maximum: 100,
+          onChanged: onThresholdChanged,
+        ),
       ],
     );
   }
@@ -682,6 +743,7 @@ final class _SessionView extends StatelessWidget {
     required this.evaluation,
     required this.selectedRating,
     required this.answerControllers,
+    required this.enteredAnswers,
     required this.elapsedSeconds,
     required this.sessionAttempts,
     required this.sessionCorrect,
@@ -699,6 +761,7 @@ final class _SessionView extends StatelessWidget {
   final AnswerEvaluation? evaluation;
   final AttemptRating selectedRating;
   final Map<String, TextEditingController> answerControllers;
+  final Map<String, String> enteredAnswers;
   final int elapsedSeconds;
   final int sessionAttempts;
   final int sessionCorrect;
@@ -738,19 +801,55 @@ final class _SessionView extends StatelessWidget {
           timeLimitSeconds: options.timeLimitSeconds,
         ),
         const SizedBox(height: LearnAnywhereTokens.gapSmall),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton.tonalIcon(
-            onPressed: onCancel,
-            icon: const Icon(Icons.close),
-            label: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(messages.message(LearnAnywhereMessage.actionCancel)),
-                const Text('Esc', style: TextStyle(fontSize: 10)),
-              ],
+        // Cancel and the primary action (Reveal/Check before reveal, Continue
+        // after) are both kept at the top of the screen.
+        Wrap(
+          spacing: LearnAnywhereTokens.gapSmall,
+          children: <Widget>[
+            FilledButton.tonalIcon(
+              onPressed: onCancel,
+              icon: const Icon(Icons.close),
+              label: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(messages.message(LearnAnywhereMessage.actionCancel)),
+                  const Text('Esc', style: TextStyle(fontSize: 10)),
+                ],
+              ),
             ),
-          ),
+            if (evaluation == null)
+              FilledButton.icon(
+                onPressed: onReveal,
+                icon: Icon(
+                  parameters.withInput ? Icons.check : Icons.visibility,
+                ),
+                label: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      messages.message(
+                        parameters.withInput
+                            ? LearnAnywhereMessage.learnCheckAnswer
+                            : LearnAnywhereMessage.learnReveal,
+                      ),
+                    ),
+                    const Text('F10', style: TextStyle(fontSize: 10)),
+                  ],
+                ),
+              )
+            else
+              FilledButton.icon(
+                onPressed: onContinue,
+                icon: const Icon(Icons.arrow_forward),
+                label: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(messages.message(LearnAnywhereMessage.learnContinue)),
+                    const Text('F3', style: TextStyle(fontSize: 10)),
+                  ],
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
         _FieldGroup(
@@ -763,38 +862,17 @@ final class _SessionView extends StatelessWidget {
             values: answerFields(deck, unit, item.direction),
             controllers: answerControllers,
           ),
-        if (evaluation == null)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: FilledButton.icon(
-              onPressed: onReveal,
-              icon: Icon(parameters.withInput ? Icons.check : Icons.visibility),
-              label: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    messages.message(
-                      parameters.withInput
-                          ? LearnAnywhereMessage.learnCheckAnswer
-                          : LearnAnywhereMessage.learnReveal,
-                    ),
-                  ),
-                  const Text('F10', style: TextStyle(fontSize: 10)),
-                ],
-              ),
-            ),
-          )
-        else
+        if (evaluation != null)
           _RevealPanel(
             deck: deck,
             unit: unit,
             direction: item.direction,
             evaluation: evaluation!,
             withInput: parameters.withInput,
+            enteredAnswers: enteredAnswers,
             wrongInputCorrectable: options.wrongInputCorrectable,
             selectedRating: selectedRating,
             onRatingChanged: onRatingChanged,
-            onContinue: onContinue,
           ),
       ],
     );
@@ -907,10 +985,10 @@ final class _RevealPanel extends StatelessWidget {
     required this.direction,
     required this.evaluation,
     required this.withInput,
+    required this.enteredAnswers,
     required this.wrongInputCorrectable,
     required this.selectedRating,
     required this.onRatingChanged,
-    required this.onContinue,
   });
 
   final LearningDeck deck;
@@ -918,15 +996,20 @@ final class _RevealPanel extends StatelessWidget {
   final QueryDirection direction;
   final AnswerEvaluation evaluation;
   final bool withInput;
+  final Map<String, String> enteredAnswers;
   final bool wrongInputCorrectable;
   final AttemptRating selectedRating;
   final ValueChanged<AttemptRating> onRatingChanged;
-  final VoidCallback onContinue;
 
   @override
   Widget build(BuildContext context) {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
+    );
+    final Map<FieldDefinition, FieldValue> solution = answerFields(
+      deck,
+      unit,
+      direction,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -939,9 +1022,22 @@ final class _RevealPanel extends StatelessWidget {
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
+        // Result order matches the correct-answer screen: the prompt is shown
+        // above; here we show the user's typed answer, the solution, then
+        // remarks.
+        if (withInput) ...<Widget>[
+          _FieldGroup(
+            title: messages.message(LearnAnywhereMessage.learnYourAnswer),
+            values: <FieldDefinition, FieldValue>{
+              for (final FieldDefinition field in solution.keys)
+                field: FieldValue.plain(enteredAnswers[field.name] ?? ''),
+            },
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapMedium),
+        ],
         _FieldGroup(
           title: messages.message(LearnAnywhereMessage.learnSolution),
-          values: answerFields(deck, unit, direction),
+          values: solution,
         ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
         _FieldGroup(
@@ -960,18 +1056,6 @@ final class _RevealPanel extends StatelessWidget {
                 );
               })
               .toList(growable: false),
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        FilledButton.icon(
-          onPressed: onContinue,
-          icon: const Icon(Icons.arrow_forward),
-          label: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(messages.message(LearnAnywhereMessage.learnContinue)),
-              const Text('F3', style: TextStyle(fontSize: 10)),
-            ],
-          ),
         ),
       ],
     );
