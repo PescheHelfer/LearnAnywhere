@@ -283,9 +283,16 @@ void main() {
     await tester.pumpWidget(const LearnAnywhereDesktopApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(DropdownButton<Locale>));
+    await tester.drag(
+      find.byType(SingleChildScrollView).first,
+      const Offset(-600, 0),
+    );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('German').last);
+    await tester.tap(find.text('Options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Language'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('German'));
     await tester.pumpAndSettle();
 
     expect(find.text('Datei'), findsOneWidget);

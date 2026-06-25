@@ -8,6 +8,7 @@ import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import 'src/about/about_page.dart';
 import 'src/editor/unit_editor_page.dart';
 import 'src/file_operations/desktop_document.dart';
+import 'src/file_operations/desktop_file_picker.dart';
 import 'src/file_operations/desktop_file_service.dart';
 import 'src/learn/desktop_query_options.dart';
 import 'src/learn/learn_session_page.dart';
@@ -109,7 +110,15 @@ final class _DesktopHome extends StatefulWidget {
 
 final class _DesktopHomeState extends State<_DesktopHome> {
   final DesktopFileService _fileService = const DesktopFileService();
+  final DesktopFilePicker _filePicker = const DesktopFilePicker();
   final ScrollController _menuScrollController = ScrollController();
+  // The main content area lives in its own FocusScope so that keyboard focus
+  // can be re-asserted into it after interactions that park focus on AppBar
+  // chrome (the language/theme dropdowns) or transient overlays (dialogs),
+  // none of which are inside this scope. See [_restoreContentFocus].
+  final FocusScopeNode _contentFocusScope = FocusScopeNode(
+    debugLabel: 'desktopContent',
+  );
   _DesktopRoute _route = _DesktopRoute.home;
   DesktopDocument _document = DesktopDocument.empty(_defaultMask());
   DesktopQueryOptions _queryOptions = const DesktopQueryOptions();
@@ -127,6 +136,8 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   int? _editorInitialIndex;
   int? _editorLastIndex;
   List<Widget>? _cachedMenuChildren;
+  String? _cachedMenuLocale;
+  _AppTheme? _cachedMenuTheme;
 
   @override
   void initState() {
@@ -141,15 +152,41 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   @override
   void didUpdateWidget(_DesktopHome oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.locale != oldWidget.locale) {
+    // A locale or theme change is triggered from the Options submenu in the
+    // MenuBar, which lives OUTSIDE the content FocusScope. Selecting an item
+    // leaves keyboard focus parked on the menu, so the active page's
+    // Shortcuts/Actions (F-keys, Esc) stop receiving key events until the user
+    // clicks back into the body. We detect either change here, clear the menu
+    // cache so radio checkmarks reflect the new state, and pull focus back into
+    // the content scope to re-activate page shortcuts immediately.
+    if (widget.locale != oldWidget.locale ||
+        widget.appTheme != oldWidget.appTheme) {
       _cachedMenuChildren = null;
+      _restoreContentFocus();
     }
   }
 
   @override
   void dispose() {
     _menuScrollController.dispose();
+    _contentFocusScope.dispose();
     super.dispose();
+  }
+
+  /// Re-asserts keyboard focus into the main content area so the active page's
+  /// Shortcuts/Actions keep receiving F-key and Esc events.
+  ///
+  /// Used as a belt-and-suspenders guard after anything that can move focus
+  /// outside the content scope: the AppBar language/theme menus and the modal
+  /// file dialogs. Requesting focus on the scope re-homes primary focus to its
+  /// most recent descendant — the page's autofocus [Focus] node — which is the
+  /// surface the shortcuts are registered above.
+  void _restoreContentFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((Duration _) {
+      if (mounted) {
+        _contentFocusScope.requestFocus();
+      }
+    });
   }
 
   // --- Settings persistence -------------------------------------------------
@@ -245,22 +282,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     return Scaffold(
       appBar: AppBar(
         title: Text(messages.appTitle),
-        actions: <Widget>[
-          Text(messages.message(LearnAnywhereMessage.themeLabel)),
-          const SizedBox(width: LearnAnywhereTokens.gapSmall),
-          _ThemeModeMenu(
-            appTheme: widget.appTheme,
-            onChanged: widget.onAppThemeChanged,
-          ),
-          const SizedBox(width: LearnAnywhereTokens.gapSmall),
-          Text(messages.message(LearnAnywhereMessage.languageLabel)),
-          const SizedBox(width: LearnAnywhereTokens.gapSmall),
-          _LanguageMenu(
-            locale: widget.locale,
-            onChanged: widget.onLocaleChanged,
-          ),
-          const SizedBox(width: LearnAnywhereTokens.gapMedium),
-        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -277,7 +298,15 @@ final class _DesktopHomeState extends State<_DesktopHome> {
               ),
             ),
           ),
-          Expanded(child: _contentForRoute()),
+          // The content lives in a dedicated FocusScope so focus can be
+          // restored here after the AppBar menus or a dialog steal it; see
+          // [_restoreContentFocus].
+          Expanded(
+            child: FocusScope(
+              node: _contentFocusScope,
+              child: _contentForRoute(),
+            ),
+          ),
         ],
       ),
     );
@@ -291,6 +320,13 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   // _MenuAcceleratorLabelState._listenToKeyEvent and causes intermittent ~1 s
   // delays before Alt-key underlines appear. Caching restores the fast-path.
   List<Widget> _menuChildren(LearnAnywhereLocalizations messages) {
+    final String locale = messages.locale.languageCode;
+    final _AppTheme theme = widget.appTheme;
+    if (locale != _cachedMenuLocale || theme != _cachedMenuTheme) {
+      _cachedMenuChildren = null;
+      _cachedMenuLocale = locale;
+      _cachedMenuTheme = theme;
+    }
     return _cachedMenuChildren ??= _buildMenuChildren(messages);
   }
 
@@ -387,6 +423,100 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         messages,
         LearnAnywhereMessage.menuList,
         _DesktopRoute.list,
+      ),
+      SubmenuButton(
+        menuChildren: <Widget>[
+          SubmenuButton(
+            menuChildren: <Widget>[
+              RadioMenuButton<_AppTheme>(
+                value: _AppTheme.system,
+                groupValue: widget.appTheme,
+                onChanged: (_AppTheme? v) {
+                  if (v != null) widget.onAppThemeChanged(v);
+                },
+                child: Text(
+                  messages.message(LearnAnywhereMessage.themeSystem),
+                ),
+              ),
+              RadioMenuButton<_AppTheme>(
+                value: _AppTheme.light,
+                groupValue: widget.appTheme,
+                onChanged: (_AppTheme? v) {
+                  if (v != null) widget.onAppThemeChanged(v);
+                },
+                child: Text(
+                  messages.message(LearnAnywhereMessage.themeLight),
+                ),
+              ),
+              RadioMenuButton<_AppTheme>(
+                value: _AppTheme.dark,
+                groupValue: widget.appTheme,
+                onChanged: (_AppTheme? v) {
+                  if (v != null) widget.onAppThemeChanged(v);
+                },
+                child: Text(
+                  messages.message(LearnAnywhereMessage.themeDark),
+                ),
+              ),
+              RadioMenuButton<_AppTheme>(
+                value: _AppTheme.darkBlue,
+                groupValue: widget.appTheme,
+                onChanged: (_AppTheme? v) {
+                  if (v != null) widget.onAppThemeChanged(v);
+                },
+                child: Text(
+                  messages.message(LearnAnywhereMessage.themeDarkBlue),
+                ),
+              ),
+              RadioMenuButton<_AppTheme>(
+                value: _AppTheme.lightBlue,
+                groupValue: widget.appTheme,
+                onChanged: (_AppTheme? v) {
+                  if (v != null) widget.onAppThemeChanged(v);
+                },
+                child: Text(
+                  messages.message(LearnAnywhereMessage.themeLightBlue),
+                ),
+              ),
+            ],
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.themeLabel),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+          SubmenuButton(
+            menuChildren: <Widget>[
+              RadioMenuButton<Locale>(
+                value: const Locale('en'),
+                groupValue: widget.locale,
+                onChanged: (Locale? v) {
+                  if (v != null) widget.onLocaleChanged(v);
+                },
+                child: Text(
+                  messages.message(LearnAnywhereMessage.languageEnglish),
+                ),
+              ),
+              RadioMenuButton<Locale>(
+                value: const Locale('de'),
+                groupValue: widget.locale,
+                onChanged: (Locale? v) {
+                  if (v != null) widget.onLocaleChanged(v);
+                },
+                child: Text(
+                  messages.message(LearnAnywhereMessage.languageGerman),
+                ),
+              ),
+            ],
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.languageLabel),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+        ],
+        child: MenuAcceleratorLabel(
+          messages.message(LearnAnywhereMessage.menuOptions),
+          builder: menuAcceleratorBuilder,
+        ),
       ),
       SubmenuButton(
         menuChildren: <Widget>[
@@ -613,6 +743,14 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       default:
         _selectRoute(_DesktopRoute.fileOperations);
     }
+    // Every File-menu command runs through a modal (a confirm dialog and/or the
+    // native file picker) and is launched from the MenuBar, which lives outside
+    // the content FocusScope. Re-assert content focus once the command settles
+    // so the destination page's F-key/Esc shortcuts are live again — the same
+    // defensive guard applied to the language/theme switch.
+    if (mounted) {
+      _restoreContentFocus();
+    }
   }
 
   Future<void> _newDeck() async {
@@ -630,8 +768,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   Future<void> _openDeck() async {
-    final String? path = await _askPath(
-      suggestedPath: _document.deckPath ?? 'learn_anywhere.vok',
+    final String? path = await _pickOpenPath(
+      extension: 'vok',
+      typeLabel: LearnAnywhereMessage.filePickerDeckType,
+      currentPath: _document.deckPath,
     );
     if (path == null) {
       return;
@@ -646,7 +786,11 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   Future<void> _mergeDeck() async {
-    final String? path = await _askPath(suggestedPath: 'merge.vok');
+    final String? path = await _pickOpenPath(
+      extension: 'vok',
+      typeLabel: LearnAnywhereMessage.filePickerDeckType,
+      currentPath: _document.deckPath,
+    );
     if (path == null) {
       return;
     }
@@ -674,8 +818,11 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   Future<void> _saveDeck({required bool saveAs}) async {
     String? path = saveAs ? null : _document.deckPath;
     if (path == null) {
-      path = await _askPath(
-        suggestedPath: _document.deckPath ?? 'learn_anywhere.vok',
+      path = await _pickSavePath(
+        extension: 'vok',
+        typeLabel: LearnAnywhereMessage.filePickerDeckType,
+        suggestedName: _suggestedName(_document.deckPath, 'learn_anywhere.vok'),
+        currentPath: _document.deckPath,
       );
       if (path == null) {
         return;
@@ -710,7 +857,11 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     if (!confirmed) {
       return;
     }
-    final String? path = await _askPath(suggestedPath: 'learn_anywhere.inf');
+    final String? path = await _pickOpenPath(
+      extension: 'inf',
+      typeLabel: LearnAnywhereMessage.filePickerMaskType,
+      currentPath: _lastMaskPath ?? _settings.lastMaskPath,
+    );
     if (path == null) {
       return;
     }
@@ -725,7 +876,15 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   Future<void> _saveMask() async {
-    final String? path = await _askPath(suggestedPath: 'learn_anywhere.inf');
+    final String? path = await _pickSavePath(
+      extension: 'inf',
+      typeLabel: LearnAnywhereMessage.filePickerMaskType,
+      suggestedName: _suggestedName(
+        _lastMaskPath ?? _settings.lastMaskPath,
+        'learn_anywhere.inf',
+      ),
+      currentPath: _lastMaskPath ?? _settings.lastMaskPath,
+    );
     if (path == null) {
       return;
     }
@@ -740,12 +899,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   Future<void> _loadStatistics() async {
-    final String? path = await _askPath(
-      suggestedPath:
-          _document.statisticsPath ??
-          (_document.deckPath == null
-              ? 'learn_anywhere.sta'
-              : _fileService.statisticsSidecarPath(_document.deckPath!)),
+    final String? path = await _pickOpenPath(
+      extension: 'sta',
+      typeLabel: LearnAnywhereMessage.filePickerStatsType,
+      currentPath: _statisticsDefaultPath(),
     );
     if (path == null) {
       return;
@@ -757,12 +914,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   Future<void> _saveStatistics() async {
-    final String? path = await _askPath(
-      suggestedPath:
-          _document.statisticsPath ??
-          (_document.deckPath == null
-              ? 'learn_anywhere.sta'
-              : _fileService.statisticsSidecarPath(_document.deckPath!)),
+    final String? statsDefault = _statisticsDefaultPath();
+    final String? path = await _pickSavePath(
+      extension: 'sta',
+      typeLabel: LearnAnywhereMessage.filePickerStatsType,
+      suggestedName: _suggestedName(statsDefault, 'learn_anywhere.sta'),
+      currentPath: statsDefault,
     );
     if (path == null) {
       return;
@@ -792,7 +949,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       _showStatus(LearnAnywhereMessage.statisticsNoSelection);
       return;
     }
-    final String? path = await _askPath(suggestedPath: 'selected_units.vok');
+    final String? path = await _pickSavePath(
+      extension: 'vok',
+      typeLabel: LearnAnywhereMessage.filePickerDeckType,
+      suggestedName: 'selected_units.vok',
+      currentPath: _document.deckPath,
+    );
     if (path == null) {
       return;
     }
@@ -882,49 +1044,63 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     return result ?? false;
   }
 
-  Future<String?> _askPath({required String suggestedPath}) async {
-    final TextEditingController controller = TextEditingController(
-      text: suggestedPath,
-    );
+  /// Shows the native "Open file" dialog filtered to [extension].
+  ///
+  /// The dialog opens in the folder of [currentPath] when a file is loaded,
+  /// otherwise the documents/home folder. Returns the resolved path, or null
+  /// when the user cancels. The path is handed to the existing core load logic
+  /// unchanged.
+  Future<String?> _pickOpenPath({
+    required String extension,
+    required LearnAnywhereMessage typeLabel,
+    String? currentPath,
+  }) async {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final String? result = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(messages.message(LearnAnywhereMessage.fileStatusDeck)),
-          content: TextField(
-            autofocus: true,
-            controller: controller,
-            decoration: InputDecoration(
-              labelText: messages.message(LearnAnywhereMessage.fileStatusDeck),
-            ),
-            onSubmitted: (String value) {
-              Navigator.of(context).pop(value.trim());
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim()),
-              child: Text(
-                messages.message(LearnAnywhereMessage.actionContinue),
-              ),
-            ),
-          ],
-        );
-      },
+    return _filePicker.openPath(
+      extension: extension,
+      typeLabel: messages.message(typeLabel),
+      initialDirectory: _filePicker.initialDirectory(currentPath),
     );
-    controller.dispose();
-    if (result == null || result.isEmpty) {
-      return null;
-    }
-    return result;
+  }
+
+  /// Shows the native "Save file" dialog filtered to [extension], pre-filling
+  /// [suggestedName].
+  ///
+  /// The dialog opens in the folder of [currentPath] when a file is loaded,
+  /// otherwise the documents/home folder. Returns the resolved path, or null
+  /// when the user cancels.
+  Future<String?> _pickSavePath({
+    required String extension,
+    required LearnAnywhereMessage typeLabel,
+    required String suggestedName,
+    String? currentPath,
+  }) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return _filePicker.savePath(
+      extension: extension,
+      typeLabel: messages.message(typeLabel),
+      suggestedName: suggestedName,
+      initialDirectory: _filePicker.initialDirectory(currentPath),
+    );
+  }
+
+  /// Returns the file name to pre-fill in a save dialog: the name of [path]
+  /// when set, otherwise [fallback].
+  String _suggestedName(String? path, String fallback) {
+    return path == null ? fallback : _filePicker.fileNameOf(path);
+  }
+
+  /// Resolves the conventional path used as the statistics save/load default:
+  /// the loaded `.sta` file, else the deck's sidecar, else null.
+  String? _statisticsDefaultPath() {
+    return _document.statisticsPath ??
+        (_document.deckPath == null
+            ? null
+            : _fileService.statisticsSidecarPath(_document.deckPath!));
   }
 
   void _setFileStatus(LearnAnywhereMessage message) {
@@ -1269,83 +1445,4 @@ final class _StatusLine extends StatelessWidget {
   }
 }
 
-final class _ThemeModeMenu extends StatelessWidget {
-  const _ThemeModeMenu({required this.appTheme, required this.onChanged});
-
-  final _AppTheme appTheme;
-  final ValueChanged<_AppTheme> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<_AppTheme>(
-        value: appTheme,
-        items: <DropdownMenuItem<_AppTheme>>[
-          DropdownMenuItem<_AppTheme>(
-            value: _AppTheme.system,
-            child: Text(messages.message(LearnAnywhereMessage.themeSystem)),
-          ),
-          DropdownMenuItem<_AppTheme>(
-            value: _AppTheme.light,
-            child: Text(messages.message(LearnAnywhereMessage.themeLight)),
-          ),
-          DropdownMenuItem<_AppTheme>(
-            value: _AppTheme.dark,
-            child: Text(messages.message(LearnAnywhereMessage.themeDark)),
-          ),
-          DropdownMenuItem<_AppTheme>(
-            value: _AppTheme.darkBlue,
-            child: Text(messages.message(LearnAnywhereMessage.themeDarkBlue)),
-          ),
-          DropdownMenuItem<_AppTheme>(
-            value: _AppTheme.lightBlue,
-            child: Text(messages.message(LearnAnywhereMessage.themeLightBlue)),
-          ),
-        ],
-        onChanged: (_AppTheme? value) {
-          if (value != null) {
-            onChanged(value);
-          }
-        },
-      ),
-    );
-  }
-}
-
-final class _LanguageMenu extends StatelessWidget {
-  const _LanguageMenu({required this.locale, required this.onChanged});
-
-  final Locale locale;
-  final ValueChanged<Locale> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<Locale>(
-        value: locale,
-        items: <DropdownMenuItem<Locale>>[
-          DropdownMenuItem<Locale>(
-            value: const Locale('en'),
-            child: Text(messages.message(LearnAnywhereMessage.languageEnglish)),
-          ),
-          DropdownMenuItem<Locale>(
-            value: const Locale('de'),
-            child: Text(messages.message(LearnAnywhereMessage.languageGerman)),
-          ),
-        ],
-        onChanged: (Locale? value) {
-          if (value != null) {
-            onChanged(value);
-          }
-        },
-      ),
-    );
-  }
-}
 

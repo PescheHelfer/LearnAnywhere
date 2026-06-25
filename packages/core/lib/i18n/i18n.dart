@@ -151,6 +151,9 @@ enum LearnAnywhereMessage {
   /// About command.
   helpAbout,
 
+  /// Options menu label.
+  menuOptions,
+
   /// Theme control label.
   themeLabel,
 
@@ -807,6 +810,15 @@ enum LearnAnywhereMessage {
 
   /// Exit request message.
   fileExitRequested,
+
+  /// Native file-picker filter caption for `.vok` deck files.
+  filePickerDeckType,
+
+  /// Native file-picker filter caption for `.inf` mask files.
+  filePickerMaskType,
+
+  /// Native file-picker filter caption for `.sta` statistics files.
+  filePickerStatsType,
 }
 
 /// Localized message catalog for framework-independent strings.
@@ -860,6 +872,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuList: 'L&ist', // top-bar I
       LearnAnywhereMessage.menuHelp: '&Help', // top-bar H
       LearnAnywhereMessage.helpAbout: '&About', // A
+      LearnAnywhereMessage.menuOptions: '&Options', // top-bar O
       LearnAnywhereMessage.themeLabel: 'Theme',
       LearnAnywhereMessage.themeSystem: 'System',
       LearnAnywhereMessage.themeLight: 'Light',
@@ -1111,6 +1124,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSaveMaskDone: 'Mask saved.',
       LearnAnywhereMessage.fileAutoLoadedStats: 'Statistics sidecar loaded.',
       LearnAnywhereMessage.fileExitRequested: 'Exit requested.',
+      LearnAnywhereMessage.filePickerDeckType: 'Vocabulary decks (*.vok)',
+      LearnAnywhereMessage.filePickerMaskType: 'Mask files (*.inf)',
+      LearnAnywhereMessage.filePickerStatsType: 'Statistics files (*.sta)',
     },
     LearnAnywhereLanguage.german: <LearnAnywhereMessage, String>{
       LearnAnywhereMessage.appTitle: 'Learn Anywhere',
@@ -1161,6 +1177,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuList: 'L&iste', // top-bar I
       LearnAnywhereMessage.menuHelp: '&Hilfe', // top-bar H
       LearnAnywhereMessage.helpAbout: '&Programminfo', // P
+      LearnAnywhereMessage.menuOptions: '&Optionen', // top-bar O
       LearnAnywhereMessage.themeLabel: 'Darstellung',
       LearnAnywhereMessage.themeSystem: 'System',
       LearnAnywhereMessage.themeLight: 'Hell',
@@ -1419,6 +1436,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSaveMaskDone: 'Maske gespeichert.',
       LearnAnywhereMessage.fileAutoLoadedStats: 'Statistik-Datei geladen.',
       LearnAnywhereMessage.fileExitRequested: 'Beenden angefordert.',
+      LearnAnywhereMessage.filePickerDeckType: 'Lern-Dateien (*.vok)',
+      LearnAnywhereMessage.filePickerMaskType: 'Masken-Dateien (*.inf)',
+      LearnAnywhereMessage.filePickerStatsType: 'Statistik-Dateien (*.sta)',
     },
   };
 

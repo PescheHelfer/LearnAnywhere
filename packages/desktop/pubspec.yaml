@@ -9,6 +9,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  file_selector: ^1.0.3
   flutter:
     sdk: flutter
   learn_anywhere_core:
