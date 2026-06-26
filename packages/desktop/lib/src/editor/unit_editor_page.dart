@@ -798,18 +798,41 @@ final class _FieldValueEditorState extends State<_FieldValueEditor> {
     _controller = LearnAnywhereRichTextEditingController(value: widget.value);
     _lastReported = widget.value;
     _controller.addListener(_onControllerChanged);
-    _focusNode = FocusNode(
-      onKeyEvent: (FocusNode node, KeyEvent event) {
-        if (widget.onNext != null &&
-            event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.tab &&
-            !HardwareKeyboard.instance.isShiftPressed) {
-          widget.onNext!();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-    );
+    _focusNode = FocusNode(onKeyEvent: _handleFieldKeyEvent);
+  }
+
+  /// Treats Enter exactly like a forward Tab: advance to the next input field,
+  /// or—on the last field—hand off to [_FieldValueEditor.onNext] (next unit).
+  ///
+  /// Both keys are intercepted here, on the focused field's own node, which is
+  /// the first handler in Flutter's key dispatch. That deliberately runs before
+  /// the editor's ancestor `_EnterIntent` shortcut and before EditableText's
+  /// own newline handling, so Enter is neither swallowed as a no-op nor turned
+  /// into a newline. Shift+Tab is left to the default backward traversal.
+  KeyEventResult _handleFieldKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+    final LogicalKeyboardKey key = event.logicalKey;
+    final bool isEnter =
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter;
+    final bool isForwardTab =
+        key == LogicalKeyboardKey.tab &&
+        !HardwareKeyboard.instance.isShiftPressed;
+    if (!isEnter && !isForwardTab) {
+      return KeyEventResult.ignored;
+    }
+    if (widget.onNext != null) {
+      // Last input field: navigate to the next unit (same path as F3).
+      widget.onNext!();
+    } else {
+      // Move to the next focusable field. The formatting toolbar is wrapped in
+      // ExcludeFocus, so traversal lands on the next field's TextField—matching
+      // Tab's default traversal order exactly (both use the same policy).
+      node.nextFocus();
+    }
+    return KeyEventResult.handled;
   }
 
   @override
