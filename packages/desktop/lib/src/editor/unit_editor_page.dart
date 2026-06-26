@@ -972,12 +972,6 @@ final class _FieldValueEditorState extends State<_FieldValueEditor> {
                 focusNode: _focusNode,
                 controller: _controller,
                 maxLines: 1,
-                textInputAction: widget.onNext != null
-                    ? TextInputAction.done
-                    : TextInputAction.next,
-                onSubmitted: widget.onNext != null
-                    ? (String _) => widget.onNext!()
-                    : null,
                 inputFormatters: <TextInputFormatter>[
                   LengthLimitingTextInputFormatter(widget.field.length),
                 ],
