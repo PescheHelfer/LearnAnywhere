@@ -80,13 +80,28 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     SingleActivator(LogicalKeyboardKey.f1): _LearnHelpIntent(),
     SingleActivator(LogicalKeyboardKey.f3): _LearnContinueIntent(),
     SingleActivator(LogicalKeyboardKey.enter): _LearnContinueIntent(),
+    SingleActivator(LogicalKeyboardKey.f5): _LearnRate1Intent(),
+    SingleActivator(LogicalKeyboardKey.f6): _LearnRate2Intent(),
+    SingleActivator(LogicalKeyboardKey.f7): _LearnRate3Intent(),
+    SingleActivator(LogicalKeyboardKey.f9): _LearnToggleViewIntent(),
     SingleActivator(LogicalKeyboardKey.f10): _LearnRevealIntent(),
     SingleActivator(LogicalKeyboardKey.escape): _LearnSetupIntent(),
   };
 
   final Random _random = Random(1);
+  final FocusNode _rootFocusNode = FocusNode();
   final Map<String, TextEditingController> _answerControllers =
       <String, TextEditingController>{};
+  final Map<String, FocusNode> _answerFocusNodes = <String, FocusNode>{};
+
+  // Prevents rapid-fire unit progression when Enter is held: set to true when
+  // Enter triggers Check or Continue, cleared on the next key-up event.
+  bool _enterAwaitingRelease = false;
+
+  // Whether the post-check toggle panel shows the solution (true) or the
+  // user's typed answer (false). Persists across units within a session;
+  // reset to true when a new session starts.
+  bool _showSolution = true;
 
   late SessionParameters _draftParameters;
   late int _startIndex;
@@ -136,50 +151,107 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   @override
   void dispose() {
     _clockTimer?.cancel();
+    _rootFocusNode.dispose();
     for (final TextEditingController controller in _answerControllers.values) {
       controller.dispose();
+    }
+    for (final FocusNode node in _answerFocusNodes.values) {
+      node.dispose();
     }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Shortcuts(
-      shortcuts: _kShortcuts,
-      child: Actions(
-        actions: <Type, Action<Intent>>{
-          _LearnHelpIntent: CallbackAction<_LearnHelpIntent>(
-            onInvoke: (_) {
-              _showHelp();
-              return null;
-            },
-          ),
-          _LearnContinueIntent: CallbackAction<_LearnContinueIntent>(
-            onInvoke: (_) {
-              _continueShortcut();
-              return null;
-            },
-          ),
-          _LearnRevealIntent: CallbackAction<_LearnRevealIntent>(
-            onInvoke: (_) {
-              _reveal();
-              return null;
-            },
-          ),
-          _LearnSetupIntent: CallbackAction<_LearnSetupIntent>(
-            onInvoke: (_) {
-              // Esc exits learning mode back to the home screen. A confirmation
-              // is shown only mid-session, when live stats would be lost.
-              _cancelSession();
-              return null;
-            },
-          ),
-        },
-        child: Focus(
-          autofocus: true,
-          child: Material(
-            color: Theme.of(context).colorScheme.surface,
-            child: _content(context),
+    return Focus(
+      // Outer Focus intercepts Enter key-up to release the anti-rapid-fire
+      // guard, without consuming the event (so shortcuts still fire normally).
+      onKeyEvent: (FocusNode _, KeyEvent event) {
+        if (event is KeyUpEvent) {
+          final LogicalKeyboardKey key = event.logicalKey;
+          if ((key == LogicalKeyboardKey.enter ||
+                  key == LogicalKeyboardKey.numpadEnter) &&
+              _enterAwaitingRelease) {
+            setState(() => _enterAwaitingRelease = false);
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Shortcuts(
+        shortcuts: _kShortcuts,
+        child: Actions(
+          actions: <Type, Action<Intent>>{
+            _LearnHelpIntent: CallbackAction<_LearnHelpIntent>(
+              onInvoke: (_) {
+                _showHelp();
+                return null;
+              },
+            ),
+            _LearnContinueIntent: CallbackAction<_LearnContinueIntent>(
+              onInvoke: (_) {
+                if (_enterAwaitingRelease) return null;
+                final bool enterHeld =
+                    HardwareKeyboard.instance.isLogicalKeyPressed(
+                      LogicalKeyboardKey.enter,
+                    ) ||
+                    HardwareKeyboard.instance.isLogicalKeyPressed(
+                      LogicalKeyboardKey.numpadEnter,
+                    );
+                _continueShortcut();
+                if (enterHeld) setState(() => _enterAwaitingRelease = true);
+                return null;
+              },
+            ),
+            _LearnRevealIntent: CallbackAction<_LearnRevealIntent>(
+              onInvoke: (_) {
+                _reveal();
+                return null;
+              },
+            ),
+            _LearnSetupIntent: CallbackAction<_LearnSetupIntent>(
+              onInvoke: (_) {
+                _cancelSession();
+                return null;
+              },
+            ),
+            _LearnRate1Intent: CallbackAction<_LearnRate1Intent>(
+              onInvoke: (_) {
+                final AttemptRating? r = _ratingAtIndex(0);
+                if (r != null) setState(() => _selectedRating = r);
+                return null;
+              },
+            ),
+            _LearnRate2Intent: CallbackAction<_LearnRate2Intent>(
+              onInvoke: (_) {
+                final AttemptRating? r = _ratingAtIndex(1);
+                if (r != null) setState(() => _selectedRating = r);
+                return null;
+              },
+            ),
+            _LearnRate3Intent: CallbackAction<_LearnRate3Intent>(
+              onInvoke: (_) {
+                final AttemptRating? r = _ratingAtIndex(2);
+                if (r != null) setState(() => _selectedRating = r);
+                return null;
+              },
+            ),
+            _LearnToggleViewIntent: CallbackAction<_LearnToggleViewIntent>(
+              onInvoke: (_) {
+                if (_evaluation != null && _draftParameters.withInput) {
+                  setState(() => _showSolution = !_showSolution);
+                  _rootFocusNode.requestFocus();
+                }
+                return null;
+              },
+            ),
+          },
+          child: Focus(
+            focusNode: _rootFocusNode,
+            autofocus: true,
+            child: Material(
+              color: Theme.of(context).colorScheme.surface,
+              child: _content(context),
+            ),
           ),
         ),
       ),
@@ -228,6 +300,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         onCancel: _cancelSession,
       );
     }
+    final LearnAnywhereLocalizations messages =
+        LearnAnywhereLocalizations.of(context);
     return _SessionView(
       deck: widget.deck,
       statistics: widget.statistics,
@@ -236,15 +310,25 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       item: _currentItem!,
       evaluation: _evaluation,
       selectedRating: _selectedRating,
+      ratingEntries: _evaluation != null
+          ? _computeRatingEntries(messages)
+          : const <MapEntry<AttemptRating, String>>[],
       answerControllers: _answerControllers,
+      answerFocusNodes: _answerFocusNodes,
       enteredAnswers: _lastEntered,
       elapsedSeconds: _elapsedSeconds,
       sessionAttempts: widget.sessionAttempts,
       sessionCorrect: widget.sessionCorrect,
+      showSolution: _showSolution,
       onReveal: _reveal,
       onRatingChanged: (AttemptRating value) {
         setState(() => _selectedRating = value);
       },
+      onToggleView: () {
+        setState(() => _showSolution = !_showSolution);
+        _rootFocusNode.requestFocus();
+      },
+      onRestoreFocus: _rootFocusNode.requestFocus,
       onContinue: _continueAfterRating,
       onCancel: _cancelSession,
     );
@@ -266,6 +350,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       random: _random,
     );
     _orderPosition = 0;
+    _showSolution = true;
     _selectNextItem();
   }
 
@@ -336,22 +421,92 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   }
 
   void _resetAnswerControllers(SessionItem item) {
-    for (final TextEditingController controller in _answerControllers.values) {
-      controller.dispose();
+    for (final TextEditingController c in _answerControllers.values) {
+      c.dispose();
+    }
+    for (final FocusNode n in _answerFocusNodes.values) {
+      n.dispose();
     }
     _answerControllers.clear();
+    _answerFocusNodes.clear();
+    _enterAwaitingRelease = false;
     if (!_draftParameters.withInput) {
       return;
     }
     final LearningUnit unit = widget.deck.units[item.unitIndex - 1];
-    final Iterable<FieldDefinition> fields = answerFields(
+    final List<FieldDefinition> fields = answerFields(
       widget.deck,
       unit,
       item.direction,
-    ).keys;
-    for (final FieldDefinition field in fields) {
+    ).keys.toList(growable: false);
+    for (int i = 0; i < fields.length; i++) {
+      final FieldDefinition field = fields[i];
+      final bool isLast = i == fields.length - 1;
       _answerControllers[field.name] = TextEditingController();
+      _answerFocusNodes[field.name] = FocusNode(
+        onKeyEvent: (FocusNode node, KeyEvent event) =>
+            _handleAnswerFieldKey(node, event, isLast),
+      );
     }
+    if (_answerFocusNodes.isNotEmpty) {
+      final FocusNode firstNode = _answerFocusNodes.values.first;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) firstNode.requestFocus();
+      });
+    }
+  }
+
+  /// Key handler for answer input fields.
+  ///
+  /// Tab always moves to the next answer field. Enter on a non-last field also
+  /// advances; on the last field Enter triggers Check (before reveal) or
+  /// Continue (after reveal). A mandatory key-release cycle prevents the held
+  /// Enter key from racing through multiple units.
+  KeyEventResult _handleAnswerFieldKey(
+    FocusNode node,
+    KeyEvent event,
+    bool isLast,
+  ) {
+    final LogicalKeyboardKey key = event.logicalKey;
+    final bool isEnter =
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter;
+    final bool isForwardTab =
+        key == LogicalKeyboardKey.tab &&
+        !HardwareKeyboard.instance.isShiftPressed;
+
+    // Track key-up to release the anti-rapid-fire guard.
+    if (isEnter && event is KeyUpEvent) {
+      if (_enterAwaitingRelease) {
+        setState(() => _enterAwaitingRelease = false);
+      }
+      return KeyEventResult.ignored;
+    }
+
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    if (isEnter) {
+      if (_enterAwaitingRelease) return KeyEventResult.handled;
+      if (!isLast) {
+        node.nextFocus();
+        return KeyEventResult.handled;
+      }
+      // Last answer field: trigger Check or Continue.
+      setState(() => _enterAwaitingRelease = true);
+      if (_evaluation == null) {
+        _reveal();
+      } else {
+        _continueAfterRating();
+      }
+      return KeyEventResult.handled;
+    }
+
+    if (isForwardTab) {
+      node.nextFocus();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   void _reveal() {
@@ -497,6 +652,89 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     );
   }
 
+  /// Returns the ordered rating entries shown as evaluation buttons.
+  /// Must match the ordering used by [_ratingAtIndex].
+  List<MapEntry<AttemptRating, String>> _computeRatingEntries(
+    LearnAnywhereLocalizations messages,
+  ) {
+    if (!_draftParameters.withInput) {
+      return <MapEntry<AttemptRating, String>>[
+        MapEntry<AttemptRating, String>(
+          AttemptRating.correct,
+          messages.message(LearnAnywhereMessage.learnRatingKnewIt),
+        ),
+        MapEntry<AttemptRating, String>(
+          AttemptRating.wrong,
+          messages.message(LearnAnywhereMessage.learnRatingDidNotKnow),
+        ),
+        MapEntry<AttemptRating, String>(
+          AttemptRating.noCount,
+          messages.message(LearnAnywhereMessage.learnRatingNoCount),
+        ),
+      ];
+    }
+    if (_evaluation!.correct) {
+      return <MapEntry<AttemptRating, String>>[
+        MapEntry<AttemptRating, String>(
+          AttemptRating.correct,
+          messages.message(LearnAnywhereMessage.learnRatingCorrect),
+        ),
+        MapEntry<AttemptRating, String>(
+          AttemptRating.wrong,
+          messages.message(LearnAnywhereMessage.learnRatingActuallyWrong),
+        ),
+        MapEntry<AttemptRating, String>(
+          AttemptRating.noCount,
+          messages.message(LearnAnywhereMessage.learnRatingNoCount),
+        ),
+      ];
+    }
+    return <MapEntry<AttemptRating, String>>[
+      MapEntry<AttemptRating, String>(
+        AttemptRating.wrong,
+        messages.message(LearnAnywhereMessage.learnRatingWrong),
+      ),
+      if (widget.options.wrongInputCorrectable)
+        MapEntry<AttemptRating, String>(
+          AttemptRating.correct,
+          messages.message(LearnAnywhereMessage.learnRatingActuallyCorrect),
+        ),
+      MapEntry<AttemptRating, String>(
+        AttemptRating.noCount,
+        messages.message(LearnAnywhereMessage.learnRatingNoCount),
+      ),
+    ];
+  }
+
+  /// Returns the [AttemptRating] at the given 0-based index in the rating
+  /// list, or null when the index is out of range or no evaluation is active.
+  /// Must match the ordering used by [_computeRatingEntries].
+  AttemptRating? _ratingAtIndex(int index) {
+    if (_evaluation == null) return null;
+    if (!_draftParameters.withInput) {
+      const List<AttemptRating> r = <AttemptRating>[
+        AttemptRating.correct,
+        AttemptRating.wrong,
+        AttemptRating.noCount,
+      ];
+      return index < r.length ? r[index] : null;
+    }
+    if (_evaluation!.correct) {
+      const List<AttemptRating> r = <AttemptRating>[
+        AttemptRating.correct,
+        AttemptRating.wrong,
+        AttemptRating.noCount,
+      ];
+      return index < r.length ? r[index] : null;
+    }
+    final List<AttemptRating> r = <AttemptRating>[
+      AttemptRating.wrong,
+      if (widget.options.wrongInputCorrectable) AttemptRating.correct,
+      AttemptRating.noCount,
+    ];
+    return index < r.length ? r[index] : null;
+  }
+
   Future<void> _cancelSession() async {
     // On the setup or completion screens there are no live stats to lose, so
     // exit straight to the home screen without a confirmation prompt.
@@ -615,34 +853,6 @@ final class _SetupView extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        Wrap(
-          spacing: LearnAnywhereTokens.gapSmall,
-          children: <Widget>[
-            FilledButton.icon(
-              onPressed: onStartSession,
-              icon: const Icon(Icons.play_arrow),
-              label: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(messages.message(LearnAnywhereMessage.learnStartSession)),
-                  const Text('F3', style: TextStyle(fontSize: 10)),
-                ],
-              ),
-            ),
-            FilledButton.tonalIcon(
-              onPressed: onCancel,
-              icon: const Icon(Icons.close),
-              label: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(messages.message(LearnAnywhereMessage.actionCancel)),
-                  const Text('Esc', style: TextStyle(fontSize: 10)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
         _DropdownRow<DirectionSelection>(
           label: messages.message(LearnAnywhereMessage.learnDirection),
           value: parameters.directionSelection,
@@ -728,6 +938,34 @@ final class _SetupView extends StatelessWidget {
           maximum: 100,
           onChanged: onThresholdChanged,
         ),
+        const SizedBox(height: LearnAnywhereTokens.gapMedium),
+        Wrap(
+          spacing: LearnAnywhereTokens.gapSmall,
+          children: <Widget>[
+            FilledButton.icon(
+              onPressed: onStartSession,
+              icon: const Icon(Icons.play_arrow),
+              label: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(messages.message(LearnAnywhereMessage.learnStartSession)),
+                  const Text('F3', style: TextStyle(fontSize: 10)),
+                ],
+              ),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: onCancel,
+              icon: const Icon(Icons.close),
+              label: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(messages.message(LearnAnywhereMessage.actionCancel)),
+                  const Text('Esc', style: TextStyle(fontSize: 10)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -742,13 +980,18 @@ final class _SessionView extends StatelessWidget {
     required this.item,
     required this.evaluation,
     required this.selectedRating,
+    required this.ratingEntries,
     required this.answerControllers,
+    required this.answerFocusNodes,
     required this.enteredAnswers,
     required this.elapsedSeconds,
     required this.sessionAttempts,
     required this.sessionCorrect,
+    required this.showSolution,
     required this.onReveal,
     required this.onRatingChanged,
+    required this.onToggleView,
+    required this.onRestoreFocus,
     required this.onContinue,
     required this.onCancel,
   });
@@ -760,13 +1003,18 @@ final class _SessionView extends StatelessWidget {
   final SessionItem item;
   final AnswerEvaluation? evaluation;
   final AttemptRating selectedRating;
+  final List<MapEntry<AttemptRating, String>> ratingEntries;
   final Map<String, TextEditingController> answerControllers;
+  final Map<String, FocusNode> answerFocusNodes;
   final Map<String, String> enteredAnswers;
   final int elapsedSeconds;
   final int sessionAttempts;
   final int sessionCorrect;
+  final bool showSolution;
   final VoidCallback onReveal;
   final ValueChanged<AttemptRating> onRatingChanged;
+  final VoidCallback onToggleView;
+  final VoidCallback onRestoreFocus;
   final VoidCallback onContinue;
   final VoidCallback onCancel;
 
@@ -775,106 +1023,400 @@ final class _SessionView extends StatelessWidget {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
+    final ColorScheme colors = Theme.of(context).colorScheme;
     final LearningUnit unit = deck.units[item.unitIndex - 1];
     final CategoryDefinition category = deck.categoryForUnit(unit);
-    return ListView(
-      padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
-      children: <Widget>[
-        Text(
-          _learnUnitHeader(
-            messages,
-            item.unitIndex,
-            deck.units.length,
-            category.name,
-            _directionLabel(deck, item.direction),
-          ),
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        _LiveStatsPanel(
-          deck: deck,
-          statistics: statistics,
-          parameters: parameters,
-          sessionAttempts: sessionAttempts,
-          sessionCorrect: sessionCorrect,
-          elapsedSeconds: options.showClock ? elapsedSeconds : null,
-          timeLimitSeconds: options.timeLimitSeconds,
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapSmall),
-        // Cancel and the primary action (Reveal/Check before reveal, Continue
-        // after) are both kept at the top of the screen.
-        Wrap(
-          spacing: LearnAnywhereTokens.gapSmall,
+
+    // All non-hidden fields for the category, in definition order.
+    final List<FieldDefinition> allFields = category.fields
+        .where((FieldDefinition f) => !f.isHidden)
+        .toList(growable: false);
+
+    // Only render fields that are relevant in the current state.
+    final List<FieldDefinition> visibleFields = allFields
+        .where((FieldDefinition f) {
+          final FieldRole r = f.roleFor(item.direction);
+          // Remarks appear only after Check.
+          if (r == FieldRole.remark && evaluation == null) return false;
+          // Answer fields without typed-input mode are hidden before Check.
+          if (r == FieldRole.answer &&
+              evaluation == null &&
+              !parameters.withInput) {
+            return false;
+          }
+          return true;
+        })
+        .toList(growable: false);
+
+    // Compute stat values for the header row.
+    final List<SessionItem> pool = activeSuperQueryPool(
+      deck: deck,
+      statistics: statistics,
+      parameters: parameters,
+    );
+    final int totalItems = _totalItems(deck, parameters);
+    final int mastered = (totalItems - pool.length).clamp(0, totalItems);
+    final int accuracy = sessionAttempts == 0
+        ? 0
+        : ((sessionCorrect / sessionAttempts) * 100).round();
+    final bool timeWarning =
+        options.showClock &&
+        options.timeLimitSeconds > 0 &&
+        elapsedSeconds >= options.timeLimitSeconds;
+
+    return Scrollbar(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            FilledButton.tonalIcon(
-              onPressed: onCancel,
-              icon: const Icon(Icons.close),
-              label: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(messages.message(LearnAnywhereMessage.actionCancel)),
-                  const Text('Esc', style: TextStyle(fontSize: 10)),
+            // ── Header: stats + inline title ───────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                _StatPill(
+                  label: messages.message(
+                    LearnAnywhereMessage.learnLiveMastered,
+                  ),
+                  value: '$mastered/$totalItems',
+                ),
+                const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                _StatPill(
+                  label: messages.message(
+                    LearnAnywhereMessage.learnLiveRemaining,
+                  ),
+                  value: pool.length.toString(),
+                ),
+                const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                _StatPill(
+                  label: messages.message(
+                    LearnAnywhereMessage.learnLiveAccuracy,
+                  ),
+                  value: '$accuracy%',
+                ),
+                if (options.showClock) ...<Widget>[
+                  const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                  _StatPill(
+                    label: 'Time',
+                    value: _clockText(elapsedSeconds),
+                    warning: timeWarning,
+                  ),
                 ],
+                const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                Expanded(
+                  child: Text(
+                    _learnUnitHeader(
+                      messages,
+                      item.unitIndex,
+                      deck.units.length,
+                      category.name,
+                      _directionLabel(deck, item.direction),
+                    ),
+                    style: Theme.of(context).textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapSmall),
+            // ── Field grid ────────────────────────────────────────────────
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: colors.outlineVariant),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: Column(
+                  children: <Widget>[
+                    for (int i = 0; i < visibleFields.length; i++) ...<Widget>[
+                      if (i > 0)
+                        Container(height: 1, color: colors.outlineVariant),
+                      Builder(
+                        builder: (BuildContext ctx) {
+                          final FieldDefinition field = visibleFields[i];
+                          final FieldRole role = field.roleFor(item.direction);
+                          final double bgOpacity =
+                              Theme.of(ctx).brightness == Brightness.light
+                                  ? 0.15
+                                  : 0.10;
+
+                          final bool showUserAnswer =
+                              role == FieldRole.answer &&
+                              evaluation != null &&
+                              parameters.withInput &&
+                              !showSolution;
+
+                          final Color accentColor;
+                          final Color bgColor;
+                          final FieldValue displayValue;
+
+                          if (showUserAnswer) {
+                            final ColorScheme rowColors =
+                                Theme.of(ctx).colorScheme;
+                            accentColor = rowColors.outline;
+                            bgColor = rowColors.surfaceContainerHighest;
+                            displayValue = FieldValue.plain(
+                              enteredAnswers[field.name] ?? '',
+                            );
+                          } else {
+                            accentColor = switch (role) {
+                              FieldRole.question =>
+                                const Color.fromRGBO(0, 150, 180, 1),
+                              FieldRole.answer =>
+                                const Color.fromRGBO(0, 160, 80, 1),
+                              FieldRole.remark =>
+                                const Color.fromRGBO(200, 140, 0, 1),
+                            };
+                            bgColor = accentColor.withValues(alpha: bgOpacity);
+                            displayValue = unit.valueForField(field.name);
+                          }
+
+                          return _PracticeGridRow(
+                            field: field,
+                            role: role,
+                            value: displayValue,
+                            bgColor: bgColor,
+                            accentColor: accentColor,
+                            evaluation: evaluation,
+                            withInput: parameters.withInput,
+                            enteredText: enteredAnswers[field.name],
+                            controller: answerControllers[field.name],
+                            focusNode: answerFocusNodes[field.name],
+                          );
+                        },
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
-            if (evaluation == null)
-              FilledButton.icon(
-                onPressed: onReveal,
-                icon: Icon(
-                  parameters.withInput ? Icons.check : Icons.visibility,
-                ),
-                label: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      messages.message(
-                        parameters.withInput
-                            ? LearnAnywhereMessage.learnCheckAnswer
-                            : LearnAnywhereMessage.learnReveal,
-                      ),
-                    ),
-                    const Text('F10', style: TextStyle(fontSize: 10)),
-                  ],
-                ),
-              )
-            else
-              FilledButton.icon(
-                onPressed: onContinue,
-                icon: const Icon(Icons.arrow_forward),
-                label: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(messages.message(LearnAnywhereMessage.learnContinue)),
-                    const Text('F3', style: TextStyle(fontSize: 10)),
-                  ],
-                ),
+            // ── Post-reveal results ────────────────────────────────────────
+            if (evaluation != null) ...<Widget>[
+              const SizedBox(height: LearnAnywhereTokens.gapMedium),
+              // Fix 3: emoji immediately after result text, inline
+              Row(
+                children: <Widget>[
+                  Text(
+                    evaluation!.correct
+                        ? messages.message(
+                            LearnAnywhereMessage.learnCorrectMessage,
+                          )
+                        : messages.message(
+                            LearnAnywhereMessage.learnWrongMessage,
+                          ),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    evaluation!.correct ? '😊' : '😔',
+                    style: const TextStyle(fontSize: 40),
+                  ),
+                ],
               ),
+              const SizedBox(height: LearnAnywhereTokens.gapSmall),
+              Row(
+                children: <Widget>[
+                  FilledButton.icon(
+                    onPressed: onContinue,
+                    icon: const Icon(Icons.arrow_forward),
+                    label: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          messages.message(LearnAnywhereMessage.learnContinue),
+                        ),
+                        const Text('F3', style: TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                  FilledButton.tonalIcon(
+                    onPressed: onCancel,
+                    icon: const Icon(Icons.close),
+                    label: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          messages.message(LearnAnywhereMessage.actionCancel),
+                        ),
+                        const Text('Esc', style: TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                  if (parameters.withInput) ...<Widget>[
+                    const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                    _ToggleViewButton(
+                      label: showSolution
+                          ? messages.message(
+                              LearnAnywhereMessage.learnYourAnswer,
+                            )
+                          : messages.message(LearnAnywhereMessage.learnSolution),
+                      onPressed: onToggleView,
+                      onRestoreFocus: onRestoreFocus,
+                    ),
+                  ],
+                  const Spacer(),
+                  Text(
+                    messages.message(LearnAnywhereMessage.learnEvaluateAs),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                  for (int i = 0; i < ratingEntries.length; i++) ...<Widget>[
+                    if (i > 0)
+                      const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                    _EvalButton(
+                      label: ratingEntries[i].value,
+                      hint: 'F${i + 5}',
+                      filled: ratingEntries[i].key == selectedRating,
+                      onPressed: () => onRatingChanged(ratingEntries[i].key),
+                      onRestoreFocus: onRestoreFocus,
+                    ),
+                  ],
+                ],
+              ),
+            ] else ...<Widget>[
+              const SizedBox(height: LearnAnywhereTokens.gapLarge),
+              // ── Pre-check buttons ──────────────────────────────────────
+              Wrap(
+                spacing: LearnAnywhereTokens.gapSmall,
+                children: <Widget>[
+                  FilledButton.tonalIcon(
+                    onPressed: onCancel,
+                    icon: const Icon(Icons.close),
+                    label: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          messages.message(LearnAnywhereMessage.actionCancel),
+                        ),
+                        const Text('Esc', style: TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                  FilledButton.icon(
+                    onPressed: onReveal,
+                    icon: Icon(
+                      parameters.withInput ? Icons.check : Icons.visibility,
+                    ),
+                    label: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          messages.message(
+                            parameters.withInput
+                                ? LearnAnywhereMessage.learnCheckAnswer
+                                : LearnAnywhereMessage.learnReveal,
+                          ),
+                        ),
+                        const Text('F10', style: TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        _FieldGroup(
-          title: messages.message(LearnAnywhereMessage.learnPrompt),
-          values: promptFields(deck, unit, item.direction),
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        if (parameters.withInput && evaluation == null)
-          _AnswerInputGroup(
-            values: answerFields(deck, unit, item.direction),
-            controllers: answerControllers,
+      ),
+    );
+  }
+
+}
+
+// ─── Practice grid row ────────────────────────────────────────────────────────
+
+final class _PracticeGridRow extends StatelessWidget {
+  const _PracticeGridRow({
+    required this.field,
+    required this.role,
+    required this.value,
+    required this.bgColor,
+    required this.accentColor,
+    required this.evaluation,
+    required this.withInput,
+    required this.enteredText,
+    required this.controller,
+    required this.focusNode,
+  });
+
+  final FieldDefinition field;
+  final FieldRole role;
+  final FieldValue value;
+  final Color bgColor;
+  final Color accentColor;
+  final AnswerEvaluation? evaluation;
+  final bool withInput;
+  final String? enteredText;
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final bool isEditable =
+        role == FieldRole.answer && evaluation == null && withInput;
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Container(width: 4, color: accentColor),
+          Container(
+            width: 120,
+            color: bgColor,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              field.name,
+              style: Theme.of(context).textTheme.bodySmall,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        if (evaluation != null)
-          _RevealPanel(
-            deck: deck,
-            unit: unit,
-            direction: item.direction,
-            evaluation: evaluation!,
-            withInput: parameters.withInput,
-            enteredAnswers: enteredAnswers,
-            wrongInputCorrectable: options.wrongInputCorrectable,
-            selectedRating: selectedRating,
-            onRatingChanged: onRatingChanged,
+          Container(width: 1, color: colors.outlineVariant),
+          Expanded(
+            child: ColoredBox(
+              color: bgColor,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
+                child: isEditable
+                    ? TextField(
+                        focusNode: focusNode,
+                        controller: controller,
+                        maxLines: 1,
+                        inputFormatters: <TextInputFormatter>[
+                          LengthLimitingTextInputFormatter(field.length),
+                        ],
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontFamilyFallback:
+                              LearnAnywhereTokens.monospaceFallback,
+                        ),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 0,
+                          ),
+                          border: InputBorder.none,
+                        ),
+                      )
+                    : LearnAnywhereRichText(
+                        value: value,
+                        maxLines: 3,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontFamilyFallback:
+                              LearnAnywhereTokens.monospaceFallback,
+                        ),
+                      ),
+              ),
+            ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -912,274 +1454,6 @@ final class _CompletionView extends StatelessWidget {
   }
 }
 
-final class _FieldGroup extends StatelessWidget {
-  const _FieldGroup({required this.title, required this.values});
-
-  final String title;
-  final Map<FieldDefinition, FieldValue> values;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Section(
-      title: title,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: values.entries
-            .map((MapEntry<FieldDefinition, FieldValue> entry) {
-              return _FieldLine(field: entry.key, value: entry.value);
-            })
-            .toList(growable: false),
-      ),
-    );
-  }
-}
-
-final class _AnswerInputGroup extends StatelessWidget {
-  const _AnswerInputGroup({required this.values, required this.controllers});
-
-  final Map<FieldDefinition, FieldValue> values;
-  final Map<String, TextEditingController> controllers;
-
-  @override
-  Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    return _Section(
-      title: messages.message(LearnAnywhereMessage.learnYourAnswer),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: values.keys
-            .map((FieldDefinition field) {
-              return Padding(
-                padding: const EdgeInsets.only(
-                  bottom: LearnAnywhereTokens.gapSmall,
-                ),
-                child: SizedBox(
-                  width: max(260, field.length * 12 + 32).toDouble(),
-                  child: TextField(
-                    key: ValueKey<String>('learn-answer-${field.name}'),
-                    controller: controllers[field.name],
-                    maxLines: 1,
-                    inputFormatters: <TextInputFormatter>[
-                      LengthLimitingTextInputFormatter(field.length),
-                    ],
-                    decoration: InputDecoration(labelText: field.name),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
-                    ),
-                  ),
-                ),
-              );
-            })
-            .toList(growable: false),
-      ),
-    );
-  }
-}
-
-final class _RevealPanel extends StatelessWidget {
-  const _RevealPanel({
-    required this.deck,
-    required this.unit,
-    required this.direction,
-    required this.evaluation,
-    required this.withInput,
-    required this.enteredAnswers,
-    required this.wrongInputCorrectable,
-    required this.selectedRating,
-    required this.onRatingChanged,
-  });
-
-  final LearningDeck deck;
-  final LearningUnit unit;
-  final QueryDirection direction;
-  final AnswerEvaluation evaluation;
-  final bool withInput;
-  final Map<String, String> enteredAnswers;
-  final bool wrongInputCorrectable;
-  final AttemptRating selectedRating;
-  final ValueChanged<AttemptRating> onRatingChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    final Map<FieldDefinition, FieldValue> solution = answerFields(
-      deck,
-      unit,
-      direction,
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        Text(
-          evaluation.correct
-              ? messages.message(LearnAnywhereMessage.learnCorrectMessage)
-              : messages.message(LearnAnywhereMessage.learnWrongMessage),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        // Result order matches the correct-answer screen: the prompt is shown
-        // above; here we show the user's typed answer, the solution, then
-        // remarks.
-        if (withInput) ...<Widget>[
-          _FieldGroup(
-            title: messages.message(LearnAnywhereMessage.learnYourAnswer),
-            values: <FieldDefinition, FieldValue>{
-              for (final FieldDefinition field in solution.keys)
-                field: FieldValue.plain(enteredAnswers[field.name] ?? ''),
-            },
-          ),
-          const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        ],
-        _FieldGroup(
-          title: messages.message(LearnAnywhereMessage.learnSolution),
-          values: solution,
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        _FieldGroup(
-          title: messages.message(LearnAnywhereMessage.learnRemarks),
-          values: remarkFields(deck, unit, direction),
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        Wrap(
-          spacing: LearnAnywhereTokens.gapSmall,
-          children: _ratingOptions(messages)
-              .map((MapEntry<AttemptRating, String> entry) {
-                return ChoiceChip(
-                  label: Text(entry.value),
-                  selected: selectedRating == entry.key,
-                  onSelected: (_) => onRatingChanged(entry.key),
-                );
-              })
-              .toList(growable: false),
-        ),
-      ],
-    );
-  }
-
-  List<MapEntry<AttemptRating, String>> _ratingOptions(
-    LearnAnywhereLocalizations messages,
-  ) {
-    if (!withInput) {
-      return <MapEntry<AttemptRating, String>>[
-        MapEntry<AttemptRating, String>(
-          AttemptRating.correct,
-          messages.message(LearnAnywhereMessage.learnRatingKnewIt),
-        ),
-        MapEntry<AttemptRating, String>(
-          AttemptRating.wrong,
-          messages.message(LearnAnywhereMessage.learnRatingDidNotKnow),
-        ),
-        MapEntry<AttemptRating, String>(
-          AttemptRating.noCount,
-          messages.message(LearnAnywhereMessage.learnRatingNoCount),
-        ),
-      ];
-    }
-    if (evaluation.correct) {
-      return <MapEntry<AttemptRating, String>>[
-        MapEntry<AttemptRating, String>(
-          AttemptRating.correct,
-          messages.message(LearnAnywhereMessage.learnRatingCorrect),
-        ),
-        MapEntry<AttemptRating, String>(
-          AttemptRating.wrong,
-          messages.message(LearnAnywhereMessage.learnRatingActuallyWrong),
-        ),
-        MapEntry<AttemptRating, String>(
-          AttemptRating.noCount,
-          messages.message(LearnAnywhereMessage.learnRatingNoCount),
-        ),
-      ];
-    }
-    return <MapEntry<AttemptRating, String>>[
-      MapEntry<AttemptRating, String>(
-        AttemptRating.wrong,
-        messages.message(LearnAnywhereMessage.learnRatingWrong),
-      ),
-      if (wrongInputCorrectable)
-        MapEntry<AttemptRating, String>(
-          AttemptRating.correct,
-          messages.message(LearnAnywhereMessage.learnRatingActuallyCorrect),
-        ),
-      MapEntry<AttemptRating, String>(
-        AttemptRating.noCount,
-        messages.message(LearnAnywhereMessage.learnRatingNoCount),
-      ),
-    ];
-  }
-}
-
-final class _LiveStatsPanel extends StatelessWidget {
-  const _LiveStatsPanel({
-    required this.deck,
-    required this.statistics,
-    required this.parameters,
-    required this.sessionAttempts,
-    required this.sessionCorrect,
-    required this.elapsedSeconds,
-    required this.timeLimitSeconds,
-  });
-
-  final LearningDeck deck;
-  final List<UnitStats> statistics;
-  final SessionParameters parameters;
-  final int sessionAttempts;
-  final int sessionCorrect;
-  final int? elapsedSeconds;
-  final int timeLimitSeconds;
-
-  @override
-  Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    final List<SessionItem> pool = activeSuperQueryPool(
-      deck: deck,
-      statistics: statistics,
-      parameters: parameters,
-    );
-    final int totalItems = _totalItems(deck, parameters);
-    final int mastered = (totalItems - pool.length)
-        .clamp(0, totalItems)
-        .toInt();
-    final int accuracy = sessionAttempts == 0
-        ? 0
-        : ((sessionCorrect / sessionAttempts) * 100).round();
-    final bool timeWarning =
-        elapsedSeconds != null &&
-        timeLimitSeconds > 0 &&
-        elapsedSeconds! >= timeLimitSeconds;
-    return Wrap(
-      spacing: LearnAnywhereTokens.gapSmall,
-      runSpacing: LearnAnywhereTokens.gapSmall,
-      children: <Widget>[
-        _StatPill(
-          label: messages.message(LearnAnywhereMessage.learnLiveMastered),
-          value: '$mastered/$totalItems',
-        ),
-        _StatPill(
-          label: messages.message(LearnAnywhereMessage.learnLiveRemaining),
-          value: pool.length.toString(),
-        ),
-        _StatPill(
-          label: messages.message(LearnAnywhereMessage.learnLiveAccuracy),
-          value: '$accuracy%',
-        ),
-        if (elapsedSeconds != null)
-          _StatPill(
-            label: 'Time',
-            value: _clockText(elapsedSeconds!),
-            warning: timeWarning,
-          ),
-      ],
-    );
-  }
-}
 
 final class _StatPill extends StatelessWidget {
   const _StatPill({
@@ -1211,53 +1485,6 @@ final class _StatPill extends StatelessWidget {
   }
 }
 
-final class _FieldLine extends StatelessWidget {
-  const _FieldLine({required this.field, required this.value});
-
-  final FieldDefinition field;
-  final FieldValue value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapSmall),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          SizedBox(width: 160, child: Text(field.name)),
-          Expanded(
-            child: LearnAnywhereRichText(
-              value: value,
-              maxLines: 3,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-final class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: LearnAnywhereTokens.gapSmall),
-        child,
-      ],
-    );
-  }
-}
 
 final class _DropdownRow<T> extends StatelessWidget {
   const _DropdownRow({
@@ -1407,6 +1634,119 @@ String _clockText(int seconds) {
   return '$minutes:${rest.toString().padLeft(2, '0')}';
 }
 
+// ─── Evaluation button (Fix 1: skipTraversal focus node) ─────────────────────
+
+final class _EvalButton extends StatefulWidget {
+  const _EvalButton({
+    required this.label,
+    required this.hint,
+    required this.filled,
+    required this.onPressed,
+    required this.onRestoreFocus,
+  });
+
+  final String label;
+  final String hint;
+  final bool filled;
+  final VoidCallback onPressed;
+  final VoidCallback onRestoreFocus;
+
+  @override
+  State<_EvalButton> createState() => _EvalButtonState();
+}
+
+final class _EvalButtonState extends State<_EvalButton> {
+  final FocusNode _focusNode = FocusNode(
+    skipTraversal: true,
+    canRequestFocus: false,
+  );
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget child = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(widget.label),
+        Text(widget.hint, style: const TextStyle(fontSize: 10)),
+      ],
+    );
+    if (widget.filled) {
+      return FilledButton(
+        focusNode: _focusNode,
+        onPressed: () {
+          widget.onPressed();
+          widget.onRestoreFocus();
+        },
+        child: child,
+      );
+    }
+    return OutlinedButton(
+      focusNode: _focusNode,
+      onPressed: () {
+        widget.onPressed();
+        widget.onRestoreFocus();
+      },
+      child: child,
+    );
+  }
+}
+
+// ─── Toggle view button (Fix 4: F9 toggle, skipTraversal focus node) ──────────
+
+final class _ToggleViewButton extends StatefulWidget {
+  const _ToggleViewButton({
+    required this.label,
+    required this.onPressed,
+    required this.onRestoreFocus,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final VoidCallback onRestoreFocus;
+
+  @override
+  State<_ToggleViewButton> createState() => _ToggleViewButtonState();
+}
+
+final class _ToggleViewButtonState extends State<_ToggleViewButton> {
+  final FocusNode _focusNode = FocusNode(
+    skipTraversal: true,
+    canRequestFocus: false,
+  );
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.tonal(
+      focusNode: _focusNode,
+      onPressed: () {
+        widget.onPressed();
+        widget.onRestoreFocus();
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(widget.label),
+          const Text('F9', style: TextStyle(fontSize: 10)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Intents ──────────────────────────────────────────────────────────────────
+
 final class _LearnHelpIntent extends Intent {
   const _LearnHelpIntent();
 }
@@ -1421,4 +1761,20 @@ final class _LearnRevealIntent extends Intent {
 
 final class _LearnSetupIntent extends Intent {
   const _LearnSetupIntent();
+}
+
+final class _LearnRate1Intent extends Intent {
+  const _LearnRate1Intent();
+}
+
+final class _LearnRate2Intent extends Intent {
+  const _LearnRate2Intent();
+}
+
+final class _LearnRate3Intent extends Intent {
+  const _LearnRate3Intent();
+}
+
+final class _LearnToggleViewIntent extends Intent {
+  const _LearnToggleViewIntent();
 }

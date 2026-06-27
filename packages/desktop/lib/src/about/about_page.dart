@@ -94,6 +94,12 @@ final class AboutPage extends StatelessWidget {
                         LearnAnywhereMessage.aboutVersionCurrent,
                       ),
                     ),
+                    const SizedBox(height: LearnAnywhereTokens.gapSmall),
+                    _VersionHistoryItem(
+                      label: messages.message(
+                        LearnAnywhereMessage.aboutVersionPrevious,
+                      ),
+                    ),
                   ],
                 ),
               ),

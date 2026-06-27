@@ -247,6 +247,9 @@ enum LearnAnywhereMessage {
   /// About page version history heading.
   aboutVersionHistory,
 
+  /// About page previous version history entry.
+  aboutVersionPrevious,
+
   /// About page current version history entry.
   aboutVersionCurrent,
 
@@ -504,6 +507,9 @@ enum LearnAnywhereMessage {
 
   /// Confirm cancel learn session.
   learnCancelConfirm,
+
+  /// "Evaluate as:" label before the rating buttons.
+  learnEvaluateAs,
 
   /// Learning options title.
   queryOptionsTitle,
@@ -916,8 +922,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutConversionCredit:
           'Modern conversion: SbitFire Software',
       LearnAnywhereMessage.aboutVersionHistory: 'Version history',
+      LearnAnywhereMessage.aboutVersionPrevious:
+          '0.1.0 – Phase 2 desktop foundation: file operations, editor, learning, statistics, lexicon, and program info.',
       LearnAnywhereMessage.aboutVersionCurrent:
-          '0.1.0 - Phase 2 desktop foundation: file operations, editor, learning, statistics, lexicon, and program info.',
+          '0.2.0 – Compact grid-based editor and practice screen.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1012,6 +1020,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
       LearnAnywhereMessage.learnBackToSetup: 'Back to setup',
       LearnAnywhereMessage.learnCancelConfirm: 'Cancel the current session?',
+      LearnAnywhereMessage.learnEvaluateAs: 'Evaluate as:',
       LearnAnywhereMessage.queryOptionsTitle: 'Learning Options',
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Wrong input correctable',
@@ -1221,8 +1230,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutConversionCredit:
           'Moderne Umsetzung: SbitFire Software',
       LearnAnywhereMessage.aboutVersionHistory: 'Versionsgeschichte',
+      LearnAnywhereMessage.aboutVersionPrevious:
+          '0.1.0 – Phase-2-Desktop-Grundlage: Dateioperationen, Editor, Lernen, Statistik, Lexikon und Programminfo.',
       LearnAnywhereMessage.aboutVersionCurrent:
-          '0.1.0 - Phase-2-Desktop-Grundlage: Dateioperationen, Editor, Lernen, Statistik, Lexikon und Programminfo.',
+          '0.2.0 – Kompakter rasterbasierter Editor und Übungsbildschirm.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurück   F3 Weiter   F5 Suche   F6 Springen   F7 Löschen   F8 Einfügen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
@@ -1318,6 +1329,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
       LearnAnywhereMessage.learnBackToSetup: 'Zur Einrichtung',
       LearnAnywhereMessage.learnCancelConfirm: 'Aktuelle Sitzung abbrechen?',
+      LearnAnywhereMessage.learnEvaluateAs: 'Bewerten als:',
       LearnAnywhereMessage.queryOptionsTitle: 'Abfrageoptionen',
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Falsche Eingabe korrigierbar',

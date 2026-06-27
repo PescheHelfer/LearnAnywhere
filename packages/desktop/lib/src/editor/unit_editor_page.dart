@@ -624,7 +624,9 @@ final class _EmptyEditor extends StatelessWidget {
   }
 }
 
-final class _EditorBody extends StatelessWidget {
+// ─── Editor body (stateful to host the shared formatting toolbar) ────────────
+
+final class _EditorBody extends StatefulWidget {
   const _EditorBody({
     required this.deck,
     required this.currentIndex,
@@ -654,123 +656,352 @@ final class _EditorBody extends StatelessWidget {
   final VoidCallback onCancel;
 
   @override
+  State<_EditorBody> createState() => _EditorBodyState();
+}
+
+final class _EditorBodyState extends State<_EditorBody> {
+  // The controller and focus node that currently have keyboard focus — drive toolbar state.
+  LearnAnywhereRichTextEditingController? _activeController;
+  _ColorMemory? _activeColorMemory;
+  FocusNode? _activeFocusNode;
+
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(_EditorBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When the user navigates to a different unit the grid rows are rebuilt
+    // from scratch, so the previously-registered controller is gone.
+    if (widget.currentIndex != oldWidget.currentIndex) {
+      _activeController?.removeListener(_onActiveControllerChanged);
+      _activeController = null;
+      _activeColorMemory = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _activeController?.removeListener(_onActiveControllerChanged);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _registerActive(
+    LearnAnywhereRichTextEditingController controller,
+    _ColorMemory colorMemory,
+    FocusNode focusNode,
+  ) {
+    if (_activeController == controller) return;
+    _activeController?.removeListener(_onActiveControllerChanged);
+    _activeController = controller;
+    _activeColorMemory = colorMemory;
+    _activeFocusNode = focusNode;
+    _activeController!.addListener(_onActiveControllerChanged);
+    if (mounted) setState(() {});
+  }
+
+  void _onActiveControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  // ── Toolbar formatting helpers ───────────────────────────────────────────
+
+  void _toggleBold() {
+    final LearnAnywhereRichTextEditingController? c = _activeController;
+    if (c == null) return;
+    final bool active = c.selectionSatisfies((RunFormat f) => f.bold);
+    c.formatSelection((RunFormat f) => f.copyWith(bold: !active));
+    _activeFocusNode?.requestFocus();
+  }
+
+  void _toggleItalic() {
+    final LearnAnywhereRichTextEditingController? c = _activeController;
+    if (c == null) return;
+    final bool active = c.selectionSatisfies((RunFormat f) => f.italic);
+    c.formatSelection((RunFormat f) => f.copyWith(italic: !active));
+    _activeFocusNode?.requestFocus();
+  }
+
+  void _toggleUnderline() {
+    final LearnAnywhereRichTextEditingController? c = _activeController;
+    if (c == null) return;
+    final bool active = c.selectionSatisfies((RunFormat f) => f.underline);
+    c.formatSelection((RunFormat f) => f.copyWith(underline: !active));
+    _activeFocusNode?.requestFocus();
+  }
+
+  void _applyColor(String? hex) {
+    _activeColorMemory?.lastTextColor = hex;
+    _activeController?.formatSelection((RunFormat f) => f.withColor(hex));
+    _activeFocusNode?.requestFocus();
+  }
+
+  void _applyHighlight(String? hex) {
+    _activeColorMemory?.lastHighlight = hex;
+    _activeController?.formatSelection((RunFormat f) => f.withHighlight(hex));
+    _activeFocusNode?.requestFocus();
+  }
+
+  void _clearFormatting() {
+    _activeController?.clearFormatting();
+    _activeFocusNode?.requestFocus();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final LearningUnit unit = deck.units[currentIndex];
-    final CategoryDefinition category = deck.categoryForUnit(unit);
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final Brightness brightness = Theme.of(context).brightness;
+
+    final LearningUnit unit = widget.deck.units[widget.currentIndex];
+    final CategoryDefinition category = widget.deck.categoryForUnit(unit);
     final List<FieldDefinition> fields = category.fields
-        .where((FieldDefinition field) => !field.isHidden)
+        .where((FieldDefinition f) => !f.isHidden)
         .toList(growable: false);
 
-    return Padding(
-      padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            _unitHeader(
-              messages,
-              currentIndex + 1,
-              deck.units.length,
-              category.name,
-            ),
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: LearnAnywhereTokens.gapMedium),
-          Wrap(
-            spacing: LearnAnywhereTokens.gapSmall,
-            runSpacing: LearnAnywhereTokens.gapSmall,
-            children: <Widget>[
-              _ActionButton(
-                icon: Icons.arrow_back,
-                label: messages.message(LearnAnywhereMessage.editorPrevious),
-                shortcut: 'F2',
-                onPressed: currentIndex == 0 ? null : onPrevious,
-              ),
-              _ActionButton(
-                icon: Icons.arrow_forward,
-                label: messages.message(LearnAnywhereMessage.editorNext),
-                shortcut: 'F3',
-                onPressed: onNext,
-              ),
-              _ActionButton(
-                icon: Icons.numbers,
-                label: messages.message(LearnAnywhereMessage.editorJump),
-                shortcut: 'F6',
-                onPressed: onJump,
-              ),
-              _ActionButton(
-                icon: Icons.add,
-                label: messages.message(
-                  LearnAnywhereMessage.editorInsertBefore,
-                ),
-                shortcut: 'F8',
-                onPressed: onInsertBefore,
-              ),
-              _ActionButton(
-                icon: Icons.delete_outline,
-                label: messages.message(LearnAnywhereMessage.editorDelete),
-                shortcut: 'F7',
-                onPressed: onDelete,
-              ),
-              _ActionButton(
-                icon: Icons.search,
-                label: messages.message(LearnAnywhereMessage.editorSearch),
-                shortcut: 'F5',
-                onPressed: onSearch,
-              ),
-              _ActionButton(
-                icon: Icons.check,
-                label: messages.message(LearnAnywhereMessage.editorDone),
-                shortcut: 'F10',
-                onPressed: onDone,
-              ),
-              _ActionButton(
-                icon: Icons.close,
-                label: messages.message(LearnAnywhereMessage.editorCancel),
-                shortcut: 'Esc',
-                onPressed: onCancel,
-              ),
-            ],
-          ),
-          const SizedBox(height: LearnAnywhereTokens.gapLarge),
-          Expanded(
-            child: ListView.separated(
-              itemCount: fields.length,
-              separatorBuilder: (BuildContext context, int index) =>
-                  const SizedBox(height: LearnAnywhereTokens.gapMedium),
-              itemBuilder: (BuildContext context, int index) {
-                final FieldDefinition field = fields[index];
-                final bool isLastField = index == fields.length - 1;
-                return _FieldValueEditor(
-                  key: ValueKey<String>(
-                    'editor-field-${currentIndex}-${index}-${field.name}',
+    // Which field index should receive initial focus for this unit?
+    // First blank field wins; if all filled, focus the last field with cursor at end.
+    int autoFocusIndex = 0;
+    bool allFilled = true;
+    for (int k = 0; k < fields.length; k++) {
+      if (unit.valueForField(fields[k].name).isBlank) {
+        autoFocusIndex = k;
+        allFilled = false;
+        break;
+      }
+    }
+    if (allFilled && fields.isNotEmpty) {
+      autoFocusIndex = fields.length - 1;
+    }
+
+    final LearnAnywhereRichTextEditingController? ac = _activeController;
+    final RunFormat activeFormat = ac?.activeFormat ?? RunFormat.none;
+
+    return Scrollbar(
+      controller: _scrollController,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // ── Compact header with inline formatting toolbar ──────────────
+            Row(
+              children: <Widget>[
+                ExcludeFocus(
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: LearnAnywhereTokens.gapSmall,
+                    runSpacing: LearnAnywhereTokens.gapSmall,
+                    children: <Widget>[
+                      _FormatIconButton(
+                        tooltip: messages.message(
+                          LearnAnywhereMessage.editorBold,
+                        ),
+                        icon: Icons.format_bold,
+                        selected:
+                            ac?.selectionSatisfies(
+                              (RunFormat f) => f.bold,
+                            ) ??
+                            false,
+                        onPressed: ac != null ? _toggleBold : null,
+                      ),
+                      _FormatIconButton(
+                        tooltip: messages.message(
+                          LearnAnywhereMessage.editorItalic,
+                        ),
+                        icon: Icons.format_italic,
+                        selected:
+                            ac?.selectionSatisfies(
+                              (RunFormat f) => f.italic,
+                            ) ??
+                            false,
+                        onPressed: ac != null ? _toggleItalic : null,
+                      ),
+                      _FormatIconButton(
+                        tooltip: messages.message(
+                          LearnAnywhereMessage.editorUnderline,
+                        ),
+                        icon: Icons.format_underline,
+                        selected:
+                            ac?.selectionSatisfies(
+                              (RunFormat f) => f.underline,
+                            ) ??
+                            false,
+                        onPressed: ac != null ? _toggleUnderline : null,
+                      ),
+                      _ColorPickerButton(
+                        tooltip: messages.message(
+                          LearnAnywhereMessage.editorColor,
+                        ),
+                        icon: Icons.format_color_text,
+                        swatches: LearnAnywherePalette.textColors,
+                        selectedHex: activeFormat.color,
+                        indicator: activeFormat.color == null
+                            ? null
+                            : colorFromHex(activeFormat.color!),
+                        onSelected: ac != null ? _applyColor : null,
+                      ),
+                      _ColorPickerButton(
+                        tooltip: messages.message(
+                          LearnAnywhereMessage.editorHighlight,
+                        ),
+                        icon: Icons.format_color_fill,
+                        swatches: LearnAnywherePalette.highlightsFor(
+                          brightness,
+                        ),
+                        selectedHex: activeFormat.highlight,
+                        indicator: activeFormat.highlight == null
+                            ? null
+                            : colorFromHex(
+                                LearnAnywherePalette.highlightForBrightness(
+                                  activeFormat.highlight!,
+                                  brightness,
+                                ),
+                              ),
+                        onSelected: ac != null ? _applyHighlight : null,
+                      ),
+                      _FormatIconButton(
+                        tooltip: messages.message(
+                          LearnAnywhereMessage.editorClearFormatting,
+                        ),
+                        icon: Icons.format_clear,
+                        selected: false,
+                        onPressed: ac != null ? _clearFormatting : null,
+                      ),
+                    ],
                   ),
-                  field: field,
-                  value: unit.valueForField(field.name),
-                  colorMemory: colorMemory,
-                  onNext: isLastField ? onNext : null,
-                  onChanged: (FieldValue value) {
-                    onFieldChanged(field.name, value);
-                  },
-                );
-              },
+                ),
+                const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                Flexible(
+                  child: Text(
+                    _unitHeader(
+                      messages,
+                      widget.currentIndex + 1,
+                      widget.deck.units.length,
+                      category.name,
+                    ),
+                    style: Theme.of(context).textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: LearnAnywhereTokens.gapSmall),
+            // ── Field grid ────────────────────────────────────────────────
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: colors.outlineVariant),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: Column(
+                  children: <Widget>[
+                    for (int i = 0; i < fields.length; i++) ...<Widget>[
+                      if (i > 0)
+                        Container(height: 1, color: colors.outlineVariant),
+                      _GridRow(
+                        key: ValueKey<String>(
+                          'editor-field-${widget.currentIndex}-$i-${fields[i].name}',
+                        ),
+                        field: fields[i],
+                        value: unit.valueForField(fields[i].name),
+                        colorMemory: widget.colorMemory,
+                        autofocus: i == autoFocusIndex,
+                        moveToEnd: allFilled && i == autoFocusIndex,
+                        onNext: i == fields.length - 1
+                            ? widget.onNext
+                            : null,
+                        onChanged: (FieldValue v) {
+                          widget.onFieldChanged(fields[i].name, v);
+                        },
+                        onFocusGained: _registerActive,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapLarge),
+            // ── Action buttons (bottom) ────────────────────────────────────
+            Wrap(
+              spacing: LearnAnywhereTokens.gapSmall,
+              runSpacing: LearnAnywhereTokens.gapSmall,
+              children: <Widget>[
+                _ActionButton(
+                  icon: Icons.arrow_back,
+                  label: messages.message(LearnAnywhereMessage.editorPrevious),
+                  shortcut: 'F2',
+                  onPressed: widget.currentIndex == 0 ? null : widget.onPrevious,
+                ),
+                _ActionButton(
+                  icon: Icons.arrow_forward,
+                  label: messages.message(LearnAnywhereMessage.editorNext),
+                  shortcut: 'F3',
+                  onPressed: widget.onNext,
+                ),
+                _ActionButton(
+                  icon: Icons.numbers,
+                  label: messages.message(LearnAnywhereMessage.editorJump),
+                  shortcut: 'F6',
+                  onPressed: widget.onJump,
+                ),
+                _ActionButton(
+                  icon: Icons.add,
+                  label: messages.message(
+                    LearnAnywhereMessage.editorInsertBefore,
+                  ),
+                  shortcut: 'F8',
+                  onPressed: widget.onInsertBefore,
+                ),
+                _ActionButton(
+                  icon: Icons.delete_outline,
+                  label: messages.message(LearnAnywhereMessage.editorDelete),
+                  shortcut: 'F7',
+                  onPressed: widget.onDelete,
+                ),
+                _ActionButton(
+                  icon: Icons.search,
+                  label: messages.message(LearnAnywhereMessage.editorSearch),
+                  shortcut: 'F5',
+                  onPressed: widget.onSearch,
+                ),
+                _ActionButton(
+                  icon: Icons.check,
+                  label: messages.message(LearnAnywhereMessage.editorDone),
+                  shortcut: 'F10',
+                  onPressed: widget.onDone,
+                ),
+                _ActionButton(
+                  icon: Icons.close,
+                  label: messages.message(LearnAnywhereMessage.editorCancel),
+                  shortcut: 'Esc',
+                  onPressed: widget.onCancel,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-final class _FieldValueEditor extends StatefulWidget {
-  const _FieldValueEditor({
+// ─── Compact two-column grid row ─────────────────────────────────────────────
+
+final class _GridRow extends StatefulWidget {
+  const _GridRow({
     required this.field,
     required this.value,
     required this.colorMemory,
     required this.onChanged,
+    required this.onFocusGained,
+    this.autofocus = false,
+    this.moveToEnd = false,
     this.onNext,
     super.key,
   });
@@ -780,14 +1011,30 @@ final class _FieldValueEditor extends StatefulWidget {
   final _ColorMemory colorMemory;
   final ValueChanged<FieldValue> onChanged;
 
-  /// When non-null, Enter and Tab (without Shift) in this field call [onNext].
+  /// Called when this row's text field gains focus; lets the parent toolbar
+  /// track which controller is currently active.
+  final void Function(
+    LearnAnywhereRichTextEditingController,
+    _ColorMemory,
+    FocusNode,
+  ) onFocusGained;
+
+  /// Whether this field should claim keyboard focus when it first appears.
+  final bool autofocus;
+
+  /// When true together with [autofocus], moves the cursor to the end of the
+  /// existing text after focus is claimed.
+  final bool moveToEnd;
+
+  /// When non-null, Enter/Tab on this (last) field calls [onNext] instead of
+  /// advancing within the grid.
   final VoidCallback? onNext;
 
   @override
-  State<_FieldValueEditor> createState() => _FieldValueEditorState();
+  State<_GridRow> createState() => _GridRowState();
 }
 
-final class _FieldValueEditorState extends State<_FieldValueEditor> {
+final class _GridRowState extends State<_GridRow> {
   late final LearnAnywhereRichTextEditingController _controller;
   late final FocusNode _focusNode;
   late FieldValue _lastReported;
@@ -798,48 +1045,24 @@ final class _FieldValueEditorState extends State<_FieldValueEditor> {
     _controller = LearnAnywhereRichTextEditingController(value: widget.value);
     _lastReported = widget.value;
     _controller.addListener(_onControllerChanged);
-    _focusNode = FocusNode(onKeyEvent: _handleFieldKeyEvent);
-  }
-
-  /// Treats Enter exactly like a forward Tab: advance to the next input field,
-  /// or—on the last field—hand off to [_FieldValueEditor.onNext] (next unit).
-  ///
-  /// Both keys are intercepted here, on the focused field's own node, which is
-  /// the first handler in Flutter's key dispatch. That deliberately runs before
-  /// the editor's ancestor `_EnterIntent` shortcut and before EditableText's
-  /// own newline handling, so Enter is neither swallowed as a no-op nor turned
-  /// into a newline. Shift+Tab is left to the default backward traversal.
-  KeyEventResult _handleFieldKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) {
-      return KeyEventResult.ignored;
+    _focusNode = FocusNode(onKeyEvent: _handleKeyEvent);
+    _focusNode.addListener(_onFocusChanged);
+    if (widget.autofocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _focusNode.requestFocus();
+        if (widget.moveToEnd) {
+          _controller.selection = TextSelection.collapsed(
+            offset: _controller.text.length,
+          );
+        }
+      });
     }
-    final LogicalKeyboardKey key = event.logicalKey;
-    final bool isEnter =
-        key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.numpadEnter;
-    final bool isForwardTab =
-        key == LogicalKeyboardKey.tab &&
-        !HardwareKeyboard.instance.isShiftPressed;
-    if (!isEnter && !isForwardTab) {
-      return KeyEventResult.ignored;
-    }
-    if (widget.onNext != null) {
-      // Last input field: navigate to the next unit (same path as F3).
-      widget.onNext!();
-    } else {
-      // Move to the next focusable field. The formatting toolbar is wrapped in
-      // ExcludeFocus, so traversal lands on the next field's TextField—matching
-      // Tab's default traversal order exactly (both use the same policy).
-      node.nextFocus();
-    }
-    return KeyEventResult.handled;
   }
 
   @override
-  void didUpdateWidget(_FieldValueEditor oldWidget) {
+  void didUpdateWidget(_GridRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reload only when the host swapped in a genuinely different value (e.g. a
-    // unit change), not when our own edits round-tripped back unchanged.
     if (widget.value != _controller.fieldValue) {
       _lastReported = widget.value;
       _controller.loadValue(widget.value);
@@ -848,10 +1071,17 @@ final class _FieldValueEditorState extends State<_FieldValueEditor> {
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChanged);
     _controller.removeListener(_onControllerChanged);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _onFocusChanged() {
+    if (_focusNode.hasFocus) {
+      widget.onFocusGained(_controller, widget.colorMemory, _focusNode);
+    }
   }
 
   void _onControllerChanged() {
@@ -860,165 +1090,110 @@ final class _FieldValueEditorState extends State<_FieldValueEditor> {
       _lastReported = value;
       widget.onChanged(value);
     }
-    if (mounted) {
-      setState(() {});
+    if (mounted) setState(() {});
+  }
+
+  // Enter and forward-Tab both advance focus; on the last field they hand off
+  // to onNext (next unit). Shift+Tab uses Flutter's default backward traversal.
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final LogicalKeyboardKey key = event.logicalKey;
+    final bool isEnter =
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter;
+    final bool isForwardTab =
+        key == LogicalKeyboardKey.tab &&
+        !HardwareKeyboard.instance.isShiftPressed;
+    if (!isEnter && !isForwardTab) return KeyEventResult.ignored;
+    if (widget.onNext != null) {
+      widget.onNext!();
+    } else {
+      node.nextFocus();
     }
+    return KeyEventResult.handled;
   }
 
   @override
   Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final Brightness brightness = Theme.of(context).brightness;
-    final RunFormat active = _controller.activeFormat;
-    final double width = math.min(
-      780,
-      math.max(260, widget.field.length * 12 + 32),
-    );
+    final double bgOpacity =
+        Theme.of(context).brightness == Brightness.light ? 0.15 : 0.10;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: colors.outlineVariant),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(LearnAnywhereTokens.gapMedium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
+    final Color accentColor;
+    switch (widget.field.role1) {
+      case FieldRole.question:
+        accentColor = const Color.fromRGBO(0, 150, 180, 1);
+      case FieldRole.answer:
+        accentColor = const Color.fromRGBO(0, 160, 80, 1);
+      case FieldRole.remark:
+        accentColor = const Color.fromRGBO(200, 140, 0, 1);
+    }
+    final Color bgColor = accentColor.withValues(alpha: bgOpacity);
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          // Left accent bar
+          Container(width: 4, color: accentColor),
+          // Label (fixed width)
+          Container(
+            width: 120,
+            color: bgColor,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
               widget.field.name,
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.bodySmall,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: LearnAnywhereTokens.gapSmall),
-            ExcludeFocus(
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: LearnAnywhereTokens.gapSmall,
-                runSpacing: LearnAnywhereTokens.gapSmall,
-                children: <Widget>[
-                  Text(messages.message(LearnAnywhereMessage.editorFormatting)),
-                  _FormatIconButton(
-                    tooltip: messages.message(LearnAnywhereMessage.editorBold),
-                    icon: Icons.format_bold,
-                    selected: _controller.selectionSatisfies(
-                      (RunFormat f) => f.bold,
-                    ),
-                    onPressed: () => _toggleBold(),
-                  ),
-                  _FormatIconButton(
-                    tooltip: messages.message(LearnAnywhereMessage.editorItalic),
-                    icon: Icons.format_italic,
-                    selected: _controller.selectionSatisfies(
-                      (RunFormat f) => f.italic,
-                    ),
-                    onPressed: () => _toggleItalic(),
-                  ),
-                  _FormatIconButton(
-                    tooltip: messages.message(
-                      LearnAnywhereMessage.editorUnderline,
-                    ),
-                    icon: Icons.format_underline,
-                    selected: _controller.selectionSatisfies(
-                      (RunFormat f) => f.underline,
-                    ),
-                    onPressed: () => _toggleUnderline(),
-                  ),
-                  _ColorPickerButton(
-                    tooltip: messages.message(LearnAnywhereMessage.editorColor),
-                    icon: Icons.format_color_text,
-                    swatches: LearnAnywherePalette.textColors,
-                    selectedHex: active.color,
-                    indicator: active.color == null
-                        ? null
-                        : colorFromHex(active.color!),
-                    onSelected: _applyColor,
-                  ),
-                  _ColorPickerButton(
-                    tooltip: messages.message(
-                      LearnAnywhereMessage.editorHighlight,
-                    ),
-                    icon: Icons.format_color_fill,
-                    swatches: LearnAnywherePalette.highlightsFor(brightness),
-                    selectedHex: active.highlight,
-                    indicator: active.highlight == null
-                        ? null
-                        : colorFromHex(
-                            LearnAnywherePalette.highlightForBrightness(
-                              active.highlight!,
-                              brightness,
-                            ),
+          ),
+          Container(width: 1, color: colors.outlineVariant),
+          // Editable cell
+          Expanded(
+            child: ColoredBox(
+              color: bgColor,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: TextField(
+                        focusNode: _focusNode,
+                        controller: _controller,
+                        maxLines: 1,
+                        inputFormatters: <TextInputFormatter>[
+                          LengthLimitingTextInputFormatter(widget.field.length),
+                        ],
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontFamilyFallback:
+                              LearnAnywhereTokens.monospaceFallback,
+                        ),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 0,
                           ),
-                    onSelected: _applyHighlight,
-                  ),
-                  _FormatIconButton(
-                    tooltip: messages.message(
-                      LearnAnywhereMessage.editorClearFormatting,
+                          border: InputBorder.none,
+                        ),
+                      ),
                     ),
-                    icon: Icons.format_clear,
-                    selected: false,
-                    onPressed: _controller.clearFormatting,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: LearnAnywhereTokens.gapSmall),
-            SizedBox(
-              width: width,
-              child: TextField(
-                key: ValueKey<String>('editor-input-${widget.field.name}'),
-                focusNode: _focusNode,
-                controller: _controller,
-                maxLines: 1,
-                inputFormatters: <TextInputFormatter>[
-                  LengthLimitingTextInputFormatter(widget.field.length),
-                ],
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
-                ),
-                decoration: InputDecoration(
-                  counterText:
+                    const SizedBox(width: 4),
+                    Text(
                       '${_controller.text.length}/${widget.field.length}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
-  }
-
-  void _toggleBold() {
-    final bool active = _controller.selectionSatisfies((RunFormat f) => f.bold);
-    _controller.formatSelection((RunFormat f) => f.copyWith(bold: !active));
-  }
-
-  void _toggleItalic() {
-    final bool active = _controller.selectionSatisfies(
-      (RunFormat f) => f.italic,
-    );
-    _controller.formatSelection((RunFormat f) => f.copyWith(italic: !active));
-  }
-
-  void _toggleUnderline() {
-    final bool active = _controller.selectionSatisfies(
-      (RunFormat f) => f.underline,
-    );
-    _controller.formatSelection(
-      (RunFormat f) => f.copyWith(underline: !active),
-    );
-  }
-
-  void _applyColor(String? hex) {
-    widget.colorMemory.lastTextColor = hex;
-    _controller.formatSelection((RunFormat f) => f.withColor(hex));
-  }
-
-  void _applyHighlight(String? hex) {
-    widget.colorMemory.lastHighlight = hex;
-    _controller.formatSelection((RunFormat f) => f.withHighlight(hex));
   }
 }
 
@@ -1054,7 +1229,7 @@ final class _ActionButton extends StatelessWidget {
   }
 }
 
-final class _FormatIconButton extends StatelessWidget {
+final class _FormatIconButton extends StatefulWidget {
   const _FormatIconButton({
     required this.tooltip,
     required this.icon,
@@ -1065,16 +1240,36 @@ final class _FormatIconButton extends StatelessWidget {
   final String tooltip;
   final IconData icon;
   final bool selected;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+
+  @override
+  State<_FormatIconButton> createState() => _FormatIconButtonState();
+}
+
+final class _FormatIconButtonState extends State<_FormatIconButton> {
+  final FocusNode _focusNode = FocusNode(
+    skipTraversal: true,
+    canRequestFocus: false,
+  );
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      tooltip: tooltip,
-      isSelected: selected,
-      onPressed: onPressed,
-      icon: Icon(icon),
-      selectedIcon: Icon(icon),
+      focusNode: _focusNode,
+      tooltip: widget.tooltip,
+      isSelected: widget.selected,
+      onPressed: widget.onPressed,
+      iconSize: 15,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+      padding: const EdgeInsets.all(8.5),
+      icon: Icon(widget.icon),
+      selectedIcon: Icon(widget.icon),
     );
   }
 }
@@ -1092,7 +1287,7 @@ final class _ColorMemory {
 ///
 /// Selecting a swatch applies that color to the current selection (or stores it
 /// as the active insertion-point color when nothing is selected).
-final class _ColorPickerButton extends StatelessWidget {
+final class _ColorPickerButton extends StatefulWidget {
   const _ColorPickerButton({
     required this.tooltip,
     required this.icon,
@@ -1107,7 +1302,23 @@ final class _ColorPickerButton extends StatelessWidget {
   final List<LearnAnywhereColorSwatch> swatches;
   final String? selectedHex;
   final Color? indicator;
-  final ValueChanged<String?> onSelected;
+  final ValueChanged<String?>? onSelected;
+
+  @override
+  State<_ColorPickerButton> createState() => _ColorPickerButtonState();
+}
+
+final class _ColorPickerButtonState extends State<_ColorPickerButton> {
+  final FocusNode _focusNode = FocusNode(
+    skipTraversal: true,
+    canRequestFocus: false,
+  );
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1116,32 +1327,38 @@ final class _ColorPickerButton extends StatelessWidget {
     );
     final ColorScheme colors = Theme.of(context).colorScheme;
     return MenuAnchor(
-      menuChildren: swatches.map((LearnAnywhereColorSwatch swatch) {
-        final bool selected = swatch.hex == selectedHex;
+      menuChildren: widget.swatches.map((LearnAnywhereColorSwatch swatch) {
+        final bool selected = swatch.hex == widget.selectedHex;
         return MenuItemButton(
           leadingIcon: _SwatchDot(
             color: swatch.color,
             selected: selected,
           ),
-          onPressed: () => onSelected(swatch.hex),
+          onPressed: widget.onSelected == null
+              ? null
+              : () => widget.onSelected!(swatch.hex),
           child: Text(messages.message(swatch.label)),
         );
       }).toList(growable: false),
       builder:
           (BuildContext context, MenuController controller, Widget? child) {
             return IconButton(
-              tooltip: tooltip,
+              focusNode: _focusNode,
+              tooltip: widget.tooltip,
               onPressed: () =>
                   controller.isOpen ? controller.close() : controller.open(),
+              iconSize: 15,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: const EdgeInsets.all(8.5),
               icon: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Icon(icon),
+                  Icon(widget.icon, size: 15),
                   Container(
-                    width: 20,
-                    height: 3,
+                    width: 14,
+                    height: 2,
                     margin: const EdgeInsets.only(top: 1),
-                    color: indicator ?? colors.outlineVariant,
+                    color: widget.indicator ?? colors.outlineVariant,
                   ),
                 ],
               ),
