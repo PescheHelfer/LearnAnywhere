@@ -16,6 +16,7 @@ final class StatisticsPage extends StatefulWidget {
     required this.statistics,
     required this.onLoadStatistics,
     required this.onSaveStatistics,
+    required this.onSaveStatisticsAs,
     required this.onClearStatistics,
     required this.onSaveSelectedUnits,
     super.key,
@@ -30,8 +31,11 @@ final class StatisticsPage extends StatefulWidget {
   /// Loads statistics from disk.
   final Future<void> Function() onLoadStatistics;
 
-  /// Saves statistics to disk.
+  /// Saves statistics to disk (to existing path if known).
   final Future<void> Function() onSaveStatistics;
+
+  /// Saves statistics to a new path chosen by the user.
+  final Future<void> Function() onSaveStatisticsAs;
 
   /// Clears in-memory statistics.
   final Future<void> Function() onClearStatistics;
@@ -93,6 +97,13 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                     icon: const Icon(Icons.save),
                     label: Text(
                       messages.message(LearnAnywhereMessage.statisticsSave),
+                    ),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: widget.onSaveStatisticsAs,
+                    icon: const Icon(Icons.save_as),
+                    label: Text(
+                      messages.message(LearnAnywhereMessage.fileSaveStatsAs),
                     ),
                   ),
                   FilledButton.tonalIcon(

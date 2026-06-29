@@ -423,6 +423,7 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
               child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
             ),
             FilledButton(
+              autofocus: true,
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(messages.message(LearnAnywhereMessage.editorDelete)),
             ),
@@ -543,6 +544,7 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
           content: Text(messages.message(LearnAnywhereMessage.desktopHintBar)),
           actions: <Widget>[
             FilledButton(
+              autofocus: true,
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 messages.message(LearnAnywhereMessage.actionContinue),

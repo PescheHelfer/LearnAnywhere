@@ -11,6 +11,7 @@ final class QueryOptionsPage extends StatelessWidget {
   const QueryOptionsPage({
     required this.options,
     required this.onChanged,
+    this.onClose,
     super.key,
   });
 
@@ -19,6 +20,9 @@ final class QueryOptionsPage extends StatelessWidget {
 
   /// Called when options change.
   final ValueChanged<DesktopQueryOptions> onChanged;
+
+  /// Called when the user closes this page.
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -123,6 +127,13 @@ final class QueryOptionsPage extends StatelessWidget {
               onChanged(options.copyWith(wrongAnswerCeiling: value));
             },
           ),
+          if (onClose != null) ...<Widget>[
+            const SizedBox(height: LearnAnywhereTokens.gapLarge),
+            FilledButton(
+              onPressed: onClose,
+              child: Text(messages.message(LearnAnywhereMessage.actionClose)),
+            ),
+          ],
         ],
       ),
     );

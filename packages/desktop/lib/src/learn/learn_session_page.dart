@@ -759,6 +759,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
               child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
             ),
             FilledButton(
+              autofocus: true,
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(
                 messages.message(LearnAnywhereMessage.actionContinue),

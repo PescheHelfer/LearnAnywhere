@@ -260,6 +260,7 @@ final class _LexiconPageState extends State<LexiconPage> {
               child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
             ),
             FilledButton(
+              autofocus: true,
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(
                 messages.message(LearnAnywhereMessage.actionContinue),

@@ -5,7 +5,10 @@ import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 /// Desktop About page with legacy and conversion credits.
 final class AboutPage extends StatelessWidget {
   /// Creates the About page.
-  const AboutPage({super.key});
+  const AboutPage({this.onClose, super.key});
+
+  /// Called when the user closes this page.
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +103,18 @@ final class AboutPage extends StatelessWidget {
                         LearnAnywhereMessage.aboutVersionPrevious,
                       ),
                     ),
+                    if (onClose != null) ...<Widget>[
+                      const SizedBox(height: LearnAnywhereTokens.gapLarge),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton(
+                          onPressed: onClose,
+                          child: Text(
+                            messages.message(LearnAnywhereMessage.actionClose),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -396,10 +397,34 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           // The content lives in a dedicated FocusScope so focus can be
           // restored here after the AppBar menus or a dialog steal it; see
           // [_restoreContentFocus].
+          //
+          // The Shortcuts/Actions pair provides a global ESC handler: any
+          // non-root screen that does not handle ESC internally (Statistics,
+          // Lexicon, About, Options, Mask Editor) is returned to home. Screens
+          // with their own inner Shortcuts (UnitEditor, LearnSession) take
+          // priority because Flutter processes the innermost Shortcuts first.
           Expanded(
-            child: FocusScope(
-              node: _contentFocusScope,
-              child: _contentForRoute(),
+            child: Shortcuts(
+              shortcuts: const <ShortcutActivator, Intent>{
+                SingleActivator(LogicalKeyboardKey.escape): _GoHomeIntent(),
+              },
+              child: Actions(
+                actions: <Type, Action<Intent>>{
+                  _GoHomeIntent: CallbackAction<_GoHomeIntent>(
+                    onInvoke: (_) {
+                      if (_route != _DesktopRoute.home &&
+                          _route != _DesktopRoute.fileOperations) {
+                        _selectRoute(_DesktopRoute.home);
+                      }
+                      return null;
+                    },
+                  ),
+                },
+                child: FocusScope(
+                  node: _contentFocusScope,
+                  child: _contentForRoute(),
+                ),
+              ),
             ),
           ),
         ],
@@ -427,19 +452,23 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   List<Widget> _buildMenuChildren(LearnAnywhereLocalizations messages) {
     return <Widget>[
+      // 1. File
       SubmenuButton(
         menuChildren: <Widget>[
           _commandItem(messages, LearnAnywhereMessage.fileNewDeck),
           _commandItem(messages, LearnAnywhereMessage.fileOpenDeck),
           _commandItem(messages, LearnAnywhereMessage.fileAddMergeDeck),
-          const _MenuSeparator(),
           _commandItem(messages, LearnAnywhereMessage.fileSave),
           _commandItem(messages, LearnAnywhereMessage.fileSaveAs),
           const _MenuSeparator(),
-          _commandItem(messages, LearnAnywhereMessage.fileClearUnits),
-          const _MenuSeparator(),
           _commandItem(messages, LearnAnywhereMessage.fileLoadMask),
           _commandItem(messages, LearnAnywhereMessage.fileSaveMask),
+          _commandItem(messages, LearnAnywhereMessage.fileSaveMaskAs),
+          const _MenuSeparator(),
+          _commandItem(messages, LearnAnywhereMessage.statisticsLoad),
+          _commandItem(messages, LearnAnywhereMessage.statisticsSave),
+          _commandItem(messages, LearnAnywhereMessage.fileSaveStatsAs),
+          _commandItem(messages, LearnAnywhereMessage.statisticsClear),
           const _MenuSeparator(),
           _commandItem(messages, LearnAnywhereMessage.fileExit),
         ],
@@ -448,6 +477,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           builder: menuAcceleratorBuilder,
         ),
       ),
+      // 2. Edit (absorbs Mask Editor)
       SubmenuButton(
         menuChildren: <Widget>[
           MenuItemButton(
@@ -471,56 +501,52 @@ final class _DesktopHomeState extends State<_DesktopHome> {
               builder: menuAcceleratorBuilder,
             ),
           ),
+          const _MenuSeparator(),
+          MenuItemButton(
+            onPressed: () => _selectRoute(_DesktopRoute.maskEditor),
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuMaskEditor),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
         ],
         child: MenuAcceleratorLabel(
           messages.message(LearnAnywhereMessage.menuEdit),
           builder: menuAcceleratorBuilder,
         ),
       ),
-      _routeMenu(
-        messages,
-        LearnAnywhereMessage.menuMaskEditor,
-        _DesktopRoute.maskEditor,
-      ),
+      // 3. Learn (direct — opens practice setup)
+      _routeMenu(messages, LearnAnywhereMessage.menuLearn, _DesktopRoute.learn),
+      // 4. Statistics (direct)
+      _routeMenu(messages, LearnAnywhereMessage.menuStatistics, _DesktopRoute.statistics),
+      // 5. Lexicon (direct)
+      _routeMenu(messages, LearnAnywhereMessage.menuLexicon, _DesktopRoute.lexicon),
+      // 6. Options (new)
       SubmenuButton(
         menuChildren: <Widget>[
-          MenuItemButton(
-            onPressed: () => _selectRoute(_DesktopRoute.learn),
-            child: MenuAcceleratorLabel(
-              messages.message(LearnAnywhereMessage.menuLearnPractice),
-              builder: menuAcceleratorBuilder,
-            ),
-          ),
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.queryOptions),
             child: MenuAcceleratorLabel(
-              messages.message(LearnAnywhereMessage.menuLearnAdvancedOptions),
+              messages.message(LearnAnywhereMessage.menuOptionsAdvancedLearning),
               builder: menuAcceleratorBuilder,
             ),
           ),
-        ],
-        child: MenuAcceleratorLabel(
-          messages.message(LearnAnywhereMessage.menuLearn),
-          builder: menuAcceleratorBuilder,
-        ),
-      ),
-      _routeMenu(
-        messages,
-        LearnAnywhereMessage.menuStatistics,
-        _DesktopRoute.statistics,
-      ),
-      _routeMenu(
-        messages,
-        LearnAnywhereMessage.menuLexicon,
-        _DesktopRoute.lexicon,
-      ),
-      _routeMenu(
-        messages,
-        LearnAnywhereMessage.menuList,
-        _DesktopRoute.list,
-      ),
-      SubmenuButton(
-        menuChildren: <Widget>[
+          const _MenuSeparator(),
+          CheckboxMenuButton(
+            value: false,
+            onChanged: null,
+            child: Text(
+              messages.message(LearnAnywhereMessage.menuOptionsAutoLoadStats),
+            ),
+          ),
+          CheckboxMenuButton(
+            value: false,
+            onChanged: null,
+            child: Text(
+              messages.message(LearnAnywhereMessage.menuOptionsAutoSaveStats),
+            ),
+          ),
+          const _MenuSeparator(),
           SubmenuButton(
             menuChildren: <Widget>[
               RadioMenuButton<_AppTheme>(
@@ -529,9 +555,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(
-                  messages.message(LearnAnywhereMessage.themeSystem),
-                ),
+                child: Text(messages.message(LearnAnywhereMessage.themeSystem)),
               ),
               RadioMenuButton<_AppTheme>(
                 value: _AppTheme.light,
@@ -539,9 +563,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(
-                  messages.message(LearnAnywhereMessage.themeLight),
-                ),
+                child: Text(messages.message(LearnAnywhereMessage.themeLight)),
               ),
               RadioMenuButton<_AppTheme>(
                 value: _AppTheme.dark,
@@ -549,9 +571,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(
-                  messages.message(LearnAnywhereMessage.themeDark),
-                ),
+                child: Text(messages.message(LearnAnywhereMessage.themeDark)),
               ),
               RadioMenuButton<_AppTheme>(
                 value: _AppTheme.darkBlue,
@@ -559,9 +579,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(
-                  messages.message(LearnAnywhereMessage.themeDarkBlue),
-                ),
+                child: Text(messages.message(LearnAnywhereMessage.themeDarkBlue)),
               ),
               RadioMenuButton<_AppTheme>(
                 value: _AppTheme.lightBlue,
@@ -569,9 +587,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(
-                  messages.message(LearnAnywhereMessage.themeLightBlue),
-                ),
+                child: Text(messages.message(LearnAnywhereMessage.themeLightBlue)),
               ),
             ],
             child: MenuAcceleratorLabel(
@@ -587,9 +603,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (Locale? v) {
                   if (v != null) widget.onLocaleChanged(v);
                 },
-                child: Text(
-                  messages.message(LearnAnywhereMessage.languageEnglish),
-                ),
+                child: Text(messages.message(LearnAnywhereMessage.languageEnglish)),
               ),
               RadioMenuButton<Locale>(
                 value: const Locale('de'),
@@ -597,9 +611,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (Locale? v) {
                   if (v != null) widget.onLocaleChanged(v);
                 },
-                child: Text(
-                  messages.message(LearnAnywhereMessage.languageGerman),
-                ),
+                child: Text(messages.message(LearnAnywhereMessage.languageGerman)),
               ),
             ],
             child: MenuAcceleratorLabel(
@@ -613,6 +625,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           builder: menuAcceleratorBuilder,
         ),
       ),
+      // 7. Help
       SubmenuButton(
         menuChildren: <Widget>[
           MenuItemButton(
@@ -769,12 +782,14 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           setState(() => _queryOptions = value);
           unawaited(_saveSettings());
         },
+        onClose: () => _selectRoute(_DesktopRoute.home),
       ),
       _DesktopRoute.statistics => StatisticsPage(
         deck: _document.deck,
         statistics: _document.statistics,
         onLoadStatistics: _loadStatistics,
         onSaveStatistics: _saveStatistics,
+        onSaveStatisticsAs: () => _saveStatistics(saveAs: true),
         onClearStatistics: _clearStatistics,
         onSaveSelectedUnits: _saveSelectedUnits,
       ),
@@ -787,7 +802,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         loadDecksByPattern: _fileService.loadDecksByPattern,
         onLoadFoundDeck: _loadFoundLexiconDeck,
       ),
-      _DesktopRoute.about => const AboutPage(),
+      _DesktopRoute.about => AboutPage(
+        onClose: () => _selectRoute(_DesktopRoute.home),
+      ),
       _ => _RoutePlaceholder(route: _route),
     };
   }
@@ -833,6 +850,16 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         await _loadMask();
       case LearnAnywhereMessage.fileSaveMask:
         await _saveMask();
+      case LearnAnywhereMessage.fileSaveMaskAs:
+        await _saveMask(saveAs: true);
+      case LearnAnywhereMessage.statisticsLoad:
+        await _loadStatistics();
+      case LearnAnywhereMessage.statisticsSave:
+        await _saveStatistics();
+      case LearnAnywhereMessage.fileSaveStatsAs:
+        await _saveStatistics(saveAs: true);
+      case LearnAnywhereMessage.statisticsClear:
+        await _clearStatistics();
       case LearnAnywhereMessage.fileExit:
         await _exit();
       default:
@@ -971,20 +998,23 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     });
   }
 
-  Future<void> _saveMask() async {
-    final String? path = await _pickSavePath(
-      extension: 'inf',
-      typeLabel: LearnAnywhereMessage.filePickerMaskType,
-      suggestedName: _suggestedName(
-        _lastMaskPath ?? _settings.lastMaskPath,
-        'learn_anywhere.inf',
-      ),
-    );
+  Future<void> _saveMask({bool saveAs = false}) async {
+    String? path = saveAs ? null : (_lastMaskPath ?? _settings.lastMaskPath);
     if (path == null) {
-      return;
+      path = await _pickSavePath(
+        extension: 'inf',
+        typeLabel: LearnAnywhereMessage.filePickerMaskType,
+        suggestedName: _suggestedName(
+          _lastMaskPath ?? _settings.lastMaskPath,
+          'learn_anywhere.inf',
+        ),
+      );
+      if (path == null) {
+        return;
+      }
     }
     await _guardedFileOperation(() async {
-      final String maskPath = _ensureExtension(path, 'inf');
+      final String maskPath = _ensureExtension(path!, 'inf');
       await _fileService.saveMask(_document.mask, maskPath);
       _lastMaskPath = maskPath;
       _selectRoute(_DesktopRoute.fileOperations);
@@ -1009,18 +1039,21 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     });
   }
 
-  Future<void> _saveStatistics() async {
-    final String? statsDefault = _statisticsDefaultPath();
-    final String? path = await _pickSavePath(
-      extension: 'sta',
-      typeLabel: LearnAnywhereMessage.filePickerStatsType,
-      suggestedName: _suggestedName(statsDefault, 'learn_anywhere.sta'),
-    );
+  Future<void> _saveStatistics({bool saveAs = false}) async {
+    String? path = saveAs ? null : _document.statisticsPath;
     if (path == null) {
-      return;
+      final String? statsDefault = _statisticsDefaultPath();
+      path = await _pickSavePath(
+        extension: 'sta',
+        typeLabel: LearnAnywhereMessage.filePickerStatsType,
+        suggestedName: _suggestedName(statsDefault, 'learn_anywhere.sta'),
+      );
+      if (path == null) {
+        return;
+      }
     }
     await _guardedFileOperation(() async {
-      final String staPath = _ensureExtension(path, 'sta');
+      final String staPath = _ensureExtension(path!, 'sta');
       _document = await _fileService.saveStatistics(_document, staPath);
       _setLastDir('sta', staPath);
       _showStatus(LearnAnywhereMessage.statisticsSaved);
@@ -1028,8 +1061,32 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   Future<void> _clearStatistics() async {
-    final bool confirmed = await _confirm(LearnAnywhereMessage.statisticsClear);
-    if (!confirmed) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
+          content: Text(
+            messages.message(LearnAnywhereMessage.confirmClearStatistics),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(messages.message(LearnAnywhereMessage.actionClear)),
+            ),
+          ],
+        );
+      },
+    );
+    if (result != true) {
       return;
     }
     setState(() {
@@ -1125,6 +1182,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
               child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
             ),
             FilledButton(
+              autofocus: true,
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(
                 messages.message(LearnAnywhereMessage.actionContinue),
@@ -1569,4 +1627,11 @@ final class _StatusLine extends StatelessWidget {
       child: Text('$label: $value'),
     );
   }
+}
+
+/// Intent fired by the global ESC shortcut to return to the home screen.
+/// Screens with their own inner Shortcuts (UnitEditor, LearnSession) take
+/// priority, so this only fires for screens that have no ESC handler.
+final class _GoHomeIntent extends Intent {
+  const _GoHomeIntent();
 }

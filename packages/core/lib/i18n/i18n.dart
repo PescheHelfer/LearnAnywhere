@@ -106,6 +106,9 @@ enum LearnAnywhereMessage {
   /// Save mask command.
   fileSaveMask,
 
+  /// Save mask as command.
+  fileSaveMaskAs,
+
   /// Exit command.
   fileExit,
 
@@ -153,6 +156,15 @@ enum LearnAnywhereMessage {
 
   /// Options menu label.
   menuOptions,
+
+  /// Options menu: advanced learning options item.
+  menuOptionsAdvancedLearning,
+
+  /// Options menu: auto-load statistics toggle.
+  menuOptionsAutoLoadStats,
+
+  /// Options menu: auto-save statistics toggle.
+  menuOptionsAutoSaveStats,
 
   /// Theme control label.
   themeLabel,
@@ -613,6 +625,9 @@ enum LearnAnywhereMessage {
   /// Save statistics action.
   statisticsSave,
 
+  /// Save statistics as action.
+  fileSaveStatsAs,
+
   /// Clear statistics action.
   statisticsClear,
 
@@ -784,6 +799,15 @@ enum LearnAnywhereMessage {
   /// Continue action.
   actionContinue,
 
+  /// Clear action.
+  actionClear,
+
+  /// Close action.
+  actionClose,
+
+  /// Confirm clear statistics message.
+  confirmClearStatistics,
+
   /// File operation success title.
   fileOperationDone,
 
@@ -856,18 +880,19 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.homeLastMask: 'Last mask',
       LearnAnywhereMessage.menuFile: '&File', // top-bar F
       LearnAnywhereMessage.fileNewDeck: '&New deck', // N
-      LearnAnywhereMessage.fileOpenDeck: '&Open deck...', // O
-      LearnAnywhereMessage.fileAddMergeDeck: '&Add/merge deck...', // A
-      LearnAnywhereMessage.fileSave: '&Save', // S
-      LearnAnywhereMessage.fileSaveAs: 'Sa&ve As...', // V
-      LearnAnywhereMessage.fileClearUnits: '&Clear units in memory...', // C
-      LearnAnywhereMessage.fileLoadMask: '&Load mask...', // L
-      LearnAnywhereMessage.fileSaveMask: 'Save &mask...', // M
+      LearnAnywhereMessage.fileOpenDeck: 'Load &deck', // D
+      LearnAnywhereMessage.fileAddMergeDeck: '&Add/merge deck', // A
+      LearnAnywhereMessage.fileSave: '&Save deck', // S
+      LearnAnywhereMessage.fileSaveAs: 'Sa&ve deck as', // V
+      LearnAnywhereMessage.fileClearUnits: '&Clear units in memory', // C
+      LearnAnywhereMessage.fileLoadMask: '&Load mask', // L
+      LearnAnywhereMessage.fileSaveMask: 'Save &mask', // M
+      LearnAnywhereMessage.fileSaveMaskAs: 'Save mask as',
       LearnAnywhereMessage.fileExit: '&Exit', // E
       LearnAnywhereMessage.menuEdit: '&Edit', // top-bar E
       LearnAnywhereMessage.menuEditUnitEditor: '&Unit editor', // U
       LearnAnywhereMessage.menuEditSearchUnit: '&Search unit', // S
-      LearnAnywhereMessage.menuEditJumpToNumber: '&Jump to number...', // J
+      LearnAnywhereMessage.menuEditJumpToNumber: '&Jump to number', // J
       LearnAnywhereMessage.menuMaskEditor: '&Mask Editor', // top-bar M
       LearnAnywhereMessage.menuLearn: '&Learn', // top-bar L
       LearnAnywhereMessage.menuLearnPractice: '&Practice', // P
@@ -879,6 +904,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuHelp: '&Help', // top-bar H
       LearnAnywhereMessage.helpAbout: '&About', // A
       LearnAnywhereMessage.menuOptions: '&Options', // top-bar O
+      LearnAnywhereMessage.menuOptionsAdvancedLearning: '&Advanced Learning Options', // A
+      LearnAnywhereMessage.menuOptionsAutoLoadStats: 'Auto-load statistics',
+      LearnAnywhereMessage.menuOptionsAutoSaveStats: 'Auto-save statistics',
       LearnAnywhereMessage.themeLabel: 'Theme',
       LearnAnywhereMessage.themeSystem: 'System',
       LearnAnywhereMessage.themeLight: 'Light',
@@ -1021,7 +1049,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnBackToSetup: 'Back to setup',
       LearnAnywhereMessage.learnCancelConfirm: 'Cancel the current session?',
       LearnAnywhereMessage.learnEvaluateAs: 'Evaluate as:',
-      LearnAnywhereMessage.queryOptionsTitle: 'Learning Options',
+      LearnAnywhereMessage.queryOptionsTitle: 'Advanced Learning Options',
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Wrong input correctable',
       LearnAnywhereMessage.queryOptionCompleteInputRequired:
@@ -1060,6 +1088,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsSaveSelected: 'Save selected units',
       LearnAnywhereMessage.statisticsLoad: 'Load stats',
       LearnAnywhereMessage.statisticsSave: 'Save stats',
+      LearnAnywhereMessage.fileSaveStatsAs: 'Save stats as',
       LearnAnywhereMessage.statisticsClear: 'Clear stats',
       LearnAnywhereMessage.statisticsLoaded: 'Statistics loaded.',
       LearnAnywhereMessage.statisticsSaved: 'Statistics saved.',
@@ -1122,10 +1151,14 @@ final class LearnAnywhereCatalog {
           'Load a new mask? Current in-memory units will be cleared.',
       LearnAnywhereMessage.actionCancel: 'Cancel',
       LearnAnywhereMessage.actionContinue: 'Continue',
+      LearnAnywhereMessage.actionClear: 'Clear',
+      LearnAnywhereMessage.actionClose: 'Close',
+      LearnAnywhereMessage.confirmClearStatistics:
+          'Clear all statistics for the current deck?',
       LearnAnywhereMessage.fileOperationDone: 'Done',
       LearnAnywhereMessage.fileOperationFailed: 'File operation failed',
       LearnAnywhereMessage.fileNewDeckDone: 'New deck created.',
-      LearnAnywhereMessage.fileOpenDeckDone: 'Deck opened.',
+      LearnAnywhereMessage.fileOpenDeckDone: 'Deck loaded.',
       LearnAnywhereMessage.fileMergeDeckDone: 'Deck merged.',
       LearnAnywhereMessage.fileSaveDeckDone: 'Deck saved.',
       LearnAnywhereMessage.fileClearUnitsDone: 'Units cleared.',
@@ -1161,14 +1194,15 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.homeLastMask: 'Letzte Masken-Datei',
       LearnAnywhereMessage.menuFile: '&Datei', // top-bar D
       LearnAnywhereMessage.fileNewDeck: '&Neue Lern-Datei', // N
-      LearnAnywhereMessage.fileOpenDeck: '&Lern-Datei laden...', // L
-      LearnAnywhereMessage.fileAddMergeDeck: 'Lern-Datei &hinzuladen...', // H
-      LearnAnywhereMessage.fileSave: '&Speichern', // S
-      LearnAnywhereMessage.fileSaveAs: 'Speichern &unter...', // U
+      LearnAnywhereMessage.fileOpenDeck: '&Lern-Datei laden', // L
+      LearnAnywhereMessage.fileAddMergeDeck: 'Lern-Datei &hinzuladen', // H
+      LearnAnywhereMessage.fileSave: 'Lern-Datei &speichern', // S
+      LearnAnywhereMessage.fileSaveAs: 'Lern-Datei speichern &unter', // U
       LearnAnywhereMessage.fileClearUnits:
-          'Lerneinheiten &im Speicher löschen...', // I
-      LearnAnywhereMessage.fileLoadMask: 'Neue &Masken-Datei laden...', // M
-      LearnAnywhereMessage.fileSaveMask: 'Masken-&Datei speichern...', // D
+          'Lerneinheiten &im Speicher löschen', // I
+      LearnAnywhereMessage.fileLoadMask: 'Neue &Masken-Datei laden', // M
+      LearnAnywhereMessage.fileSaveMask: 'Masken-&Datei speichern', // D
+      LearnAnywhereMessage.fileSaveMaskAs: 'Masken-Datei speichern unter',
       LearnAnywhereMessage.fileExit: '&Beenden', // B
       LearnAnywhereMessage.menuEdit: '&Edit', // top-bar E
       LearnAnywhereMessage.menuEditUnitEditor: '&Eingabe-Maske', // E
@@ -1187,6 +1221,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuHelp: '&Hilfe', // top-bar H
       LearnAnywhereMessage.helpAbout: '&Programminfo', // P
       LearnAnywhereMessage.menuOptions: '&Optionen', // top-bar O
+      LearnAnywhereMessage.menuOptionsAdvancedLearning: '&Erweiterte Lernoptionen', // E
+      LearnAnywhereMessage.menuOptionsAutoLoadStats: 'Statistiken automatisch laden',
+      LearnAnywhereMessage.menuOptionsAutoSaveStats: 'Statistiken automatisch speichern',
       LearnAnywhereMessage.themeLabel: 'Darstellung',
       LearnAnywhereMessage.themeSystem: 'System',
       LearnAnywhereMessage.themeLight: 'Hell',
@@ -1330,7 +1367,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnBackToSetup: 'Zur Einrichtung',
       LearnAnywhereMessage.learnCancelConfirm: 'Aktuelle Sitzung abbrechen?',
       LearnAnywhereMessage.learnEvaluateAs: 'Bewerten als:',
-      LearnAnywhereMessage.queryOptionsTitle: 'Abfrageoptionen',
+      LearnAnywhereMessage.queryOptionsTitle: 'Erweiterte Lernoptionen',
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Falsche Eingabe korrigierbar',
       LearnAnywhereMessage.queryOptionCompleteInputRequired:
@@ -1372,6 +1409,7 @@ final class LearnAnywhereCatalog {
           'Ausgewählte Einheiten speichern',
       LearnAnywhereMessage.statisticsLoad: 'Statistik laden',
       LearnAnywhereMessage.statisticsSave: 'Statistik speichern',
+      LearnAnywhereMessage.fileSaveStatsAs: 'Statistik speichern unter',
       LearnAnywhereMessage.statisticsClear: 'Statistik löschen',
       LearnAnywhereMessage.statisticsLoaded: 'Statistik geladen.',
       LearnAnywhereMessage.statisticsSaved: 'Statistik gespeichert.',
@@ -1437,6 +1475,10 @@ final class LearnAnywhereCatalog {
           'Neue Maske laden? Aktuelle Lerneinheiten im Speicher werden gelöscht.',
       LearnAnywhereMessage.actionCancel: 'Abbruch',
       LearnAnywhereMessage.actionContinue: 'Weiter',
+      LearnAnywhereMessage.actionClear: 'Löschen',
+      LearnAnywhereMessage.actionClose: 'Schließen',
+      LearnAnywhereMessage.confirmClearStatistics:
+          'Alle Statistiken für das aktuelle Vokabular löschen?',
       LearnAnywhereMessage.fileOperationDone: 'Fertig',
       LearnAnywhereMessage.fileOperationFailed: 'Dateioperation fehlgeschlagen',
       LearnAnywhereMessage.fileNewDeckDone: 'Neue Lern-Datei erstellt.',
