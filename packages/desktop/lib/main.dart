@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
@@ -8,6 +7,7 @@ import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'services/window_geometry_service.dart';
 import 'src/about/about_page.dart';
 import 'src/editor/unit_editor_page.dart';
 import 'src/file_operations/desktop_document.dart';
@@ -26,6 +26,21 @@ Future<void> main() async {
   await windowManager.ensureInitialized();
   final SharedPreferences sharedPrefs = await SharedPreferences.getInstance();
   final DesktopPrefs prefs = DesktopPrefs(sharedPrefs);
+
+  final WindowGeometryService geometryService = WindowGeometryService();
+
+  const WindowOptions windowOptions = WindowOptions(
+    size: Size(1024, 700),
+    center: true,
+    skipTaskbar: false,
+  );
+
+  await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await geometryService.restoreGeometry();
+    await windowManager.show();
+    await windowManager.focus();
+  });
+
   runApp(LearnAnywhereDesktopApp(prefs: prefs));
 }
 
@@ -46,7 +61,7 @@ final class _LearnAnywhereDesktopAppState
     extends State<LearnAnywhereDesktopApp> with WindowListener {
   late _AppTheme _appTheme;
   late Locale _locale;
-  Timer? _windowSaveTimer;
+  final WindowGeometryService _geometryService = WindowGeometryService();
 
   ThemeData get _lightTheme => _appTheme == _AppTheme.lightBlue
       ? LearnAnywhereTheme.lightBlue()
@@ -69,80 +84,28 @@ final class _LearnAnywhereDesktopAppState
     _appTheme = _appThemeFromPrefs(widget.prefs);
     _locale = _localeFromPrefs(widget.prefs);
     windowManager.addListener(this);
-    unawaited(_restoreWindow());
   }
 
   @override
   void dispose() {
     windowManager.removeListener(this);
-    _windowSaveTimer?.cancel();
+    _geometryService.dispose();
     super.dispose();
   }
 
-  // --- Window manager callbacks (N2) ----------------------------------------
+  // --- Window manager callbacks ---------------------------------------------
 
   @override
-  void onWindowMoved() => _scheduleWindowSave();
+  void onWindowResize() => _geometryService.saveGeometry();
 
   @override
-  void onWindowResized() => _scheduleWindowSave();
+  void onWindowMove() => _geometryService.saveGeometry();
 
-  void _scheduleWindowSave() {
-    _windowSaveTimer?.cancel();
-    _windowSaveTimer = Timer(const Duration(seconds: 10), _saveWindowBounds);
-  }
+  @override
+  void onWindowMaximize() => _geometryService.saveGeometry();
 
-  Future<void> _saveWindowBounds() async {
-    final Rect bounds = await windowManager.getBounds();
-    widget.prefs.setWindowBounds(
-      bounds.left,
-      bounds.top,
-      bounds.width,
-      bounds.height,
-    );
-  }
-
-  Future<void> _restoreWindow() async {
-    final double? savedX = widget.prefs.windowX;
-    final double? savedY = widget.prefs.windowY;
-    final double? savedW = widget.prefs.windowWidth;
-    final double? savedH = widget.prefs.windowHeight;
-
-    if (savedW != null && savedH != null) {
-      await windowManager.setSize(Size(savedW, savedH));
-    }
-
-    if (savedX != null && savedY != null) {
-      final double w = savedW ?? 1024;
-      final double h = savedH ?? 720;
-      if (_isOnScreen(savedX, savedY, w, h)) {
-        await windowManager.setPosition(Offset(savedX, savedY));
-      } else {
-        await windowManager.center();
-      }
-    }
-  }
-
-  /// Returns true when enough of the window is on the primary display.
-  ///
-  /// Compares logical-pixel coordinates against the display's logical size.
-  /// Falls back to true (keep position) when display info is unavailable.
-  bool _isOnScreen(double x, double y, double w, double h) {
-    final Iterable<ui.Display> displays =
-        WidgetsBinding.instance.platformDispatcher.displays;
-    if (displays.isEmpty) {
-      return true;
-    }
-    final ui.Display display = displays.first;
-    final double dpr = display.devicePixelRatio;
-    final double screenW = display.size.width / dpr;
-    final double screenH = display.size.height / dpr;
-    const double minVisible = 100.0;
-    return x + minVisible <= screenW &&
-        y + minVisible <= screenH &&
-        x + w > 0 &&
-        y + h > 0;
-  }
+  @override
+  void onWindowUnmaximize() => _geometryService.saveGeometry();
 
   // --- Theme / locale (C4) --------------------------------------------------
 

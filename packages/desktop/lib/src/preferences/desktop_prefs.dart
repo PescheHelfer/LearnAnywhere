@@ -4,9 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Typed wrapper around [SharedPreferences] for desktop-specific settings.
 ///
-/// Covers UI theme, UI language, last-used file-dialog directories, and
-/// window position/size. Pure learning-engine settings are stored separately
-/// in the JSON settings file managed by the core package.
+/// Covers UI theme, UI language, and last-used file-dialog directories.
+/// Window geometry is handled separately by `WindowGeometryService`.
+/// Pure learning-engine settings are stored in the JSON settings file
+/// managed by the core package.
 final class DesktopPrefs {
   /// Creates a prefs wrapper backed by [prefs].
   DesktopPrefs(SharedPreferences prefs) : _prefs = prefs;
@@ -18,10 +19,6 @@ final class DesktopPrefs {
   static const String _keyLastDirVok = 'last_dir_vok';
   static const String _keyLastDirSta = 'last_dir_sta';
   static const String _keyLastDirInf = 'last_dir_inf';
-  static const String _keyWindowX = 'window_x';
-  static const String _keyWindowY = 'window_y';
-  static const String _keyWindowWidth = 'window_width';
-  static const String _keyWindowHeight = 'window_height';
 
   // --- Theme & locale -------------------------------------------------------
 
@@ -62,26 +59,4 @@ final class DesktopPrefs {
   void setLastDirInf(String value) =>
       unawaited(_prefs.setString(_keyLastDirInf, value));
 
-  // --- Window position & size -----------------------------------------------
-
-  /// Last saved window X position in logical pixels, or null on first run.
-  double? get windowX => _prefs.getDouble(_keyWindowX);
-
-  /// Last saved window Y position in logical pixels, or null on first run.
-  double? get windowY => _prefs.getDouble(_keyWindowY);
-
-  /// Last saved window width in logical pixels, or null on first run.
-  double? get windowWidth => _prefs.getDouble(_keyWindowWidth);
-
-  /// Last saved window height in logical pixels, or null on first run.
-  double? get windowHeight => _prefs.getDouble(_keyWindowHeight);
-
-  /// Persists window position ([x], [y]) and size ([width], [height]) in
-  /// logical pixels.
-  void setWindowBounds(double x, double y, double width, double height) {
-    unawaited(_prefs.setDouble(_keyWindowX, x));
-    unawaited(_prefs.setDouble(_keyWindowY, y));
-    unawaited(_prefs.setDouble(_keyWindowWidth, width));
-    unawaited(_prefs.setDouble(_keyWindowHeight, height));
-  }
 }
