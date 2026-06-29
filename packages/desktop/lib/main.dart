@@ -1,9 +1,12 @@
-﻿import 'dart:async';
+import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'src/about/about_page.dart';
 import 'src/editor/unit_editor_page.dart';
@@ -15,16 +18,24 @@ import 'src/learn/learn_session_page.dart';
 import 'src/learn/query_options_page.dart';
 import 'src/lexicon/lexicon_page.dart';
 import 'src/mask_editor/mask_editor_page.dart';
+import 'src/preferences/desktop_prefs.dart';
 import 'src/statistics/statistics_page.dart';
 
-void main() {
-  runApp(const LearnAnywhereDesktopApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await windowManager.ensureInitialized();
+  final SharedPreferences sharedPrefs = await SharedPreferences.getInstance();
+  final DesktopPrefs prefs = DesktopPrefs(sharedPrefs);
+  runApp(LearnAnywhereDesktopApp(prefs: prefs));
 }
 
 /// Desktop shell for Learn Anywhere.
 final class LearnAnywhereDesktopApp extends StatefulWidget {
   /// Creates the desktop shell.
-  const LearnAnywhereDesktopApp({super.key});
+  const LearnAnywhereDesktopApp({super.key, required this.prefs});
+
+  /// Desktop-specific preferences (theme, locale, dialog dirs, window bounds).
+  final DesktopPrefs prefs;
 
   @override
   State<LearnAnywhereDesktopApp> createState() =>
@@ -32,9 +43,10 @@ final class LearnAnywhereDesktopApp extends StatefulWidget {
 }
 
 final class _LearnAnywhereDesktopAppState
-    extends State<LearnAnywhereDesktopApp> {
-  _AppTheme _appTheme = _AppTheme.system;
-  Locale _locale = const Locale('en');
+    extends State<LearnAnywhereDesktopApp> with WindowListener {
+  late _AppTheme _appTheme;
+  late Locale _locale;
+  Timer? _windowSaveTimer;
 
   ThemeData get _lightTheme => _appTheme == _AppTheme.lightBlue
       ? LearnAnywhereTheme.lightBlue()
@@ -52,6 +64,99 @@ final class _LearnAnywhereDesktopAppState
       };
 
   @override
+  void initState() {
+    super.initState();
+    _appTheme = _appThemeFromPrefs(widget.prefs);
+    _locale = _localeFromPrefs(widget.prefs);
+    windowManager.addListener(this);
+    unawaited(_restoreWindow());
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(this);
+    _windowSaveTimer?.cancel();
+    super.dispose();
+  }
+
+  // --- Window manager callbacks (N2) ----------------------------------------
+
+  @override
+  void onWindowMoved() => _scheduleWindowSave();
+
+  @override
+  void onWindowResized() => _scheduleWindowSave();
+
+  void _scheduleWindowSave() {
+    _windowSaveTimer?.cancel();
+    _windowSaveTimer = Timer(const Duration(seconds: 10), _saveWindowBounds);
+  }
+
+  Future<void> _saveWindowBounds() async {
+    final Rect bounds = await windowManager.getBounds();
+    widget.prefs.setWindowBounds(
+      bounds.left,
+      bounds.top,
+      bounds.width,
+      bounds.height,
+    );
+  }
+
+  Future<void> _restoreWindow() async {
+    final double? savedX = widget.prefs.windowX;
+    final double? savedY = widget.prefs.windowY;
+    final double? savedW = widget.prefs.windowWidth;
+    final double? savedH = widget.prefs.windowHeight;
+
+    if (savedW != null && savedH != null) {
+      await windowManager.setSize(Size(savedW, savedH));
+    }
+
+    if (savedX != null && savedY != null) {
+      final double w = savedW ?? 1024;
+      final double h = savedH ?? 720;
+      if (_isOnScreen(savedX, savedY, w, h)) {
+        await windowManager.setPosition(Offset(savedX, savedY));
+      } else {
+        await windowManager.center();
+      }
+    }
+  }
+
+  /// Returns true when enough of the window is on the primary display.
+  ///
+  /// Compares logical-pixel coordinates against the display's logical size.
+  /// Falls back to true (keep position) when display info is unavailable.
+  bool _isOnScreen(double x, double y, double w, double h) {
+    final Iterable<ui.Display> displays =
+        WidgetsBinding.instance.platformDispatcher.displays;
+    if (displays.isEmpty) {
+      return true;
+    }
+    final ui.Display display = displays.first;
+    final double dpr = display.devicePixelRatio;
+    final double screenW = display.size.width / dpr;
+    final double screenH = display.size.height / dpr;
+    const double minVisible = 100.0;
+    return x + minVisible <= screenW &&
+        y + minVisible <= screenH &&
+        x + w > 0 &&
+        y + h > 0;
+  }
+
+  // --- Theme / locale (C4) --------------------------------------------------
+
+  void _onAppThemeChanged(_AppTheme value) {
+    setState(() => _appTheme = value);
+    widget.prefs.setTheme(value.name);
+  }
+
+  void _onLocaleChanged(Locale value) {
+    setState(() => _locale = value);
+    widget.prefs.setLocale(value.languageCode);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       onGenerateTitle: (BuildContext context) =>
@@ -63,20 +168,37 @@ final class _LearnAnywhereDesktopAppState
       supportedLocales: LearnAnywhereLocalizations.supportedLocales,
       localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
       home: _DesktopHome(
+        prefs: widget.prefs,
         appTheme: _appTheme,
         locale: _locale,
-        onAppThemeChanged: (_AppTheme value) {
-          setState(() => _appTheme = value);
-        },
-        onLocaleChanged: (Locale value) {
-          setState(() => _locale = value);
-        },
+        onAppThemeChanged: _onAppThemeChanged,
+        onLocaleChanged: _onLocaleChanged,
       ),
     );
   }
 }
 
 enum _AppTheme { system, light, dark, darkBlue, lightBlue }
+
+_AppTheme _appThemeFromPrefs(DesktopPrefs prefs) {
+  final String? name = prefs.theme;
+  if (name != null) {
+    for (final _AppTheme t in _AppTheme.values) {
+      if (t.name == name) {
+        return t;
+      }
+    }
+  }
+  return _AppTheme.system;
+}
+
+Locale _localeFromPrefs(DesktopPrefs prefs) {
+  final String? code = prefs.locale;
+  if (code != null && code.isNotEmpty) {
+    return Locale(code);
+  }
+  return const Locale('en');
+}
 
 enum _DesktopRoute {
   home,
@@ -93,12 +215,14 @@ enum _DesktopRoute {
 
 final class _DesktopHome extends StatefulWidget {
   const _DesktopHome({
+    required this.prefs,
     required this.appTheme,
     required this.locale,
     required this.onAppThemeChanged,
     required this.onLocaleChanged,
   });
 
+  final DesktopPrefs prefs;
   final _AppTheme appTheme;
   final Locale locale;
   final ValueChanged<_AppTheme> onAppThemeChanged;
@@ -130,6 +254,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   );
   String _settingsPath = '';
   String? _lastMaskPath;
+  // Per-type last-used dialog directories (C1).
+  String? _lastVokDir;
+  String? _lastStaDir;
+  String? _lastInfDir;
   int _learnSessionAttempts = 0;
   int _learnSessionCorrect = 0;
   String? _lastFileStatus;
@@ -146,6 +274,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     _range = resetUnitRange(_document.deck.units.length);
     _queryOptions = _optionsFromSettings(_settings);
     _learnParameters = _parametersFromSettings(_settings);
+    // Load per-type dialog directories from shared_preferences (C1).
+    _lastVokDir = widget.prefs.lastDirVok;
+    _lastStaDir = widget.prefs.lastDirSta;
+    _lastInfDir = widget.prefs.lastDirInf;
     unawaited(_loadSettings());
   }
 
@@ -771,7 +903,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     final String? path = await _pickOpenPath(
       extension: 'vok',
       typeLabel: LearnAnywhereMessage.filePickerDeckType,
-      currentPath: _document.deckPath,
     );
     if (path == null) {
       return;
@@ -781,6 +912,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       _resetRangeForDeck();
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileOpenDeckDone);
+      _setLastDir('vok', path);
       unawaited(_saveSettings());
     });
   }
@@ -789,7 +921,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     final String? path = await _pickOpenPath(
       extension: 'vok',
       typeLabel: LearnAnywhereMessage.filePickerDeckType,
-      currentPath: _document.deckPath,
     );
     if (path == null) {
       return;
@@ -812,6 +943,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       );
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileMergeDeckDone);
+      _setLastDir('vok', path);
     });
   }
 
@@ -822,17 +954,18 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         extension: 'vok',
         typeLabel: LearnAnywhereMessage.filePickerDeckType,
         suggestedName: _suggestedName(_document.deckPath, 'learn_anywhere.vok'),
-        currentPath: _document.deckPath,
       );
       if (path == null) {
         return;
       }
       path = _ensureExtension(path, 'vok');
     }
+    final String resolvedPath = path;
     await _guardedFileOperation(() async {
-      _document = await _fileService.saveDeck(_document, path: path);
+      _document = await _fileService.saveDeck(_document, path: resolvedPath);
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileSaveDeckDone);
+      _setLastDir('vok', resolvedPath);
       unawaited(_saveSettings());
     });
   }
@@ -860,7 +993,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     final String? path = await _pickOpenPath(
       extension: 'inf',
       typeLabel: LearnAnywhereMessage.filePickerMaskType,
-      currentPath: _lastMaskPath ?? _settings.lastMaskPath,
     );
     if (path == null) {
       return;
@@ -871,6 +1003,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       _resetRangeForDeck();
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileLoadMaskDone);
+      _setLastDir('inf', path);
       unawaited(_saveSettings());
     });
   }
@@ -883,7 +1016,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         _lastMaskPath ?? _settings.lastMaskPath,
         'learn_anywhere.inf',
       ),
-      currentPath: _lastMaskPath ?? _settings.lastMaskPath,
     );
     if (path == null) {
       return;
@@ -894,6 +1026,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       _lastMaskPath = maskPath;
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileSaveMaskDone);
+      _setLastDir('inf', maskPath);
       unawaited(_saveSettings());
     });
   }
@@ -902,13 +1035,13 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     final String? path = await _pickOpenPath(
       extension: 'sta',
       typeLabel: LearnAnywhereMessage.filePickerStatsType,
-      currentPath: _statisticsDefaultPath(),
     );
     if (path == null) {
       return;
     }
     await _guardedFileOperation(() async {
       _document = await _fileService.loadStatistics(_document, path);
+      _setLastDir('sta', path);
       _showStatus(LearnAnywhereMessage.statisticsLoaded);
     });
   }
@@ -919,16 +1052,14 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       extension: 'sta',
       typeLabel: LearnAnywhereMessage.filePickerStatsType,
       suggestedName: _suggestedName(statsDefault, 'learn_anywhere.sta'),
-      currentPath: statsDefault,
     );
     if (path == null) {
       return;
     }
     await _guardedFileOperation(() async {
-      _document = await _fileService.saveStatistics(
-        _document,
-        _ensureExtension(path, 'sta'),
-      );
+      final String staPath = _ensureExtension(path, 'sta');
+      _document = await _fileService.saveStatistics(_document, staPath);
+      _setLastDir('sta', staPath);
       _showStatus(LearnAnywhereMessage.statisticsSaved);
     });
   }
@@ -953,7 +1084,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       extension: 'vok',
       typeLabel: LearnAnywhereMessage.filePickerDeckType,
       suggestedName: 'selected_units.vok',
-      currentPath: _document.deckPath,
     );
     if (path == null) {
       return;
@@ -967,10 +1097,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       ],
     );
     await _guardedFileOperation(() async {
-      await _fileService.saveDeckSnapshot(
-        selectedDeck,
-        _ensureExtension(path, 'vok'),
-      );
+      final String vokPath = _ensureExtension(path, 'vok');
+      await _fileService.saveDeckSnapshot(selectedDeck, vokPath);
+      _setLastDir('vok', vokPath);
       _showStatus(LearnAnywhereMessage.statisticsSelectedSaved);
     });
   }
@@ -987,11 +1116,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     });
   }
 
+  // B1: Use exit(0) so the process actually terminates on Windows/Linux.
   Future<void> _exit() async {
     await _guardedFileOperation(() async {
       await _fileService.autoSaveStatistics(_document);
-      _setFileStatus(LearnAnywhereMessage.fileExitRequested);
-      await SystemNavigator.pop();
+      await _saveSettings();
+      exit(0);
     });
   }
 
@@ -1044,16 +1174,51 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     return result ?? false;
   }
 
+  // --- File dialog helpers (C1) ---------------------------------------------
+
+  /// Returns the initial directory for a dialog of the given [extension] type.
+  ///
+  /// Uses the last directory saved for that type; falls back to the
+  /// user's Documents folder (or home on Linux) on first run.
+  String? _initialDirectoryFor(String extension) {
+    final String? saved = switch (extension) {
+      'vok' => _lastVokDir,
+      'sta' => _lastStaDir,
+      'inf' => _lastInfDir,
+      _ => null,
+    };
+    if (saved != null && saved.isNotEmpty) {
+      return saved;
+    }
+    return _filePicker.initialDirectory(null);
+  }
+
+  /// Extracts the directory from [path] and persists it for [extension].
+  void _setLastDir(String extension, String path) {
+    final String dir = _filePicker.directoryOf(path);
+    if (dir.isEmpty) {
+      return;
+    }
+    switch (extension) {
+      case 'vok':
+        _lastVokDir = dir;
+        widget.prefs.setLastDirVok(dir);
+      case 'sta':
+        _lastStaDir = dir;
+        widget.prefs.setLastDirSta(dir);
+      case 'inf':
+        _lastInfDir = dir;
+        widget.prefs.setLastDirInf(dir);
+    }
+  }
+
   /// Shows the native "Open file" dialog filtered to [extension].
   ///
-  /// The dialog opens in the folder of [currentPath] when a file is loaded,
-  /// otherwise the documents/home folder. Returns the resolved path, or null
-  /// when the user cancels. The path is handed to the existing core load logic
-  /// unchanged.
+  /// Opens in the last-used directory for that type, or Documents on first run.
+  /// Returns the chosen absolute path, or null when the user cancels.
   Future<String?> _pickOpenPath({
     required String extension,
     required LearnAnywhereMessage typeLabel,
-    String? currentPath,
   }) async {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
@@ -1061,21 +1226,19 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     return _filePicker.openPath(
       extension: extension,
       typeLabel: messages.message(typeLabel),
-      initialDirectory: _filePicker.initialDirectory(currentPath),
+      initialDirectory: _initialDirectoryFor(extension),
     );
   }
 
   /// Shows the native "Save file" dialog filtered to [extension], pre-filling
-  /// [suggestedName].
+  /// [suggestedName] as the file name.
   ///
-  /// The dialog opens in the folder of [currentPath] when a file is loaded,
-  /// otherwise the documents/home folder. Returns the resolved path, or null
-  /// when the user cancels.
+  /// Opens in the last-used directory for that type, or Documents on first run.
+  /// Returns the chosen absolute path, or null when the user cancels.
   Future<String?> _pickSavePath({
     required String extension,
     required LearnAnywhereMessage typeLabel,
     required String suggestedName,
-    String? currentPath,
   }) async {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
@@ -1084,7 +1247,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       extension: extension,
       typeLabel: messages.message(typeLabel),
       suggestedName: suggestedName,
-      initialDirectory: _filePicker.initialDirectory(currentPath),
+      initialDirectory: _initialDirectoryFor(extension),
     );
   }
 
@@ -1444,5 +1607,3 @@ final class _StatusLine extends StatelessWidget {
     );
   }
 }
-
-

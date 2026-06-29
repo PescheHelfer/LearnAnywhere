@@ -36,7 +36,7 @@ final class LearnAnywhereSettings {
     this.wrongAnswerCeiling = 10,
     this.mode = SessionMode.superQuery,
     this.direction = DirectionSelection.direction1,
-    this.shuffle = false,
+    this.shuffle = true,
     this.requireTypedAnswers = true,
     this.superStatusThreshold = 0.4,
     this.lastDeckPath,

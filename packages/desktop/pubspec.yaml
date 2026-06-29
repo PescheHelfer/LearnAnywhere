@@ -16,6 +16,8 @@ dependencies:
     path: ../core
   learn_anywhere_ui_kit:
     path: ../ui_kit
+  shared_preferences: ^2.3.2
+  window_manager: ^0.3.9
 
 dev_dependencies:
   flutter_test:
