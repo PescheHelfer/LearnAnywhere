@@ -808,6 +808,9 @@ enum LearnAnywhereMessage {
   /// Confirm clear statistics message.
   confirmClearStatistics,
 
+  /// Confirm exit message.
+  confirmExit,
+
   /// File operation success title.
   fileOperationDone,
 
@@ -879,20 +882,20 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.homeLastDeck: 'Last deck',
       LearnAnywhereMessage.homeLastMask: 'Last mask',
       LearnAnywhereMessage.menuFile: '&File', // top-bar F
-      LearnAnywhereMessage.fileNewDeck: '&New deck', // N
-      LearnAnywhereMessage.fileOpenDeck: 'Load &deck', // D
-      LearnAnywhereMessage.fileAddMergeDeck: '&Add/merge deck', // A
+      LearnAnywhereMessage.fileNewDeck: '&Clear units from memory...', // C
+      LearnAnywhereMessage.fileOpenDeck: 'Load &deck...', // D
+      LearnAnywhereMessage.fileAddMergeDeck: '&Add/merge deck...', // A
       LearnAnywhereMessage.fileSave: '&Save deck', // S
-      LearnAnywhereMessage.fileSaveAs: 'Sa&ve deck as', // V
+      LearnAnywhereMessage.fileSaveAs: 'Sa&ve deck as...', // V
       LearnAnywhereMessage.fileClearUnits: '&Clear units in memory', // C
-      LearnAnywhereMessage.fileLoadMask: '&Load mask', // L
+      LearnAnywhereMessage.fileLoadMask: '&Load mask...', // L
       LearnAnywhereMessage.fileSaveMask: 'Save &mask', // M
-      LearnAnywhereMessage.fileSaveMaskAs: 'Save mask as',
-      LearnAnywhereMessage.fileExit: '&Exit', // E
+      LearnAnywhereMessage.fileSaveMaskAs: 'Save mask as...',
+      LearnAnywhereMessage.fileExit: '&Exit...', // E
       LearnAnywhereMessage.menuEdit: '&Edit', // top-bar E
       LearnAnywhereMessage.menuEditUnitEditor: '&Unit editor', // U
-      LearnAnywhereMessage.menuEditSearchUnit: '&Search unit', // S
-      LearnAnywhereMessage.menuEditJumpToNumber: '&Jump to number', // J
+      LearnAnywhereMessage.menuEditSearchUnit: '&Search unit...', // S
+      LearnAnywhereMessage.menuEditJumpToNumber: '&Jump to number...', // J
       LearnAnywhereMessage.menuMaskEditor: '&Mask Editor', // top-bar M
       LearnAnywhereMessage.menuLearn: '&Learn', // top-bar L
       LearnAnywhereMessage.menuLearnPractice: '&Practice', // P
@@ -1086,10 +1089,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsSelectAll: 'Select visible',
       LearnAnywhereMessage.statisticsClearSelection: 'Clear selection',
       LearnAnywhereMessage.statisticsSaveSelected: 'Save selected units',
-      LearnAnywhereMessage.statisticsLoad: 'Load stats',
+      LearnAnywhereMessage.statisticsLoad: 'Load stats...',
       LearnAnywhereMessage.statisticsSave: 'Save stats',
-      LearnAnywhereMessage.fileSaveStatsAs: 'Save stats as',
-      LearnAnywhereMessage.statisticsClear: 'Clear stats',
+      LearnAnywhereMessage.fileSaveStatsAs: 'Save stats as...',
+      LearnAnywhereMessage.statisticsClear: 'Clear stats...',
       LearnAnywhereMessage.statisticsLoaded: 'Statistics loaded.',
       LearnAnywhereMessage.statisticsSaved: 'Statistics saved.',
       LearnAnywhereMessage.statisticsCleared: 'Statistics cleared.',
@@ -1144,7 +1147,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileStatusUnits: 'Units',
       LearnAnywhereMessage.confirmTitle: 'Please confirm',
       LearnAnywhereMessage.confirmNewDeck:
-          'Create a new deck? Current in-memory units will be cleared.',
+          'Clear units from memory? No file will be deleted.',
       LearnAnywhereMessage.confirmClearUnits:
           'Clear all units in memory? This does not delete any file.',
       LearnAnywhereMessage.confirmLoadMask:
@@ -1155,6 +1158,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionClose: 'Close',
       LearnAnywhereMessage.confirmClearStatistics:
           'Clear all statistics for the current deck?',
+      LearnAnywhereMessage.confirmExit: 'Exit Learn Anywhere?',
       LearnAnywhereMessage.fileOperationDone: 'Done',
       LearnAnywhereMessage.fileOperationFailed: 'File operation failed',
       LearnAnywhereMessage.fileNewDeckDone: 'New deck created.',
@@ -1190,25 +1194,29 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.desktopHomeBody: 'Desktop-Shell bereit',
       LearnAnywhereMessage.homeNoFileLoaded: 'Keine Datei geladen',
       LearnAnywhereMessage.homeMaskName: 'Maske',
-      LearnAnywhereMessage.homeLastDeck: 'Letzte Lern-Datei',
+      LearnAnywhereMessage.homeLastDeck: 'Letzte Lerneinheiten',
       LearnAnywhereMessage.homeLastMask: 'Letzte Masken-Datei',
       LearnAnywhereMessage.menuFile: '&Datei', // top-bar D
-      LearnAnywhereMessage.fileNewDeck: '&Neue Lern-Datei', // N
-      LearnAnywhereMessage.fileOpenDeck: '&Lern-Datei laden', // L
-      LearnAnywhereMessage.fileAddMergeDeck: 'Lern-Datei &hinzuladen', // H
-      LearnAnywhereMessage.fileSave: 'Lern-Datei &speichern', // S
-      LearnAnywhereMessage.fileSaveAs: 'Lern-Datei speichern &unter', // U
+      LearnAnywhereMessage.fileNewDeck:
+          'Lerneinheiten &im Speicher löschen...', // I
+      LearnAnywhereMessage.fileOpenDeck: '&Lerneinheiten laden...', // L
+      LearnAnywhereMessage.fileAddMergeDeck:
+          'Lerneinheiten &hinzuladen...', // H
+      LearnAnywhereMessage.fileSave: 'Lerneinheiten &speichern', // S
+      LearnAnywhereMessage.fileSaveAs:
+          'Lerneinheiten speichern &unter...', // U
       LearnAnywhereMessage.fileClearUnits:
           'Lerneinheiten &im Speicher löschen', // I
-      LearnAnywhereMessage.fileLoadMask: 'Neue &Masken-Datei laden', // M
+      LearnAnywhereMessage.fileLoadMask: 'Neue &Masken-Datei laden...', // M
       LearnAnywhereMessage.fileSaveMask: 'Masken-&Datei speichern', // D
-      LearnAnywhereMessage.fileSaveMaskAs: 'Masken-Datei speichern unter',
-      LearnAnywhereMessage.fileExit: '&Beenden', // B
+      LearnAnywhereMessage.fileSaveMaskAs: 'Masken-Datei speichern unter...',
+      LearnAnywhereMessage.fileExit: '&Beenden...', // B
       LearnAnywhereMessage.menuEdit: '&Edit', // top-bar E
       LearnAnywhereMessage.menuEditUnitEditor: '&Eingabe-Maske', // E
-      LearnAnywhereMessage.menuEditSearchUnit: '&Suchen einer Lerneinheit', // S
+      LearnAnywhereMessage.menuEditSearchUnit:
+          '&Suchen einer Lerneinheit...', // S
       LearnAnywhereMessage.menuEditJumpToNumber:
-          'Springe zu bestimmter &Nummer', // N (avoids S conflict with Suchen)
+          'Springe zu bestimmter &Nummer...', // N (avoids S conflict with Suchen)
       LearnAnywhereMessage.menuMaskEditor: '&Mask Editor', // top-bar M
       LearnAnywhereMessage.menuLearn: '&Lern', // top-bar L
       LearnAnywhereMessage.menuLearnPractice: '&Üben', // Ü
@@ -1407,10 +1415,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsClearSelection: 'Auswahl leeren',
       LearnAnywhereMessage.statisticsSaveSelected:
           'Ausgewählte Einheiten speichern',
-      LearnAnywhereMessage.statisticsLoad: 'Statistik laden',
+      LearnAnywhereMessage.statisticsLoad: 'Statistik laden...',
       LearnAnywhereMessage.statisticsSave: 'Statistik speichern',
-      LearnAnywhereMessage.fileSaveStatsAs: 'Statistik speichern unter',
-      LearnAnywhereMessage.statisticsClear: 'Statistik löschen',
+      LearnAnywhereMessage.fileSaveStatsAs: 'Statistik speichern unter...',
+      LearnAnywhereMessage.statisticsClear: 'Statistik löschen...',
       LearnAnywhereMessage.statisticsLoaded: 'Statistik geladen.',
       LearnAnywhereMessage.statisticsSaved: 'Statistik gespeichert.',
       LearnAnywhereMessage.statisticsCleared: 'Statistik gelöscht.',
@@ -1468,7 +1476,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileStatusUnits: 'Lerneinheiten',
       LearnAnywhereMessage.confirmTitle: 'Bitte bestätigen',
       LearnAnywhereMessage.confirmNewDeck:
-          'Neue Lern-Datei erstellen? Aktuelle Lerneinheiten im Speicher werden gelöscht.',
+          'Lerneinheiten im Speicher löschen? Es wird keine Datei gelöscht.',
       LearnAnywhereMessage.confirmClearUnits:
           'Alle Lerneinheiten im Speicher löschen? Es wird keine Datei gelöscht.',
       LearnAnywhereMessage.confirmLoadMask:
@@ -1479,6 +1487,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionClose: 'Schließen',
       LearnAnywhereMessage.confirmClearStatistics:
           'Alle Statistiken für das aktuelle Vokabular löschen?',
+      LearnAnywhereMessage.confirmExit: 'Learn Anywhere beenden?',
       LearnAnywhereMessage.fileOperationDone: 'Fertig',
       LearnAnywhereMessage.fileOperationFailed: 'Dateioperation fehlgeschlagen',
       LearnAnywhereMessage.fileNewDeckDone: 'Neue Lern-Datei erstellt.',

@@ -455,11 +455,11 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       // 1. File
       SubmenuButton(
         menuChildren: <Widget>[
-          _commandItem(messages, LearnAnywhereMessage.fileNewDeck),
           _commandItem(messages, LearnAnywhereMessage.fileOpenDeck),
           _commandItem(messages, LearnAnywhereMessage.fileAddMergeDeck),
           _commandItem(messages, LearnAnywhereMessage.fileSave),
           _commandItem(messages, LearnAnywhereMessage.fileSaveAs),
+          _commandItem(messages, LearnAnywhereMessage.fileNewDeck),
           const _MenuSeparator(),
           _commandItem(messages, LearnAnywhereMessage.fileLoadMask),
           _commandItem(messages, LearnAnywhereMessage.fileSaveMask),
@@ -529,21 +529,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
             child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.menuOptionsAdvancedLearning),
               builder: menuAcceleratorBuilder,
-            ),
-          ),
-          const _MenuSeparator(),
-          CheckboxMenuButton(
-            value: false,
-            onChanged: null,
-            child: Text(
-              messages.message(LearnAnywhereMessage.menuOptionsAutoLoadStats),
-            ),
-          ),
-          CheckboxMenuButton(
-            value: false,
-            onChanged: null,
-            child: Text(
-              messages.message(LearnAnywhereMessage.menuOptionsAutoSaveStats),
             ),
           ),
           const _MenuSeparator(),
@@ -617,6 +602,21 @@ final class _DesktopHomeState extends State<_DesktopHome> {
             child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.languageLabel),
               builder: menuAcceleratorBuilder,
+            ),
+          ),
+          const _MenuSeparator(),
+          CheckboxMenuButton(
+            value: false,
+            onChanged: null,
+            child: Text(
+              messages.message(LearnAnywhereMessage.menuOptionsAutoLoadStats),
+            ),
+          ),
+          CheckboxMenuButton(
+            value: false,
+            onChanged: null,
+            child: Text(
+              messages.message(LearnAnywhereMessage.menuOptionsAutoSaveStats),
             ),
           ),
         ],
@@ -1138,6 +1138,8 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   // B1: Use exit(0) so the process actually terminates on Windows/Linux.
   Future<void> _exit() async {
+    final bool confirmed = await _confirm(LearnAnywhereMessage.confirmExit);
+    if (!confirmed) return;
     await _guardedFileOperation(() async {
       await _fileService.autoSaveStatistics(_document);
       await _saveSettings();
