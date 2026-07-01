@@ -14,6 +14,7 @@ final class LexiconPage extends StatefulWidget {
     required this.textOptions,
     required this.loadDecksByPattern,
     required this.onLoadFoundDeck,
+    required this.onClose,
     super.key,
   });
 
@@ -28,6 +29,9 @@ final class LexiconPage extends StatefulWidget {
 
   /// Replaces the in-memory deck with found units.
   final ValueChanged<LearningDeck> onLoadFoundDeck;
+
+  /// Called when the user closes this page.
+  final VoidCallback onClose;
 
   @override
   State<LexiconPage> createState() => _LexiconPageState();
@@ -58,7 +62,7 @@ final class _LexiconPageState extends State<LexiconPage> {
     );
     return Material(
       color: Theme.of(context).colorScheme.surface,
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,6 +157,22 @@ final class _LexiconPageState extends State<LexiconPage> {
               ],
             ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
+            Text(
+              '${messages.message(LearnAnywhereMessage.lexiconResults)}: ${_results.length}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapSmall),
+            _results.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: LearnAnywhereTokens.gapLarge,
+                    ),
+                    child: Text(
+                      messages.message(LearnAnywhereMessage.lexiconNoResults),
+                    ),
+                  )
+                : _ResultList(deck: widget.deck, results: _results),
+            const SizedBox(height: LearnAnywhereTokens.gapMedium),
             Wrap(
               spacing: LearnAnywhereTokens.gapSmall,
               runSpacing: LearnAnywhereTokens.gapSmall,
@@ -181,22 +201,18 @@ final class _LexiconPageState extends State<LexiconPage> {
                       messages.message(LearnAnywhereMessage.lexiconLoadResults),
                     ),
                   ),
+                FilledButton.tonalIcon(
+                  onPressed: widget.onClose,
+                  icon: const Icon(Icons.close),
+                  label: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(messages.message(LearnAnywhereMessage.actionCancel)),
+                      const Text('Esc', style: TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                ),
               ],
-            ),
-            const SizedBox(height: LearnAnywhereTokens.gapMedium),
-            Text(
-              '${messages.message(LearnAnywhereMessage.lexiconResults)}: ${_results.length}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: LearnAnywhereTokens.gapSmall),
-            Expanded(
-              child: _results.isEmpty
-                  ? Center(
-                      child: Text(
-                        messages.message(LearnAnywhereMessage.lexiconNoResults),
-                      ),
-                    )
-                  : _ResultList(deck: widget.deck, results: _results),
             ),
           ],
         ),
@@ -345,6 +361,8 @@ final class _ResultList extends StatelessWidget {
       context,
     );
     return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: results.length,
       separatorBuilder: (BuildContext context, int index) =>
           const Divider(height: 1),

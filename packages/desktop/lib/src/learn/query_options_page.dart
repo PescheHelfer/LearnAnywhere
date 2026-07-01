@@ -29,6 +29,36 @@ final class QueryOptionsPage extends StatelessWidget {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
+    final Widget page = _buildPage(context, messages);
+    final VoidCallback? close = onClose;
+    if (close == null) {
+      return page;
+    }
+    // The Close button is styled as the screen's default action, so Enter
+    // should activate it the same way Esc (handled globally in main.dart)
+    // already does.
+    return Shortcuts(
+      shortcuts: const <ShortcutActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.enter): _CloseIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _CloseIntent: CallbackAction<_CloseIntent>(
+            onInvoke: (_) {
+              close();
+              return null;
+            },
+          ),
+        },
+        child: Focus(autofocus: true, child: page),
+      ),
+    );
+  }
+
+  Widget _buildPage(
+    BuildContext context,
+    LearnAnywhereLocalizations messages,
+  ) {
     return Material(
       color: Theme.of(context).colorScheme.surface,
       child: ListView(
@@ -129,15 +159,24 @@ final class QueryOptionsPage extends StatelessWidget {
           ),
           if (onClose != null) ...<Widget>[
             const SizedBox(height: LearnAnywhereTokens.gapLarge),
-            FilledButton(
-              onPressed: onClose,
-              child: Text(messages.message(LearnAnywhereMessage.actionClose)),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton(
+                onPressed: onClose,
+                child: Text(
+                  messages.message(LearnAnywhereMessage.actionClose),
+                ),
+              ),
             ),
           ],
         ],
       ),
     );
   }
+}
+
+final class _CloseIntent extends Intent {
+  const _CloseIntent();
 }
 
 final class _SwitchOption extends StatelessWidget {

@@ -987,6 +987,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         onSaveStatisticsAs: () => _saveStatistics(saveAs: true),
         onClearStatistics: _clearStatistics,
         onSaveSelectedUnits: _saveSelectedUnits,
+        onClose: () => _selectRoute(_DesktopRoute.home),
       ),
       _DesktopRoute.lexicon => LexiconPage(
         deck: _document.deck,
@@ -996,6 +997,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         ),
         loadDecksByPattern: _fileService.loadDecksByPattern,
         onLoadFoundDeck: _loadFoundLexiconDeck,
+        onClose: () => _selectRoute(_DesktopRoute.home),
       ),
       _DesktopRoute.about => AboutPage(
         onClose: () => _selectRoute(_DesktopRoute.home),

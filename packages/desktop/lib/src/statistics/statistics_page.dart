@@ -19,6 +19,7 @@ final class StatisticsPage extends StatefulWidget {
     required this.onSaveStatisticsAs,
     required this.onClearStatistics,
     required this.onSaveSelectedUnits,
+    required this.onClose,
     super.key,
   });
 
@@ -42,6 +43,9 @@ final class StatisticsPage extends StatefulWidget {
 
   /// Saves selected unit indices as a new deck.
   final SaveSelectedUnitsCallback onSaveSelectedUnits;
+
+  /// Called when the user closes this page.
+  final VoidCallback onClose;
 
   @override
   State<StatisticsPage> createState() => _StatisticsPageState();
@@ -76,8 +80,9 @@ final class _StatisticsPageState extends State<StatisticsPage> {
               ),
               const SizedBox(height: LearnAnywhereTokens.gapMedium),
               Wrap(
-                spacing: LearnAnywhereTokens.gapSmall,
+                spacing: LearnAnywhereTokens.gapMedium,
                 runSpacing: LearnAnywhereTokens.gapSmall,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: <Widget>[
                   _DirectionViewMenu(
                     view: _view,
@@ -85,32 +90,21 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       setState(() => _view = value);
                     },
                   ),
-                  FilledButton.tonalIcon(
-                    onPressed: widget.onLoadStatistics,
-                    icon: const Icon(Icons.upload_file),
-                    label: Text(
-                      messages.message(LearnAnywhereMessage.statisticsLoad),
-                    ),
+                  _StatsFileButtons(
+                    onLoad: widget.onLoadStatistics,
+                    onSave: widget.onSaveStatistics,
+                    onSaveAs: widget.onSaveStatisticsAs,
+                    onClear: widget.onClearStatistics,
                   ),
                   FilledButton.tonalIcon(
-                    onPressed: widget.onSaveStatistics,
-                    icon: const Icon(Icons.save),
-                    label: Text(
-                      messages.message(LearnAnywhereMessage.statisticsSave),
-                    ),
-                  ),
-                  FilledButton.tonalIcon(
-                    onPressed: widget.onSaveStatisticsAs,
-                    icon: const Icon(Icons.save_as),
-                    label: Text(
-                      messages.message(LearnAnywhereMessage.fileSaveStatsAs),
-                    ),
-                  ),
-                  FilledButton.tonalIcon(
-                    onPressed: widget.onClearStatistics,
-                    icon: const Icon(Icons.clear),
-                    label: Text(
-                      messages.message(LearnAnywhereMessage.statisticsClear),
+                    onPressed: widget.onClose,
+                    icon: const Icon(Icons.close),
+                    label: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(messages.message(LearnAnywhereMessage.actionCancel)),
+                        const Text('Esc', style: TextStyle(fontSize: 10)),
+                      ],
                     ),
                   ),
                 ],
@@ -245,109 +239,103 @@ final class _PracticeList extends StatelessWidget {
       context,
     );
     final List<_UnitStatisticsRow> rows = _rowsFor(deck, statistics, view);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Wrap(
-          spacing: LearnAnywhereTokens.gapSmall,
-          runSpacing: LearnAnywhereTokens.gapSmall,
-          children: <Widget>[
-            FilledButton.tonalIcon(
-              onPressed: () {
-                onSelectionChanged(
-                  rows.map((_UnitStatisticsRow row) => row.index).toSet(),
-                );
-              },
-              icon: const Icon(Icons.select_all),
-              label: Text(
-                messages.message(LearnAnywhereMessage.statisticsSelectAll),
-              ),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: <DataColumn>[
+                const DataColumn(label: SizedBox.shrink()),
+                DataColumn(
+                  label: Text(
+                    messages.message(LearnAnywhereMessage.statisticsUnit),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    messages.message(LearnAnywhereMessage.statisticsCategory),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    messages.message(LearnAnywhereMessage.statisticsBucket),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    messages.message(LearnAnywhereMessage.statisticsHitRate),
+                  ),
+                ),
+              ],
+              rows: rows
+                  .map((_UnitStatisticsRow row) {
+                    return DataRow(
+                      selected: selectedUnitIndices.contains(row.index),
+                      cells: <DataCell>[
+                        DataCell(
+                          Checkbox(
+                            value: selectedUnitIndices.contains(row.index),
+                            onChanged: (bool? value) {
+                              final Set<int> next = <int>{
+                                ...selectedUnitIndices,
+                              };
+                              if (value ?? false) {
+                                next.add(row.index);
+                              } else {
+                                next.remove(row.index);
+                              }
+                              onSelectionChanged(next);
+                            },
+                          ),
+                        ),
+                        DataCell(Text(row.index.toString())),
+                        DataCell(Text(row.categoryName)),
+                        DataCell(Text(_bucketLabel(messages, row.bucket))),
+                        DataCell(Text(_hitRateLabel(row.stats))),
+                      ],
+                    );
+                  })
+                  .toList(growable: false),
             ),
-            FilledButton.tonalIcon(
-              onPressed: () => onSelectionChanged(<int>{}),
-              icon: const Icon(Icons.deselect),
-              label: Text(
-                messages.message(LearnAnywhereMessage.statisticsClearSelection),
-              ),
-            ),
-            FilledButton.icon(
-              onPressed: onSaveSelected,
-              icon: const Icon(Icons.save_alt),
-              label: Text(
-                messages.message(LearnAnywhereMessage.statisticsSaveSelected),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        Expanded(
-          child: ListView(
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapMedium),
+          Wrap(
+            spacing: LearnAnywhereTokens.gapSmall,
+            runSpacing: LearnAnywhereTokens.gapSmall,
             children: <Widget>[
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columns: <DataColumn>[
-                    const DataColumn(label: SizedBox.shrink()),
-                    DataColumn(
-                      label: Text(
-                        messages.message(LearnAnywhereMessage.statisticsUnit),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        messages.message(
-                          LearnAnywhereMessage.statisticsCategory,
-                        ),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        messages.message(LearnAnywhereMessage.statisticsBucket),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        messages.message(
-                          LearnAnywhereMessage.statisticsHitRate,
-                        ),
-                      ),
-                    ),
-                  ],
-                  rows: rows
-                      .map((_UnitStatisticsRow row) {
-                        return DataRow(
-                          selected: selectedUnitIndices.contains(row.index),
-                          cells: <DataCell>[
-                            DataCell(
-                              Checkbox(
-                                value: selectedUnitIndices.contains(row.index),
-                                onChanged: (bool? value) {
-                                  final Set<int> next = <int>{
-                                    ...selectedUnitIndices,
-                                  };
-                                  if (value ?? false) {
-                                    next.add(row.index);
-                                  } else {
-                                    next.remove(row.index);
-                                  }
-                                  onSelectionChanged(next);
-                                },
-                              ),
-                            ),
-                            DataCell(Text(row.index.toString())),
-                            DataCell(Text(row.categoryName)),
-                            DataCell(Text(_bucketLabel(messages, row.bucket))),
-                            DataCell(Text(_hitRateLabel(row.stats))),
-                          ],
-                        );
-                      })
-                      .toList(growable: false),
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  onSelectionChanged(
+                    rows.map((_UnitStatisticsRow row) => row.index).toSet(),
+                  );
+                },
+                icon: const Icon(Icons.select_all),
+                label: Text(
+                  messages.message(LearnAnywhereMessage.statisticsSelectAll),
+                ),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => onSelectionChanged(<int>{}),
+                icon: const Icon(Icons.deselect),
+                label: Text(
+                  messages.message(
+                    LearnAnywhereMessage.statisticsClearSelection,
+                  ),
+                ),
+              ),
+              FilledButton.icon(
+                onPressed: onSaveSelected,
+                icon: const Icon(Icons.save_alt),
+                label: Text(
+                  messages.message(LearnAnywhereMessage.statisticsSaveSelected),
                 ),
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -458,6 +446,53 @@ final class _BucketChart extends StatelessWidget {
                   const TextStyle(fontSize: 12),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+final class _StatsFileButtons extends StatelessWidget {
+  const _StatsFileButtons({
+    required this.onLoad,
+    required this.onSave,
+    required this.onSaveAs,
+    required this.onClear,
+  });
+
+  final Future<void> Function() onLoad;
+  final Future<void> Function() onSave;
+  final Future<void> Function() onSaveAs;
+  final Future<void> Function() onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return Wrap(
+      spacing: LearnAnywhereTokens.gapSmall,
+      runSpacing: LearnAnywhereTokens.gapSmall,
+      children: <Widget>[
+        FilledButton.tonalIcon(
+          onPressed: onLoad,
+          icon: const Icon(Icons.upload_file),
+          label: Text(messages.message(LearnAnywhereMessage.statisticsLoad)),
+        ),
+        FilledButton.tonalIcon(
+          onPressed: onSave,
+          icon: const Icon(Icons.save),
+          label: Text(messages.message(LearnAnywhereMessage.statisticsSave)),
+        ),
+        FilledButton.tonalIcon(
+          onPressed: onSaveAs,
+          icon: const Icon(Icons.save_as),
+          label: Text(messages.message(LearnAnywhereMessage.fileSaveStatsAs)),
+        ),
+        FilledButton.tonalIcon(
+          onPressed: onClear,
+          icon: const Icon(Icons.clear),
+          label: Text(messages.message(LearnAnywhereMessage.statisticsClear)),
         ),
       ],
     );

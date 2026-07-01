@@ -357,21 +357,6 @@ final class _CategoryList extends StatelessWidget {
               ],
             ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
-            FilledButton.icon(
-              key: const ValueKey<String>('add-category-button'),
-              onPressed: atLimit ? null : onAdd,
-              icon: const Icon(Icons.add),
-              label: Text(
-                atLimit
-                    ? messages.message(
-                        LearnAnywhereMessage.maskEditorLimitReached,
-                      )
-                    : messages.message(
-                        LearnAnywhereMessage.maskEditorAddCategory,
-                      ),
-              ),
-            ),
-            const SizedBox(height: LearnAnywhereTokens.gapMedium),
             for (var index = 0; index < mask.categories.length; index += 1)
               _CategoryTile(
                 category: mask.categories[index],
@@ -381,6 +366,24 @@ final class _CategoryList extends StatelessWidget {
                 onDelete: onDelete,
                 onRename: onRename,
               ),
+            const SizedBox(height: LearnAnywhereTokens.gapMedium),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                key: const ValueKey<String>('add-category-button'),
+                onPressed: atLimit ? null : onAdd,
+                icon: const Icon(Icons.add),
+                label: Text(
+                  atLimit
+                      ? messages.message(
+                          LearnAnywhereMessage.maskEditorLimitReached,
+                        )
+                      : messages.message(
+                          LearnAnywhereMessage.maskEditorAddCategory,
+                        ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -505,19 +508,6 @@ final class _FieldGrid extends StatelessWidget {
               ],
             ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
-            FilledButton.icon(
-              key: const ValueKey<String>('add-field-button'),
-              onPressed: category == null || atLimit ? null : onAddField,
-              icon: const Icon(Icons.add),
-              label: Text(
-                atLimit
-                    ? messages.message(
-                        LearnAnywhereMessage.maskEditorLimitReached,
-                      )
-                    : messages.message(LearnAnywhereMessage.maskEditorAddField),
-              ),
-            ),
-            const SizedBox(height: LearnAnywhereTokens.gapMedium),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
@@ -559,6 +549,24 @@ final class _FieldGrid extends StatelessWidget {
                   for (var index = 0; index < fields.length; index += 1)
                     _fieldRow(context, messages, index, fields[index]),
                 ],
+              ),
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapMedium),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                key: const ValueKey<String>('add-field-button'),
+                onPressed: category == null || atLimit ? null : onAddField,
+                icon: const Icon(Icons.add),
+                label: Text(
+                  atLimit
+                      ? messages.message(
+                          LearnAnywhereMessage.maskEditorLimitReached,
+                        )
+                      : messages.message(
+                          LearnAnywhereMessage.maskEditorAddField,
+                        ),
+                ),
               ),
             ),
           ],
