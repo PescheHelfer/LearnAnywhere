@@ -890,7 +890,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileClearUnits: '&Clear units in memory', // C
       LearnAnywhereMessage.fileLoadMask: '&Load mask...', // L
       LearnAnywhereMessage.fileSaveMask: 'Save &mask', // M
-      LearnAnywhereMessage.fileSaveMaskAs: 'Save mask as...',
+      LearnAnywhereMessage.fileSaveMaskAs: 'Save mas&k as...', // K
       LearnAnywhereMessage.fileExit: '&Exit...', // E
       LearnAnywhereMessage.menuEdit: '&Edit', // top-bar E
       LearnAnywhereMessage.menuEditUnitEditor: '&Unit editor', // U
@@ -908,17 +908,19 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.helpAbout: '&About', // A
       LearnAnywhereMessage.menuOptions: '&Options', // top-bar O
       LearnAnywhereMessage.menuOptionsAdvancedLearning: '&Advanced Learning Options', // A
-      LearnAnywhereMessage.menuOptionsAutoLoadStats: 'Auto-load statistics',
-      LearnAnywhereMessage.menuOptionsAutoSaveStats: 'Auto-save statistics',
-      LearnAnywhereMessage.themeLabel: 'Theme',
-      LearnAnywhereMessage.themeSystem: 'System',
-      LearnAnywhereMessage.themeLight: 'Light',
-      LearnAnywhereMessage.themeDark: 'Dark',
-      LearnAnywhereMessage.themeDarkBlue: 'Dark Blue',
-      LearnAnywhereMessage.themeLightBlue: 'Light Blue',
-      LearnAnywhereMessage.languageLabel: 'Language',
-      LearnAnywhereMessage.languageEnglish: 'English',
-      LearnAnywhereMessage.languageGerman: 'German',
+      LearnAnywhereMessage.menuOptionsAutoLoadStats:
+          'Auto-l&oad statistics', // O
+      LearnAnywhereMessage.menuOptionsAutoSaveStats:
+          'Auto-sa&ve statistics', // V
+      LearnAnywhereMessage.themeLabel: '&Theme', // T
+      LearnAnywhereMessage.themeSystem: '&System', // S
+      LearnAnywhereMessage.themeLight: 'Lig&ht', // H
+      LearnAnywhereMessage.themeDark: '&Dark', // D
+      LearnAnywhereMessage.themeDarkBlue: 'Dark &Blue', // B
+      LearnAnywhereMessage.themeLightBlue: 'Light Bl&ue', // U
+      LearnAnywhereMessage.languageLabel: '&Language', // L
+      LearnAnywhereMessage.languageEnglish: '&English', // E
+      LearnAnywhereMessage.languageGerman: '&German', // G
       LearnAnywhereMessage.routeFileOperationsTitle: 'File operations',
       LearnAnywhereMessage.routeFileOperationsBody:
           'Create, open, merge, save, and review deck and statistics files.',
@@ -1209,7 +1211,8 @@ final class LearnAnywhereCatalog {
           'Lerneinheiten &im Speicher löschen', // I
       LearnAnywhereMessage.fileLoadMask: 'Neue &Masken-Datei laden...', // M
       LearnAnywhereMessage.fileSaveMask: 'Masken-&Datei speichern', // D
-      LearnAnywhereMessage.fileSaveMaskAs: 'Masken-Datei speichern unter...',
+      LearnAnywhereMessage.fileSaveMaskAs:
+          'Mas&ken-Datei speichern unter...', // K
       LearnAnywhereMessage.fileExit: '&Beenden...', // B
       LearnAnywhereMessage.menuEdit: '&Edit', // top-bar E
       LearnAnywhereMessage.menuEditUnitEditor: '&Eingabe-Maske', // E
@@ -1230,17 +1233,19 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.helpAbout: '&Programminfo', // P
       LearnAnywhereMessage.menuOptions: '&Optionen', // top-bar O
       LearnAnywhereMessage.menuOptionsAdvancedLearning: '&Erweiterte Lernoptionen', // E
-      LearnAnywhereMessage.menuOptionsAutoLoadStats: 'Statistiken automatisch laden',
-      LearnAnywhereMessage.menuOptionsAutoSaveStats: 'Statistiken automatisch speichern',
-      LearnAnywhereMessage.themeLabel: 'Darstellung',
-      LearnAnywhereMessage.themeSystem: 'System',
-      LearnAnywhereMessage.themeLight: 'Hell',
-      LearnAnywhereMessage.themeDark: 'Dunkel',
-      LearnAnywhereMessage.themeDarkBlue: 'Dunkelblau',
-      LearnAnywhereMessage.themeLightBlue: 'Hellblau',
-      LearnAnywhereMessage.languageLabel: 'Sprache',
-      LearnAnywhereMessage.languageEnglish: 'Englisch',
-      LearnAnywhereMessage.languageGerman: 'Deutsch',
+      LearnAnywhereMessage.menuOptionsAutoLoadStats:
+          'Statistiken automatisch &laden', // L
+      LearnAnywhereMessage.menuOptionsAutoSaveStats:
+          'Statistiken au&tomatisch speichern', // T
+      LearnAnywhereMessage.themeLabel: '&Darstellung', // D
+      LearnAnywhereMessage.themeSystem: 'S&ystem', // Y (avoids S = Sprache label)
+      LearnAnywhereMessage.themeLight: '&Hell', // H
+      LearnAnywhereMessage.themeDark: '&Dunkel', // D
+      LearnAnywhereMessage.themeDarkBlue: 'Dunkel&blau', // B
+      LearnAnywhereMessage.themeLightBlue: 'Hellbla&u', // U
+      LearnAnywhereMessage.languageLabel: '&Sprache', // S
+      LearnAnywhereMessage.languageEnglish: 'En&glisch', // G (avoids E = Erweiterte)
+      LearnAnywhereMessage.languageGerman: 'De&utsch', // U
       LearnAnywhereMessage.routeFileOperationsTitle: 'Dateioperationen',
       LearnAnywhereMessage.routeFileOperationsBody:
           'Lern- und Statistikdateien erstellen, laden, hinzufügen, speichern und prüfen.',

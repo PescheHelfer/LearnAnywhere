@@ -231,9 +231,98 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   String? _cachedMenuLocale;
   _AppTheme? _cachedMenuTheme;
 
+  // --- ALT-mnemonic scoping (see docs/menu-alt-mnemonics.md) ----------------
+  //
+  // Flutter's MenuAcceleratorLabel registers every Alt+<letter> into one global
+  // ShortcutRegistry with no per-open-menu scoping, so closed top-level menus
+  // would steal Alt+<letter> from the items of whichever submenu is open. To fix
+  // this, the top-level bar does NOT use MenuAcceleratorLabel; instead each
+  // top-level entry is opened/activated through [_topLevelBindings], a gated
+  // CallbackShortcuts layer that is disabled whenever a menu is open so the open
+  // submenu's items own Alt+<letter> exclusively.
+  final MenuController _fileMenuController = MenuController();
+  final MenuController _editMenuController = MenuController();
+  final MenuController _optionsMenuController = MenuController();
+  final MenuController _helpMenuController = MenuController();
+
+  // The three direct-action top-level entries (Learn/Statistics/Lexicon) are bare
+  // MenuItemButtons. Without [skipTraversal] the MenuBar's Left/Right arrow
+  // navigation lands on them and stalls (they have no submenu to open); skipping
+  // them lets arrow nav jump straight to the next submenu-bearing menu. They are
+  // still activated via their Alt accelerator and the mouse.
+  final FocusNode _learnMenuFocusNode = FocusNode(
+    skipTraversal: true,
+    debugLabel: 'menuLearn',
+  );
+  final FocusNode _statisticsMenuFocusNode = FocusNode(
+    skipTraversal: true,
+    debugLabel: 'menuStatistics',
+  );
+  final FocusNode _lexiconMenuFocusNode = FocusNode(
+    skipTraversal: true,
+    debugLabel: 'menuLexicon',
+  );
+
+  /// Number of top-level submenus currently open (0 or 1 in practice; a counter
+  /// keeps the close-one/open-another transition from briefly reading "closed").
+  int _openMenuCount = 0;
+  bool get _menuActive => _openMenuCount > 0;
+
+  /// Current locale's top-level accelerators (lower-case access char -> action),
+  /// refreshed each [build] and consumed by [_handleMenuAccelerator].
+  Map<String, VoidCallback> _topLevelAccelerators = <String, VoidCallback>{};
+
+  void _onMenuOpened() {
+    setState(() => _openMenuCount++);
+  }
+
+  void _onMenuClosed() {
+    setState(() {
+      if (_openMenuCount > 0) _openMenuCount--;
+    });
+  }
+
+  /// Low-level key handler for the top-level menu accelerators.
+  ///
+  /// Handling them here (rather than via `MenuAcceleratorLabel`/`Shortcuts`)
+  /// matters on Windows: a [HardwareKeyboard] handler's return value is what marks
+  /// the key event handled for the embedder, which suppresses the system "ding".
+  /// We also consume the bare **left** Alt so Windows never enters menu-mode (the
+  /// other source of the ding). Right Alt (AltGr) is deliberately left alone so
+  /// German keyboards can still type `@ € { }` etc.
+  bool _handleMenuAccelerator(KeyEvent event) {
+    // Swallow the bare left-Alt press/release to keep Windows out of menu-mode.
+    if (event.logicalKey == LogicalKeyboardKey.altLeft) {
+      return true;
+    }
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return false;
+    }
+    // While a menu is open, its items own Alt+<letter>; don't intercept.
+    if (_menuActive) {
+      return false;
+    }
+    final HardwareKeyboard keyboard = HardwareKeyboard.instance;
+    // Require Alt, but reject AltGr (reported as Control+AltRight).
+    if (!keyboard.isAltPressed || keyboard.isControlPressed) {
+      return false;
+    }
+    final String? character = event.character?.toLowerCase();
+    if (character == null || character.isEmpty) {
+      return false;
+    }
+    final VoidCallback? action = _topLevelAccelerators[character];
+    if (action == null) {
+      return false;
+    }
+    action();
+    return true;
+  }
+
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_handleMenuAccelerator);
     _settingsPath = _fileService.settingsFilePath();
     _range = resetUnitRange(_document.deck.units.length);
     _queryOptions = _optionsFromSettings(_settings);
@@ -264,8 +353,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleMenuAccelerator);
     _menuScrollController.dispose();
     _contentFocusScope.dispose();
+    _learnMenuFocusNode.dispose();
+    _statisticsMenuFocusNode.dispose();
+    _lexiconMenuFocusNode.dispose();
     super.dispose();
   }
 
@@ -375,6 +468,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
+    // Refresh the top-level accelerator map (char -> action) for the current
+    // locale; [_handleMenuAccelerator] reads it. Top-level accelerators are
+    // handled there (NOT via MenuAcceleratorLabel) so they can be scoped to "no
+    // menu open" and so the key is marked handled at the HardwareKeyboard level,
+    // which silences the Windows Alt "ding". See docs/menu-alt-mnemonics.md.
+    _topLevelAccelerators = _buildTopLevelAccelerators(messages);
     return Scaffold(
       appBar: AppBar(
         title: Text(messages.appTitle),
@@ -432,6 +531,51 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     );
   }
 
+  /// Builds the top-level accelerator map (lower-case access char -> action),
+  /// keyed off each top-level label's `&` marker so it stays in sync with the
+  /// localized strings.
+  ///
+  /// Submenu entries open their menu via a [MenuController]; the direct-action
+  /// entries (Learn/Statistics/Lexicon) select their route. Consumed by
+  /// [_handleMenuAccelerator] only while no menu is open; once a menu opens, its
+  /// items' own [MenuAcceleratorLabel] accelerators take over Alt+<letter>.
+  Map<String, VoidCallback> _buildTopLevelAccelerators(
+    LearnAnywhereLocalizations messages,
+  ) {
+    final List<(LearnAnywhereMessage, VoidCallback)> entries =
+        <(LearnAnywhereMessage, VoidCallback)>[
+          (LearnAnywhereMessage.menuFile, () => _fileMenuController.open()),
+          (LearnAnywhereMessage.menuEdit, () => _editMenuController.open()),
+          (
+            LearnAnywhereMessage.menuLearn,
+            () => _selectRoute(_DesktopRoute.learn),
+          ),
+          (
+            LearnAnywhereMessage.menuStatistics,
+            () => _selectRoute(_DesktopRoute.statistics),
+          ),
+          (
+            LearnAnywhereMessage.menuLexicon,
+            () => _selectRoute(_DesktopRoute.lexicon),
+          ),
+          (
+            LearnAnywhereMessage.menuOptions,
+            () => _optionsMenuController.open(),
+          ),
+          (LearnAnywhereMessage.menuHelp, () => _helpMenuController.open()),
+        ];
+    final Map<String, VoidCallback> accelerators = <String, VoidCallback>{};
+    for (final (LearnAnywhereMessage message, VoidCallback action) in entries) {
+      final String? key = MenuAcceleratorDisplayLabel.accessKeyOf(
+        messages.message(message),
+      );
+      if (key != null) {
+        accelerators[key] = action;
+      }
+    }
+    return accelerators;
+  }
+
   // Each build() would create new widget objects, causing _MenuAnchorState
   // .didUpdateWidget to fire on every unrelated setState (route changes, session
   // progress, clock ticks, etc.) and cascade through all MenuAcceleratorLabel
@@ -454,6 +598,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     return <Widget>[
       // 1. File
       SubmenuButton(
+        controller: _fileMenuController,
+        onOpen: _onMenuOpened,
+        onClose: _onMenuClosed,
         menuChildren: <Widget>[
           _commandItem(messages, LearnAnywhereMessage.fileOpenDeck),
           _commandItem(messages, LearnAnywhereMessage.fileAddMergeDeck),
@@ -472,13 +619,15 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           const _MenuSeparator(),
           _commandItem(messages, LearnAnywhereMessage.fileExit),
         ],
-        child: MenuAcceleratorLabel(
+        child: MenuAcceleratorDisplayLabel(
           messages.message(LearnAnywhereMessage.menuFile),
-          builder: menuAcceleratorBuilder,
         ),
       ),
       // 2. Edit (absorbs Mask Editor)
       SubmenuButton(
+        controller: _editMenuController,
+        onOpen: _onMenuOpened,
+        onClose: _onMenuClosed,
         menuChildren: <Widget>[
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.editor),
@@ -510,19 +659,36 @@ final class _DesktopHomeState extends State<_DesktopHome> {
             ),
           ),
         ],
-        child: MenuAcceleratorLabel(
+        child: MenuAcceleratorDisplayLabel(
           messages.message(LearnAnywhereMessage.menuEdit),
-          builder: menuAcceleratorBuilder,
         ),
       ),
       // 3. Learn (direct — opens practice setup)
-      _routeMenu(messages, LearnAnywhereMessage.menuLearn, _DesktopRoute.learn),
+      _routeMenu(
+        messages,
+        LearnAnywhereMessage.menuLearn,
+        _DesktopRoute.learn,
+        _learnMenuFocusNode,
+      ),
       // 4. Statistics (direct)
-      _routeMenu(messages, LearnAnywhereMessage.menuStatistics, _DesktopRoute.statistics),
+      _routeMenu(
+        messages,
+        LearnAnywhereMessage.menuStatistics,
+        _DesktopRoute.statistics,
+        _statisticsMenuFocusNode,
+      ),
       // 5. Lexicon (direct)
-      _routeMenu(messages, LearnAnywhereMessage.menuLexicon, _DesktopRoute.lexicon),
+      _routeMenu(
+        messages,
+        LearnAnywhereMessage.menuLexicon,
+        _DesktopRoute.lexicon,
+        _lexiconMenuFocusNode,
+      ),
       // 6. Options (new)
       SubmenuButton(
+        controller: _optionsMenuController,
+        onOpen: _onMenuOpened,
+        onClose: _onMenuClosed,
         menuChildren: <Widget>[
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.queryOptions),
@@ -540,7 +706,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(messages.message(LearnAnywhereMessage.themeSystem)),
+                child: MenuAcceleratorLabel(
+                  messages.message(LearnAnywhereMessage.themeSystem),
+                  builder: menuAcceleratorBuilder,
+                ),
               ),
               RadioMenuButton<_AppTheme>(
                 value: _AppTheme.light,
@@ -548,7 +717,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(messages.message(LearnAnywhereMessage.themeLight)),
+                child: MenuAcceleratorLabel(
+                  messages.message(LearnAnywhereMessage.themeLight),
+                  builder: menuAcceleratorBuilder,
+                ),
               ),
               RadioMenuButton<_AppTheme>(
                 value: _AppTheme.dark,
@@ -556,7 +728,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(messages.message(LearnAnywhereMessage.themeDark)),
+                child: MenuAcceleratorLabel(
+                  messages.message(LearnAnywhereMessage.themeDark),
+                  builder: menuAcceleratorBuilder,
+                ),
               ),
               RadioMenuButton<_AppTheme>(
                 value: _AppTheme.darkBlue,
@@ -564,7 +739,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(messages.message(LearnAnywhereMessage.themeDarkBlue)),
+                child: MenuAcceleratorLabel(
+                  messages.message(LearnAnywhereMessage.themeDarkBlue),
+                  builder: menuAcceleratorBuilder,
+                ),
               ),
               RadioMenuButton<_AppTheme>(
                 value: _AppTheme.lightBlue,
@@ -572,7 +750,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (_AppTheme? v) {
                   if (v != null) widget.onAppThemeChanged(v);
                 },
-                child: Text(messages.message(LearnAnywhereMessage.themeLightBlue)),
+                child: MenuAcceleratorLabel(
+                  messages.message(LearnAnywhereMessage.themeLightBlue),
+                  builder: menuAcceleratorBuilder,
+                ),
               ),
             ],
             child: MenuAcceleratorLabel(
@@ -588,7 +769,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (Locale? v) {
                   if (v != null) widget.onLocaleChanged(v);
                 },
-                child: Text(messages.message(LearnAnywhereMessage.languageEnglish)),
+                child: MenuAcceleratorLabel(
+                  messages.message(LearnAnywhereMessage.languageEnglish),
+                  builder: menuAcceleratorBuilder,
+                ),
               ),
               RadioMenuButton<Locale>(
                 value: const Locale('de'),
@@ -596,7 +780,10 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                 onChanged: (Locale? v) {
                   if (v != null) widget.onLocaleChanged(v);
                 },
-                child: Text(messages.message(LearnAnywhereMessage.languageGerman)),
+                child: MenuAcceleratorLabel(
+                  messages.message(LearnAnywhereMessage.languageGerman),
+                  builder: menuAcceleratorBuilder,
+                ),
               ),
             ],
             child: MenuAcceleratorLabel(
@@ -608,25 +795,29 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           CheckboxMenuButton(
             value: false,
             onChanged: null,
-            child: Text(
+            child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.menuOptionsAutoLoadStats),
+              builder: menuAcceleratorBuilder,
             ),
           ),
           CheckboxMenuButton(
             value: false,
             onChanged: null,
-            child: Text(
+            child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.menuOptionsAutoSaveStats),
+              builder: menuAcceleratorBuilder,
             ),
           ),
         ],
-        child: MenuAcceleratorLabel(
+        child: MenuAcceleratorDisplayLabel(
           messages.message(LearnAnywhereMessage.menuOptions),
-          builder: menuAcceleratorBuilder,
         ),
       ),
       // 7. Help
       SubmenuButton(
+        controller: _helpMenuController,
+        onOpen: _onMenuOpened,
+        onClose: _onMenuClosed,
         menuChildren: <Widget>[
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.about),
@@ -636,9 +827,8 @@ final class _DesktopHomeState extends State<_DesktopHome> {
             ),
           ),
         ],
-        child: MenuAcceleratorLabel(
+        child: MenuAcceleratorDisplayLabel(
           messages.message(LearnAnywhereMessage.menuHelp),
-          builder: menuAcceleratorBuilder,
         ),
       ),
     ];
@@ -658,10 +848,15 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     LearnAnywhereLocalizations messages,
     LearnAnywhereMessage message,
     _DesktopRoute route,
+    FocusNode focusNode,
   ) {
     return MenuItemButton(
       onPressed: () => _selectRoute(route),
-      child: MenuAcceleratorLabel(messages.message(message), builder: menuAcceleratorBuilder),
+      // Skip-traversal node so arrow navigation jumps over this submenu-less entry.
+      focusNode: focusNode,
+      // Top-level direct action: display-only label; activation is handled by
+      // [_handleMenuAccelerator] so it doesn't collide with open-submenu items.
+      child: MenuAcceleratorDisplayLabel(messages.message(message)),
     );
   }
 
