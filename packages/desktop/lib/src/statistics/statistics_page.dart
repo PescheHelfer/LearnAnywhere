@@ -114,11 +114,6 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                 tabs: <Widget>[
                   Tab(
                     text: messages.message(
-                      LearnAnywhereMessage.statisticsKeepPracticing,
-                    ),
-                  ),
-                  Tab(
-                    text: messages.message(
                       LearnAnywhereMessage.statisticsDetailed,
                     ),
                   ),
@@ -127,12 +122,19 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       LearnAnywhereMessage.statisticsChart,
                     ),
                   ),
+                  Tab(
+                    text: messages.message(
+                      LearnAnywhereMessage.statisticsKeepPracticing,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: LearnAnywhereTokens.gapMedium),
               Expanded(
                 child: TabBarView(
                   children: <Widget>[
+                    _DetailedStats(summary: summary),
+                    _BucketChart(summary: summary),
                     _PracticeList(
                       deck: widget.deck,
                       statistics: widget.statistics,
@@ -141,8 +143,6 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       onSelectionChanged: _replaceSelection,
                       onSaveSelected: _saveSelected,
                     ),
-                    _DetailedStats(summary: summary),
-                    _BucketChart(summary: summary),
                   ],
                 ),
               ),
@@ -216,7 +216,7 @@ final class _DirectionViewMenu extends StatelessWidget {
   }
 }
 
-final class _PracticeList extends StatelessWidget {
+final class _PracticeList extends StatefulWidget {
   const _PracticeList({
     required this.deck,
     required this.statistics,
@@ -234,15 +234,70 @@ final class _PracticeList extends StatelessWidget {
   final VoidCallback onSaveSelected;
 
   @override
+  State<_PracticeList> createState() => _PracticeListState();
+}
+
+final class _PracticeListState extends State<_PracticeList> {
+  /// Buckets currently shown; all buckets are visible by default.
+  final Set<HitRateBucket> _visibleBuckets = <HitRateBucket>{
+    ...HitRateBucket.values,
+  };
+  final TextEditingController _minController = TextEditingController();
+  final TextEditingController _maxController = TextEditingController();
+
+  @override
+  void dispose() {
+    _minController.dispose();
+    _maxController.dispose();
+    super.dispose();
+  }
+
+  /// Returns rows passing the active bucket and numeric hit-rate filters.
+  List<_UnitStatisticsRow> _applyFilters(List<_UnitStatisticsRow> rows) {
+    final double? min = _parsePercent(_minController.text);
+    final double? max = _parsePercent(_maxController.text);
+    final bool numericActive = min != null || max != null;
+    return rows.where((_UnitStatisticsRow row) {
+      if (!_visibleBuckets.contains(row.bucket)) {
+        return false;
+      }
+      if (!numericActive) {
+        return true;
+      }
+      final double? hitRate = row.stats.hitRate;
+      if (hitRate == null) {
+        // Never-practiced units have no hit rate; exclude when a numeric
+        // range filter is active.
+        return false;
+      }
+      final double percent = hitRate * 100;
+      if (min != null && percent < min) {
+        return false;
+      }
+      if (max != null && percent > max) {
+        return false;
+      }
+      return true;
+    }).toList(growable: false);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final List<_UnitStatisticsRow> rows = _rowsFor(deck, statistics, view);
+    final List<_UnitStatisticsRow> rows = _rowsFor(
+      widget.deck,
+      widget.statistics,
+      widget.view,
+    );
+    final List<_UnitStatisticsRow> visibleRows = _applyFilters(rows);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          _buildFilterControls(messages),
+          const SizedBox(height: LearnAnywhereTokens.gapMedium),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
@@ -268,32 +323,48 @@ final class _PracticeList extends StatelessWidget {
                     messages.message(LearnAnywhereMessage.statisticsHitRate),
                   ),
                 ),
+                DataColumn(
+                  label: Text(
+                    messages.message(LearnAnywhereMessage.statisticsQuestion),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    messages.message(LearnAnywhereMessage.statisticsAnswer),
+                  ),
+                ),
               ],
-              rows: rows
+              rows: visibleRows
                   .map((_UnitStatisticsRow row) {
                     return DataRow(
-                      selected: selectedUnitIndices.contains(row.index),
+                      selected: widget.selectedUnitIndices.contains(row.index),
                       cells: <DataCell>[
                         DataCell(
                           Checkbox(
-                            value: selectedUnitIndices.contains(row.index),
+                            value:
+                                widget.selectedUnitIndices.contains(row.index),
                             onChanged: (bool? value) {
                               final Set<int> next = <int>{
-                                ...selectedUnitIndices,
+                                ...widget.selectedUnitIndices,
                               };
                               if (value ?? false) {
                                 next.add(row.index);
                               } else {
                                 next.remove(row.index);
                               }
-                              onSelectionChanged(next);
+                              widget.onSelectionChanged(next);
                             },
                           ),
                         ),
-                        DataCell(Text(row.index.toString())),
-                        DataCell(Text(row.categoryName)),
-                        DataCell(Text(_bucketLabel(messages, row.bucket))),
-                        DataCell(Text(_hitRateLabel(row.stats))),
+                        _tipCell(row.tooltip, Text(row.index.toString())),
+                        _tipCell(row.tooltip, Text(row.categoryName)),
+                        _tipCell(
+                          row.tooltip,
+                          Text(_bucketLabel(messages, row.bucket)),
+                        ),
+                        _tipCell(row.tooltip, Text(_hitRateLabel(row.stats))),
+                        _tipCell(row.tooltip, Text(row.question)),
+                        _tipCell(row.tooltip, Text(row.answer)),
                       ],
                     );
                   })
@@ -307,8 +378,10 @@ final class _PracticeList extends StatelessWidget {
             children: <Widget>[
               FilledButton.tonalIcon(
                 onPressed: () {
-                  onSelectionChanged(
-                    rows.map((_UnitStatisticsRow row) => row.index).toSet(),
+                  widget.onSelectionChanged(
+                    visibleRows
+                        .map((_UnitStatisticsRow row) => row.index)
+                        .toSet(),
                   );
                 },
                 icon: const Icon(Icons.select_all),
@@ -317,7 +390,7 @@ final class _PracticeList extends StatelessWidget {
                 ),
               ),
               FilledButton.tonalIcon(
-                onPressed: () => onSelectionChanged(<int>{}),
+                onPressed: () => widget.onSelectionChanged(<int>{}),
                 icon: const Icon(Icons.deselect),
                 label: Text(
                   messages.message(
@@ -326,7 +399,7 @@ final class _PracticeList extends StatelessWidget {
                 ),
               ),
               FilledButton.icon(
-                onPressed: onSaveSelected,
+                onPressed: widget.onSaveSelected,
                 icon: const Icon(Icons.save_alt),
                 label: Text(
                   messages.message(LearnAnywhereMessage.statisticsSaveSelected),
@@ -338,6 +411,85 @@ final class _PracticeList extends StatelessWidget {
       ),
     );
   }
+
+  /// Bucket toggle chips and the optional numeric hit-rate range filter.
+  Widget _buildFilterControls(LearnAnywhereLocalizations messages) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          messages.message(LearnAnywhereMessage.statisticsFilterBuckets),
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        const SizedBox(height: LearnAnywhereTokens.gapSmall),
+        Wrap(
+          spacing: LearnAnywhereTokens.gapSmall,
+          runSpacing: LearnAnywhereTokens.gapSmall,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: <Widget>[
+            for (final HitRateBucket bucket in HitRateBucket.values)
+              FilterChip(
+                label: Text(_bucketLabel(messages, bucket)),
+                selected: _visibleBuckets.contains(bucket),
+                onSelected: (bool selected) {
+                  setState(() {
+                    if (selected) {
+                      _visibleBuckets.add(bucket);
+                    } else {
+                      _visibleBuckets.remove(bucket);
+                    }
+                  });
+                },
+              ),
+            SizedBox(
+              width: 90,
+              child: TextField(
+                controller: _minController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: messages.message(
+                    LearnAnywhereMessage.statisticsFilterMin,
+                  ),
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            SizedBox(
+              width: 90,
+              child: TextField(
+                controller: _maxController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: messages.message(
+                    LearnAnywhereMessage.statisticsFilterMax,
+                  ),
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Wraps a cell child in a [Tooltip] listing all of the unit's fields.
+DataCell _tipCell(String tooltip, Widget child) {
+  return DataCell(
+    tooltip.isEmpty ? child : Tooltip(message: tooltip, child: child),
+  );
+}
+
+/// Parses a percentage filter field, returning null when blank or invalid.
+double? _parsePercent(String text) {
+  final String trimmed = text.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  return double.tryParse(trimmed.replaceAll(',', '.'));
 }
 
 final class _DetailedStats extends StatelessWidget {
@@ -380,6 +532,11 @@ final class _DetailedStats extends StatelessWidget {
                 ),
               ),
               DataColumn(
+                label: Text(
+                  messages.message(LearnAnywhereMessage.statisticsRange),
+                ),
+              ),
+              DataColumn(
                 numeric: true,
                 label: Text(
                   messages.message(LearnAnywhereMessage.statisticsCount),
@@ -405,6 +562,7 @@ final class _DetailedStats extends StatelessWidget {
                   return DataRow(
                     cells: <DataCell>[
                       DataCell(Text(_bucketLabel(messages, bucket.bucket))),
+                      DataCell(Text(_bucketRange(bucket.bucket))),
                       DataCell(Text(bucket.count.toString())),
                       DataCell(Text(_percent(bucket.percentageOfAll))),
                       DataCell(Text(_percent(bucket.percentageOfQueried))),
@@ -413,6 +571,15 @@ final class _DetailedStats extends StatelessWidget {
                 })
                 .toList(growable: false),
           ),
+        ),
+        const SizedBox(height: LearnAnywhereTokens.gapMedium),
+        Text(
+          _practicedSummary(
+            messages,
+            practiced: summary.queriedUnits,
+            total: summary.totalUnits,
+          ),
+          style: Theme.of(context).textTheme.titleSmall,
         ),
       ],
     );
@@ -600,12 +767,24 @@ final class _UnitStatisticsRow {
     required this.categoryName,
     required this.bucket,
     required this.stats,
+    required this.question,
+    required this.answer,
+    required this.tooltip,
   });
 
   final int index;
   final String categoryName;
   final HitRateBucket bucket;
   final DirectionStats stats;
+
+  /// Truncated plain-text preview of the first direction-1 question field.
+  final String question;
+
+  /// Truncated plain-text preview of the first direction-1 answer field.
+  final String answer;
+
+  /// Multi-line "field name: value" listing of all named fields (hover tip).
+  final String tooltip;
 }
 
 List<_UnitStatisticsRow> _rowsFor(
@@ -619,15 +798,62 @@ List<_UnitStatisticsRow> _rowsFor(
   return List<_UnitStatisticsRow>.generate(deck.units.length, (int offset) {
     final int index = offset + 1;
     final LearningUnit unit = deck.units[offset];
+    final CategoryDefinition category = deck.categoryForUnit(unit);
     final UnitStats unitStats = byIndex[index] ?? UnitStats(index: index);
     final DirectionStats stats = _statsForView(unitStats, view);
     return _UnitStatisticsRow(
       index: index,
-      categoryName: deck.categoryForUnit(unit).name,
+      categoryName: category.name,
       bucket: bucketFor(stats),
       stats: stats,
+      question: _fieldPreview(
+        unit,
+        category,
+        QueryDirection.direction1,
+        FieldRole.question,
+      ),
+      answer: _fieldPreview(
+        unit,
+        category,
+        QueryDirection.direction1,
+        FieldRole.answer,
+      ),
+      tooltip: _fieldsTooltip(unit, category),
     );
   }, growable: false);
+}
+
+/// Returns the truncated plain text of the first [role] field in [direction].
+String _fieldPreview(
+  LearningUnit unit,
+  CategoryDefinition category,
+  QueryDirection direction,
+  FieldRole role,
+) {
+  final List<FieldDefinition> fields = category.fieldsForRole(direction, role);
+  if (fields.isEmpty) {
+    return '';
+  }
+  return _truncate(unit.valueForField(fields.first.name).plainText);
+}
+
+/// Builds a "field name: value" listing of all named (non-hidden) fields.
+String _fieldsTooltip(LearningUnit unit, CategoryDefinition category) {
+  final List<String> lines = <String>[
+    for (final FieldDefinition field in category.fields)
+      if (!field.isHidden)
+        '${field.name}: ${unit.valueForField(field.name).plainText}',
+  ];
+  return lines.join('\n');
+}
+
+/// Truncates [text] to roughly [max] characters, appending an ellipsis.
+String _truncate(String text, [int max = 30]) {
+  final String collapsed = text.replaceAll('\n', ' ').trim();
+  if (collapsed.length <= max) {
+    return collapsed;
+  }
+  return '${collapsed.substring(0, max)}…';
 }
 
 DirectionStats _statsForView(UnitStats stats, StatisticsDirectionView view) {
@@ -677,4 +903,31 @@ String _hitRateLabel(DirectionStats stats) {
 
 String _percent(double value) {
   return '${(value * 100).round()}%';
+}
+
+/// Human-readable hit-rate range for a bucket. Empty for "not yet practiced".
+String _bucketRange(HitRateBucket bucket) {
+  return switch (bucket) {
+    HitRateBucket.perfect => '100%',
+    HitRateBucket.good => '75 – 99%',
+    HitRateBucket.fair => '50 – 74%',
+    HitRateBucket.unsure => '25 – 49%',
+    HitRateBucket.veryUnsure => '1 – 24%',
+    HitRateBucket.neverKnown => '0%',
+    HitRateBucket.notYetQueried => '',
+  };
+}
+
+/// Builds the "Practiced: X of Y units (Z%)" summary line.
+String _practicedSummary(
+  LearnAnywhereLocalizations messages, {
+  required int practiced,
+  required int total,
+}) {
+  final double percent = total == 0 ? 0 : practiced / total * 100;
+  return messages
+      .message(LearnAnywhereMessage.statisticsPracticedSummary)
+      .replaceAll('{practiced}', practiced.toString())
+      .replaceAll('{total}', total.toString())
+      .replaceAll('{percent}', percent.toStringAsFixed(1));
 }

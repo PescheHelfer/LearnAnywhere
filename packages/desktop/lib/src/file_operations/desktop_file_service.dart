@@ -9,12 +9,14 @@ final class DesktopFileService {
   /// Creates a desktop file service.
   const DesktopFileService();
 
-  /// Creates a new empty deck, auto-saving current statistics first if needed.
+  /// Creates a new empty deck carrying the current auto-load/save toggles.
+  ///
+  /// The app layer auto-saves the outgoing statistics (with an overwrite
+  /// prompt) before calling this; see `_confirmAndAutoSaveStats` in main.dart.
   Future<DesktopDocument> newDeck(
     DesktopDocument current, {
     LearningMask? mask,
   }) async {
-    await autoSaveStatistics(current);
     return DesktopDocument.empty(mask ?? current.mask).copyWith(
       autoLoadStatistics: current.autoLoadStatistics,
       autoSaveStatistics: current.autoSaveStatistics,
@@ -22,8 +24,9 @@ final class DesktopFileService {
   }
 
   /// Opens a `.vok` deck and auto-loads its sidecar `.sta` when configured.
+  ///
+  /// Outgoing statistics are auto-saved by the app layer before this runs.
   Future<DesktopDocument> openDeck(DesktopDocument current, String path) async {
-    await autoSaveStatistics(current);
     final LearningDeck deck = decodeDeckJson(await File(path).readAsString());
     var statistics = clearStatistics(deck);
     String? statisticsPath;
@@ -125,8 +128,9 @@ final class DesktopFileService {
   }
 
   /// Loads a standalone `.inf` mask and clears in-memory units.
+  ///
+  /// Outgoing statistics are auto-saved by the app layer before this runs.
   Future<DesktopDocument> loadMask(DesktopDocument current, String path) async {
-    await autoSaveStatistics(current);
     final LearningMask mask = decodeMaskJson(await File(path).readAsString());
     return DesktopDocument.empty(mask).copyWith(
       autoLoadStatistics: current.autoLoadStatistics,

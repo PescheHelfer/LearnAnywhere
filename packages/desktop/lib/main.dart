@@ -331,6 +331,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     _lastVokDir = widget.prefs.lastDirVok;
     _lastStaDir = widget.prefs.lastDirSta;
     _lastInfDir = widget.prefs.lastDirInf;
+    // Apply persisted auto-load/auto-save statistics toggles (C11); both
+    // default OFF on first run.
+    _document = _document.copyWith(
+      autoLoadStatistics: widget.prefs.autoLoadStats,
+      autoSaveStatistics: widget.prefs.autoSaveStats,
+    );
     unawaited(_loadSettings());
   }
 
@@ -461,6 +467,98 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       startIndex: _range.startUnit,
       endIndex: _range.endUnit,
     );
+  }
+
+  // --- Auto-load / auto-save statistics toggles (C11) -----------------------
+
+  void _setAutoLoadStats(bool value) {
+    setState(() {
+      _document = _document.copyWith(autoLoadStatistics: value);
+      // The menu is cached across rebuilds; drop the cache so the checkmark
+      // reflects the new state.
+      _cachedMenuChildren = null;
+    });
+    widget.prefs.setAutoLoadStats(value);
+  }
+
+  void _setAutoSaveStats(bool value) {
+    setState(() {
+      _document = _document.copyWith(autoSaveStatistics: value);
+      _cachedMenuChildren = null;
+    });
+    widget.prefs.setAutoSaveStats(value);
+  }
+
+  /// Auto-saves statistics before an action that would drop the current units
+  /// from memory (open/new/merge/clear/exit). Returns `false` when the user
+  /// cancels the overwrite prompt, in which case the caller must abort.
+  Future<bool> _confirmAndAutoSaveStats() async {
+    final DesktopDocument doc = _document;
+    if (!doc.autoSaveStatistics || doc.deck.units.isEmpty) {
+      return true;
+    }
+    String? target = doc.statisticsPath;
+    if (target == null) {
+      // No manual save this session: derive the path from the deck file.
+      if (doc.deckPath == null) {
+        return true; // Nothing to derive a path from; skip silently.
+      }
+      target = _fileService.statisticsSidecarPath(doc.deckPath!);
+      if (await File(target).exists()) {
+        final _OverwriteChoice choice = await _confirmOverwriteStats(target);
+        switch (choice) {
+          case _OverwriteChoice.cancel:
+            return false;
+          case _OverwriteChoice.no:
+            return true; // Proceed without saving.
+          case _OverwriteChoice.yes:
+            break;
+        }
+      }
+    }
+    final String resolved = target;
+    await _guardedFileOperation(() async {
+      _document = await _fileService.saveStatistics(doc, resolved);
+    });
+    return true;
+  }
+
+  /// Yes/No/Cancel prompt shown before overwriting an existing `.sta` sidecar.
+  Future<_OverwriteChoice> _confirmOverwriteStats(String path) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final String name = _filePicker.fileNameOf(path);
+    final _OverwriteChoice? result = await showDialog<_OverwriteChoice>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
+          content: Text(
+            messages
+                .message(LearnAnywhereMessage.confirmAutoSaveOverwrite)
+                .replaceAll('{name}', name),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(_OverwriteChoice.cancel),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(_OverwriteChoice.no),
+              child: Text(messages.message(LearnAnywhereMessage.actionNo)),
+            ),
+            FilledButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(context).pop(_OverwriteChoice.yes),
+              child: Text(messages.message(LearnAnywhereMessage.actionYes)),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? _OverwriteChoice.cancel;
   }
 
   @override
@@ -612,10 +710,11 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           _commandItem(messages, LearnAnywhereMessage.fileSaveMask),
           _commandItem(messages, LearnAnywhereMessage.fileSaveMaskAs),
           const _MenuSeparator(),
+          // Load/Save/Save-as share the Statistics screen's handlers (C12);
+          // Clear stats stays on the Statistics screen only.
           _commandItem(messages, LearnAnywhereMessage.statisticsLoad),
           _commandItem(messages, LearnAnywhereMessage.statisticsSave),
           _commandItem(messages, LearnAnywhereMessage.fileSaveStatsAs),
-          _commandItem(messages, LearnAnywhereMessage.statisticsClear),
           const _MenuSeparator(),
           _commandItem(messages, LearnAnywhereMessage.fileExit),
         ],
@@ -793,16 +892,16 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           ),
           const _MenuSeparator(),
           CheckboxMenuButton(
-            value: false,
-            onChanged: null,
+            value: _document.autoLoadStatistics,
+            onChanged: (bool? value) => _setAutoLoadStats(value ?? false),
             child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.menuOptionsAutoLoadStats),
               builder: menuAcceleratorBuilder,
             ),
           ),
           CheckboxMenuButton(
-            value: false,
-            onChanged: null,
+            value: _document.autoSaveStatistics,
+            onChanged: (bool? value) => _setAutoSaveStats(value ?? false),
             child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.menuOptionsAutoSaveStats),
               builder: menuAcceleratorBuilder,
@@ -899,8 +998,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     return switch (_route) {
       _DesktopRoute.home => _HomeScreen(
         document: _document,
-        lastDeckPath: _settings.lastDeckPath,
+        lastDeckPath: widget.prefs.lastPathOpenDeck ?? _settings.lastDeckPath,
         lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
+        onOpenLastDeck: _openDeckPath,
       ),
       _DesktopRoute.fileOperations => _FileOperationsStatus(
         document: _document,
@@ -1077,6 +1177,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     if (!confirmed) {
       return;
     }
+    if (!await _confirmAndAutoSaveStats()) {
+      return;
+    }
     await _guardedFileOperation(() async {
       _document = await _fileService.newDeck(_document);
       _resetRangeForDeck();
@@ -1094,12 +1197,24 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     if (path == null) {
       return;
     }
+    await _openDeckPath(path);
+  }
+
+  /// Opens the deck at [path] directly (no file dialog).
+  ///
+  /// Shared by File > Open and the clickable last-deck link on the workspace
+  /// (N1). Persists [path] as the last-opened deck for that link.
+  Future<void> _openDeckPath(String path) async {
+    if (!await _confirmAndAutoSaveStats()) {
+      return;
+    }
     await _guardedFileOperation(() async {
       _document = await _fileService.openDeck(_document, path);
       _resetRangeForDeck();
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileOpenDeckDone);
       _setLastDir('vok', path);
+      widget.prefs.setLastPathOpenDeck(path);
       unawaited(_saveSettings());
     });
   }
@@ -1110,6 +1225,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       typeLabel: LearnAnywhereMessage.filePickerDeckType,
     );
     if (path == null) {
+      return;
+    }
+    if (!await _confirmAndAutoSaveStats()) {
       return;
     }
     final int previousCount = _document.deck.units.length;
@@ -1164,6 +1282,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     if (!confirmed) {
       return;
     }
+    if (!await _confirmAndAutoSaveStats()) {
+      return;
+    }
     setState(() {
       _document = _fileService.clearUnits(_document);
       _resetRangeForDeck();
@@ -1182,6 +1303,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       typeLabel: LearnAnywhereMessage.filePickerMaskType,
     );
     if (path == null) {
+      return;
+    }
+    if (!await _confirmAndAutoSaveStats()) {
       return;
     }
     await _guardedFileOperation(() async {
@@ -1337,8 +1461,11 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   Future<void> _exit() async {
     final bool confirmed = await _confirm(LearnAnywhereMessage.confirmExit);
     if (!confirmed) return;
+    // Auto-save (with overwrite prompt) before leaving; Cancel aborts exit.
+    if (!await _confirmAndAutoSaveStats()) {
+      return;
+    }
     await _guardedFileOperation(() async {
-      await _fileService.autoSaveStatistics(_document);
       await _saveSettings();
       exit(0);
     });
@@ -1562,6 +1689,7 @@ LearningMask _defaultMask() {
 final class _HomeScreen extends StatelessWidget {
   const _HomeScreen({
     required this.document,
+    required this.onOpenLastDeck,
     this.lastDeckPath,
     this.lastMaskPath,
   });
@@ -1569,6 +1697,9 @@ final class _HomeScreen extends StatelessWidget {
   final DesktopDocument document;
   final String? lastDeckPath;
   final String? lastMaskPath;
+
+  /// Loads the given deck path directly (no file dialog).
+  final Future<void> Function(String path) onOpenLastDeck;
 
   @override
   Widget build(BuildContext context) {
@@ -1591,9 +1722,10 @@ final class _HomeScreen extends StatelessWidget {
             if (!hasContent) ...<Widget>[
               Text(messages.message(LearnAnywhereMessage.homeNoFileLoaded)),
               if (lastDeckPath != null)
-                _StatusLine(
+                _LastDeckLink(
                   label: messages.message(LearnAnywhereMessage.homeLastDeck),
-                  value: lastDeckPath!,
+                  path: lastDeckPath!,
+                  onOpen: onOpenLastDeck,
                 ),
               if (lastMaskPath != null)
                 _StatusLine(
@@ -1813,6 +1945,73 @@ final class _FileOperationsStatus extends StatelessWidget {
   }
 }
 
+/// Clickable "Last deck: <name>" link on the workspace (N1).
+///
+/// Loads the stored deck directly on tap. When the file no longer exists the
+/// link is muted and a tap shows a "File not found" snackbar instead.
+final class _LastDeckLink extends StatelessWidget {
+  const _LastDeckLink({
+    required this.label,
+    required this.path,
+    required this.onOpen,
+  });
+
+  final String label;
+  final String path;
+  final Future<void> Function(String path) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final bool exists = File(path).existsSync();
+    final String fileName = _fileNameOf(path);
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final TextStyle linkStyle = TextStyle(
+      color: exists ? colors.primary : colors.onSurfaceVariant,
+      decoration: exists ? TextDecoration.underline : TextDecoration.none,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapSmall),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text('$label: '),
+          Tooltip(
+            message: path,
+            child: InkWell(
+              onTap: () {
+                if (exists) {
+                  unawaited(onOpen(path));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        messages
+                            .message(LearnAnywhereMessage.fileNotFound)
+                            .replaceAll('{path}', path),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text(fileName, style: linkStyle),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _fileNameOf(String value) {
+    final int slash = value.lastIndexOf('/');
+    final int backslash = value.lastIndexOf(r'\');
+    final int separator = slash > backslash ? slash : backslash;
+    return separator < 0 ? value : value.substring(separator + 1);
+  }
+}
+
 final class _StatusLine extends StatelessWidget {
   const _StatusLine({required this.label, required this.value});
 
@@ -1834,3 +2033,6 @@ final class _StatusLine extends StatelessWidget {
 final class _GoHomeIntent extends Intent {
   const _GoHomeIntent();
 }
+
+/// User choice from the auto-save overwrite prompt (C11).
+enum _OverwriteChoice { yes, no, cancel }

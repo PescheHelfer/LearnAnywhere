@@ -19,6 +19,9 @@ final class DesktopPrefs {
   static const String _keyLastDirVok = 'last_dir_vok';
   static const String _keyLastDirSta = 'last_dir_sta';
   static const String _keyLastDirInf = 'last_dir_inf';
+  static const String _keyLastPathOpenDeck = 'last_path_open_deck';
+  static const String _keyAutoLoadStats = 'auto_load_stats';
+  static const String _keyAutoSaveStats = 'auto_save_stats';
 
   // --- Theme & locale -------------------------------------------------------
 
@@ -59,4 +62,28 @@ final class DesktopPrefs {
   void setLastDirInf(String value) =>
       unawaited(_prefs.setString(_keyLastDirInf, value));
 
+  // --- Last opened deck (N1) -------------------------------------------------
+
+  /// Absolute path of the deck last opened via File > Open, or null.
+  String? get lastPathOpenDeck => _prefs.getString(_keyLastPathOpenDeck);
+
+  /// Persists [value] as the path of the deck last opened.
+  void setLastPathOpenDeck(String value) =>
+      unawaited(_prefs.setString(_keyLastPathOpenDeck, value));
+
+  // --- Auto-load / auto-save statistics toggles (C11) ------------------------
+
+  /// Whether opening a `.vok` auto-loads a sidecar `.sta`. Defaults to off.
+  bool get autoLoadStats => _prefs.getBool(_keyAutoLoadStats) ?? false;
+
+  /// Persists the auto-load statistics toggle state.
+  void setAutoLoadStats(bool value) =>
+      unawaited(_prefs.setBool(_keyAutoLoadStats, value));
+
+  /// Whether leaving a deck auto-saves statistics. Defaults to off.
+  bool get autoSaveStats => _prefs.getBool(_keyAutoSaveStats) ?? false;
+
+  /// Persists the auto-save statistics toggle state.
+  void setAutoSaveStats(bool value) =>
+      unawaited(_prefs.setBool(_keyAutoSaveStats, value));
 }

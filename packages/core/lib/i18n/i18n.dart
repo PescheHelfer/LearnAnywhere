@@ -610,6 +610,28 @@ enum LearnAnywhereMessage {
   /// Statistics hit rate column label.
   statisticsHitRate,
 
+  /// Statistics hit-rate range column label (Detailed view).
+  statisticsRange,
+
+  /// Statistics question preview column label (Keep practicing).
+  statisticsQuestion,
+
+  /// Statistics answer preview column label (Keep practicing).
+  statisticsAnswer,
+
+  /// Practiced-of-total summary line (Detailed view). Placeholders:
+  /// {practiced}, {total}, {percent}.
+  statisticsPracticedSummary,
+
+  /// Bucket filter section label (Keep practicing).
+  statisticsFilterBuckets,
+
+  /// Minimum hit-rate filter field label (Keep practicing).
+  statisticsFilterMin,
+
+  /// Maximum hit-rate filter field label (Keep practicing).
+  statisticsFilterMax,
+
   /// Select all visible statistics units action.
   statisticsSelectAll,
 
@@ -804,6 +826,18 @@ enum LearnAnywhereMessage {
 
   /// Close action.
   actionClose,
+
+  /// Affirmative action (Yes).
+  actionYes,
+
+  /// Negative action (No).
+  actionNo,
+
+  /// Confirm auto-save overwrite of an existing `.sta`. Placeholder: {name}.
+  confirmAutoSaveOverwrite,
+
+  /// Snackbar shown when a stored deck path no longer exists. Placeholder: {path}.
+  fileNotFound,
 
   /// Confirm clear statistics message.
   confirmClearStatistics,
@@ -1088,6 +1122,14 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsUnit: 'Unit',
       LearnAnywhereMessage.statisticsCategory: 'Category',
       LearnAnywhereMessage.statisticsHitRate: 'Hit rate',
+      LearnAnywhereMessage.statisticsRange: 'Range',
+      LearnAnywhereMessage.statisticsQuestion: 'Question',
+      LearnAnywhereMessage.statisticsAnswer: 'Answer',
+      LearnAnywhereMessage.statisticsPracticedSummary:
+          'Practiced: {practiced} of {total} units ({percent}%)',
+      LearnAnywhereMessage.statisticsFilterBuckets: 'Show buckets',
+      LearnAnywhereMessage.statisticsFilterMin: 'Min %',
+      LearnAnywhereMessage.statisticsFilterMax: 'Max %',
       LearnAnywhereMessage.statisticsSelectAll: 'Select visible',
       LearnAnywhereMessage.statisticsClearSelection: 'Clear selection',
       LearnAnywhereMessage.statisticsSaveSelected: 'Save selected units',
@@ -1158,6 +1200,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionContinue: 'Continue',
       LearnAnywhereMessage.actionClear: 'Clear',
       LearnAnywhereMessage.actionClose: 'Close',
+      LearnAnywhereMessage.actionYes: 'Yes',
+      LearnAnywhereMessage.actionNo: 'No',
+      LearnAnywhereMessage.confirmAutoSaveOverwrite: 'Overwrite {name}?',
+      LearnAnywhereMessage.fileNotFound: 'File not found: {path}',
       LearnAnywhereMessage.confirmClearStatistics:
           'Clear all statistics for the current deck?',
       LearnAnywhereMessage.confirmExit: 'Exit Learn Anywhere?',
@@ -1416,6 +1462,14 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsUnit: 'Einheit',
       LearnAnywhereMessage.statisticsCategory: 'Kategorie',
       LearnAnywhereMessage.statisticsHitRate: 'Trefferquote',
+      LearnAnywhereMessage.statisticsRange: 'Bereich',
+      LearnAnywhereMessage.statisticsQuestion: 'Frage',
+      LearnAnywhereMessage.statisticsAnswer: 'Antwort',
+      LearnAnywhereMessage.statisticsPracticedSummary:
+          'Geübt: {practiced} von {total} Einheiten ({percent}%)',
+      LearnAnywhereMessage.statisticsFilterBuckets: 'Kategorien anzeigen',
+      LearnAnywhereMessage.statisticsFilterMin: 'Min %',
+      LearnAnywhereMessage.statisticsFilterMax: 'Max %',
       LearnAnywhereMessage.statisticsSelectAll: 'Sichtbare auswählen',
       LearnAnywhereMessage.statisticsClearSelection: 'Auswahl leeren',
       LearnAnywhereMessage.statisticsSaveSelected:
@@ -1490,6 +1544,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionContinue: 'Weiter',
       LearnAnywhereMessage.actionClear: 'Löschen',
       LearnAnywhereMessage.actionClose: 'Schließen',
+      LearnAnywhereMessage.actionYes: 'Ja',
+      LearnAnywhereMessage.actionNo: 'Nein',
+      LearnAnywhereMessage.confirmAutoSaveOverwrite: '{name} überschreiben?',
+      LearnAnywhereMessage.fileNotFound: 'Datei nicht gefunden: {path}',
       LearnAnywhereMessage.confirmClearStatistics:
           'Alle Statistiken für das aktuelle Vokabular löschen?',
       LearnAnywhereMessage.confirmExit: 'Learn Anywhere beenden?',
