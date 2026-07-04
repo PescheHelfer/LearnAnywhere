@@ -84,11 +84,25 @@ LearningDeck decodeDeck(Object? value) {
   final Map<String, Object?> json = _asMap(value, r'$');
   _expectFormat(json, lessonFormat, r'$');
   _expectVersion(json, r'$');
-  final LearningMask mask = _decodeEmbeddedMask(json['mask'], r'$.mask');
+  final Object? rawMask = json['mask'];
+  final LearningMask mask = _decodeEmbeddedMask(rawMask, r'$.mask');
+  // Self-healing (Step 3): a mask that carried no maskId is a legacy or
+  // hand-edited APP file whose unit values are keyed by field NAME, not id.
+  // (A file with a maskId is authoritative new format: keys are field ids.)
+  // This flag disambiguates the two, so even a field literally named "3" is
+  // not mistaken for id 3.
+  final bool legacyFieldKeys = !_hasMaskId(rawMask);
   final List<Object?> unitValues = _asList(json['units'], r'$.units');
   final List<LearningUnit> units = <LearningUnit>[];
   for (var index = 0; index < unitValues.length; index += 1) {
-    units.add(_decodeUnit(unitValues[index], mask, r'$.units[$index]'));
+    units.add(
+      _decodeUnit(
+        unitValues[index],
+        mask,
+        r'$.units[$index]',
+        legacyFieldKeys: legacyFieldKeys,
+      ),
+    );
   }
   return LearningDeck(
     mask: mask,
@@ -186,6 +200,7 @@ LearningMask _decodeMaskBody(Map<String, Object?> json, String path) {
       categoryValues[index],
       '$path.categories[$index]',
       fieldIdBase,
+      index,
     );
     if (!categoryIds.add(category.id)) {
       throw ValidationException(
@@ -225,16 +240,18 @@ Map<String, Object?> _encodeMaskBody(LearningMask mask) {
   };
 }
 
-CategoryDefinition _decodeCategory(Object? value, String path, int fieldIdBase) {
+CategoryDefinition _decodeCategory(
+  Object? value,
+  String path,
+  int fieldIdBase,
+  int fallbackCategoryId,
+) {
   final Map<String, Object?> json = _asMap(value, path);
-  final int id = _asInt(json['id'], '$path.id');
-  if (id < 0) {
-    // Category ids are 0-based (first category created gets 0).
-    throw ValidationException(
-      'Category id must be zero or greater.',
-      path: '$path.id',
-    );
-  }
+  // Self-healing (Step 3): category ids are 0-based. Read tolerantly — a
+  // missing or invalid id falls back to the category's array position, which
+  // reproduces this app's assignment scheme for older/hand-edited files.
+  final Object? rawId = json['id'];
+  final int id = rawId is int && rawId >= 0 ? rawId : fallbackCategoryId;
   final String name = _asString(json['name'], '$path.name');
   if (name.length > maxCategoryNameLength) {
     throw ValidationException(
@@ -317,7 +334,12 @@ Map<String, Object?> _encodeField(FieldDefinition field) {
   };
 }
 
-LearningUnit _decodeUnit(Object? value, LearningMask mask, String path) {
+LearningUnit _decodeUnit(
+  Object? value,
+  LearningMask mask,
+  String path, {
+  required bool legacyFieldKeys,
+}) {
   final Map<String, Object?> json = _asMap(value, path);
   final int categoryId = _asInt(json['categoryId'], '$path.categoryId');
   final CategoryDefinition? category = mask.categoryById(categoryId);
@@ -329,11 +351,19 @@ LearningUnit _decodeUnit(Object? value, LearningMask mask, String path) {
   }
   final Map<String, Object?> fieldJson = _asMap(json['fields'], '$path.fields');
   // Unit field VALUES are keyed by FieldDefinition.id, serialized as JSON
-  // string keys (JSON object keys must be strings). Parse each back to its int
-  // id. The field's display name is not stored here — it lives in the mask.
+  // string keys (JSON object keys must be strings). The field's display name is
+  // not stored here — it lives in the mask.
   final Map<int, FieldValue> fields = <int, FieldValue>{};
   for (final MapEntry<String, Object?> entry in fieldJson.entries) {
-    final int fieldId = int.tryParse(entry.key) ?? -1;
+    final int fieldId = legacyFieldKeys
+        // Legacy files keyed values by field NAME. Resolve to the (self-healed)
+        // field id via the mask. A name matching no field references a field
+        // no longer present, so its value is dropped tolerantly.
+        ? category.fieldNamed(entry.key)?.id ?? -1
+        : int.tryParse(entry.key) ?? -1;
+    if (legacyFieldKeys && fieldId < 0) {
+      continue;
+    }
     if (fieldId < 0) {
       throw ValidationException(
         'Unit field keys must be non-negative integer field ids.',
@@ -357,6 +387,14 @@ LearningUnit _decodeUnit(Object? value, LearningMask mask, String path) {
     categoryId: categoryId,
     fields: Map<int, FieldValue>.unmodifiable(fields),
   );
+}
+
+bool _hasMaskId(Object? maskValue) {
+  if (maskValue is! Map) {
+    return false;
+  }
+  final Object? maskId = maskValue['maskId'];
+  return maskId is String && maskId.isNotEmpty;
 }
 
 Map<String, Object?> _encodeUnit(LearningUnit unit) {

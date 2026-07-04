@@ -67,6 +67,72 @@ void main() {
       expect(encodeDeckJson(deck), vokSource);
     });
 
+    test('self-heals a legacy deck lacking ids and keyed by field name', () {
+      // An older/hand-edited APP deck: no maskId, no category/field ids, unit
+      // values keyed by field NAME. It must load without crashing, minting a
+      // fresh app maskId and assigning 0-based ids in array order, with the
+      // name-keyed values migrated onto the healed field ids.
+      const String legacy = '''
+{
+  "format": "learn-anywhere/lessons",
+  "version": 1,
+  "mask": {
+    "name": "Legacy",
+    "direction1Label": "A",
+    "direction2Label": "B",
+    "categories": [
+      { "name": "Words", "fields": [
+        {"name":"Q","length":40,"equalGroup":0,"role1":"Q","role2":"A"},
+        {"name":"A","length":40,"equalGroup":0,"role1":"A","role2":"Q"}
+      ]}
+    ]
+  },
+  "units": [
+    { "categoryId": 0, "fields": {"Q":"hello","A":"bonjour"} }
+  ]
+}
+''';
+      final LearningDeck deck = decodeDeckJson(legacy);
+
+      expect(deck.mask.maskId, startsWith(appMaskIdPrefix));
+      expect(deck.mask.maskId, isNot(startsWith(legacyMaskIdPrefix)));
+      expect(deck.mask.revision, 0);
+      expect(deck.mask.categories.single.id, 0);
+      expect(
+        deck.mask.categories.single.fields.map((FieldDefinition f) => f.id),
+        <int>[0, 1],
+      );
+      final LearningUnit unit = deck.units.single;
+      expect(unit.valueForFieldId(0).plainText, 'hello'); // healed from "Q"
+      expect(unit.valueForFieldId(1).plainText, 'bonjour'); // healed from "A"
+
+      // Re-encoding lifts it to the authoritative new format (id-keyed).
+      final LearningDeck reloaded = decodeDeckJson(encodeDeckJson(deck));
+      expect(reloaded.units.single.valueForFieldId(0).plainText, 'hello');
+      expect(reloaded.mask.maskId, deck.mask.maskId);
+    });
+
+    test('still rejects genuinely malformed masks while self-healing ids', () {
+      const String badRole = '''
+{
+  "format": "learn-anywhere/mask",
+  "version": 1,
+  "name": "Bad",
+  "direction1Label": "A",
+  "direction2Label": "B",
+  "categories": [
+    { "name": "C", "fields": [
+      {"name":"F","length":40,"equalGroup":0,"role1":"X","role2":"A"}
+    ]}
+  ]
+}
+''';
+      expect(
+        () => decodeMaskJson(badRole),
+        throwsA(isA<ValidationException>()),
+      );
+    });
+
     test('validates strict schema rules and ignores unknown future fields', () {
       final Map<String, Object?> json = encodeMask(sampleMask());
       json['future'] = 'ignored';
