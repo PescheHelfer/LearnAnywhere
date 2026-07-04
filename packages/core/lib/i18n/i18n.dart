@@ -818,6 +818,15 @@ enum LearnAnywhereMessage {
   /// Confirm load mask message.
   confirmLoadMask,
 
+  /// Prompt to create a linked `.inf` when a deck has none.
+  confirmCreateLinkedMask,
+
+  /// Status shown after the linked `.inf` mask is saved.
+  fileStatusMaskSaved,
+
+  /// Status shown when compatible sibling decks were updated on mask save.
+  fileStatusDecksUpdated,
+
   /// Cancel action.
   actionCancel,
 
@@ -1201,6 +1210,11 @@ final class LearnAnywhereCatalog {
           'Clear all units in memory? This does not delete any file.',
       LearnAnywhereMessage.confirmLoadMask:
           'Load a new mask? Current in-memory units will be cleared.',
+      LearnAnywhereMessage.confirmCreateLinkedMask:
+          'No mask file found for this deck. Create one from the '
+          "deck's embedded mask?",
+      LearnAnywhereMessage.fileStatusMaskSaved: 'Mask saved',
+      LearnAnywhereMessage.fileStatusDecksUpdated: 'Updated {count} deck(s)',
       LearnAnywhereMessage.actionCancel: 'Cancel',
       LearnAnywhereMessage.actionContinue: 'Continue',
       LearnAnywhereMessage.actionClear: 'Clear',
@@ -1547,6 +1561,12 @@ final class LearnAnywhereCatalog {
           'Alle Lerneinheiten im Speicher löschen? Es wird keine Datei gelöscht.',
       LearnAnywhereMessage.confirmLoadMask:
           'Neue Maske laden? Aktuelle Lerneinheiten im Speicher werden gelöscht.',
+      LearnAnywhereMessage.confirmCreateLinkedMask:
+          'Keine Maskendatei für dieses Deck gefunden. Aus der eingebetteten '
+          'Maske des Decks eine erstellen?',
+      LearnAnywhereMessage.fileStatusMaskSaved: 'Maske gespeichert',
+      LearnAnywhereMessage.fileStatusDecksUpdated:
+          '{count} Deck(s) aktualisiert',
       LearnAnywhereMessage.actionCancel: 'Abbruch',
       LearnAnywhereMessage.actionContinue: 'Weiter',
       LearnAnywhereMessage.actionClear: 'Löschen',

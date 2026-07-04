@@ -174,6 +174,58 @@ void main() {
       expect(loaded[deckPath]!.units, hasLength(1));
       await temp.delete(recursive: true);
     });
+
+    test('resolves the linked .inf for a deck by matching maskId', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_linked_mask',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String deckPath = '${temp.path}${sep}french.vok';
+
+      // A sibling .inf with the SAME maskId is the link; a decoy with a
+      // different maskId in the same directory must be ignored.
+      await service.saveMask(sampleMask(), '${temp.path}${sep}french.inf');
+      await File(
+        '${temp.path}${sep}other.inf',
+      ).writeAsString(encodeMaskJson(sampleMask().copyWith(maskId: 'm_new_x')));
+
+      final String? linked = await service.findLinkedMaskPath(
+        deckPath,
+        'm_new_fileop-fixture',
+      );
+      expect(linked, '${temp.path}${sep}french.inf');
+
+      final String? none = await service.findLinkedMaskPath(
+        deckPath,
+        'm_new_absent',
+      );
+      expect(none, isNull);
+      await temp.delete(recursive: true);
+    });
+
+    test('creates a linked .inf reusing the mask id, never minting', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_create_mask',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath =
+          '${temp.path}${Platform.pathSeparator}french.vok';
+
+      final LearningMask embedded = sampleMask();
+      final String infPath = await service.createLinkedMask(deckPath, embedded);
+
+      expect(infPath, endsWith('french.inf'));
+      final LearningMask reloaded = await service.readMask(infPath);
+      // The created file REUSES the embedded maskId (identity is preserved).
+      expect(reloaded.maskId, embedded.maskId);
+      // And it is now resolvable as the deck's link.
+      expect(
+        await service.findLinkedMaskPath(deckPath, embedded.maskId),
+        infPath,
+      );
+      await temp.delete(recursive: true);
+    });
   });
 }
 

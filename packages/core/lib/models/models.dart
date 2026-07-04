@@ -404,6 +404,28 @@ final class LearningMask {
     }
     return null;
   }
+
+  /// Returns a copy with selected fields changed.
+  ///
+  /// The [maskId] is preserved unless explicitly overridden — schema edits never
+  /// change identity; only an explicit fork mints a new id.
+  LearningMask copyWith({
+    String? maskId,
+    int? revision,
+    String? name,
+    String? direction1Label,
+    String? direction2Label,
+    List<CategoryDefinition>? categories,
+  }) {
+    return LearningMask(
+      maskId: maskId ?? this.maskId,
+      revision: revision ?? this.revision,
+      name: name ?? this.name,
+      direction1Label: direction1Label ?? this.direction1Label,
+      direction2Label: direction2Label ?? this.direction2Label,
+      categories: categories ?? this.categories,
+    );
+  }
 }
 
 /// One ordered learning unit in a deck.

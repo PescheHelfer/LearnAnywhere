@@ -218,6 +218,12 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   );
   String _settingsPath = '';
   String? _lastMaskPath;
+  // The Mask Editor edits a linked `.inf` file (Step 4), not the deck's
+  // embedded read-only cache. These hold the in-progress mask, its `.inf` path
+  // (null until a save-as target is chosen), and whether it has unsaved edits.
+  LearningMask? _maskEditorMask;
+  String? _maskEditorPath;
+  bool _maskEditorDirty = false;
   // Per-type last-used dialog directories (C1).
   String? _lastVokDir;
   String? _lastStaDir;
@@ -751,7 +757,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           ),
           const _MenuSeparator(),
           MenuItemButton(
-            onPressed: () => _selectRoute(_DesktopRoute.maskEditor),
+            onPressed: _openMaskEditor,
             child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.menuMaskEditor),
               builder: menuAcceleratorBuilder,
@@ -966,6 +972,112 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     });
   }
 
+  /// Opens the Mask Editor on the `.inf` LINKED to the loaded deck (Step 4).
+  ///
+  /// Resolves the linked mask by scanning the deck's OWN directory for an
+  /// `.inf` whose maskId matches the deck's embedded maskId. If none exists,
+  /// offers to create one from the embedded mask (reusing its maskId — never
+  /// minting a new one). When no deck is saved yet, edits the in-memory mask
+  /// and prompts for a save target on close. The deck's embedded mask is a
+  /// read-only cache and is never edited here.
+  Future<void> _openMaskEditor() async {
+    final String? deckPath = _document.deckPath;
+    if (deckPath == null) {
+      setState(() {
+        _maskEditorMask = _document.mask;
+        _maskEditorPath = _lastMaskPath;
+        _maskEditorDirty = false;
+        _editorInitialIndex = null;
+        _route = _DesktopRoute.maskEditor;
+      });
+      return;
+    }
+    String? linked;
+    try {
+      linked = await _fileService.findLinkedMaskPath(
+        deckPath,
+        _document.mask.maskId,
+      );
+    } on Object {
+      linked = null;
+    }
+    if (linked == null) {
+      final bool create = await _confirm(
+        LearnAnywhereMessage.confirmCreateLinkedMask,
+      );
+      if (!create) {
+        return;
+      }
+    }
+    final String? resolvedLink = linked;
+    await _guardedFileOperation(() async {
+      final LearningMask editMask;
+      final String infPath;
+      if (resolvedLink != null) {
+        editMask = await _fileService.readMask(resolvedLink);
+        infPath = resolvedLink;
+      } else {
+        infPath = await _fileService.createLinkedMask(deckPath, _document.mask);
+        editMask = _document.mask;
+        _setLastDir('inf', infPath);
+        unawaited(_saveSettings());
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _maskEditorMask = editMask;
+        _maskEditorPath = infPath;
+        _maskEditorDirty = false;
+        _editorInitialIndex = null;
+        _route = _DesktopRoute.maskEditor;
+      });
+    });
+  }
+
+  /// Saves the edited `.inf` (bumping its revision) when it has changed, then
+  /// returns home. An unedited session leaves the file untouched.
+  Future<void> _closeMaskEditor() async {
+    final LearningMask? mask = _maskEditorMask;
+    if (mask == null || !_maskEditorDirty) {
+      _clearMaskEditorState();
+      _selectRoute(_DesktopRoute.home);
+      return;
+    }
+    String? path = _maskEditorPath;
+    if (path == null) {
+      path = await _pickSavePath(
+        extension: 'inf',
+        typeLabel: LearnAnywhereMessage.filePickerMaskType,
+        suggestedName: _suggestedName(
+          _lastMaskPath ?? _settings.lastMaskPath,
+          'learn_anywhere.inf',
+        ),
+      );
+      if (path == null) {
+        // Cancelled the save target: stay in the editor rather than lose edits.
+        return;
+      }
+    }
+    final String infPath = _ensureExtension(path, 'inf');
+    // A revision is bumped on each `.inf` save.
+    final LearningMask saved = mask.copyWith(revision: mask.revision + 1);
+    await _guardedFileOperation(() async {
+      await _fileService.saveMask(saved, infPath);
+      _lastMaskPath = infPath;
+      _setLastDir('inf', infPath);
+      _clearMaskEditorState();
+      _setFileStatus(LearnAnywhereMessage.fileStatusMaskSaved);
+      unawaited(_saveSettings());
+    });
+  }
+
+  void _clearMaskEditorState() {
+    _maskEditorMask = null;
+    _maskEditorPath = null;
+    _maskEditorDirty = false;
+  }
+
   Future<void> _openEditorSearch() async {
     if (_document.deck.units.isEmpty) return;
     final int? index = await UnitEditorPage.openSearchDialog(
@@ -1017,15 +1129,15 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         },
       ),
       _DesktopRoute.maskEditor => MaskEditorPage(
-        mask: _document.mask,
+        // Edits the linked `.inf` mask, never the deck's embedded cache.
+        mask: _maskEditorMask ?? _document.mask,
         onChanged: (LearningMask value) {
-          final LearningDeck deck = LearningDeck(
-            mask: value,
-            units: _document.deck.units,
-          );
-          setState(() => _document = _document.copyWith(deck: deck));
+          setState(() {
+            _maskEditorMask = value;
+            _maskEditorDirty = true;
+          });
         },
-        onClose: () => _selectRoute(_DesktopRoute.home),
+        onClose: _closeMaskEditor,
       ),
       _DesktopRoute.learn => LearnSessionPage(
         deck: _document.deck,

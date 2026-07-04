@@ -143,6 +143,61 @@ final class DesktopFileService {
     await File(path).writeAsString(encodeMaskJson(mask));
   }
 
+  /// Reads and decodes a standalone `.inf` mask file.
+  Future<LearningMask> readMask(String path) async {
+    return decodeMaskJson(await File(path).readAsString());
+  }
+
+  /// Finds the `.inf` in [deckPath]'s own directory whose embedded maskId
+  /// equals [maskId], or `null` when none exists.
+  ///
+  /// This resolves the editable mask file LINKED to a loaded deck (Step 4).
+  /// Two files describe the same mask iff their maskIds are equal, so matching
+  /// is by maskId only — never by name or contents. Unreadable or invalid
+  /// `.inf` files are skipped rather than aborting the scan.
+  Future<String?> findLinkedMaskPath(String deckPath, String maskId) async {
+    final Directory directory = File(deckPath).parent;
+    if (!await directory.exists()) {
+      return null;
+    }
+    await for (final FileSystemEntity entity in directory.list()) {
+      if (entity is! File || !_hasExtension(entity.path, 'inf')) {
+        continue;
+      }
+      try {
+        final LearningMask mask = decodeMaskJson(await entity.readAsString());
+        if (mask.maskId == maskId) {
+          return entity.path;
+        }
+      } on Object {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  /// Writes a new `.inf` beside [deckPath] built from [mask], REUSING its
+  /// existing maskId (never minting a new one), and returns the created path.
+  ///
+  /// Used when the Mask Editor opens for a deck that has no linked `.inf` yet
+  /// and the user opts to create one from the deck's embedded mask.
+  Future<String> createLinkedMask(String deckPath, LearningMask mask) async {
+    final String infPath = _withExtension(deckPath, 'inf');
+    await File(infPath).writeAsString(encodeMaskJson(mask));
+    return infPath;
+  }
+
+  bool _hasExtension(String path, String extension) {
+    return path.toLowerCase().endsWith('.${extension.toLowerCase()}');
+  }
+
+  String _withExtension(String path, String extension) {
+    final int separator = path.lastIndexOf(Platform.pathSeparator);
+    final int dot = path.lastIndexOf('.');
+    final String base = dot > separator ? path.substring(0, dot) : path;
+    return '$base.$extension';
+  }
+
   /// Loads a `.sta` statistics file into the current document.
   Future<DesktopDocument> loadStatistics(
     DesktopDocument current,
