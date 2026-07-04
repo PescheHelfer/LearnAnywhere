@@ -177,6 +177,18 @@ enum _DesktopRoute {
   about,
 }
 
+/// The user's choice in the breaking-propagation dialog (Step 6).
+enum _PropagationChoice {
+  /// Abandon the save; keep editing.
+  cancel,
+
+  /// Save the `.inf` as a brand-new mask (mint a new id); leave decks alone.
+  fork,
+
+  /// Apply the mask to every matching deck, accepting the data loss.
+  force,
+}
+
 final class _DesktopHome extends StatefulWidget {
   const _DesktopHome({
     required this.prefs,
@@ -1036,7 +1048,8 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   }
 
   /// Saves the edited `.inf` (bumping its revision) when it has changed, then
-  /// returns home. An unedited session leaves the file untouched.
+  /// propagates it to same-directory decks (Step 6) and returns home. An
+  /// unedited session leaves the file untouched.
   Future<void> _closeMaskEditor() async {
     final LearningMask? mask = _maskEditorMask;
     if (mask == null || !_maskEditorDirty) {
@@ -1061,15 +1074,159 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     }
     final String infPath = _ensureExtension(path, 'inf');
     // A revision is bumped on each `.inf` save.
-    final LearningMask saved = mask.copyWith(revision: mask.revision + 1);
+    var saved = mask.copyWith(revision: mask.revision + 1);
+    final String directory = _filePicker.directoryOf(infPath);
+
     await _guardedFileOperation(() async {
+      // Tier-1 propagation: classify same-directory decks sharing this maskId.
+      final MaskPropagationPlan plan = await _fileService.planMaskPropagation(
+        maskDirectory: directory,
+        newMask: saved,
+      );
+
+      if (plan.hasBreaking) {
+        final _PropagationChoice? choice =
+            await _showBreakingPropagationDialog(plan);
+        if (choice == null || choice == _PropagationChoice.cancel) {
+          // Nothing written; stay in the editor with edits intact.
+          return;
+        }
+        if (choice == _PropagationChoice.fork) {
+          // Fork: the .inf becomes a brand-new mask; no existing deck matches
+          // its new id, so nothing propagates. Existing decks keep the old one.
+          saved = saved.copyWith(maskId: mintNewMaskId());
+          await _fileService.saveMask(saved, infPath);
+          _finishMaskSave(infPath, saved, updatedDeckCount: 0);
+          return;
+        }
+        // Force: accept the data loss and overwrite every matching deck.
+        await _fileService.saveMask(saved, infPath);
+        await _fileService.applyMaskPropagation(
+          newMask: saved,
+          deckPaths: plan.allPaths,
+        );
+        _applyMaskToLoadedDeck(saved, force: true);
+        _finishMaskSave(infPath, saved, updatedDeckCount: plan.allPaths.length);
+        return;
+      }
+
+      // No breaking decks: save and auto-update every compatible deck.
       await _fileService.saveMask(saved, infPath);
-      _lastMaskPath = infPath;
-      _setLastDir('inf', infPath);
-      _clearMaskEditorState();
-      _setFileStatus(LearnAnywhereMessage.fileStatusMaskSaved);
-      unawaited(_saveSettings());
+      await _fileService.applyMaskPropagation(
+        newMask: saved,
+        deckPaths: plan.compatible,
+      );
+      _applyMaskToLoadedDeck(saved, force: false);
+      _finishMaskSave(
+        infPath,
+        saved,
+        updatedDeckCount: plan.compatible.length,
+      );
     });
+  }
+
+  /// Common bookkeeping after a mask save completes.
+  void _finishMaskSave(
+    String infPath,
+    LearningMask saved, {
+    required int updatedDeckCount,
+  }) {
+    _lastMaskPath = infPath;
+    _setLastDir('inf', infPath);
+    _clearMaskEditorState();
+    _setFileStatus(
+      updatedDeckCount > 0
+          ? LearnAnywhereMessage.fileStatusDecksUpdated
+          : LearnAnywhereMessage.fileStatusMaskSaved,
+      count: updatedDeckCount,
+    );
+    unawaited(_saveSettings());
+  }
+
+  /// Applies [saved] to the in-memory loaded deck when it is the same mask and
+  /// the change is safe (or [force] is set), keeping the UI in sync with disk.
+  void _applyMaskToLoadedDeck(LearningMask saved, {required bool force}) {
+    if (_document.mask.maskId != saved.maskId) {
+      return;
+    }
+    if (!force) {
+      final MaskCompatibilityResult result = checkMaskCompatibility(
+        oldMask: _document.mask,
+        newMask: saved,
+        units: _document.deck.units,
+      );
+      if (!result.isCompatible) {
+        return;
+      }
+    }
+    setState(() {
+      _document = _document.copyWith(
+        deck: applyMaskToDeck(_document.deck, saved),
+      );
+    });
+  }
+
+  Future<_PropagationChoice?> _showBreakingPropagationDialog(
+    MaskPropagationPlan plan,
+  ) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return showDialog<_PropagationChoice>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            messages.message(LearnAnywhereMessage.propagationBreakingTitle),
+          ),
+          content: SizedBox(
+            width: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    messages.message(
+                      LearnAnywhereMessage.propagationBreakingBody,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  for (final DeckBreak deck in plan.breaking) ...<Widget>[
+                    Text(
+                      _filePicker.fileNameOf(deck.deckPath),
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    for (final MaskBreakingReason reason in deck.reasons)
+                      Text('• ${reason.describe()}'),
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(_PropagationChoice.cancel),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(_PropagationChoice.fork),
+              child: Text(messages.message(LearnAnywhereMessage.actionForkMask)),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(_PropagationChoice.force),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionForceUpdate),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _clearMaskEditorState() {
@@ -1726,7 +1883,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
             : _fileService.statisticsSidecarPath(_document.deckPath!));
   }
 
-  void _setFileStatus(LearnAnywhereMessage message) {
+  void _setFileStatus(LearnAnywhereMessage message, {int count = 0}) {
     if (!mounted) {
       return;
     }
@@ -1734,7 +1891,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       context,
     );
     setState(() {
-      _lastFileStatus = messages.message(message);
+      _lastFileStatus = messages
+          .message(message)
+          .replaceAll('{count}', count.toString());
       _route = _DesktopRoute.fileOperations;
     });
     ScaffoldMessenger.of(

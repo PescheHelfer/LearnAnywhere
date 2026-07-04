@@ -827,6 +827,18 @@ enum LearnAnywhereMessage {
   /// Status shown when compatible sibling decks were updated on mask save.
   fileStatusDecksUpdated,
 
+  /// Title of the breaking-propagation dialog.
+  propagationBreakingTitle,
+
+  /// Intro line of the breaking-propagation dialog.
+  propagationBreakingBody,
+
+  /// Fork action: save the `.inf` as a brand-new mask.
+  actionForkMask,
+
+  /// Force action: apply the mask despite data loss.
+  actionForceUpdate,
+
   /// Cancel action.
   actionCancel,
 
@@ -1215,6 +1227,13 @@ final class LearnAnywhereCatalog {
           "deck's embedded mask?",
       LearnAnywhereMessage.fileStatusMaskSaved: 'Mask saved',
       LearnAnywhereMessage.fileStatusDecksUpdated: 'Updated {count} deck(s)',
+      LearnAnywhereMessage.propagationBreakingTitle: 'Some decks would lose data',
+      LearnAnywhereMessage.propagationBreakingBody:
+          'Applying this mask change would break the following deck(s). Save the '
+          'mask as a new mask (leaving these decks on the old one), cancel, or '
+          'force the update and lose the listed data.',
+      LearnAnywhereMessage.actionForkMask: 'Save as new mask',
+      LearnAnywhereMessage.actionForceUpdate: 'Force update (lose data)',
       LearnAnywhereMessage.actionCancel: 'Cancel',
       LearnAnywhereMessage.actionContinue: 'Continue',
       LearnAnywhereMessage.actionClear: 'Clear',
@@ -1567,6 +1586,14 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileStatusMaskSaved: 'Maske gespeichert',
       LearnAnywhereMessage.fileStatusDecksUpdated:
           '{count} Deck(s) aktualisiert',
+      LearnAnywhereMessage.propagationBreakingTitle:
+          'Einige Decks würden Daten verlieren',
+      LearnAnywhereMessage.propagationBreakingBody:
+          'Diese Maskenänderung würde die folgenden Decks beschädigen. Maske als '
+          'neue Maske speichern (die Decks bleiben auf der alten), abbrechen '
+          'oder Aktualisierung erzwingen und die aufgeführten Daten verlieren.',
+      LearnAnywhereMessage.actionForkMask: 'Als neue Maske speichern',
+      LearnAnywhereMessage.actionForceUpdate: 'Erzwingen (Datenverlust)',
       LearnAnywhereMessage.actionCancel: 'Abbruch',
       LearnAnywhereMessage.actionContinue: 'Weiter',
       LearnAnywhereMessage.actionClear: 'Löschen',

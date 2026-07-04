@@ -226,7 +226,102 @@ void main() {
       );
       await temp.delete(recursive: true);
     });
+
+    test('plans and applies tier-1 propagation to sibling decks', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_propagation',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String okPath = '${temp.path}${sep}short.vok';
+      final String breakPath = '${temp.path}${sep}long.vok';
+
+      // Two decks share the fixture maskId. "short" holds a 1-char value;
+      // "long" holds a 6-char value in field id 0.
+      await service.saveDeckSnapshot(
+        LearningDeck(
+          mask: sampleMask(),
+          units: const <LearningUnit>[
+            LearningUnit(categoryId: 1, fields: <int, FieldValue>{0: FieldValue.plain('Q')}),
+          ],
+        ),
+        okPath,
+      );
+      await service.saveDeckSnapshot(
+        LearningDeck(
+          mask: sampleMask(),
+          units: const <LearningUnit>[
+            LearningUnit(
+              categoryId: 1,
+              fields: <int, FieldValue>{0: FieldValue.plain('sixchr')},
+            ),
+          ],
+        ),
+        breakPath,
+      );
+
+      // New mask shrinks field id 0 from 40 to 3: "short" is fine, "long" breaks.
+      final LearningMask shrunk = _withFirstFieldLength(sampleMask(), 3);
+      final MaskPropagationPlan plan = await service.planMaskPropagation(
+        maskDirectory: temp.path,
+        newMask: shrunk,
+      );
+      expect(plan.compatible, <String>[okPath]);
+      expect(plan.breaking, hasLength(1));
+      expect(plan.breaking.single.deckPath, breakPath);
+
+      // Auto-apply to the compatible deck only.
+      await service.applyMaskPropagation(
+        newMask: shrunk,
+        deckPaths: plan.compatible,
+      );
+      final LearningDeck updatedOk = decodeDeckJson(
+        await File(okPath).readAsString(),
+      );
+      expect(updatedOk.mask.categories.single.fields.single.length, 3);
+      expect(updatedOk.units.single.valueForFieldId(0).plainText, 'Q');
+      // The breaking deck was left untouched (still length 40).
+      final LearningDeck untouched = decodeDeckJson(
+        await File(breakPath).readAsString(),
+      );
+      expect(untouched.mask.categories.single.fields.single.length, 40);
+
+      // Forcing applies to the breaking deck too, truncating its data.
+      await service.applyMaskPropagation(
+        newMask: shrunk,
+        deckPaths: <String>[breakPath],
+      );
+      final LearningDeck forced = decodeDeckJson(
+        await File(breakPath).readAsString(),
+      );
+      expect(forced.mask.categories.single.fields.single.length, 3);
+      expect(forced.units.single.valueForFieldId(0).plainText, 'six');
+      await temp.delete(recursive: true);
+    });
   });
+}
+
+LearningMask _withFirstFieldLength(LearningMask mask, int length) {
+  final CategoryDefinition category = mask.categories.single;
+  final FieldDefinition field = category.fields.single;
+  return mask.copyWith(
+    categories: <CategoryDefinition>[
+      CategoryDefinition(
+        id: category.id,
+        name: category.name,
+        fields: <FieldDefinition>[
+          FieldDefinition(
+            id: field.id,
+            name: field.name,
+            length: length,
+            equalGroup: field.equalGroup,
+            role1: field.role1,
+            role2: field.role2,
+          ),
+        ],
+      ),
+    ],
+  );
 }
 
 LearningMask sampleMask({String name = 'Sample'}) {

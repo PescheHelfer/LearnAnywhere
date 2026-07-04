@@ -353,6 +353,45 @@ void main() {
       expect(tooShort.reasons.single.newLength, 5);
       expect(check(shrinkTo(6)).isCompatible, isTrue);
     });
+
+    test('applyMaskToDeck prunes dropped categories/fields and truncates', () {
+      final LearningDeck deck = LearningDeck(
+        mask: compatMask(),
+        units: compatUnits(),
+      );
+      // New mask: drop the Verb category (id 1) entirely and, in Noun, drop the
+      // DE field (id 0) and shrink FR (id 1) from 40 to 3 characters.
+      final LearningMask pruned = compatMask().copyWith(
+        categories: <CategoryDefinition>[
+          const CategoryDefinition(
+            id: 0,
+            name: 'Noun',
+            fields: <FieldDefinition>[
+              FieldDefinition(
+                id: 1,
+                name: 'FR',
+                length: 3,
+                equalGroup: 0,
+                role1: FieldRole.answer,
+                role2: FieldRole.question,
+              ),
+            ],
+          ),
+        ],
+      );
+      final LearningDeck result = applyMaskToDeck(deck, pruned);
+
+      // The verb unit (category id 1) is gone; only the noun unit remains.
+      expect(result.units, hasLength(1));
+      final LearningUnit unit = result.units.single;
+      expect(unit.categoryId, 0);
+      // DE (id 0) dropped; FR (id 1) kept but truncated "maison" -> "mai".
+      expect(unit.fields.containsKey(0), isFalse);
+      expect(unit.valueForFieldId(1).plainText, 'mai');
+      // The result re-encodes and reloads cleanly under the new schema.
+      final LearningDeck reloaded = decodeDeckJson(encodeDeckJson(result));
+      expect(reloaded.units.single.valueForFieldId(1).plainText, 'mai');
+    });
   });
 
   group('i18n', () {

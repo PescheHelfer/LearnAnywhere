@@ -208,3 +208,73 @@ MaskCompatibilityResult checkMaskCompatibility({
     reasons: List<MaskBreakingReason>.unmodifiable(reasons),
   );
 }
+
+/// Returns [deck] with its embedded mask replaced by [newMask], dropping unit
+/// data that no longer has a home under the new schema.
+///
+/// Units whose category was removed are dropped; surviving units keep only the
+/// field values whose field id still exists in the unit's category. For a
+/// COMPATIBLE change this removes nothing meaningful (at most already-blank
+/// values); for a forcibly applied BREAKING change it realizes the accepted
+/// data loss so the written file stays internally consistent. Field ids are
+/// stable, so renaming/reordering never drops anything.
+LearningDeck applyMaskToDeck(LearningDeck deck, LearningMask newMask) {
+  final List<LearningUnit> units = <LearningUnit>[];
+  for (final LearningUnit unit in deck.units) {
+    final CategoryDefinition? category = newMask.categoryById(unit.categoryId);
+    if (category == null) {
+      // The unit's category no longer exists: drop the whole unit.
+      continue;
+    }
+    final Map<int, FieldValue> fields = <int, FieldValue>{};
+    for (final MapEntry<int, FieldValue> entry in unit.fields.entries) {
+      final FieldDefinition? field = category.fieldById(entry.key);
+      if (field == null) {
+        // Field removed from the schema: drop its stored value.
+        continue;
+      }
+      // A forced length decrease truncates over-long values so the written
+      // deck still satisfies the new schema (and reloads). Compatible changes
+      // never exceed the new length, so this is a no-op there.
+      fields[entry.key] = _truncateValue(entry.value, field.length);
+    }
+    units.add(
+      LearningUnit(
+        categoryId: unit.categoryId,
+        fields: Map<int, FieldValue>.unmodifiable(fields),
+      ),
+    );
+  }
+  return LearningDeck(
+    mask: newMask,
+    units: List<LearningUnit>.unmodifiable(units),
+  );
+}
+
+/// Truncates [value] to at most [maxLength] characters of plain text, keeping
+/// run formatting up to the cut. Returns [value] unchanged when it already fits.
+FieldValue _truncateValue(FieldValue value, int maxLength) {
+  if (value.plainText.length <= maxLength) {
+    return value;
+  }
+  switch (value) {
+    case PlainFieldValue(:final String text):
+      return FieldValue.plain(text.substring(0, maxLength));
+    case RichFieldValue(:final List<RichTextRun> runs):
+      final List<RichTextRun> kept = <RichTextRun>[];
+      var remaining = maxLength;
+      for (final RichTextRun run in runs) {
+        if (remaining <= 0) {
+          break;
+        }
+        if (run.text.length <= remaining) {
+          kept.add(run);
+          remaining -= run.text.length;
+        } else {
+          kept.add(run.copyWith(text: run.text.substring(0, remaining)));
+          remaining = 0;
+        }
+      }
+      return FieldValue.rich(kept);
+  }
+}

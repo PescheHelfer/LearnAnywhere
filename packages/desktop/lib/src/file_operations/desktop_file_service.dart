@@ -187,6 +187,74 @@ final class DesktopFileService {
     return infPath;
   }
 
+  /// Classifies (WITHOUT writing) every `.vok` in [maskDirectory] that shares
+  /// [newMask]'s maskId, comparing each deck's embedded (old) mask to [newMask]
+  /// via the core compatibility check.
+  ///
+  /// This is the dry-run behind tier-1 propagation (Step 6): the caller decides
+  /// what to write based on the returned plan. [excludePaths] skips files (e.g.
+  /// the deck currently open in memory, handled separately). Decks that fail to
+  /// decode are skipped.
+  Future<MaskPropagationPlan> planMaskPropagation({
+    required String maskDirectory,
+    required LearningMask newMask,
+    Iterable<String> excludePaths = const <String>[],
+  }) async {
+    final Directory directory = Directory(maskDirectory);
+    final List<String> compatible = <String>[];
+    final List<DeckBreak> breaking = <DeckBreak>[];
+    if (!await directory.exists()) {
+      return MaskPropagationPlan(compatible: compatible, breaking: breaking);
+    }
+    final Set<String> excluded = excludePaths.toSet();
+    await for (final FileSystemEntity entity in directory.list()) {
+      if (entity is! File ||
+          !_hasExtension(entity.path, 'vok') ||
+          excluded.contains(entity.path)) {
+        continue;
+      }
+      final LearningDeck deck;
+      try {
+        deck = decodeDeckJson(await entity.readAsString());
+      } on Object {
+        continue;
+      }
+      if (deck.mask.maskId != newMask.maskId) {
+        continue;
+      }
+      final MaskCompatibilityResult result = checkMaskCompatibility(
+        oldMask: deck.mask,
+        newMask: newMask,
+        units: deck.units,
+      );
+      if (result.isCompatible) {
+        compatible.add(entity.path);
+      } else {
+        breaking.add(DeckBreak(deckPath: entity.path, reasons: result.reasons));
+      }
+    }
+    return MaskPropagationPlan(compatible: compatible, breaking: breaking);
+  }
+
+  /// Overwrites the embedded mask cache of each deck in [deckPaths] with
+  /// [newMask], pruning any unit data orphaned by the new schema (see
+  /// [applyMaskToDeck]). Decks that fail to decode are skipped.
+  Future<void> applyMaskPropagation({
+    required LearningMask newMask,
+    required Iterable<String> deckPaths,
+  }) async {
+    for (final String path in deckPaths) {
+      final LearningDeck deck;
+      try {
+        deck = decodeDeckJson(await File(path).readAsString());
+      } on Object {
+        continue;
+      }
+      final LearningDeck updated = applyMaskToDeck(deck, newMask);
+      await File(path).writeAsString(encodeDeckJson(updated));
+    }
+  }
+
   bool _hasExtension(String path, String extension) {
     return path.toLowerCase().endsWith('.${extension.toLowerCase()}');
   }
@@ -303,6 +371,40 @@ final class DesktopFileService {
     final int separator = path.lastIndexOf(Platform.pathSeparator);
     return separator < 0 ? path : path.substring(separator + 1);
   }
+}
+
+/// A same-directory deck that a mask edit would break, with its reasons.
+final class DeckBreak {
+  /// Creates a deck-break record.
+  const DeckBreak({required this.deckPath, required this.reasons});
+
+  /// Path of the `.vok` that would lose data.
+  final String deckPath;
+
+  /// Why applying the new mask would break this deck.
+  final List<MaskBreakingReason> reasons;
+}
+
+/// The dry-run result of tier-1 propagation: which sibling decks would update
+/// cleanly and which would break.
+final class MaskPropagationPlan {
+  /// Creates a propagation plan.
+  const MaskPropagationPlan({required this.compatible, required this.breaking});
+
+  /// Paths of decks whose embedded cache can be updated without data loss.
+  final List<String> compatible;
+
+  /// Decks that would lose data, with reasons; not updated unless forced.
+  final List<DeckBreak> breaking;
+
+  /// Whether any sibling deck would break.
+  bool get hasBreaking => breaking.isNotEmpty;
+
+  /// All matching deck paths (compatible + breaking).
+  List<String> get allPaths => <String>[
+    ...compatible,
+    ...breaking.map((DeckBreak deck) => deck.deckPath),
+  ];
 }
 
 /// File operation failure with a user-facing message.
