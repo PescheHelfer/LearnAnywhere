@@ -259,6 +259,9 @@ enum LearnAnywhereMessage {
   /// About page version history heading.
   aboutVersionHistory,
 
+  /// About page oldest version history entry.
+  aboutVersionOldest,
+
   /// About page previous version history entry.
   aboutVersionPrevious,
 
@@ -989,10 +992,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutConversionCredit:
           'Modern conversion: SbitFire Software',
       LearnAnywhereMessage.aboutVersionHistory: 'Version history',
-      LearnAnywhereMessage.aboutVersionPrevious:
+      LearnAnywhereMessage.aboutVersionOldest:
           '0.1.0 – Phase 2 desktop foundation: file operations, editor, learning, statistics, lexicon, and program info.',
-      LearnAnywhereMessage.aboutVersionCurrent:
+      LearnAnywhereMessage.aboutVersionPrevious:
           '0.2.0 – Compact grid-based editor and practice screen.',
+      LearnAnywhereMessage.aboutVersionCurrent:
+          '0.3.0 – Statistics, mask editor, and menu accessibility improvements.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1326,10 +1331,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutConversionCredit:
           'Moderne Umsetzung: SbitFire Software',
       LearnAnywhereMessage.aboutVersionHistory: 'Versionsgeschichte',
-      LearnAnywhereMessage.aboutVersionPrevious:
+      LearnAnywhereMessage.aboutVersionOldest:
           '0.1.0 – Phase-2-Desktop-Grundlage: Dateioperationen, Editor, Lernen, Statistik, Lexikon und Programminfo.',
-      LearnAnywhereMessage.aboutVersionCurrent:
+      LearnAnywhereMessage.aboutVersionPrevious:
           '0.2.0 – Kompakter rasterbasierter Editor und Übungsbildschirm.',
+      LearnAnywhereMessage.aboutVersionCurrent:
+          '0.3.0 – Verbesserungen bei Statistik, Maskeneditor und Menü-Zugänglichkeit.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurück   F3 Weiter   F5 Suche   F6 Springen   F7 Löschen   F8 Einfügen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
