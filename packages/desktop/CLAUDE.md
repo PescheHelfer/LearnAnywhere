@@ -23,3 +23,29 @@ When adding/renaming/reordering menus, follow the checklists and letter-assignme
 rules in [`../../docs/menu-alt-mnemonics.md`](../../docs/menu-alt-mnemonics.md),
 and keep the inline `// top-bar X` / `// X` mnemonic comments in the i18n catalog
 (`packages/core/lib/i18n/i18n.dart`) accurate.
+
+## Keep `test/*.dart` in sync with UI drift
+
+Widget tests here find things by exact string/key, so they silently rot when the UI
+changes. **After any change that could break a finder, run `flutter test` in this
+package and fix every file that fails to compile or fails an assertion — don't just
+fix the file you were touching.** `flutter test` shares one compiler process across
+all test files in a run: one file with a stale required-constructor-arg can make an
+unrelated, still-correct test file report as "failed to load" too — check each
+failure's own error text before assuming it's actually broken.
+
+Changes with the most breaking potential:
+- Adding/renaming a **required** constructor param on a page widget instantiated
+  directly by a test (`LearnAnywhereDesktopApp`, `StatisticsPage`, `LexiconPage`,
+  `MaskEditorPage`, `QueryOptionsPage`, ...) — compile error in that widget's test.
+- Moving a menu command between top-level and a submenu, or renaming/removing an
+  i18n message used in `find.text(...)` — breaks `widget_test.dart` taps/asserts.
+  (Note: `MenuAcceleratorLabel`/`MenuAcceleratorDisplayLabel` render as plain
+  `Text` with `&` stripped when ALT isn't held, so `find.text('Label')` — no `&`,
+  no `findRichText: true` — is the correct finder; don't add rich-text finders.)
+- Removing/renaming a `ValueKey` a test uses via `find.byKey(...)`.
+- Swapping a screen's root scrollable type (e.g. `ListView` → `SingleChildScrollView`)
+  — breaks `find.byType(...)` drags.
+- Widening a screen's default layout — can overflow the default 800×600 test
+  surface; widen it in the test via `tester.view.physicalSize` instead of shrinking
+  the UI.

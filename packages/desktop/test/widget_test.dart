@@ -1,35 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learn_anywhere_desktop/main.dart';
+import 'package:learn_anywhere_desktop/src/preferences/desktop_prefs.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  late DesktopPrefs prefs;
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    prefs = DesktopPrefs(await SharedPreferences.getInstance());
+  });
+
   testWidgets('desktop shell launches with navigation chrome', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
     expect(find.text('Learn Anywhere'), findsOneWidget);
     expect(find.text('Workspace'), findsOneWidget);
-    expect(find.text('Desktop shell ready'), findsOneWidget);
+    expect(find.text('No file loaded'), findsOneWidget);
     expect(find.text('File'), findsOneWidget);
     expect(find.text('Edit'), findsOneWidget);
-    expect(find.text('Mask Editor'), findsOneWidget);
-    expect(
-      find.text(
-        'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Options'), findsOneWidget);
   });
 
   testWidgets('desktop shell routes from top-level menu buttons', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mask Editor'));
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mask Editor').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Mask Editor'), findsWidgets);
@@ -43,7 +48,7 @@ void main() {
   testWidgets('help about shows legacy and conversion credits', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
     await tester.drag(
@@ -69,16 +74,20 @@ void main() {
   testWidgets('editor inserts units and edits length-limited fields', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit editor').last);
+    await tester.pumpAndSettle();
 
     expect(find.text('No learning units'), findsOneWidget);
-    await tester.tap(find.text('Insert before'));
+    await tester.tap(find.text('Insert unit'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Category 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
     expect(find.text('Unit 1 of 1 - Category 1'), findsOneWidget);
@@ -87,7 +96,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Bold').first);
     await tester.enterText(
-      find.byKey(const ValueKey<String>('editor-input-Question')),
+      editorInput('Question'),
       'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
     );
     await tester.pumpAndSettle();
@@ -105,17 +114,21 @@ void main() {
   testWidgets('editor search shows selectable all-match results', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Insert before'));
+    await tester.tap(find.text('Unit editor').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Insert unit'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Category 1'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
     await tester.enterText(
-      find.byKey(const ValueKey<String>('editor-input-Question')),
+      editorInput('Question'),
       'rabbit',
     );
     await tester.pumpAndSettle();
@@ -124,8 +137,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Category 1'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
     await tester.enterText(
-      find.byKey(const ValueKey<String>('editor-input-Question')),
+      editorInput('Question'),
       'turtle',
     );
     await tester.pumpAndSettle();
@@ -149,42 +164,55 @@ void main() {
   testWidgets('query options route exposes learning toggles', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Query Options'));
+    await tester.tap(find.text('Options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Advanced Learning Options').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Query Options'), findsWidgets);
+    expect(find.text('Advanced Learning Options'), findsWidgets);
     expect(find.text('Wrong input correctable'), findsOneWidget);
     expect(find.text('Complete input required'), findsOneWidget);
     expect(find.text('Case sensitive'), findsOneWidget);
-    expect(find.text('With answer input'), findsOneWidget);
+    expect(find.text('Accent sensitive'), findsOneWidget);
 
-    await tester.tap(find.text('With answer input'));
+    await tester.tap(find.text('Accent sensitive'));
     await tester.pumpAndSettle();
 
-    expect(find.text('With answer input'), findsOneWidget);
+    expect(find.text('Accent sensitive'), findsOneWidget);
   });
 
   testWidgets('learn session checks answers and records live accuracy', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    // The active practice grid is wider than the default 800px test surface,
+    // so give it room to lay out without a RenderFlex overflow.
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Insert before'));
+    await tester.tap(find.text('Unit editor').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Insert unit'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Category 1'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
     await tester.enterText(
-      find.byKey(const ValueKey<String>('editor-input-Question')),
+      editorInput('Question'),
       'hello',
     );
     await tester.enterText(
-      find.byKey(const ValueKey<String>('editor-input-Answer')),
+      editorInput('Answer'),
       'bonjour',
     );
     await tester.pumpAndSettle();
@@ -196,22 +224,19 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Start session'));
     await tester.pumpAndSettle();
-    await tester.drag(find.byType(ListView), const Offset(0, 500));
-    await tester.pumpAndSettle();
 
     expect(find.textContaining('Unit 1 of 1 - Category 1'), findsOneWidget);
+    // Before Check, the prompt is read-only rich text and the single answer
+    // cell is the only editable field, so target it by type.
     if (tester.any(find.text('hello', findRichText: true))) {
-      await tester.enterText(
-        find.byKey(const ValueKey<String>('learn-answer-Answer')),
-        'bonjour',
-      );
+      await tester.enterText(find.byType(TextField).first, 'bonjour');
     } else {
       expect(find.text('bonjour', findRichText: true), findsOneWidget);
-      await tester.enterText(
-        find.byKey(const ValueKey<String>('learn-answer-Question')),
-        'hello',
-      );
+      await tester.enterText(find.byType(TextField).first, 'hello');
     }
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Check'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Check'));
     await tester.pumpAndSettle();
 
@@ -231,10 +256,12 @@ void main() {
   testWidgets('mask editor edits mask metadata and adds schema items', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mask Editor'));
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mask Editor').last);
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -260,12 +287,12 @@ void main() {
   testWidgets('file menu clear units asks for confirmation and shows status', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('File'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Clear units in memory...'));
+    await tester.tap(find.text('Clear units from memory...'));
     await tester.pumpAndSettle();
 
     expect(find.text('Please confirm'), findsOneWidget);
@@ -274,13 +301,13 @@ void main() {
 
     expect(find.text('File operations'), findsOneWidget);
     expect(find.text('Units: 0'), findsOneWidget);
-    expect(find.text('Units cleared.'), findsWidgets);
+    expect(find.text('New deck created.'), findsWidgets);
   });
 
   testWidgets('desktop shell switches language at runtime', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const LearnAnywhereDesktopApp());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
     await tester.drag(
@@ -297,6 +324,23 @@ void main() {
 
     expect(find.text('Datei'), findsOneWidget);
     expect(find.text('Arbeitsbereich'), findsOneWidget);
-    expect(find.text('Desktop-Shell bereit'), findsOneWidget);
+    expect(find.text('Keine Datei geladen'), findsOneWidget);
   });
+}
+
+/// Finds the editable [TextField] for the grid-editor field named [fieldName].
+///
+/// Each editor row is a `_GridRow` keyed `editor-field-<unit>-<i>-<name>`; the
+/// inner [TextField] has no key of its own, so we locate the row by the stable
+/// name suffix and drill into it.
+Finder editorInput(String fieldName) {
+  return find.descendant(
+    of: find.byWidgetPredicate(
+      (Widget widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith('editor-field-') &&
+          (widget.key! as ValueKey<String>).value.endsWith('-$fieldName'),
+    ),
+    matching: find.byType(TextField),
+  );
 }

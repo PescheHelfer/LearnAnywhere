@@ -9,6 +9,7 @@ final class MaskEditorPage extends StatefulWidget {
   const MaskEditorPage({
     required this.mask,
     required this.onChanged,
+    this.onClose,
     super.key,
   });
 
@@ -17,6 +18,9 @@ final class MaskEditorPage extends StatefulWidget {
 
   /// Called whenever the edited mask changes.
   final ValueChanged<LearningMask> onChanged;
+
+  /// Called when the user closes this page.
+  final VoidCallback? onClose;
 
   @override
   State<MaskEditorPage> createState() => _MaskEditorPageState();
@@ -44,7 +48,8 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
     final CategoryDefinition? selectedCategory = mask.categories.isEmpty
         ? null
         : mask.categories[_selectedCategoryIndex];
-    return SingleChildScrollView(
+    final VoidCallback? close = widget.onClose;
+    final Widget page = SingleChildScrollView(
       padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +100,40 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
               );
             },
           ),
+          if (close != null) ...<Widget>[
+            const SizedBox(height: LearnAnywhereTokens.gapLarge),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton(
+                key: const ValueKey<String>('mask-editor-close-button'),
+                onPressed: close,
+                child: Text(messages.message(LearnAnywhereMessage.actionClose)),
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+    if (close == null) {
+      return page;
+    }
+    // The Close button is styled as the screen's default action, so Enter
+    // should activate it the same way Esc (handled globally in main.dart)
+    // already does.
+    return Shortcuts(
+      shortcuts: const <ShortcutActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.enter): _CloseIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _CloseIntent: CallbackAction<_CloseIntent>(
+            onInvoke: (_) {
+              close();
+              return null;
+            },
+          ),
+        },
+        child: Focus(autofocus: true, child: page),
       ),
     );
   }
@@ -217,6 +255,10 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
             .reduce((int left, int right) => left > right ? left : right) +
         1;
   }
+}
+
+final class _CloseIntent extends Intent {
+  const _CloseIntent();
 }
 
 final class _MaskHeader extends StatelessWidget {
@@ -429,7 +471,11 @@ final class _CategoryTile extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: TextFormField(
-                    key: ValueKey<String>('category-name-$index'),
+                    // Keyed by the category's stable id (not its list index) so
+                    // switching or reordering categories always rebuilds a
+                    // fresh controller instead of reusing a stale one that
+                    // still holds another category's name.
+                    key: ValueKey<String>('category-name-${category.id}'),
                     initialValue: category.name,
                     maxLength: maxCategoryNameLength,
                     decoration: InputDecoration(
@@ -547,7 +593,13 @@ final class _FieldGrid extends StatelessWidget {
                 ],
                 rows: <DataRow>[
                   for (var index = 0; index < fields.length; index += 1)
-                    _fieldRow(context, messages, index, fields[index]),
+                    _fieldRow(
+                      context,
+                      messages,
+                      category!.id,
+                      index,
+                      fields[index],
+                    ),
                 ],
               ),
             ),
@@ -578,16 +630,21 @@ final class _FieldGrid extends StatelessWidget {
   DataRow _fieldRow(
     BuildContext context,
     LearnAnywhereLocalizations messages,
+    int categoryId,
     int index,
     FieldDefinition field,
   ) {
+    // Row input keys embed the owning category's stable id so that selecting a
+    // different category rebuilds fresh controllers. Keying by list index alone
+    // let Flutter reuse another category's TextEditingControllers (whose text
+    // is only seeded from initialValue once), scrambling the displayed fields.
     return DataRow(
       cells: <DataCell>[
         DataCell(
           SizedBox(
             width: 220,
             child: TextFormField(
-              key: ValueKey<String>('field-name-$index'),
+              key: ValueKey<String>('field-name-$categoryId-$index'),
               initialValue: field.name,
               decoration: const InputDecoration(counterText: ''),
               onChanged: (String value) {
@@ -600,7 +657,7 @@ final class _FieldGrid extends StatelessWidget {
           SizedBox(
             width: 96,
             child: TextFormField(
-              key: ValueKey<String>('field-length-$index'),
+              key: ValueKey<String>('field-length-$categoryId-$index'),
               initialValue: field.length.toString(),
               keyboardType: TextInputType.number,
               inputFormatters: <TextInputFormatter>[
@@ -627,7 +684,7 @@ final class _FieldGrid extends StatelessWidget {
           SizedBox(
             width: 120,
             child: TextFormField(
-              key: ValueKey<String>('field-equal-group-$index'),
+              key: ValueKey<String>('field-equal-group-$categoryId-$index'),
               initialValue: field.equalGroup.toString(),
               keyboardType: TextInputType.number,
               inputFormatters: <TextInputFormatter>[
@@ -645,7 +702,7 @@ final class _FieldGrid extends StatelessWidget {
         ),
         DataCell(
           _RoleMenu(
-            key: ValueKey<String>('field-role1-$index'),
+            key: ValueKey<String>('field-role1-$categoryId-$index'),
             value: field.role1,
             onChanged: (FieldRole value) {
               onFieldChanged(index, _copyField(field, role1: value));
@@ -654,7 +711,7 @@ final class _FieldGrid extends StatelessWidget {
         ),
         DataCell(
           _RoleMenu(
-            key: ValueKey<String>('field-role2-$index'),
+            key: ValueKey<String>('field-role2-$categoryId-$index'),
             value: field.role2,
             onChanged: (FieldRole value) {
               onFieldChanged(index, _copyField(field, role2: value));

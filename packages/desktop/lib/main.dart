@@ -1025,6 +1025,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           );
           setState(() => _document = _document.copyWith(deck: deck));
         },
+        onClose: () => _selectRoute(_DesktopRoute.home),
       ),
       _DesktopRoute.learn => LearnSessionPage(
         deck: _document.deck,
