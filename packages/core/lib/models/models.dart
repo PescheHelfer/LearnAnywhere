@@ -414,12 +414,17 @@ final class LearningUnit {
   /// Category id this unit belongs to.
   final int categoryId;
 
-  /// Stored values keyed by field name.
-  final Map<String, FieldValue> fields;
+  /// Stored values keyed by [FieldDefinition.id].
+  ///
+  /// Keying by the stable field id (not the field name) is what lets a field be
+  /// renamed or reordered without touching stored unit data. In `.vok` files
+  /// these ids are serialized as JSON string keys; the field's display name
+  /// lives only in the embedded mask.
+  final Map<int, FieldValue> fields;
 
-  /// Returns the value for [fieldName], or an empty value when absent.
-  FieldValue valueForField(String fieldName) {
-    return fields[fieldName] ?? FieldValue.empty;
+  /// Returns the value for the field with [fieldId], or empty when absent.
+  FieldValue valueForFieldId(int fieldId) {
+    return fields[fieldId] ?? FieldValue.empty;
   }
 }
 

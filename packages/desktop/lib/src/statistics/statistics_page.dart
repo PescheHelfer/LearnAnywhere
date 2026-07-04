@@ -834,7 +834,7 @@ String _fieldPreview(
   if (fields.isEmpty) {
     return '';
   }
-  return _truncate(unit.valueForField(fields.first.name).plainText);
+  return _truncate(unit.valueForFieldId(fields.first.id).plainText);
 }
 
 /// Builds a "field name: value" listing of all named (non-hidden) fields.
@@ -842,7 +842,7 @@ String _fieldsTooltip(LearningUnit unit, CategoryDefinition category) {
   final List<String> lines = <String>[
     for (final FieldDefinition field in category.fields)
       if (!field.isHidden)
-        '${field.name}: ${unit.valueForField(field.name).plainText}',
+        '${field.name}: ${unit.valueForFieldId(field.id).plainText}',
   ];
   return lines.join('\n');
 }

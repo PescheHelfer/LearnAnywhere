@@ -163,11 +163,12 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
       return;
     }
     final List<CategoryDefinition> categories = widget.mask.categories.toList();
-    final int nextId = _nextCategoryId(categories);
+    // The default display name tracks 1-based POSITION (a human label), which
+    // is independent of the stable 0-based id assigned below.
     categories.add(
       CategoryDefinition(
-        id: nextId,
-        name: 'Category $nextId',
+        id: _nextCategoryId(categories),
+        name: 'Category ${categories.length + 1}',
         fields: const <FieldDefinition>[],
       ),
     );

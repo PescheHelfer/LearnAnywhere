@@ -34,6 +34,39 @@ void main() {
       );
     });
 
+    test('canonical format examples load and re-encode losslessly', () {
+      // These files under docs/format-examples/ are the format contract handed
+      // to the Converter. They must always re-encode byte-for-byte through the
+      // real serializers (regenerate via tool/generate_format_examples.dart).
+      final String infSource = File(
+        '../../docs/format-examples/example.inf',
+      ).readAsStringSync();
+      final String vokSource = File(
+        '../../docs/format-examples/example.vok',
+      ).readAsStringSync();
+
+      final LearningMask mask = decodeMaskJson(infSource);
+      final LearningDeck deck = decodeDeckJson(vokSource);
+
+      // Identity survived the round trip exactly (maskId never recomputed).
+      expect(mask.maskId, 'm_new_example-french-0001');
+      expect(mask.revision, 3);
+      expect(deck.mask.maskId, mask.maskId);
+      // Field ids form one 0-based space across both categories.
+      expect(
+        deck.mask.categories.expand((CategoryDefinition c) => c.fields).map(
+          (FieldDefinition f) => f.id,
+        ),
+        <int>[0, 1, 2, 3, 4, 5],
+      );
+      // A unit in the second category references its own (mask-wide) field ids.
+      expect(deck.units.last.categoryId, 1);
+      expect(deck.units.last.valueForFieldId(4).plainText, 'aller');
+
+      expect(encodeMaskJson(mask), infSource);
+      expect(encodeDeckJson(deck), vokSource);
+    });
+
     test('validates strict schema rules and ignores unknown future fields', () {
       final Map<String, Object?> json = encodeMask(sampleMask());
       json['future'] = 'ignored';
@@ -122,9 +155,9 @@ void main() {
         deck: deck,
         unit: deck.units.first,
         direction: QueryDirection.direction1,
-        enteredValues: const <String, FieldValue>{
-          'FR1': FieldValue.plain('un lapin'),
-          'FR2': FieldValue.plain('le lapin'),
+        enteredValues: const <int, FieldValue>{
+          1: FieldValue.plain('un lapin'), // FR1
+          2: FieldValue.plain('le lapin'), // FR2
         },
       );
 
@@ -137,8 +170,8 @@ void main() {
         deck: deck,
         unit: deck.units[1],
         direction: QueryDirection.direction1,
-        enteredValues: const <String, FieldValue>{
-          'FR1': FieldValue.plain('TRES IMPORTANT'),
+        enteredValues: const <int, FieldValue>{
+          1: FieldValue.plain('TRES IMPORTANT'), // FR1
         },
       );
 
@@ -151,16 +184,16 @@ void main() {
         deck: deck,
         unit: deck.units.first,
         direction: QueryDirection.direction1,
-        enteredValues: const <String, FieldValue>{
-          'FR1': FieldValue.plain('un lapin'),
+        enteredValues: const <int, FieldValue>{
+          1: FieldValue.plain('un lapin'), // FR1
         },
       );
       final AnswerEvaluation partialAllowed = evaluateAnswer(
         deck: deck,
         unit: deck.units.first,
         direction: QueryDirection.direction1,
-        enteredValues: const <String, FieldValue>{
-          'FR1': FieldValue.plain('un lapin'),
+        enteredValues: const <int, FieldValue>{
+          1: FieldValue.plain('un lapin'), // FR1
         },
         options: const AnswerEvaluationOptions(completeInputRequired: false),
       );
@@ -175,9 +208,9 @@ void main() {
         deck: deck,
         unit: deck.units.first,
         direction: QueryDirection.direction1,
-        enteredValues: const <String, FieldValue>{
-          'FR1': FieldValue.plain('un lapin'),
-          'FR2': FieldValue.plain('wrong'),
+        enteredValues: const <int, FieldValue>{
+          1: FieldValue.plain('un lapin'), // FR1
+          2: FieldValue.plain('wrong'), // FR2
         },
       );
 
@@ -520,13 +553,13 @@ void main() {
         units: <LearningUnit>[
           LearningUnit(
             categoryId: 1,
-            fields: <String, FieldValue>{'DE': value},
+            fields: <int, FieldValue>{0: value}, // DE
           ),
         ],
       );
 
       final LearningDeck restored = decodeDeckJson(encodeDeckJson(deck));
-      expect(restored.units.single.fields['DE'], value);
+      expect(restored.units.single.fields[0], value); // DE
     });
   });
 
@@ -736,26 +769,26 @@ LearningDeck sampleDeck() {
     units: <LearningUnit>[
       const LearningUnit(
         categoryId: 1,
-        fields: <String, FieldValue>{
-          'DE': FieldValue.plain('ein Kaninchen'),
-          'FR1': FieldValue.plain('le lapin'),
-          'FR2': FieldValue.plain('un lapin'),
-          'Note': FieldValue.plain('animal'),
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('ein Kaninchen'), // DE
+          1: FieldValue.plain('le lapin'), // FR1
+          2: FieldValue.plain('un lapin'), // FR2
+          3: FieldValue.plain('animal'), // Note
         },
       ),
       LearningUnit(
         categoryId: 1,
-        fields: <String, FieldValue>{
-          'DE': const FieldValue.plain('wichtig'),
-          'FR1': FieldValue.rich(<RichTextRun>[
+        fields: <int, FieldValue>{
+          0: const FieldValue.plain('wichtig'), // DE
+          1: FieldValue.rich(<RichTextRun>[
             const RichTextRun(
               text: 'tr\u00E8s important',
               bold: true,
               color: '#CC0000',
             ),
-          ]),
-          'FR2': const FieldValue.plain(''),
-          'Note': const FieldValue.plain('adjective'),
+          ]), // FR1
+          2: const FieldValue.plain(''), // FR2
+          3: const FieldValue.plain('adjective'), // Note
         },
       ),
     ],

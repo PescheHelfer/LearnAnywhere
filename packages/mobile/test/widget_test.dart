@@ -116,10 +116,10 @@ MobileDeckDocument _document() {
     units: const <LearningUnit>[
       LearningUnit(
         categoryId: 1,
-        fields: <String, FieldValue>{
-          'Prompt field': PlainFieldValue('hello'),
-          'Answer field': PlainFieldValue('bonjour'),
-          'Remark field': PlainFieldValue('use greeting'),
+        fields: <int, FieldValue>{
+          0: PlainFieldValue('hello'), // Prompt field
+          1: PlainFieldValue('bonjour'), // Answer field
+          2: PlainFieldValue('use greeting'), // Remark field
         },
       ),
     ],

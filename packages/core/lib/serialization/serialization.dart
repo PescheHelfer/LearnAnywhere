@@ -328,34 +328,44 @@ LearningUnit _decodeUnit(Object? value, LearningMask mask, String path) {
     );
   }
   final Map<String, Object?> fieldJson = _asMap(json['fields'], '$path.fields');
-  final Map<String, FieldValue> fields = <String, FieldValue>{};
+  // Unit field VALUES are keyed by FieldDefinition.id, serialized as JSON
+  // string keys (JSON object keys must be strings). Parse each back to its int
+  // id. The field's display name is not stored here — it lives in the mask.
+  final Map<int, FieldValue> fields = <int, FieldValue>{};
   for (final MapEntry<String, Object?> entry in fieldJson.entries) {
+    final int fieldId = int.tryParse(entry.key) ?? -1;
+    if (fieldId < 0) {
+      throw ValidationException(
+        'Unit field keys must be non-negative integer field ids.',
+        path: '$path.fields.${entry.key}',
+      );
+    }
     final FieldValue fieldValue = _decodeFieldValue(
       entry.value,
       '$path.fields.${entry.key}',
     );
-    final FieldDefinition? definition = category.fieldNamed(entry.key);
+    final FieldDefinition? definition = category.fieldById(fieldId);
     if (definition != null && fieldValue.plainText.length > definition.length) {
       throw ValidationException(
         'Field value exceeds declared length ${definition.length}.',
         path: '$path.fields.${entry.key}',
       );
     }
-    fields[entry.key] = fieldValue;
+    fields[fieldId] = fieldValue;
   }
   return LearningUnit(
     categoryId: categoryId,
-    fields: Map<String, FieldValue>.unmodifiable(fields),
+    fields: Map<int, FieldValue>.unmodifiable(fields),
   );
 }
 
 Map<String, Object?> _encodeUnit(LearningUnit unit) {
   return <String, Object?>{
     'categoryId': unit.categoryId,
-    'fields': unit.fields.map(
-      (String key, FieldValue value) =>
-          MapEntry<String, Object?>(key, _encodeFieldValue(value)),
-    ),
+    'fields': <String, Object?>{
+      for (final MapEntry<int, FieldValue> entry in unit.fields.entries)
+        entry.key.toString(): _encodeFieldValue(entry.value),
+    },
   };
 }
 

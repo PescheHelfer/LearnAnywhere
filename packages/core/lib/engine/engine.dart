@@ -213,7 +213,7 @@ AnswerEvaluation evaluateAnswer({
   required LearningDeck deck,
   required LearningUnit unit,
   required QueryDirection direction,
-  required Map<String, FieldValue> enteredValues,
+  required Map<int, FieldValue> enteredValues,
   AnswerEvaluationOptions options = const AnswerEvaluationOptions(),
 }) {
   final CategoryDefinition category = deck.categoryForUnit(unit);
@@ -487,7 +487,7 @@ List<SearchResult> searchDeck({
         continue;
       }
       final String text = normalizeText(
-        unit.valueForField(field.name).plainText,
+        unit.valueForFieldId(field.id).plainText,
         options,
       );
       if (text.contains(normalizedQuery)) {
@@ -563,22 +563,22 @@ Map<FieldDefinition, FieldValue> _fieldsForRole(
   final CategoryDefinition category = deck.categoryForUnit(unit);
   return <FieldDefinition, FieldValue>{
     for (final FieldDefinition field in category.fieldsForRole(direction, role))
-      field: unit.valueForField(field.name),
+      field: unit.valueForFieldId(field.id),
   };
 }
 
 FieldEvaluation _evaluatePositionalField(
   LearningUnit unit,
   FieldDefinition field,
-  Map<String, FieldValue> enteredValues,
+  Map<int, FieldValue> enteredValues,
   AnswerEvaluationOptions options,
 ) {
   final String expected = normalizeText(
-    unit.valueForField(field.name).plainText,
+    unit.valueForFieldId(field.id).plainText,
     options,
   );
   final String entered = normalizeText(
-    (enteredValues[field.name] ?? FieldValue.empty).plainText,
+    (enteredValues[field.id] ?? FieldValue.empty).plainText,
     options,
   );
   final bool checked = options.completeInputRequired || entered.isNotEmpty;
@@ -594,18 +594,18 @@ FieldEvaluation _evaluatePositionalField(
 List<FieldEvaluation> _evaluateEqualGroup(
   LearningUnit unit,
   List<FieldDefinition> fields,
-  Map<String, FieldValue> enteredValues,
+  Map<int, FieldValue> enteredValues,
   AnswerEvaluationOptions options,
 ) {
   final List<_GroupedAnswer> expectedAnswers = <_GroupedAnswer>[];
   final List<_GroupedAnswer> enteredAnswers = <_GroupedAnswer>[];
   for (final FieldDefinition field in fields) {
     final String expected = normalizeText(
-      unit.valueForField(field.name).plainText,
+      unit.valueForFieldId(field.id).plainText,
       options,
     );
     final String entered = normalizeText(
-      (enteredValues[field.name] ?? FieldValue.empty).plainText,
+      (enteredValues[field.id] ?? FieldValue.empty).plainText,
       options,
     );
     if (expected.isNotEmpty) {
@@ -628,11 +628,11 @@ List<FieldEvaluation> _evaluateEqualGroup(
         (FieldDefinition field) => FieldEvaluation(
           fieldName: field.name,
           expected: normalizeText(
-            unit.valueForField(field.name).plainText,
+            unit.valueForFieldId(field.id).plainText,
             options,
           ),
           entered: normalizeText(
-            (enteredValues[field.name] ?? FieldValue.empty).plainText,
+            (enteredValues[field.id] ?? FieldValue.empty).plainText,
             options,
           ),
           correct: groupCorrect,

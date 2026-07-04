@@ -90,11 +90,11 @@ LearningDeck sampleDeck() {
     units: <LearningUnit>[
       LearningUnit(
         categoryId: 1,
-        fields: <String, FieldValue>{'Question': FieldValue.plain('Q1')},
+        fields: <int, FieldValue>{0: FieldValue.plain('Q1')}, // Question
       ),
       LearningUnit(
         categoryId: 1,
-        fields: <String, FieldValue>{'Question': FieldValue.plain('Q2')},
+        fields: <int, FieldValue>{0: FieldValue.plain('Q2')}, // Question
       ),
     ],
   );

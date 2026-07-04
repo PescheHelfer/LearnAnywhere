@@ -19,7 +19,7 @@ void main() {
         units: const <LearningUnit>[
           LearningUnit(
             categoryId: 1,
-            fields: <String, FieldValue>{'Question': FieldValue.plain('Q')},
+            fields: <int, FieldValue>{0: FieldValue.plain('Q')}, // Question
           ),
         ],
       );
@@ -81,7 +81,7 @@ void main() {
       final LearningDeck incoming = LearningDeck(
         mask: sampleMask(),
         units: const <LearningUnit>[
-          LearningUnit(categoryId: 1, fields: <String, FieldValue>{}),
+          LearningUnit(categoryId: 1, fields: <int, FieldValue>{}),
         ],
       );
       await File(incomingPath).writeAsString(encodeDeckJson(incoming));
@@ -108,7 +108,7 @@ void main() {
         units: const <LearningUnit>[
           LearningUnit(
             categoryId: 1,
-            fields: <String, FieldValue>{'Question': FieldValue.plain('Q')},
+            fields: <int, FieldValue>{0: FieldValue.plain('Q')}, // Question
           ),
         ],
       );
@@ -157,7 +157,7 @@ void main() {
         units: const <LearningUnit>[
           LearningUnit(
             categoryId: 1,
-            fields: <String, FieldValue>{'Question': FieldValue.plain('Q')},
+            fields: <int, FieldValue>{0: FieldValue.plain('Q')}, // Question
           ),
         ],
       );

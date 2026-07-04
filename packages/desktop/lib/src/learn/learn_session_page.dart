@@ -90,9 +90,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
 
   final Random _random = Random(1);
   final FocusNode _rootFocusNode = FocusNode();
-  final Map<String, TextEditingController> _answerControllers =
-      <String, TextEditingController>{};
-  final Map<String, FocusNode> _answerFocusNodes = <String, FocusNode>{};
+  // Answer widgets are keyed by FieldDefinition.id (the same key unit values
+  // use), so renaming or reordering a field never mismatches a controller.
+  final Map<int, TextEditingController> _answerControllers =
+      <int, TextEditingController>{};
+  final Map<int, FocusNode> _answerFocusNodes = <int, FocusNode>{};
 
   // Prevents rapid-fire unit progression when Enter is held: set to true when
   // Enter triggers Check or Continue, cleared on the next key-up event.
@@ -110,7 +112,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
 
   List<SessionItem> _order = const <SessionItem>[];
   int _orderPosition = 0;
-  Map<String, String> _lastEntered = <String, String>{};
+  Map<int, String> _lastEntered = <int, String>{};
 
   SessionItem? _currentItem;
   AnswerEvaluation? _evaluation;
@@ -442,8 +444,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     for (int i = 0; i < fields.length; i++) {
       final FieldDefinition field = fields[i];
       final bool isLast = i == fields.length - 1;
-      _answerControllers[field.name] = TextEditingController();
-      _answerFocusNodes[field.name] = FocusNode(
+      _answerControllers[field.id] = TextEditingController();
+      _answerFocusNodes[field.id] = FocusNode(
         onKeyEvent: (FocusNode node, KeyEvent event) =>
             _handleAnswerFieldKey(node, event, isLast),
       );
@@ -517,8 +519,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     final LearningUnit unit = widget.deck.units[item.unitIndex - 1];
     // Capture the raw typed text so the result screen can show it back to the
     // user alongside the correct answer.
-    final Map<String, String> entered = <String, String>{
-      for (final MapEntry<String, TextEditingController> e
+    final Map<int, String> entered = <int, String>{
+      for (final MapEntry<int, TextEditingController> e
           in _answerControllers.entries)
         e.key: e.value.text,
     };
@@ -527,8 +529,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
             deck: widget.deck,
             unit: unit,
             direction: item.direction,
-            enteredValues: <String, FieldValue>{
-              for (final MapEntry<String, String> entry in entered.entries)
+            enteredValues: <int, FieldValue>{
+              for (final MapEntry<int, String> entry in entered.entries)
                 entry.key: FieldValue.plain(entry.value),
             },
             options: widget.options.evaluationOptions,
@@ -1005,9 +1007,9 @@ final class _SessionView extends StatelessWidget {
   final AnswerEvaluation? evaluation;
   final AttemptRating selectedRating;
   final List<MapEntry<AttemptRating, String>> ratingEntries;
-  final Map<String, TextEditingController> answerControllers;
-  final Map<String, FocusNode> answerFocusNodes;
-  final Map<String, String> enteredAnswers;
+  final Map<int, TextEditingController> answerControllers;
+  final Map<int, FocusNode> answerFocusNodes;
+  final Map<int, String> enteredAnswers;
   final int elapsedSeconds;
   final int sessionAttempts;
   final int sessionCorrect;
@@ -1159,7 +1161,7 @@ final class _SessionView extends StatelessWidget {
                             accentColor = rowColors.outline;
                             bgColor = rowColors.surfaceContainerHighest;
                             displayValue = FieldValue.plain(
-                              enteredAnswers[field.name] ?? '',
+                              enteredAnswers[field.id] ?? '',
                             );
                           } else {
                             accentColor = switch (role) {
@@ -1171,7 +1173,7 @@ final class _SessionView extends StatelessWidget {
                                 const Color.fromRGBO(200, 140, 0, 1),
                             };
                             bgColor = accentColor.withValues(alpha: bgOpacity);
-                            displayValue = unit.valueForField(field.name);
+                            displayValue = unit.valueForFieldId(field.id);
                           }
 
                           return _PracticeGridRow(
@@ -1182,9 +1184,9 @@ final class _SessionView extends StatelessWidget {
                             accentColor: accentColor,
                             evaluation: evaluation,
                             withInput: parameters.withInput,
-                            enteredText: enteredAnswers[field.name],
-                            controller: answerControllers[field.name],
-                            focusNode: answerFocusNodes[field.name],
+                            enteredText: enteredAnswers[field.id],
+                            controller: answerControllers[field.id],
+                            focusNode: answerFocusNodes[field.id],
                           );
                         },
                       ),

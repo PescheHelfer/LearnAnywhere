@@ -556,15 +556,13 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
     );
   }
 
-  void _updateCurrentUnitField(String fieldName, FieldValue value) {
+  void _updateCurrentUnitField(int fieldId, FieldValue value) {
     final LearningUnit unit = widget.deck.units[_currentIndex];
-    final Map<String, FieldValue> fields = Map<String, FieldValue>.from(
-      unit.fields,
-    );
-    fields[fieldName] = value;
+    final Map<int, FieldValue> fields = Map<int, FieldValue>.from(unit.fields);
+    fields[fieldId] = value;
     final LearningUnit updated = LearningUnit(
       categoryId: unit.categoryId,
-      fields: Map<String, FieldValue>.unmodifiable(fields),
+      fields: Map<int, FieldValue>.unmodifiable(fields),
     );
     final List<LearningUnit> units = widget.deck.units.toList();
     units[_currentIndex] = updated;
@@ -574,9 +572,9 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
   LearningUnit _newUnitFor(CategoryDefinition category) {
     return LearningUnit(
       categoryId: category.id,
-      fields: <String, FieldValue>{
+      fields: <int, FieldValue>{
         for (final FieldDefinition field in category.fields)
-          if (!field.isHidden) field.name: FieldValue.empty,
+          if (!field.isHidden) field.id: FieldValue.empty,
       },
     );
   }
@@ -647,7 +645,7 @@ final class _EditorBody extends StatefulWidget {
   final LearningDeck deck;
   final int currentIndex;
   final _ColorMemory colorMemory;
-  final void Function(String fieldName, FieldValue value) onFieldChanged;
+  final void Function(int fieldId, FieldValue value) onFieldChanged;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onJump;
@@ -768,7 +766,7 @@ final class _EditorBodyState extends State<_EditorBody> {
     int autoFocusIndex = 0;
     bool allFilled = true;
     for (int k = 0; k < fields.length; k++) {
-      if (unit.valueForField(fields[k].name).isBlank) {
+      if (unit.valueForFieldId(fields[k].id).isBlank) {
         autoFocusIndex = k;
         allFilled = false;
         break;
@@ -911,7 +909,7 @@ final class _EditorBodyState extends State<_EditorBody> {
                           'editor-field-${widget.currentIndex}-$i-${fields[i].name}',
                         ),
                         field: fields[i],
-                        value: unit.valueForField(fields[i].name),
+                        value: unit.valueForFieldId(fields[i].id),
                         colorMemory: widget.colorMemory,
                         autofocus: i == autoFocusIndex,
                         moveToEnd: allFilled && i == autoFocusIndex,
@@ -919,7 +917,7 @@ final class _EditorBodyState extends State<_EditorBody> {
                             ? widget.onNext
                             : null,
                         onChanged: (FieldValue v) {
-                          widget.onFieldChanged(fields[i].name, v);
+                          widget.onFieldChanged(fields[i].id, v);
                         },
                         onFocusGained: _registerActive,
                       ),

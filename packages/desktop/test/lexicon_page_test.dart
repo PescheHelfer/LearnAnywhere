@@ -94,16 +94,16 @@ LearningDeck sampleDeck() {
     units: <LearningUnit>[
       LearningUnit(
         categoryId: 1,
-        fields: <String, FieldValue>{
-          'Question': FieldValue.plain('hello'),
-          'Answer': FieldValue.plain('bonjour'),
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('hello'), // Question
+          1: FieldValue.plain('bonjour'), // Answer
         },
       ),
       LearningUnit(
         categoryId: 1,
-        fields: <String, FieldValue>{
-          'Question': FieldValue.plain('bye'),
-          'Answer': FieldValue.plain('au revoir'),
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('bye'), // Question
+          1: FieldValue.plain('au revoir'), // Answer
         },
       ),
     ],
