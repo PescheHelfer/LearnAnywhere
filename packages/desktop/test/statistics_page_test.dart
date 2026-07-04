@@ -8,6 +8,13 @@ void main() {
   testWidgets('statistics page summarizes buckets and exports selection', (
     WidgetTester tester,
   ) async {
+    // The practice list buttons sit below the default 600px test surface,
+    // so give it room to lay out without an off-screen hit-test failure.
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     List<int> savedSelection = <int>[];
     await tester.pumpWidget(
       MaterialApp(
@@ -29,6 +36,8 @@ void main() {
           onSaveSelectedUnits: (List<int> unitIndices) async {
             savedSelection = unitIndices;
           },
+          onSaveStatisticsAs: () async {},
+          onClose: () {},
         ),
       ),
     );
@@ -37,7 +46,10 @@ void main() {
     expect(find.text('Statistics'), findsOneWidget);
     expect(find.text('Keep practicing'), findsOneWidget);
     expect(find.text('Perfect'), findsWidgets);
-    expect(find.text('Not yet queried'), findsWidgets);
+    expect(find.text('Not yet practiced'), findsWidgets);
+
+    await tester.tap(find.text('Keep practicing'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Select visible'));
     await tester.pumpAndSettle();

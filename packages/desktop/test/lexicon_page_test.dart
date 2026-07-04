@@ -25,6 +25,7 @@ void main() {
             onLoadFoundDeck: (LearningDeck deck) {
               loadedDeck = deck;
             },
+            onClose: () {},
           ),
         ),
       ),
