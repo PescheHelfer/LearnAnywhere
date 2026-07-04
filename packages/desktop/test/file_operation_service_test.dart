@@ -179,6 +179,7 @@ void main() {
 
 LearningMask sampleMask({String name = 'Sample'}) {
   return LearningMask(
+    maskId: 'm_new_fileop-fixture',
     name: name,
     direction1Label: 'Direction 1',
     direction2Label: 'Direction 2',
@@ -188,6 +189,7 @@ LearningMask sampleMask({String name = 'Sample'}) {
         name: 'Default',
         fields: <FieldDefinition>[
           FieldDefinition(
+            id: 0,
             name: 'Question',
             length: 40,
             equalGroup: 0,

@@ -75,10 +75,7 @@ Map<String, Object?> encodeMask(LearningMask mask) {
   return <String, Object?>{
     'format': maskFormat,
     'version': currentFormatVersion,
-    'name': mask.name,
-    'direction1Label': mask.direction1Label,
-    'direction2Label': mask.direction2Label,
-    'categories': mask.categories.map(_encodeCategory).toList(growable: false),
+    ..._encodeMaskBody(mask),
   };
 }
 
@@ -147,6 +144,16 @@ LearningMask _decodeEmbeddedMask(Object? value, String path) {
 }
 
 LearningMask _decodeMaskBody(Map<String, Object?> json, String path) {
+  // Self-healing (see Step 3): app files may predate identity fields, so read
+  // maskId/revision tolerantly. A missing or blank maskId means this file was
+  // authored before identity existed (or hand-edited); mint a fresh app maskId
+  // rather than crash. A file's existing maskId is opaque and never recomputed.
+  final Object? rawMaskId = json['maskId'];
+  final String maskId = rawMaskId is String && rawMaskId.isNotEmpty
+      ? rawMaskId
+      : mintNewMaskId();
+  final Object? rawRevision = json['revision'];
+  final int revision = rawRevision is int && rawRevision >= 0 ? rawRevision : 0;
   final String name = _asString(json['name'], '$path.name');
   final String direction1Label = _asString(
     json['direction1Label'],
@@ -168,10 +175,17 @@ LearningMask _decodeMaskBody(Map<String, Object?> json, String path) {
   }
   final List<CategoryDefinition> categories = <CategoryDefinition>[];
   final Set<int> categoryIds = <int>{};
+  // Field ids are unique across the WHOLE mask (a single 0-based space), so
+  // fallback numbering for id-less legacy fields continues across categories in
+  // array order. [fieldIdBase] is the global ordinal of a category's first
+  // field.
+  final Set<int> fieldIds = <int>{};
+  var fieldIdBase = 0;
   for (var index = 0; index < categoryValues.length; index += 1) {
     final CategoryDefinition category = _decodeCategory(
       categoryValues[index],
       '$path.categories[$index]',
+      fieldIdBase,
     );
     if (!categoryIds.add(category.id)) {
       throw ValidationException(
@@ -179,9 +193,20 @@ LearningMask _decodeMaskBody(Map<String, Object?> json, String path) {
         path: '$path.categories[$index].id',
       );
     }
+    for (var fieldIndex = 0; fieldIndex < category.fields.length; fieldIndex++) {
+      if (!fieldIds.add(category.fields[fieldIndex].id)) {
+        throw ValidationException(
+          'Duplicate field id ${category.fields[fieldIndex].id} in mask.',
+          path: '$path.categories[$index].fields[$fieldIndex].id',
+        );
+      }
+    }
+    fieldIdBase += category.fields.length;
     categories.add(category);
   }
   return LearningMask(
+    maskId: maskId,
+    revision: revision,
     name: name,
     direction1Label: direction1Label,
     direction2Label: direction2Label,
@@ -191,6 +216,8 @@ LearningMask _decodeMaskBody(Map<String, Object?> json, String path) {
 
 Map<String, Object?> _encodeMaskBody(LearningMask mask) {
   return <String, Object?>{
+    'maskId': mask.maskId,
+    'revision': mask.revision,
     'name': mask.name,
     'direction1Label': mask.direction1Label,
     'direction2Label': mask.direction2Label,
@@ -198,12 +225,13 @@ Map<String, Object?> _encodeMaskBody(LearningMask mask) {
   };
 }
 
-CategoryDefinition _decodeCategory(Object? value, String path) {
+CategoryDefinition _decodeCategory(Object? value, String path, int fieldIdBase) {
   final Map<String, Object?> json = _asMap(value, path);
   final int id = _asInt(json['id'], '$path.id');
-  if (id <= 0) {
+  if (id < 0) {
+    // Category ids are 0-based (first category created gets 0).
     throw ValidationException(
-      'Category id must be positive.',
+      'Category id must be zero or greater.',
       path: '$path.id',
     );
   }
@@ -223,7 +251,13 @@ CategoryDefinition _decodeCategory(Object? value, String path) {
   }
   final List<FieldDefinition> fields = <FieldDefinition>[];
   for (var index = 0; index < fieldValues.length; index += 1) {
-    fields.add(_decodeField(fieldValues[index], '$path.fields[$index]'));
+    fields.add(
+      _decodeField(
+        fieldValues[index],
+        '$path.fields[$index]',
+        fieldIdBase + index,
+      ),
+    );
   }
   return CategoryDefinition(
     id: id,
@@ -240,8 +274,13 @@ Map<String, Object?> _encodeCategory(CategoryDefinition category) {
   };
 }
 
-FieldDefinition _decodeField(Object? value, String path) {
+FieldDefinition _decodeField(Object? value, String path, int fallbackId) {
   final Map<String, Object?> json = _asMap(value, path);
+  // Self-healing (see Step 3): read the field id tolerantly. A missing id means
+  // an older/hand-edited app file; fall back to the field's mask-wide array
+  // ordinal, which reproduces this app's 0-based assignment scheme.
+  final Object? rawId = json['id'];
+  final int id = rawId is int && rawId >= 0 ? rawId : fallbackId;
   final String name = _asString(json['name'], '$path.name');
   final int length = _asInt(json['length'], '$path.length');
   if (length < minFieldLength || length > maxFieldLength) {
@@ -258,6 +297,7 @@ FieldDefinition _decodeField(Object? value, String path) {
     );
   }
   return FieldDefinition(
+    id: id,
     name: name,
     length: length,
     equalGroup: equalGroup,
@@ -268,6 +308,7 @@ FieldDefinition _decodeField(Object? value, String path) {
 
 Map<String, Object?> _encodeField(FieldDefinition field) {
   return <String, Object?>{
+    'id': field.id,
     'name': field.name,
     'length': field.length,
     'equalGroup': field.equalGroup,

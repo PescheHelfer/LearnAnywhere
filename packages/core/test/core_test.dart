@@ -675,6 +675,7 @@ void main() {
 
 LearningMask sampleMask() {
   return const LearningMask(
+    maskId: 'm_new_sample-fixture',
     name: 'French 1',
     direction1Label: 'DE-FR',
     direction2Label: 'FR-DE',
@@ -684,6 +685,7 @@ LearningMask sampleMask() {
         name: 'Noun',
         fields: <FieldDefinition>[
           FieldDefinition(
+            id: 0,
             name: 'DE',
             length: 40,
             equalGroup: 0,
@@ -691,6 +693,7 @@ LearningMask sampleMask() {
             role2: FieldRole.answer,
           ),
           FieldDefinition(
+            id: 1,
             name: 'FR1',
             length: 40,
             equalGroup: 1,
@@ -698,6 +701,7 @@ LearningMask sampleMask() {
             role2: FieldRole.question,
           ),
           FieldDefinition(
+            id: 2,
             name: 'FR2',
             length: 40,
             equalGroup: 1,
@@ -705,6 +709,7 @@ LearningMask sampleMask() {
             role2: FieldRole.question,
           ),
           FieldDefinition(
+            id: 3,
             name: 'Note',
             length: 40,
             equalGroup: 0,
@@ -712,6 +717,7 @@ LearningMask sampleMask() {
             role2: FieldRole.remark,
           ),
           FieldDefinition(
+            id: 4,
             name: '',
             length: 10,
             equalGroup: 0,

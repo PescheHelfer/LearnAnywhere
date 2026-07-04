@@ -76,6 +76,7 @@ bool _hasAnyRichText(WidgetTester tester, List<String> values) {
 MobileDeckDocument _document() {
   final LearningDeck deck = LearningDeck(
     mask: const LearningMask(
+      maskId: 'm_new_mobile-fixture',
       name: 'Mobile sample',
       direction1Label: 'Forward',
       direction2Label: 'Backward',
@@ -85,6 +86,7 @@ MobileDeckDocument _document() {
           name: 'Words',
           fields: <FieldDefinition>[
             FieldDefinition(
+              id: 0,
               name: 'Prompt field',
               length: 40,
               equalGroup: 0,
@@ -92,6 +94,7 @@ MobileDeckDocument _document() {
               role2: FieldRole.answer,
             ),
             FieldDefinition(
+              id: 1,
               name: 'Answer field',
               length: 40,
               equalGroup: 0,
@@ -99,6 +102,7 @@ MobileDeckDocument _document() {
               role2: FieldRole.question,
             ),
             FieldDefinition(
+              id: 2,
               name: 'Remark field',
               length: 40,
               equalGroup: 0,

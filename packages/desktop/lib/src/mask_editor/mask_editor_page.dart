@@ -145,6 +145,11 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
   void _replaceCategories(List<CategoryDefinition> categories) {
     _emitMask(
       LearningMask(
+        // Preserve the mask's identity: editing schema never mints a new
+        // maskId (a fork is an explicit action) and never changes the revision
+        // here (the revision is bumped when the .inf is saved).
+        maskId: widget.mask.maskId,
+        revision: widget.mask.revision,
         name: widget.mask.name,
         direction1Label: widget.mask.direction1Label,
         direction2Label: widget.mask.direction2Label,
@@ -206,7 +211,8 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
     }
     final List<FieldDefinition> fields = category.fields.toList()
       ..add(
-        const FieldDefinition(
+        FieldDefinition(
+          id: _nextFieldId(widget.mask),
           name: '',
           length: 20,
           equalGroup: 0,
@@ -247,13 +253,30 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
   }
 
   int _nextCategoryId(List<CategoryDefinition> categories) {
+    // 0-based, never recycled: the next id is `max existing + 1`, or 0 when the
+    // mask has no categories. Deleting a category does not renumber the rest.
     if (categories.isEmpty) {
-      return 1;
+      return 0;
     }
     return categories
             .map((CategoryDefinition category) => category.id)
             .reduce((int left, int right) => left > right ? left : right) +
         1;
+  }
+
+  int _nextFieldId(LearningMask mask) {
+    // Field ids are unique across the WHOLE mask (see [FieldDefinition.id]), so
+    // scan every category. 0-based, never recycled: `max existing + 1`, or 0
+    // when the mask has no fields yet.
+    var maxId = -1;
+    for (final CategoryDefinition category in mask.categories) {
+      for (final FieldDefinition field in category.fields) {
+        if (field.id > maxId) {
+          maxId = field.id;
+        }
+      }
+    }
+    return maxId + 1;
   }
 }
 
@@ -289,6 +312,8 @@ final class _MaskHeader extends StatelessWidget {
             onChanged: (String value) {
               onChanged(
                 LearningMask(
+                  maskId: mask.maskId,
+                  revision: mask.revision,
                   name: value,
                   direction1Label: mask.direction1Label,
                   direction2Label: mask.direction2Label,
@@ -311,6 +336,8 @@ final class _MaskHeader extends StatelessWidget {
             onChanged: (String value) {
               onChanged(
                 LearningMask(
+                  maskId: mask.maskId,
+                  revision: mask.revision,
                   name: mask.name,
                   direction1Label: value,
                   direction2Label: mask.direction2Label,
@@ -333,6 +360,8 @@ final class _MaskHeader extends StatelessWidget {
             onChanged: (String value) {
               onChanged(
                 LearningMask(
+                  maskId: mask.maskId,
+                  revision: mask.revision,
                   name: mask.name,
                   direction1Label: mask.direction1Label,
                   direction2Label: value,
@@ -768,6 +797,8 @@ FieldDefinition _copyField(
   FieldRole? role2,
 }) {
   return FieldDefinition(
+    // The id is stable: renaming/retyping a field never changes it.
+    id: field.id,
     name: name ?? field.name,
     length: length ?? field.length,
     equalGroup: equalGroup ?? field.equalGroup,

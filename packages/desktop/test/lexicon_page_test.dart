@@ -62,6 +62,7 @@ void main() {
 LearningDeck sampleDeck() {
   return const LearningDeck(
     mask: LearningMask(
+      maskId: 'm_new_lexicon-fixture',
       name: 'Sample',
       direction1Label: 'Direction 1',
       direction2Label: 'Direction 2',
@@ -71,6 +72,7 @@ LearningDeck sampleDeck() {
           name: 'Default',
           fields: <FieldDefinition>[
             FieldDefinition(
+              id: 0,
               name: 'Question',
               length: 40,
               equalGroup: 0,
@@ -78,6 +80,7 @@ LearningDeck sampleDeck() {
               role2: FieldRole.answer,
             ),
             FieldDefinition(
+              id: 1,
               name: 'Answer',
               length: 40,
               equalGroup: 0,

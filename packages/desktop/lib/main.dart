@@ -1651,16 +1651,20 @@ String _ensureExtension(String path, String extension) {
 }
 
 LearningMask _defaultMask() {
-  return const LearningMask(
+  // A mask created in this app mints a fresh app maskId (see [mintNewMaskId]).
+  // Category id 0 and field ids 0..2 follow the 0-based, array-order scheme.
+  return LearningMask(
+    maskId: mintNewMaskId(),
     name: 'Untitled mask',
     direction1Label: 'Direction 1',
     direction2Label: 'Direction 2',
-    categories: <CategoryDefinition>[
+    categories: const <CategoryDefinition>[
       CategoryDefinition(
-        id: 1,
+        id: 0,
         name: 'Category 1',
         fields: <FieldDefinition>[
           FieldDefinition(
+            id: 0,
             name: 'Question',
             length: 40,
             equalGroup: 0,
@@ -1668,6 +1672,7 @@ LearningMask _defaultMask() {
             role2: FieldRole.answer,
           ),
           FieldDefinition(
+            id: 1,
             name: 'Answer',
             length: 40,
             equalGroup: 0,
@@ -1675,6 +1680,7 @@ LearningMask _defaultMask() {
             role2: FieldRole.question,
           ),
           FieldDefinition(
+            id: 2,
             name: 'Remark',
             length: 40,
             equalGroup: 0,

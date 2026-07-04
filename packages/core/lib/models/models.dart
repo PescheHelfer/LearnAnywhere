@@ -1,8 +1,48 @@
 /// Domain models for masks, decks, learning units, rich text values, and stats.
 library;
 
+import 'dart:math';
+
 /// Stable package identifier used by setup smoke tests.
 const String corePackageName = 'learn_anywhere_core';
+
+/// Prefix for mask IDs minted by THIS app for masks created here.
+///
+/// See [mintNewMaskId]. The Converter mints IDs with [legacyMaskIdPrefix]; this
+/// app must never produce that prefix, so app-minted and converter-minted mask
+/// IDs can never collide.
+const String appMaskIdPrefix = 'm_new_';
+
+/// Prefix reserved for the Converter's legacy mask IDs.
+///
+/// This app only ever READS mask IDs that use this prefix (from files); it never
+/// mints one. Documented here so the convention is discoverable in one place.
+const String legacyMaskIdPrefix = 'm_legacy_';
+
+final Random _idRandom = Random.secure();
+
+/// Mints a fresh, opaque [LearningMask.maskId] for a mask CREATED IN THIS APP.
+///
+/// The result is [appMaskIdPrefix] followed by a random v4 UUID. A maskId is an
+/// opaque string: nothing in the app parses or recomputes it. Masks arriving
+/// from files keep whatever maskId the file already carries — see
+/// [LearningMask.maskId]. No hashing/crypto dependency is required; the UUID is
+/// generated from [Random.secure].
+String mintNewMaskId() => '$appMaskIdPrefix${_uuidV4()}';
+
+String _uuidV4() {
+  final List<int> bytes = List<int>.generate(
+    16,
+    (_) => _idRandom.nextInt(256),
+  );
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4.
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 1 (RFC 4122).
+  final String hex = bytes
+      .map((int b) => b.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+}
 
 /// The maximum number of categories allowed in a mask.
 const int maxCategoriesPerMask = 20;
@@ -203,12 +243,25 @@ final class RichFieldValue extends FieldValue {
 final class FieldDefinition {
   /// Creates a field definition.
   const FieldDefinition({
+    required this.id,
     required this.name,
     required this.length,
     required this.equalGroup,
     required this.role1,
     required this.role2,
   });
+
+  /// Stable field identifier, unique WITHIN its owning mask.
+  ///
+  /// Assigned once at creation as a 0-based integer (first field created in a
+  /// mask gets 0, the next 1, and so on) and NEVER reused, renumbered, or
+  /// changed. Deleting a field does not recycle its id; the next new field
+  /// takes `max existing + 1`. Reordering fields changes only their array
+  /// position, never their id. Unit field VALUES are keyed by this id, so a
+  /// field can be renamed or reordered without breaking stored data. These
+  /// integers only need to be unique within one mask; a single assigner (this
+  /// app, or the Converter for legacy files) guarantees that — no hashing.
+  final int id;
 
   /// The user-visible field label. Empty means hidden.
   final String name;
@@ -247,12 +300,23 @@ final class CategoryDefinition {
   });
 
   /// Stable category identifier used by learning units.
+  ///
+  /// Assigned once at creation as a 0-based integer (first category created in a
+  /// mask gets 0, the next 1, and so on) and NEVER reused, renumbered, or
+  /// changed. Deleting a category does not recycle its id; the next new category
+  /// takes `max existing + 1`. Reordering categories changes only their array
+  /// position (which defines display order), never their id. Units reference
+  /// categories by this id, so categories can be renamed or reordered without
+  /// breaking unit links. Unique within one mask.
   final int id;
 
   /// User-authored category name.
   final String name;
 
   /// Ordered fields declared by this category.
+  ///
+  /// Display order is defined by array position; there is no separate sort
+  /// field. Field ids are independent of position.
   final List<FieldDefinition> fields;
 
   /// Returns the fields with [role] in [direction].
@@ -279,17 +343,45 @@ final class CategoryDefinition {
     }
     return null;
   }
+
+  /// Finds a field by its stable [FieldDefinition.id].
+  FieldDefinition? fieldById(int id) {
+    for (final FieldDefinition field in fields) {
+      if (field.id == id) {
+        return field;
+      }
+    }
+    return null;
+  }
 }
 
 /// A user-authored mask defining schema and direction labels.
 final class LearningMask {
   /// Creates a learning mask.
   const LearningMask({
+    required this.maskId,
     required this.name,
     required this.direction1Label,
     required this.direction2Label,
     required this.categories,
+    this.revision = 0,
   });
+
+  /// Opaque unique identifier for this mask.
+  ///
+  /// This app only ever READS this string (for masks loaded from files) or
+  /// MINTS a fresh one for masks created here via [mintNewMaskId] (prefix
+  /// [appMaskIdPrefix]). It is NEVER recomputed from mask contents. The
+  /// Converter mints IDs with a different prefix ([legacyMaskIdPrefix]), so
+  /// app-minted and converter-minted IDs can never collide. Two `.inf`/`.vok`
+  /// files describe "the same mask" iff their maskIds are equal.
+  final String maskId;
+
+  /// Monotonic revision, bumped on each `.inf` save.
+  ///
+  /// Used to tell copies of the same mask (same [maskId]) apart and to record
+  /// which revision a deck's embedded mask cache is synced to.
+  final int revision;
 
   /// User-authored mask name.
   final String name;

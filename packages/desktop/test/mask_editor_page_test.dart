@@ -13,6 +13,7 @@ void main() {
       // the smaller category's index-keyed text controllers get reused for the
       // larger category's first rows, scrambling its displayed fields.
       const LearningMask mask = LearningMask(
+        maskId: 'm_new_mask-editor-fixture',
         name: 'Französisch',
         direction1Label: 'De -> Fr',
         direction2Label: 'Fr -> De',
@@ -22,6 +23,7 @@ void main() {
             name: 'Einzeiler',
             fields: <FieldDefinition>[
               FieldDefinition(
+                id: 0,
                 name: 'Deutsch',
                 length: 60,
                 equalGroup: 0,
@@ -29,6 +31,7 @@ void main() {
                 role2: FieldRole.answer,
               ),
               FieldDefinition(
+                id: 1,
                 name: 'Franz',
                 length: 60,
                 equalGroup: 0,
@@ -42,6 +45,7 @@ void main() {
             name: 'Zweizeiler',
             fields: <FieldDefinition>[
               FieldDefinition(
+                id: 2,
                 name: 'Deutsch 1',
                 length: 60,
                 equalGroup: 1,
@@ -49,6 +53,7 @@ void main() {
                 role2: FieldRole.answer,
               ),
               FieldDefinition(
+                id: 3,
                 name: 'Deutsch 2',
                 length: 60,
                 equalGroup: 1,
@@ -56,6 +61,7 @@ void main() {
                 role2: FieldRole.answer,
               ),
               FieldDefinition(
+                id: 4,
                 name: 'Franz 1',
                 length: 60,
                 equalGroup: 2,
@@ -105,6 +111,7 @@ void main() {
     WidgetTester tester,
   ) async {
     const LearningMask mask = LearningMask(
+      maskId: 'm_new_mask-editor-empty-fixture',
       name: 'Französisch',
       direction1Label: 'De -> Fr',
       direction2Label: 'Fr -> De',
