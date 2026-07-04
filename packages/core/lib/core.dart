@@ -1,6 +1,7 @@
 /// Shared domain model, serialization, and learning engine for Learn Anywhere.
 library;
 
+export 'compatibility/mask_compatibility.dart';
 export 'engine/engine.dart';
 export 'i18n/i18n.dart';
 export 'models/models.dart';

@@ -154,6 +154,207 @@ void main() {
     });
   });
 
+  group('mask compatibility', () {
+    MaskCompatibilityResult check(LearningMask newMask) {
+      return checkMaskCompatibility(
+        oldMask: compatMask(),
+        newMask: newMask,
+        units: compatUnits(),
+      );
+    }
+
+    test('rename mask, direction labels, category and fields are compatible', () {
+      final LearningMask renamed = compatMask().copyWith(
+        name: 'Renamed',
+        direction1Label: 'X',
+        direction2Label: 'Y',
+        categories: <CategoryDefinition>[
+          const CategoryDefinition(
+            id: 0,
+            name: 'Renamed Noun',
+            fields: <FieldDefinition>[
+              // Same ids, different names/roles/equalGroup: all non-breaking.
+              FieldDefinition(
+                id: 0,
+                name: 'German word',
+                length: 40,
+                equalGroup: 3,
+                role1: FieldRole.answer,
+                role2: FieldRole.question,
+              ),
+              FieldDefinition(
+                id: 1,
+                name: 'French word',
+                length: 40,
+                equalGroup: 3,
+                role1: FieldRole.question,
+                role2: FieldRole.answer,
+              ),
+            ],
+          ),
+          compatVerbCategory(),
+        ],
+      );
+      expect(check(renamed).isCompatible, isTrue);
+    });
+
+    test('adding a category or field and increasing a length is compatible', () {
+      final CategoryDefinition noun = CategoryDefinition(
+        id: 0,
+        name: 'Noun',
+        fields: <FieldDefinition>[
+          // id 0 length increased 40 -> 80.
+          const FieldDefinition(
+            id: 0,
+            name: 'DE',
+            length: 80,
+            equalGroup: 0,
+            role1: FieldRole.question,
+            role2: FieldRole.answer,
+          ),
+          compatFrField(),
+          // New field id 9 added.
+          const FieldDefinition(
+            id: 9,
+            name: 'Extra',
+            length: 40,
+            equalGroup: 0,
+            role1: FieldRole.remark,
+            role2: FieldRole.remark,
+          ),
+        ],
+      );
+      final LearningMask expanded = compatMask().copyWith(
+        categories: <CategoryDefinition>[
+          noun,
+          compatVerbCategory(),
+          // New category id 5 added.
+          const CategoryDefinition(
+            id: 5,
+            name: 'Adjective',
+            fields: <FieldDefinition>[],
+          ),
+        ],
+      );
+      expect(check(expanded).isCompatible, isTrue);
+    });
+
+    test('reordering categories and fields is compatible', () {
+      final LearningMask reordered = compatMask().copyWith(
+        categories: <CategoryDefinition>[
+          // Verb before Noun; Noun's fields swapped. Ids unchanged.
+          compatVerbCategory(),
+          CategoryDefinition(
+            id: 0,
+            name: 'Noun',
+            fields: <FieldDefinition>[compatFrField(), compatDeField()],
+          ),
+        ],
+      );
+      expect(check(reordered).isCompatible, isTrue);
+    });
+
+    test('deleting a category referenced by a unit is breaking', () {
+      // Drop the Verb category (id 1); a unit references it.
+      final LearningMask dropped = compatMask().copyWith(
+        categories: <CategoryDefinition>[compatNounCategory()],
+      );
+      final MaskCompatibilityResult result = check(dropped);
+      expect(result.isCompatible, isFalse);
+      expect(result.reasons.single.kind, MaskBreakingKind.categoryDeleted);
+      expect(result.reasons.single.categoryId, 1);
+      expect(result.reasons.single.affectedUnits, 1);
+    });
+
+    test('deleting an empty (unreferenced) category is compatible', () {
+      // The Verb category is referenced, but add then delete an empty category.
+      final LearningMask withEmpty = compatMask().copyWith(
+        categories: <CategoryDefinition>[
+          compatNounCategory(),
+          compatVerbCategory(),
+          const CategoryDefinition(id: 7, name: 'Unused', fields: <FieldDefinition>[]),
+        ],
+      );
+      // Deleting id 7 (no units) from that mask is compatible.
+      final MaskCompatibilityResult result = checkMaskCompatibility(
+        oldMask: withEmpty,
+        newMask: compatMask(),
+        units: compatUnits(),
+      );
+      expect(result.isCompatible, isTrue);
+    });
+
+    test('deleting a field with stored data is breaking, blank is not', () {
+      // Remove FR field (id 1) from Noun; a unit stores "maison" there.
+      final LearningMask dropFr = compatMask().copyWith(
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 0,
+            name: 'Noun',
+            fields: <FieldDefinition>[compatDeField()],
+          ),
+          compatVerbCategory(),
+        ],
+      );
+      final MaskCompatibilityResult breaking = check(dropFr);
+      expect(breaking.isCompatible, isFalse);
+      expect(breaking.reasons.single.kind, MaskBreakingKind.fieldDeleted);
+      expect(breaking.reasons.single.fieldId, 1);
+
+      // Deleting a field that is blank in every unit is compatible.
+      final LearningMask dropBlank = compatMask().copyWith(
+        categories: <CategoryDefinition>[
+          compatNounCategory(),
+          const CategoryDefinition(
+            id: 1,
+            name: 'Verb',
+            // Drop the always-blank remark field id 3, keep infinitive id 2.
+            fields: <FieldDefinition>[
+              FieldDefinition(
+                id: 2,
+                name: 'Infinitive',
+                length: 40,
+                equalGroup: 0,
+                role1: FieldRole.question,
+                role2: FieldRole.answer,
+              ),
+            ],
+          ),
+        ],
+      );
+      expect(check(dropBlank).isCompatible, isTrue);
+    });
+
+    test('shrinking a field below stored data is breaking, above is not', () {
+      // "maison" is 6 chars. Shrink FR (id 1) to 5 -> breaking; to 6 -> ok.
+      LearningMask shrinkTo(int length) => compatMask().copyWith(
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 0,
+            name: 'Noun',
+            fields: <FieldDefinition>[
+              compatDeField(),
+              FieldDefinition(
+                id: 1,
+                name: 'FR',
+                length: length,
+                equalGroup: 0,
+                role1: FieldRole.answer,
+                role2: FieldRole.question,
+              ),
+            ],
+          ),
+          compatVerbCategory(),
+        ],
+      );
+      final MaskCompatibilityResult tooShort = check(shrinkTo(5));
+      expect(tooShort.isCompatible, isFalse);
+      expect(tooShort.reasons.single.kind, MaskBreakingKind.fieldLengthTooShort);
+      expect(tooShort.reasons.single.newLength, 5);
+      expect(check(shrinkTo(6)).isCompatible, isTrue);
+    });
+  });
+
   group('i18n', () {
     test('returns English and German framework-independent messages', () {
       expect(
@@ -771,6 +972,82 @@ void main() {
     });
   });
 }
+
+// --- Fixtures for the mask-compatibility tests ----------------------------
+
+FieldDefinition compatDeField() => const FieldDefinition(
+  id: 0,
+  name: 'DE',
+  length: 40,
+  equalGroup: 0,
+  role1: FieldRole.question,
+  role2: FieldRole.answer,
+);
+
+FieldDefinition compatFrField() => const FieldDefinition(
+  id: 1,
+  name: 'FR',
+  length: 40,
+  equalGroup: 0,
+  role1: FieldRole.answer,
+  role2: FieldRole.question,
+);
+
+CategoryDefinition compatNounCategory() => CategoryDefinition(
+  id: 0,
+  name: 'Noun',
+  fields: <FieldDefinition>[compatDeField(), compatFrField()],
+);
+
+CategoryDefinition compatVerbCategory() => const CategoryDefinition(
+  id: 1,
+  name: 'Verb',
+  fields: <FieldDefinition>[
+    FieldDefinition(
+      id: 2,
+      name: 'Infinitive',
+      length: 40,
+      equalGroup: 0,
+      role1: FieldRole.question,
+      role2: FieldRole.answer,
+    ),
+    // Field id 3 is always blank in the fixture units (used to prove that
+    // deleting an empty field is compatible).
+    FieldDefinition(
+      id: 3,
+      name: 'Remark',
+      length: 40,
+      equalGroup: 0,
+      role1: FieldRole.remark,
+      role2: FieldRole.remark,
+    ),
+  ],
+);
+
+LearningMask compatMask() => LearningMask(
+  maskId: 'm_new_compat-fixture',
+  name: 'Compat',
+  direction1Label: 'A',
+  direction2Label: 'B',
+  categories: <CategoryDefinition>[compatNounCategory(), compatVerbCategory()],
+);
+
+List<LearningUnit> compatUnits() => const <LearningUnit>[
+  LearningUnit(
+    categoryId: 0,
+    fields: <int, FieldValue>{
+      0: FieldValue.plain('Haus'),
+      1: FieldValue.plain('maison'), // 6 chars — drives the length tests
+    },
+  ),
+  LearningUnit(
+    categoryId: 1,
+    fields: <int, FieldValue>{
+      2: FieldValue.plain('gehen'),
+      // id 3 left blank on purpose
+    },
+  ),
+];
 
 LearningMask sampleMask() {
   return const LearningMask(
