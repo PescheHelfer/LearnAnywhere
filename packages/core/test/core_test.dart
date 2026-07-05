@@ -354,6 +354,47 @@ void main() {
       expect(check(shrinkTo(6)).isCompatible, isTrue);
     });
 
+    test('renaming a field (same id) is compatible and loses no data', () {
+      // New mask renames FR (id 1) to "French" and reorders the two fields.
+      final LearningMask renamed = compatMask().copyWith(
+        categories: <CategoryDefinition>[
+          const CategoryDefinition(
+            id: 0,
+            name: 'Noun',
+            fields: <FieldDefinition>[
+              FieldDefinition(
+                id: 1,
+                name: 'French',
+                length: 40,
+                equalGroup: 0,
+                role1: FieldRole.answer,
+                role2: FieldRole.question,
+              ),
+              FieldDefinition(
+                id: 0,
+                name: 'German',
+                length: 40,
+                equalGroup: 0,
+                role1: FieldRole.question,
+                role2: FieldRole.answer,
+              ),
+            ],
+          ),
+          compatVerbCategory(),
+        ],
+      );
+      expect(check(renamed).isCompatible, isTrue);
+      // Applying keeps every value on its id despite the rename + reorder.
+      final LearningDeck deck = LearningDeck(
+        mask: compatMask(),
+        units: compatUnits(),
+      );
+      final LearningDeck updated = applyMaskToDeck(deck, renamed);
+      final LearningUnit noun = updated.units.first;
+      expect(noun.valueForFieldId(0).plainText, 'Haus'); // German
+      expect(noun.valueForFieldId(1).plainText, 'maison'); // French (renamed)
+    });
+
     test('applyMaskToDeck prunes dropped categories/fields and truncates', () {
       final LearningDeck deck = LearningDeck(
         mask: compatMask(),

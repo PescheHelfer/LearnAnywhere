@@ -574,6 +574,7 @@ final class _CategoryTile extends StatelessWidget {
                   icon: const Icon(Icons.keyboard_arrow_down),
                 ),
                 IconButton(
+                  key: ValueKey<String>('category-delete-${category.id}'),
                   tooltip: messages.message(
                     LearnAnywhereMessage.maskEditorDeleteCategory,
                   ),

@@ -237,6 +237,60 @@ void main() {
       'Alpha',
     ]);
   });
+
+  testWidgets('deleting a category does not recycle its id on the next add', (
+    WidgetTester tester,
+  ) async {
+    const LearningMask mask = LearningMask(
+      maskId: 'm_new_id-reuse-fixture',
+      name: 'Ids',
+      direction1Label: 'A',
+      direction2Label: 'B',
+      categories: <CategoryDefinition>[
+        CategoryDefinition(id: 0, name: 'C0', fields: <FieldDefinition>[]),
+        CategoryDefinition(id: 1, name: 'C1', fields: <FieldDefinition>[]),
+        CategoryDefinition(id: 2, name: 'C2', fields: <FieldDefinition>[]),
+      ],
+    );
+    LearningMask emitted = mask;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates:
+            LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return MaskEditorPage(
+                mask: emitted,
+                onChanged: (LearningMask value) =>
+                    setState(() => emitted = value),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Delete the middle category (id 1).
+    await tester.tap(
+      find.byKey(const ValueKey<String>('category-delete-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(emitted.categories.map((CategoryDefinition c) => c.id), <int>[0, 2]);
+
+    // Adding a new category takes the next unused id (max + 1 = 3), never the
+    // freed id 1.
+    await tester.tap(
+      find.byKey(const ValueKey<String>('add-category-button')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      emitted.categories.map((CategoryDefinition c) => c.id),
+      <int>[0, 2, 3],
+    );
+  });
 }
 
 // Reads the text actually rendered in a field cell (its internal controller),
