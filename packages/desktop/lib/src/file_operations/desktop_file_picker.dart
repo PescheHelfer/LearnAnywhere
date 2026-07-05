@@ -51,6 +51,12 @@ final class DesktopFilePicker {
     return location?.path;
   }
 
+  /// Shows a native "Choose folder" dialog, returning the chosen absolute
+  /// directory path or null when the user cancels.
+  Future<String?> pickDirectory({String? initialDirectory}) async {
+    return fs.getDirectoryPath(initialDirectory: initialDirectory);
+  }
+
   /// Returns the folder the dialog should open in.
   ///
   /// Uses the folder of [currentPath] when a file is loaded, otherwise the

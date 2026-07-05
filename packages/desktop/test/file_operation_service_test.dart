@@ -298,6 +298,106 @@ void main() {
       expect(forced.units.single.valueForFieldId(0).plainText, 'six');
       await temp.delete(recursive: true);
     });
+
+    test('scans cross-directory copies and classifies each status', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_sync',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final Directory nested = Directory('${temp.path}${sep}sub');
+      await nested.create();
+
+      // Reference: field length 60, revision 3.
+      final LearningMask reference = _withFirstFieldLength(
+        sampleMask(),
+        60,
+      ).copyWith(revision: 3);
+
+      final String identicalPath = '${temp.path}${sep}identical.inf';
+      final String olderPath = '${nested.path}${sep}older.inf';
+      final String sameRevPath = '${temp.path}${sep}samerev.inf';
+      final String okDeckPath = '${nested.path}${sep}ok.vok';
+      final String breakDeckPath = '${temp.path}${sep}break.vok';
+      final String foreignPath = '${temp.path}${sep}foreign.inf';
+
+      await service.saveMask(reference, identicalPath);
+      await service.saveMask(
+        _withFirstFieldLength(sampleMask(), 40).copyWith(revision: 1),
+        olderPath,
+      );
+      await service.saveMask(
+        _withFirstFieldLength(sampleMask(), 40).copyWith(revision: 3),
+        sameRevPath,
+      );
+      await service.saveDeckSnapshot(
+        LearningDeck(
+          mask: _withFirstFieldLength(sampleMask(), 40).copyWith(revision: 1),
+          units: const <LearningUnit>[
+            LearningUnit(categoryId: 1, fields: <int, FieldValue>{0: FieldValue.plain('Q')}),
+          ],
+        ),
+        okDeckPath,
+      );
+      await service.saveDeckSnapshot(
+        LearningDeck(
+          mask: _withFirstFieldLength(sampleMask(), 80).copyWith(revision: 1),
+          units: <LearningUnit>[
+            LearningUnit(
+              categoryId: 1,
+              fields: <int, FieldValue>{0: FieldValue.plain('x' * 70)},
+            ),
+          ],
+        ),
+        breakDeckPath,
+      );
+      await service.saveMask(sampleMask().copyWith(maskId: 'm_new_other'), foreignPath);
+
+      final List<MaskSyncEntry> entries = await service.scanMaskCopies(
+        root: temp.path,
+        reference: reference,
+      );
+      final Map<String, MaskSyncStatus> byPath = <String, MaskSyncStatus>{
+        for (final MaskSyncEntry e in entries) e.path: e.status,
+      };
+
+      // The foreign-maskId file is not a copy and must not appear.
+      expect(byPath.containsKey(foreignPath), isFalse);
+      expect(byPath[identicalPath], MaskSyncStatus.upToDate);
+      expect(byPath[olderPath], MaskSyncStatus.willUpdate);
+      expect(byPath[sameRevPath], MaskSyncStatus.differs);
+      expect(byPath[okDeckPath], MaskSyncStatus.willUpdate);
+      expect(byPath[breakDeckPath], MaskSyncStatus.wouldBreak);
+
+      // Apply only the updatable (willUpdate) copies.
+      final List<String> updatable = entries
+          .where((MaskSyncEntry e) => e.isUpdatable)
+          .map((MaskSyncEntry e) => e.path)
+          .toList();
+      await service.applyMaskSync(reference: reference, paths: updatable);
+
+      // The older .inf now matches the reference exactly.
+      expect(
+        encodeMaskJson(await service.readMask(olderPath)),
+        encodeMaskJson(reference),
+      );
+      // The ok deck adopted the reference mask (length 60), units intact.
+      final LearningDeck syncedDeck = decodeDeckJson(
+        await File(okDeckPath).readAsString(),
+      );
+      expect(syncedDeck.mask.categories.single.fields.single.length, 60);
+      expect(syncedDeck.mask.revision, 3);
+      expect(syncedDeck.units.single.valueForFieldId(0).plainText, 'Q');
+      // The breaking deck and same-revision divergent copy were untouched.
+      expect(
+        decodeDeckJson(
+          await File(breakDeckPath).readAsString(),
+        ).mask.categories.single.fields.single.length,
+        80,
+      );
+      expect((await service.readMask(sameRevPath)).revision, 3);
+      await temp.delete(recursive: true);
+    });
   });
 }
 

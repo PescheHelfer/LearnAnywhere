@@ -255,6 +255,127 @@ final class DesktopFileService {
     }
   }
 
+  /// Recursively scans [root] for `.inf` and `.vok` files whose maskId equals
+  /// [reference]'s, classifying each against [reference] for tier-2 sync
+  /// (Step 7). Never merges: files that differ from [reference] at the same
+  /// revision are flagged [MaskSyncStatus.differs] to be warned about, and
+  /// decks that would lose data are flagged [MaskSyncStatus.wouldBreak].
+  Future<List<MaskSyncEntry>> scanMaskCopies({
+    required String root,
+    required LearningMask reference,
+  }) async {
+    final Directory directory = Directory(root);
+    final List<MaskSyncEntry> entries = <MaskSyncEntry>[];
+    if (!await directory.exists()) {
+      return entries;
+    }
+    final String referenceJson = encodeMaskJson(reference);
+    await for (final FileSystemEntity entity in directory.list(
+      recursive: true,
+      followLinks: false,
+    )) {
+      if (entity is! File) {
+        continue;
+      }
+      final bool isMask = _hasExtension(entity.path, 'inf');
+      final bool isDeck = _hasExtension(entity.path, 'vok');
+      if (!isMask && !isDeck) {
+        continue;
+      }
+      try {
+        final String content = await entity.readAsString();
+        if (isMask) {
+          final LearningMask mask = decodeMaskJson(content);
+          if (mask.maskId != reference.maskId) {
+            continue;
+          }
+          entries.add(
+            MaskSyncEntry(
+              path: entity.path,
+              isMask: true,
+              revision: mask.revision,
+              status: _classifyMaskCopy(mask, reference, referenceJson),
+              reasons: const <MaskBreakingReason>[],
+            ),
+          );
+        } else {
+          final LearningDeck deck = decodeDeckJson(content);
+          if (deck.mask.maskId != reference.maskId) {
+            continue;
+          }
+          final MaskCompatibilityResult compat = checkMaskCompatibility(
+            oldMask: deck.mask,
+            newMask: reference,
+            units: deck.units,
+          );
+          final MaskSyncStatus status;
+          if (!compat.isCompatible) {
+            status = MaskSyncStatus.wouldBreak;
+          } else if (encodeMaskJson(deck.mask) == referenceJson) {
+            status = MaskSyncStatus.upToDate;
+          } else {
+            status = MaskSyncStatus.willUpdate;
+          }
+          entries.add(
+            MaskSyncEntry(
+              path: entity.path,
+              isMask: false,
+              revision: deck.mask.revision,
+              status: status,
+              reasons: compat.reasons,
+            ),
+          );
+        }
+      } on Object {
+        continue;
+      }
+    }
+    entries.sort((MaskSyncEntry a, MaskSyncEntry b) => a.path.compareTo(b.path));
+    return entries;
+  }
+
+  /// Overwrites each `.inf` in [paths] with [reference] and rewrites each
+  /// `.vok`'s embedded cache via [applyMaskToDeck]. The caller passes only the
+  /// paths the user selected (never breaking ones). Files that fail to decode
+  /// are skipped.
+  Future<void> applyMaskSync({
+    required LearningMask reference,
+    required Iterable<String> paths,
+  }) async {
+    for (final String path in paths) {
+      try {
+        if (_hasExtension(path, 'inf')) {
+          await File(path).writeAsString(encodeMaskJson(reference));
+        } else if (_hasExtension(path, 'vok')) {
+          final LearningDeck deck = decodeDeckJson(
+            await File(path).readAsString(),
+          );
+          await File(
+            path,
+          ).writeAsString(encodeDeckJson(applyMaskToDeck(deck, reference)));
+        }
+      } on Object {
+        continue;
+      }
+    }
+  }
+
+  MaskSyncStatus _classifyMaskCopy(
+    LearningMask copy,
+    LearningMask reference,
+    String referenceJson,
+  ) {
+    if (encodeMaskJson(copy) == referenceJson) {
+      return MaskSyncStatus.upToDate;
+    }
+    // Same revision but different content is an unexpected divergence: warn,
+    // never silently overwrite.
+    if (copy.revision == reference.revision) {
+      return MaskSyncStatus.differs;
+    }
+    return MaskSyncStatus.willUpdate;
+  }
+
   bool _hasExtension(String path, String extension) {
     return path.toLowerCase().endsWith('.${extension.toLowerCase()}');
   }
@@ -371,6 +492,52 @@ final class DesktopFileService {
     final int separator = path.lastIndexOf(Platform.pathSeparator);
     return separator < 0 ? path : path.substring(separator + 1);
   }
+}
+
+/// The status of one `.inf`/`.vok` copy found during a tier-2 sync scan.
+enum MaskSyncStatus {
+  /// Already identical to the reference mask; nothing to do.
+  upToDate,
+
+  /// An older/compatible copy that will be brought up to the reference.
+  willUpdate,
+
+  /// A deck that would lose data if updated; excluded from sync.
+  wouldBreak,
+
+  /// A copy that differs from the reference at the SAME revision; warned about
+  /// and never auto-merged.
+  differs,
+}
+
+/// One `.inf` or `.vok` copy of a mask found during a cross-directory sync.
+final class MaskSyncEntry {
+  /// Creates a sync entry.
+  const MaskSyncEntry({
+    required this.path,
+    required this.isMask,
+    required this.revision,
+    required this.status,
+    required this.reasons,
+  });
+
+  /// Absolute path of the found file.
+  final String path;
+
+  /// Whether this is a standalone `.inf` (true) or a deck `.vok` (false).
+  final bool isMask;
+
+  /// The copy's current embedded revision.
+  final int revision;
+
+  /// How this copy compares to the reference mask.
+  final MaskSyncStatus status;
+
+  /// Breaking reasons when [status] is [MaskSyncStatus.wouldBreak].
+  final List<MaskBreakingReason> reasons;
+
+  /// Whether the sync may update this copy (only older/compatible copies).
+  bool get isUpdatable => status == MaskSyncStatus.willUpdate;
 }
 
 /// A same-directory deck that a mask edit would break, with its reasons.

@@ -839,6 +839,33 @@ enum LearnAnywhereMessage {
   /// Force action: apply the mask despite data loss.
   actionForceUpdate,
 
+  /// Edit-menu command: sync this mask to copies in other folders.
+  menuEditUpdateMaskCopies,
+
+  /// Title of the cross-directory mask-sync review dialog.
+  maskSyncTitle,
+
+  /// Sync status: already identical to the current mask.
+  maskSyncStatusUpToDate,
+
+  /// Sync status: an older/compatible copy that will be updated.
+  maskSyncStatusWillUpdate,
+
+  /// Sync status: a deck that would lose data (excluded).
+  maskSyncStatusWouldBreak,
+
+  /// Sync status: differs from the current mask at the same revision.
+  maskSyncStatusDiffers,
+
+  /// Button that applies the selected updates.
+  maskSyncApply,
+
+  /// Status shown when no copies of the mask were found under the folder.
+  maskSyncNoneFound,
+
+  /// Status shown after a sync run, with a `{count}` placeholder.
+  maskSyncDone,
+
   /// Cancel action.
   actionCancel,
 
@@ -1234,6 +1261,18 @@ final class LearnAnywhereCatalog {
           'force the update and lose the listed data.',
       LearnAnywhereMessage.actionForkMask: 'Save as new mask',
       LearnAnywhereMessage.actionForceUpdate: 'Force update (lose data)',
+      LearnAnywhereMessage.menuEditUpdateMaskCopies:
+          'U&pdate other copies of this mask...', // p
+
+      LearnAnywhereMessage.maskSyncTitle: 'Update other copies of this mask',
+      LearnAnywhereMessage.maskSyncStatusUpToDate: 'Up to date',
+      LearnAnywhereMessage.maskSyncStatusWillUpdate: 'Will update',
+      LearnAnywhereMessage.maskSyncStatusWouldBreak: 'Would break',
+      LearnAnywhereMessage.maskSyncStatusDiffers: 'Differs (same revision)',
+      LearnAnywhereMessage.maskSyncApply: 'Update selected',
+      LearnAnywhereMessage.maskSyncNoneFound:
+          'No other copies of this mask were found',
+      LearnAnywhereMessage.maskSyncDone: 'Synced {count} copy(ies)',
       LearnAnywhereMessage.actionCancel: 'Cancel',
       LearnAnywhereMessage.actionContinue: 'Continue',
       LearnAnywhereMessage.actionClear: 'Clear',
@@ -1594,6 +1633,19 @@ final class LearnAnywhereCatalog {
           'oder Aktualisierung erzwingen und die aufgeführten Daten verlieren.',
       LearnAnywhereMessage.actionForkMask: 'Als neue Maske speichern',
       LearnAnywhereMessage.actionForceUpdate: 'Erzwingen (Datenverlust)',
+      LearnAnywhereMessage.menuEditUpdateMaskCopies:
+          '&Andere Kopien dieser Maske aktualisieren...', // A
+
+      LearnAnywhereMessage.maskSyncTitle:
+          'Andere Kopien dieser Maske aktualisieren',
+      LearnAnywhereMessage.maskSyncStatusUpToDate: 'Aktuell',
+      LearnAnywhereMessage.maskSyncStatusWillUpdate: 'Wird aktualisiert',
+      LearnAnywhereMessage.maskSyncStatusWouldBreak: 'Würde beschädigen',
+      LearnAnywhereMessage.maskSyncStatusDiffers: 'Abweichend (gleiche Revision)',
+      LearnAnywhereMessage.maskSyncApply: 'Auswahl aktualisieren',
+      LearnAnywhereMessage.maskSyncNoneFound:
+          'Keine weiteren Kopien dieser Maske gefunden',
+      LearnAnywhereMessage.maskSyncDone: '{count} Kopie(n) synchronisiert',
       LearnAnywhereMessage.actionCancel: 'Abbruch',
       LearnAnywhereMessage.actionContinue: 'Weiter',
       LearnAnywhereMessage.actionClear: 'Löschen',

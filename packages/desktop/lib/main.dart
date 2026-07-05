@@ -19,6 +19,7 @@ import 'src/learn/learn_session_page.dart';
 import 'src/learn/query_options_page.dart';
 import 'src/lexicon/lexicon_page.dart';
 import 'src/mask_editor/mask_editor_page.dart';
+import 'src/mask_editor/mask_sync_dialog.dart';
 import 'src/preferences/desktop_prefs.dart';
 import 'src/statistics/statistics_page.dart';
 
@@ -775,6 +776,15 @@ final class _DesktopHomeState extends State<_DesktopHome> {
               builder: menuAcceleratorBuilder,
             ),
           ),
+          MenuItemButton(
+            onPressed: _updateMaskCopies,
+            child: MenuAcceleratorLabel(
+              messages.message(
+                LearnAnywhereMessage.menuEditUpdateMaskCopies,
+              ),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
         ],
         child: MenuAcceleratorDisplayLabel(
           messages.message(LearnAnywhereMessage.menuEdit),
@@ -1227,6 +1237,54 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         );
       },
     );
+  }
+
+  /// Tier-2 sync (Step 7): find every copy of the current mask under a chosen
+  /// folder and update the selected ones. The current in-memory mask is the
+  /// reference; copies that differ at the same revision, or decks that would
+  /// break, are shown but never auto-merged.
+  Future<void> _updateMaskCopies() async {
+    final LearningMask reference = _document.mask;
+    final String? defaultDir = _document.deckPath == null
+        ? _lastInfDir
+        : _filePicker.directoryOf(_document.deckPath!);
+    final String? root = await _filePicker.pickDirectory(
+      initialDirectory: defaultDir,
+    );
+    if (root == null) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      final List<MaskSyncEntry> entries = await _fileService.scanMaskCopies(
+        root: root,
+        reference: reference,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (entries.isEmpty) {
+        _setFileStatus(LearnAnywhereMessage.maskSyncNoneFound);
+        return;
+      }
+      final List<String>? selected = await MaskSyncDialog.show(
+        context,
+        entries,
+      );
+      if (selected == null || selected.isEmpty) {
+        return;
+      }
+      await _fileService.applyMaskSync(reference: reference, paths: selected);
+      // Keep the open deck in sync when it was one of the updated copies.
+      final String? deckPath = _document.deckPath;
+      if (deckPath != null && selected.contains(deckPath)) {
+        setState(() {
+          _document = _document.copyWith(
+            deck: applyMaskToDeck(_document.deck, reference),
+          );
+        });
+      }
+      _setFileStatus(LearnAnywhereMessage.maskSyncDone, count: selected.length);
+    });
   }
 
   void _clearMaskEditorState() {
