@@ -73,12 +73,14 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
                 onAdd: _addCategory,
                 onDelete: _deleteCategory,
                 onRename: _renameCategory,
+                onMove: _moveCategory,
               );
               final Widget fields = _FieldGrid(
                 category: selectedCategory,
                 onAddField: _addField,
                 onDeleteField: _deleteField,
                 onFieldChanged: _changeField,
+                onMoveField: _moveField,
               );
               if (compact) {
                 return Column(
@@ -199,6 +201,35 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
       fields: category.fields,
     );
     _replaceCategories(categories);
+  }
+
+  /// Moves the category at [index] by [delta] positions (±1), reordering only
+  /// the array. Ids never change, so unit→category links stay valid.
+  void _moveCategory(int index, int delta) {
+    final int target = index + delta;
+    if (target < 0 || target >= widget.mask.categories.length) {
+      return;
+    }
+    final List<CategoryDefinition> categories = widget.mask.categories.toList();
+    final CategoryDefinition moved = categories.removeAt(index);
+    categories.insert(target, moved);
+    setState(() => _selectedCategoryIndex = target);
+    _replaceCategories(categories);
+  }
+
+  /// Moves the field at [index] within the selected category by [delta] (±1).
+  /// Field ids are unchanged, so unit field values stay linked.
+  void _moveField(int index, int delta) {
+    final CategoryDefinition category =
+        widget.mask.categories[_selectedCategoryIndex];
+    final int target = index + delta;
+    if (target < 0 || target >= category.fields.length) {
+      return;
+    }
+    final List<FieldDefinition> fields = category.fields.toList();
+    final FieldDefinition moved = fields.removeAt(index);
+    fields.insert(target, moved);
+    _replaceSelectedCategory(category, fields);
   }
 
   void _addField() {
@@ -385,6 +416,7 @@ final class _CategoryList extends StatelessWidget {
     required this.onAdd,
     required this.onDelete,
     required this.onRename,
+    required this.onMove,
   });
 
   final LearningMask mask;
@@ -393,6 +425,7 @@ final class _CategoryList extends StatelessWidget {
   final VoidCallback onAdd;
   final ValueChanged<int> onDelete;
   final void Function(int index, String name) onRename;
+  final void Function(int index, int delta) onMove;
 
   @override
   Widget build(BuildContext context) {
@@ -434,9 +467,11 @@ final class _CategoryList extends StatelessWidget {
                 category: mask.categories[index],
                 selected: index == selectedIndex,
                 index: index,
+                count: mask.categories.length,
                 onSelected: onSelected,
                 onDelete: onDelete,
                 onRename: onRename,
+                onMove: onMove,
               ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
             Align(
@@ -468,17 +503,21 @@ final class _CategoryTile extends StatelessWidget {
     required this.category,
     required this.selected,
     required this.index,
+    required this.count,
     required this.onSelected,
     required this.onDelete,
     required this.onRename,
+    required this.onMove,
   });
 
   final CategoryDefinition category;
   final bool selected;
   final int index;
+  final int count;
   final ValueChanged<int> onSelected;
   final ValueChanged<int> onDelete;
   final void Function(int index, String name) onRename;
+  final void Function(int index, int delta) onMove;
 
   @override
   Widget build(BuildContext context) {
@@ -519,6 +558,22 @@ final class _CategoryTile extends StatelessWidget {
                   ),
                 ),
                 IconButton(
+                  key: ValueKey<String>('category-move-up-${category.id}'),
+                  tooltip: messages.message(
+                    LearnAnywhereMessage.maskEditorMoveUp,
+                  ),
+                  onPressed: index == 0 ? null : () => onMove(index, -1),
+                  icon: const Icon(Icons.keyboard_arrow_up),
+                ),
+                IconButton(
+                  key: ValueKey<String>('category-move-down-${category.id}'),
+                  tooltip: messages.message(
+                    LearnAnywhereMessage.maskEditorMoveDown,
+                  ),
+                  onPressed: index >= count - 1 ? null : () => onMove(index, 1),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                ),
+                IconButton(
                   tooltip: messages.message(
                     LearnAnywhereMessage.maskEditorDeleteCategory,
                   ),
@@ -540,12 +595,14 @@ final class _FieldGrid extends StatelessWidget {
     required this.onAddField,
     required this.onDeleteField,
     required this.onFieldChanged,
+    required this.onMoveField,
   });
 
   final CategoryDefinition? category;
   final VoidCallback onAddField;
   final ValueChanged<int> onDeleteField;
   final void Function(int index, FieldDefinition field) onFieldChanged;
+  final void Function(int index, int delta) onMoveField;
 
   @override
   Widget build(BuildContext context) {
@@ -628,6 +685,7 @@ final class _FieldGrid extends StatelessWidget {
                       messages,
                       category!.id,
                       index,
+                      fields.length,
                       fields[index],
                     ),
                 ],
@@ -662,6 +720,7 @@ final class _FieldGrid extends StatelessWidget {
     LearnAnywhereLocalizations messages,
     int categoryId,
     int index,
+    int fieldCount,
     FieldDefinition field,
   ) {
     // Row input keys embed the owning category's stable id so that selecting a
@@ -749,12 +808,35 @@ final class _FieldGrid extends StatelessWidget {
           ),
         ),
         DataCell(
-          IconButton(
-            tooltip: messages.message(
-              LearnAnywhereMessage.maskEditorDeleteField,
-            ),
-            onPressed: () => onDeleteField(index),
-            icon: const Icon(Icons.delete_outline),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              IconButton(
+                key: ValueKey<String>('field-move-up-$categoryId-${field.id}'),
+                tooltip: messages.message(LearnAnywhereMessage.maskEditorMoveUp),
+                onPressed: index == 0 ? null : () => onMoveField(index, -1),
+                icon: const Icon(Icons.keyboard_arrow_up),
+              ),
+              IconButton(
+                key: ValueKey<String>(
+                  'field-move-down-$categoryId-${field.id}',
+                ),
+                tooltip: messages.message(
+                  LearnAnywhereMessage.maskEditorMoveDown,
+                ),
+                onPressed: index >= fieldCount - 1
+                    ? null
+                    : () => onMoveField(index, 1),
+                icon: const Icon(Icons.keyboard_arrow_down),
+              ),
+              IconButton(
+                tooltip: messages.message(
+                  LearnAnywhereMessage.maskEditorDeleteField,
+                ),
+                onPressed: () => onDeleteField(index),
+                icon: const Icon(Icons.delete_outline),
+              ),
+            ],
           ),
         ),
       ],

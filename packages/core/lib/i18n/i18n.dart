@@ -758,6 +758,12 @@ enum LearnAnywhereMessage {
   /// Delete category action.
   maskEditorDeleteCategory,
 
+  /// Mask editor: move a category or field up one position.
+  maskEditorMoveUp,
+
+  /// Mask editor: move a category or field down one position.
+  maskEditorMoveDown,
+
   /// Category name field label.
   maskEditorCategoryName,
 
@@ -1226,6 +1232,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorCategories: 'Categories',
       LearnAnywhereMessage.maskEditorAddCategory: 'Add category',
       LearnAnywhereMessage.maskEditorDeleteCategory: 'Delete category',
+      LearnAnywhereMessage.maskEditorMoveUp: 'Move up',
+      LearnAnywhereMessage.maskEditorMoveDown: 'Move down',
       LearnAnywhereMessage.maskEditorCategoryName: 'Category name',
       LearnAnywhereMessage.maskEditorFields: 'Fields',
       LearnAnywhereMessage.maskEditorAddField: 'Add field',
@@ -1596,6 +1604,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorCategories: 'Kategorien',
       LearnAnywhereMessage.maskEditorAddCategory: 'Kategorie hinzufügen',
       LearnAnywhereMessage.maskEditorDeleteCategory: 'Kategorie löschen',
+      LearnAnywhereMessage.maskEditorMoveUp: 'Nach oben',
+      LearnAnywhereMessage.maskEditorMoveDown: 'Nach unten',
       LearnAnywhereMessage.maskEditorCategoryName: 'Kategoriename',
       LearnAnywhereMessage.maskEditorFields: 'Felder',
       LearnAnywhereMessage.maskEditorAddField: 'Feld hinzufügen',

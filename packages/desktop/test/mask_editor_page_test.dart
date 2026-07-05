@@ -150,6 +150,93 @@ void main() {
     await tester.pumpAndSettle();
     expect(closeCount, 2);
   });
+
+  testWidgets('reordering categories and fields swaps order, keeps ids', (
+    WidgetTester tester,
+  ) async {
+    const LearningMask mask = LearningMask(
+      maskId: 'm_new_reorder-fixture',
+      name: 'Reorder',
+      direction1Label: 'A',
+      direction2Label: 'B',
+      categories: <CategoryDefinition>[
+        CategoryDefinition(
+          id: 1,
+          name: 'First',
+          fields: <FieldDefinition>[
+            FieldDefinition(
+              id: 0,
+              name: 'Alpha',
+              length: 40,
+              equalGroup: 0,
+              role1: FieldRole.question,
+              role2: FieldRole.answer,
+            ),
+            FieldDefinition(
+              id: 1,
+              name: 'Beta',
+              length: 40,
+              equalGroup: 0,
+              role1: FieldRole.answer,
+              role2: FieldRole.question,
+            ),
+          ],
+        ),
+        CategoryDefinition(id: 2, name: 'Second', fields: <FieldDefinition>[]),
+      ],
+    );
+    LearningMask emitted = mask;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates:
+            LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: Scaffold(
+          // Feed edits back into the page like the app does, so the editor
+          // rebuilds against the reordered mask.
+          body: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return MaskEditorPage(
+                mask: emitted,
+                onChanged: (LearningMask value) =>
+                    setState(() => emitted = value),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Move the first category (id 1) down: order becomes [id 2, id 1].
+    await tester.tap(
+      find.byKey(const ValueKey<String>('category-move-down-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      emitted.categories.map((CategoryDefinition c) => c.id),
+      <int>[2, 1],
+    );
+
+    // Move field "Alpha" (id 0) down within its category: order [id 1, id 0].
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('field-move-down-1-0')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('field-move-down-1-0')),
+    );
+    await tester.pumpAndSettle();
+    final CategoryDefinition edited = emitted.categories.firstWhere(
+      (CategoryDefinition c) => c.id == 1,
+    );
+    expect(edited.fields.map((FieldDefinition f) => f.id), <int>[1, 0]);
+    // Names/ids preserved — only order changed.
+    expect(edited.fields.map((FieldDefinition f) => f.name), <String>[
+      'Beta',
+      'Alpha',
+    ]);
+  });
 }
 
 // Reads the text actually rendered in a field cell (its internal controller),
