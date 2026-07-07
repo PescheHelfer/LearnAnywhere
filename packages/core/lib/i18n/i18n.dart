@@ -190,14 +190,17 @@ enum LearnAnywhereMessage {
   /// About page version history heading.
   aboutVersionHistory,
 
-  /// About page oldest version history entry.
-  aboutVersionOldest,
+  /// About page version history entry for 0.1.0.
+  aboutVersion010,
 
-  /// About page previous version history entry.
-  aboutVersionPrevious,
+  /// About page version history entry for 0.2.0.
+  aboutVersion020,
 
-  /// About page current version history entry.
-  aboutVersionCurrent,
+  /// About page version history entry for 0.3.0.
+  aboutVersion030,
+
+  /// About page version history entry for 0.3.1.
+  aboutVersion031,
 
   /// Desktop bottom shortcut hint bar text.
   desktopHintBar,
@@ -994,14 +997,15 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutConversionCredit:
           'Modern conversion: SbitFire Software',
       LearnAnywhereMessage.aboutVersionHistory: 'Version history',
-      LearnAnywhereMessage.aboutVersionOldest:
+      LearnAnywhereMessage.aboutVersion010:
+          '0.1.0 – Phase 2 desktop foundation: file operations, editor, '
+          'learning, statistics, lexicon, and program info.',
+      LearnAnywhereMessage.aboutVersion020:
           '0.2.0 – Compact grid-based editor and practice screen.',
-      LearnAnywhereMessage.aboutVersionPrevious:
+      LearnAnywhereMessage.aboutVersion030:
           '0.3.0 – Statistics, mask editor, and menu accessibility improvements.',
-      LearnAnywhereMessage.aboutVersionCurrent:
-          '0.3.1 – Code audit fixes: mask-identity-aware merge/lexicon, editor '
-          'statistics preserved across insert/delete, window-close auto-save, '
-          'and menu/i18n cleanup.',
+      LearnAnywhereMessage.aboutVersion031:
+          '0.3.1 – Code audit fixes and clean-ups.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1352,14 +1356,15 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutConversionCredit:
           'Moderne Umsetzung: SbitFire Software',
       LearnAnywhereMessage.aboutVersionHistory: 'Versionsgeschichte',
-      LearnAnywhereMessage.aboutVersionOldest:
+      LearnAnywhereMessage.aboutVersion010:
+          '0.1.0 – Phase-2-Desktop-Grundlage: Dateioperationen, Editor, Lernen, '
+          'Statistik, Lexikon und Programminfo.',
+      LearnAnywhereMessage.aboutVersion020:
           '0.2.0 – Kompakter rasterbasierter Editor und Übungsbildschirm.',
-      LearnAnywhereMessage.aboutVersionPrevious:
+      LearnAnywhereMessage.aboutVersion030:
           '0.3.0 – Verbesserungen bei Statistik, Maskeneditor und Menü-Zugänglichkeit.',
-      LearnAnywhereMessage.aboutVersionCurrent:
-          '0.3.1 – Code-Audit-Korrekturen: Masken-Identität bei Hinzuladen/'
-          'Lexikon, Statistik bleibt beim Einfügen/Löschen im Editor erhalten, '
-          'automatisches Speichern beim Schließen, Menü-/i18n-Bereinigung.',
+      LearnAnywhereMessage.aboutVersion031:
+          '0.3.1 – Korrekturen und Bereinigungen im Rahmen des Code-Audits.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurück   F3 Weiter   F5 Suche   F6 Springen   F7 Löschen   F8 Einfügen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

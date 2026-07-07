@@ -92,22 +92,13 @@ final class AboutPage extends StatelessWidget {
                       style: textTheme.titleMedium,
                     ),
                     const SizedBox(height: LearnAnywhereTokens.gapSmall),
-                    _VersionHistoryItem(
-                      label: messages.message(
-                        LearnAnywhereMessage.aboutVersionCurrent,
-                      ),
-                    ),
-                    const SizedBox(height: LearnAnywhereTokens.gapSmall),
-                    _VersionHistoryItem(
-                      label: messages.message(
-                        LearnAnywhereMessage.aboutVersionPrevious,
-                      ),
-                    ),
-                    const SizedBox(height: LearnAnywhereTokens.gapSmall),
-                    _VersionHistoryItem(
-                      label: messages.message(
-                        LearnAnywhereMessage.aboutVersionOldest,
-                      ),
+                    _VersionHistoryList(
+                      labels: <String>[
+                        messages.message(LearnAnywhereMessage.aboutVersion031),
+                        messages.message(LearnAnywhereMessage.aboutVersion030),
+                        messages.message(LearnAnywhereMessage.aboutVersion020),
+                        messages.message(LearnAnywhereMessage.aboutVersion010),
+                      ],
                     ),
                     if (onClose != null) ...<Widget>[
                       const SizedBox(height: LearnAnywhereTokens.gapLarge),
@@ -162,6 +153,50 @@ final class _CreditPanel extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _VersionHistoryList extends StatefulWidget {
+  const _VersionHistoryList({required this.labels});
+
+  final List<String> labels;
+
+  @override
+  State<_VersionHistoryList> createState() => _VersionHistoryListState();
+}
+
+final class _VersionHistoryListState extends State<_VersionHistoryList> {
+  final ScrollController _controller = ScrollController();
+
+  /// Approximate viewport height for three version-history entries.
+  static const double _visibleHeight = 168;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: _visibleHeight,
+      child: Scrollbar(
+        controller: _controller,
+        thumbVisibility: true,
+        child: ListView.separated(
+          controller: _controller,
+          padding: const EdgeInsets.only(right: LearnAnywhereTokens.gapSmall),
+          itemCount: widget.labels.length,
+          separatorBuilder: (BuildContext context, int index) {
+            return const SizedBox(height: LearnAnywhereTokens.gapSmall);
+          },
+          itemBuilder: (BuildContext context, int index) {
+            return _VersionHistoryItem(label: widget.labels[index]);
+          },
         ),
       ),
     );
