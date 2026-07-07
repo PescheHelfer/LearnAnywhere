@@ -22,12 +22,18 @@ final class UnitEditorPage extends StatefulWidget {
   final LearningDeck deck;
 
   /// Called whenever the deck units change.
-  final ValueChanged<LearningDeck> onChanged;
+  ///
+  /// The `insertedAt` / `deletedAt` arguments carry the 1-based unit position
+  /// of a structural change so the host can remap per-unit statistics; both are
+  /// null for an in-place field edit or an append (the host keeps/pads stats).
+  final void Function(LearningDeck deck, {int? insertedAt, int? deletedAt})
+  onChanged;
 
-  /// Called when the user closes the editor.
+  /// Called when the user finishes editing (F10/Done), keeping changes.
   final VoidCallback onDone;
 
-  /// Called when the user cancels the editor.
+  /// Called when the user cancels the editor (Esc); the host confirms and
+  /// reverts to the snapshot taken when the editor opened.
   final VoidCallback onCancel;
 
   /// If non-null, the editor opens at this 0-based unit index on construction
@@ -351,6 +357,7 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
     }
     final List<LearningUnit> units = widget.deck.units.toList();
     units.add(_newUnitFor(category));
+    // Append: no existing unit index shifts, so the host keeps stats as-is.
     _replaceUnits(units);
     setState(() => _currentIndex = units.length - 1);
     widget.onCurrentIndexChanged?.call(_currentIndex);
@@ -365,9 +372,12 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
     if (category == null) {
       return;
     }
+    // 1-based position of the newly inserted unit (units.insert at 0-based
+    // _currentIndex puts it there, i.e. 1-based _currentIndex + 1).
+    final int insertedAt = _currentIndex + 1;
     final List<LearningUnit> units = widget.deck.units.toList();
     units.insert(_currentIndex, _newUnitFor(category));
-    _replaceUnits(units);
+    _replaceUnits(units, insertedAt: insertedAt);
     setState(() => _currentIndex = _currentIndex.clamp(0, units.length - 1));
     widget.onCurrentIndexChanged?.call(_currentIndex);
   }
@@ -434,9 +444,11 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
     if (confirmed != true) {
       return;
     }
+    // 1-based position of the unit being removed, captured before mutation.
+    final int deletedAt = _currentIndex + 1;
     final List<LearningUnit> units = widget.deck.units.toList()
       ..removeAt(_currentIndex);
-    _replaceUnits(units);
+    _replaceUnits(units, deletedAt: deletedAt);
     setState(() {
       if (units.isEmpty) {
         _currentIndex = 0;
@@ -579,12 +591,18 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
     );
   }
 
-  void _replaceUnits(List<LearningUnit> units) {
+  void _replaceUnits(
+    List<LearningUnit> units, {
+    int? insertedAt,
+    int? deletedAt,
+  }) {
     widget.onChanged(
       LearningDeck(
         mask: widget.deck.mask,
         units: List<LearningUnit>.unmodifiable(units),
       ),
+      insertedAt: insertedAt,
+      deletedAt: deletedAt,
     );
   }
 }

@@ -70,7 +70,7 @@ final class MobileHome extends StatefulWidget {
 enum _MobileSessionStage { setup, prompt, reveal, rating, completed }
 
 final class _MobileHomeState extends State<MobileHome> {
-  final Random _random = Random(7);
+  final Random _random = Random();
   final Set<SessionItem> _seenItems = <SessionItem>{};
   final SessionParameters _parameters = const SessionParameters(
     withInput: false,
@@ -80,7 +80,9 @@ final class _MobileHomeState extends State<MobileHome> {
   MobileDeckDocument? _document;
   _MobileSessionStage _stage = _MobileSessionStage.setup;
   SessionItem? _currentItem;
-  AttemptRating _selectedRating = AttemptRating.noCount;
+  // Think-only default is "Knew it" (like desktop): the one-tap fast path
+  // records a correct attempt unless the user picks otherwise.
+  AttemptRating _selectedRating = AttemptRating.correct;
   int _sessionAttempts = 0;
   int _sessionCorrect = 0;
   String? _status;
@@ -255,13 +257,7 @@ final class _MobileHomeState extends State<MobileHome> {
   }
 
   List<UnitStats> _normalizedStats(MobileDeckDocument document) {
-    final Map<int, UnitStats> byIndex = <int, UnitStats>{
-      for (final UnitStats stats in document.statistics) stats.index: stats,
-    };
-    return List<UnitStats>.generate(
-      document.deck.units.length,
-      (int index) => byIndex[index + 1] ?? UnitStats(index: index + 1),
-    );
+    return resizeUnitStats(document.statistics, document.deck.units.length);
   }
 
   void _selectNextItem() {
@@ -283,7 +279,7 @@ final class _MobileHomeState extends State<MobileHome> {
     }
     _seenItems.add(next);
     _currentItem = next;
-    _selectedRating = AttemptRating.noCount;
+    _selectedRating = AttemptRating.correct;
     _stage = _MobileSessionStage.prompt;
   }
 
@@ -291,7 +287,7 @@ final class _MobileHomeState extends State<MobileHome> {
     _seenItems.clear();
     _stage = _MobileSessionStage.setup;
     _currentItem = null;
-    _selectedRating = AttemptRating.noCount;
+    _selectedRating = AttemptRating.correct;
     _sessionAttempts = 0;
     _sessionCorrect = 0;
   }

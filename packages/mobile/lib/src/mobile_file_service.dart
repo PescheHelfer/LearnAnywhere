@@ -68,7 +68,9 @@ class MobileFileService {
     }
     await File(statisticsSidecarPath(deckPath)).writeAsString(
       encodeStatisticsJson(
-        StatisticsFile(deckRef: deckPath, perUnit: statistics),
+        // Store the deck's file name only (not the absolute device path), to
+        // match desktop and keep the .sta portable across platforms.
+        StatisticsFile(deckRef: _fileName(deckPath), perUnit: statistics),
       ),
     );
   }
@@ -96,16 +98,13 @@ class MobileFileService {
     final StatisticsFile statistics = decodeStatisticsJson(
       await sidecar.readAsString(),
     );
-    return _resizeStats(statistics.perUnit, deck);
+    return resizeUnitStats(statistics.perUnit, deck.units.length);
   }
 
-  List<UnitStats> _resizeStats(List<UnitStats> current, LearningDeck deck) {
-    final Map<int, UnitStats> byIndex = <int, UnitStats>{
-      for (final UnitStats stats in current) stats.index: stats,
-    };
-    return List<UnitStats>.generate(
-      deck.units.length,
-      (int index) => byIndex[index + 1] ?? UnitStats(index: index + 1),
-    );
+  String _fileName(String path) {
+    final int slash = path.lastIndexOf('/');
+    final int backslash = path.lastIndexOf(r'\');
+    final int separator = slash > backslash ? slash : backslash;
+    return separator < 0 ? path : path.substring(separator + 1);
   }
 }

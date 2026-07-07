@@ -20,7 +20,7 @@ void main() {
   });
 
   group('localizations', () {
-    testWidgets('resolves German shell messages', (WidgetTester tester) async {
+    testWidgets('resolves German messages', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           locale: Locale('de'),
@@ -32,7 +32,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Desktop-Shell bereit'), findsOneWidget);
+      expect(find.text('Frage'), findsOneWidget);
     });
   });
 
@@ -228,6 +228,10 @@ final class _LocalizationProbe extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(LearnAnywhereLocalizations.of(context).desktopShellReady);
+    return Text(
+      LearnAnywhereLocalizations.of(
+        context,
+      ).message(LearnAnywhereMessage.learnPrompt),
+    );
   }
 }

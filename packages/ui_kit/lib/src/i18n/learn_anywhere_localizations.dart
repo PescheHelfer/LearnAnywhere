@@ -40,13 +40,6 @@ final class LearnAnywhereLocalizations {
 
   /// Application title.
   String get appTitle => message(LearnAnywhereMessage.appTitle);
-
-  /// Desktop shell readiness text.
-  String get desktopShellReady =>
-      message(LearnAnywhereMessage.desktopShellReady);
-
-  /// Mobile shell readiness text.
-  String get mobileShellReady => message(LearnAnywhereMessage.mobileShellReady);
 }
 
 final class _LearnAnywhereLocalizationsDelegate

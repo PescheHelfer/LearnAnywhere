@@ -99,7 +99,7 @@ LearningDeck decodeDeck(Object? value) {
       _decodeUnit(
         unitValues[index],
         mask,
-        r'$.units[$index]',
+        '\$.units[$index]',
         legacyFieldKeys: legacyFieldKeys,
       ),
     );
@@ -129,7 +129,7 @@ StatisticsFile decodeStatistics(Object? value) {
   final List<Object?> unitValues = _asList(json['perUnit'], r'$.perUnit');
   final List<UnitStats> perUnit = <UnitStats>[];
   for (var index = 0; index < unitValues.length; index += 1) {
-    perUnit.add(_decodeUnitStats(unitValues[index], r'$.perUnit[$index]'));
+    perUnit.add(_decodeUnitStats(unitValues[index], '\$.perUnit[$index]'));
   }
   return StatisticsFile(
     deckRef: deckRef,

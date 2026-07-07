@@ -164,13 +164,18 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
     if (widget.mask.categories.length >= maxCategoriesPerMask) {
       return;
     }
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
     final List<CategoryDefinition> categories = widget.mask.categories.toList();
     // The default display name tracks 1-based POSITION (a human label), which
     // is independent of the stable 0-based id assigned below.
     categories.add(
       CategoryDefinition(
         id: _nextCategoryId(categories),
-        name: 'Category ${categories.length + 1}',
+        name: messages
+            .message(LearnAnywhereMessage.defaultCategoryName)
+            .replaceAll('{n}', '${categories.length + 1}'),
         fields: const <FieldDefinition>[],
       ),
     );

@@ -26,6 +26,9 @@ import 'src/statistics/statistics_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
+  // Intercept the window close (title-bar X) so statistics/settings can be
+  // auto-saved before the process exits; see `_DesktopHomeState.onWindowClose`.
+  await windowManager.setPreventClose(true);
   final SharedPreferences sharedPrefs = await SharedPreferences.getInstance();
   final DesktopPrefs prefs = DesktopPrefs(sharedPrefs);
 
@@ -174,7 +177,6 @@ enum _DesktopRoute {
   queryOptions,
   statistics,
   lexicon,
-  list,
   about,
 }
 
@@ -209,7 +211,7 @@ final class _DesktopHome extends StatefulWidget {
   State<_DesktopHome> createState() => _DesktopHomeState();
 }
 
-final class _DesktopHomeState extends State<_DesktopHome> {
+final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   final DesktopFileService _fileService = const DesktopFileService();
   final DesktopFilePicker _filePicker = const DesktopFilePicker();
   final ScrollController _menuScrollController = ScrollController();
@@ -221,7 +223,8 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     debugLabel: 'desktopContent',
   );
   _DesktopRoute _route = _DesktopRoute.home;
-  DesktopDocument _document = DesktopDocument.empty(_defaultMask());
+  // Seeded with English defaults; re-seeded from the active locale in initState.
+  DesktopDocument _document = DesktopDocument.empty(_defaultMask('en'));
   DesktopQueryOptions _queryOptions = const DesktopQueryOptions();
   SessionParameters _learnParameters = const SessionParameters();
   LearnAnywhereSettings _settings = const LearnAnywhereSettings();
@@ -246,6 +249,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   String? _lastFileStatus;
   int? _editorInitialIndex;
   int? _editorLastIndex;
+  // Document snapshot captured when the editor opens, so Cancel/Esc can revert
+  // to it after a confirmation (see [_cancelEditor]). Null when not editing.
+  DesktopDocument? _editorSnapshot;
   List<Widget>? _cachedMenuChildren;
   String? _cachedMenuLocale;
   _AppTheme? _cachedMenuTheme;
@@ -341,6 +347,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   @override
   void initState() {
     super.initState();
+    windowManager.addListener(this);
     HardwareKeyboard.instance.addHandler(_handleMenuAccelerator);
     _settingsPath = _fileService.settingsFilePath();
     _range = resetUnitRange(_document.deck.units.length);
@@ -350,12 +357,15 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     _lastVokDir = widget.prefs.lastDirVok;
     _lastStaDir = widget.prefs.lastDirSta;
     _lastInfDir = widget.prefs.lastDirInf;
-    // Apply persisted auto-load/auto-save statistics toggles (C11); both
-    // default OFF on first run.
-    _document = _document.copyWith(
-      autoLoadStatistics: widget.prefs.autoLoadStats,
-      autoSaveStatistics: widget.prefs.autoSaveStats,
-    );
+    // Re-seed the default deck's mask in the active UI language, and apply the
+    // persisted auto-load/auto-save statistics toggles (C11; both default OFF).
+    _document =
+        DesktopDocument.empty(
+          _defaultMask(widget.locale.languageCode),
+        ).copyWith(
+          autoLoadStatistics: widget.prefs.autoLoadStats,
+          autoSaveStatistics: widget.prefs.autoSaveStats,
+        );
     unawaited(_loadSettings());
   }
 
@@ -378,6 +388,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   @override
   void dispose() {
+    windowManager.removeListener(this);
     HardwareKeyboard.instance.removeHandler(_handleMenuAccelerator);
     _menuScrollController.dispose();
     _contentFocusScope.dispose();
@@ -385,6 +396,19 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     _statisticsMenuFocusNode.dispose();
     _lexiconMenuFocusNode.dispose();
     super.dispose();
+  }
+
+  /// Auto-saves statistics (with the overwrite prompt) and settings before the
+  /// window closes via the title-bar X, then destroys the window. Cancelling
+  /// the overwrite prompt aborts the close. `setPreventClose(true)` in `main`
+  /// is what routes the close through here (see §4.6 auto-save on app exit).
+  @override
+  Future<void> onWindowClose() async {
+    if (!await _confirmAndAutoSaveStats()) {
+      return;
+    }
+    await _saveSettings();
+    await windowManager.destroy();
   }
 
   /// Re-asserts keyboard focus into the main content area so the active page's
@@ -729,11 +753,11 @@ final class _DesktopHomeState extends State<_DesktopHome> {
           _commandItem(messages, LearnAnywhereMessage.fileSaveMask),
           _commandItem(messages, LearnAnywhereMessage.fileSaveMaskAs),
           const _MenuSeparator(),
-          // Load/Save/Save-as share the Statistics screen's handlers (C12);
-          // Clear stats stays on the Statistics screen only.
+          // Load/Save/Save-as/Clear share the Statistics screen's handlers (C12).
           _commandItem(messages, LearnAnywhereMessage.statisticsLoad),
           _commandItem(messages, LearnAnywhereMessage.statisticsSave),
           _commandItem(messages, LearnAnywhereMessage.fileSaveStatsAs),
+          _commandItem(messages, LearnAnywhereMessage.statisticsClear),
           const _MenuSeparator(),
           _commandItem(messages, LearnAnywhereMessage.fileExit),
         ],
@@ -989,9 +1013,51 @@ final class _DesktopHomeState extends State<_DesktopHome> {
 
   void _selectRoute(_DesktopRoute route) {
     setState(() {
+      // Snapshot the document when first entering the editor so Cancel can
+      // revert to it. Re-entering menu actions while already editing keep the
+      // original snapshot.
+      if (route == _DesktopRoute.editor && _route != _DesktopRoute.editor) {
+        _editorSnapshot = _document;
+      }
       _editorInitialIndex = null;
       _route = route;
     });
+  }
+
+  /// Finishes editing (F10/Done): keeps the changes and drops the snapshot.
+  void _finishEditor() {
+    _editorSnapshot = null;
+    _selectRoute(_DesktopRoute.home);
+  }
+
+  /// Cancels editing (Esc): if the deck changed since the editor opened, asks
+  /// to discard; on confirm, restores the snapshot (deck, statistics, and
+  /// range) before returning home.
+  Future<void> _cancelEditor() async {
+    final DesktopDocument? snapshot = _editorSnapshot;
+    final bool changed =
+        snapshot != null &&
+        encodeDeckJson(_document.deck) != encodeDeckJson(snapshot.deck);
+    if (changed) {
+      final bool discard = await _confirm(
+        LearnAnywhereMessage.confirmDiscardEdits,
+      );
+      if (!discard) {
+        return;
+      }
+      setState(() {
+        _document = snapshot;
+        _range = _clampRange(_range, _document.deck.units.length);
+        _learnParameters = _learnParameters.copyWith(
+          startIndex: _range.startUnit,
+          endIndex: _range.endUnit,
+        );
+      });
+    }
+    _editorSnapshot = null;
+    if (mounted) {
+      _selectRoute(_DesktopRoute.home);
+    }
   }
 
   /// Opens the Mask Editor on the `.inf` LINKED to the loaded deck (Step 4).
@@ -1208,7 +1274,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     for (final MaskBreakingReason reason in deck.reasons)
-                      Text('• ${reason.describe()}'),
+                      Text('• ${describeBreakingReason(messages, reason)}'),
                     const SizedBox(height: 8),
                   ],
                 ],
@@ -1301,6 +1367,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     );
     if (index != null && mounted) {
       setState(() {
+        if (_route != _DesktopRoute.editor) {
+          _editorSnapshot = _document;
+        }
         _editorInitialIndex = index;
         _route = _DesktopRoute.editor;
       });
@@ -1315,6 +1384,9 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     );
     if (index != null && mounted) {
       setState(() {
+        if (_route != _DesktopRoute.editor) {
+          _editorSnapshot = _document;
+        }
         _editorInitialIndex = index;
         _route = _DesktopRoute.editor;
       });
@@ -1325,7 +1397,7 @@ final class _DesktopHomeState extends State<_DesktopHome> {
     return switch (_route) {
       _DesktopRoute.home => _HomeScreen(
         document: _document,
-        lastDeckPath: widget.prefs.lastPathOpenDeck ?? _settings.lastDeckPath,
+        lastDeckPath: _settings.lastDeckPath,
         lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
         onOpenLastDeck: _openDeckPath,
       ),
@@ -1337,8 +1409,8 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         deck: _document.deck,
         initialIndex: _editorInitialIndex ?? _editorLastIndex,
         onChanged: _updateDeckFromEditor,
-        onDone: () => _selectRoute(_DesktopRoute.home),
-        onCancel: () => _selectRoute(_DesktopRoute.home),
+        onDone: _finishEditor,
+        onCancel: _cancelEditor,
         onCurrentIndexChanged: (int index) {
           _editorLastIndex = index;
         },
@@ -1430,16 +1502,30 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       _DesktopRoute.about => AboutPage(
         onClose: () => _selectRoute(_DesktopRoute.home),
       ),
-      _ => _RoutePlaceholder(route: _route),
     };
   }
 
-  void _updateDeckFromEditor(LearningDeck deck) {
+  void _updateDeckFromEditor(
+    LearningDeck deck, {
+    int? insertedAt,
+    int? deletedAt,
+  }) {
     final int previousCount = _document.deck.units.length;
     final int newCount = deck.units.length;
-    final List<UnitStats> statistics = newCount == previousCount
-        ? _document.statistics
-        : clearStatistics(deck);
+    // Keep per-unit statistics attached to their units across edits: an insert
+    // or delete shifts later indices; an append (or any other count change with
+    // no position) keeps existing indices and pads/truncates; a field edit
+    // leaves them untouched.
+    final List<UnitStats> statistics;
+    if (insertedAt != null) {
+      statistics = statsAfterInsert(_document.statistics, insertedAt, newCount);
+    } else if (deletedAt != null) {
+      statistics = statsAfterDelete(_document.statistics, deletedAt, newCount);
+    } else if (newCount != previousCount) {
+      statistics = resizeUnitStats(_document.statistics, newCount);
+    } else {
+      statistics = _document.statistics;
+    }
     setState(() {
       _document = _document.copyWith(deck: deck, statistics: statistics);
       _range = _clampRange(
@@ -1469,8 +1555,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
         await _saveDeck(saveAs: false);
       case LearnAnywhereMessage.fileSaveAs:
         await _saveDeck(saveAs: true);
-      case LearnAnywhereMessage.fileClearUnits:
-        await _clearUnits();
       case LearnAnywhereMessage.fileLoadMask:
         await _loadMask();
       case LearnAnywhereMessage.fileSaveMask:
@@ -1542,7 +1626,8 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileOpenDeckDone);
       _setLastDir('vok', path);
-      widget.prefs.setLastPathOpenDeck(path);
+      // The last-opened deck path is persisted by _saveSettings via
+      // _settings.lastDeckPath (single source of truth).
       unawaited(_saveSettings());
     });
   }
@@ -1601,24 +1686,6 @@ final class _DesktopHomeState extends State<_DesktopHome> {
       _setLastDir('vok', resolvedPath);
       unawaited(_saveSettings());
     });
-  }
-
-  Future<void> _clearUnits() async {
-    final bool confirmed = await _confirm(
-      LearnAnywhereMessage.confirmClearUnits,
-    );
-    if (!confirmed) {
-      return;
-    }
-    if (!await _confirmAndAutoSaveStats()) {
-      return;
-    }
-    setState(() {
-      _document = _fileService.clearUnits(_document);
-      _resetRangeForDeck();
-      _route = _DesktopRoute.fileOperations;
-    });
-    _setFileStatus(LearnAnywhereMessage.fileClearUnitsDone);
   }
 
   Future<void> _loadMask() async {
@@ -1802,6 +1869,25 @@ final class _DesktopHomeState extends State<_DesktopHome> {
   Future<void> _guardedFileOperation(Future<void> Function() operation) async {
     try {
       await operation();
+    } on FileOperationException catch (error) {
+      // Known file-operation failures carry a catalog id, resolved here so the
+      // message is shown in the active UI language.
+      if (!mounted) {
+        return;
+      }
+      final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+        context,
+      );
+      final String text = messages
+          .message(error.messageId)
+          .replaceAll('{detail}', error.detail ?? '');
+      setState(() {
+        _lastFileStatus = text;
+        _route = _DesktopRoute.fileOperations;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(text)));
     } on Object catch (error) {
       if (!mounted) {
         return;
@@ -1979,22 +2065,28 @@ String _ensureExtension(String path, String extension) {
       : '$path$normalizedExtension';
 }
 
-LearningMask _defaultMask() {
+LearningMask _defaultMask(String localeCode) {
   // A mask created in this app mints a fresh app maskId (see [mintNewMaskId]).
   // Category id 0 and field ids 0..2 follow the 0-based, array-order scheme.
+  // The seed names are user data, localized once from the active UI language.
+  String seed(LearnAnywhereMessage message) =>
+      LearnAnywhereCatalog.message(message, localeCode);
   return LearningMask(
     maskId: mintNewMaskId(),
-    name: 'Untitled mask',
-    direction1Label: 'Direction 1',
-    direction2Label: 'Direction 2',
-    categories: const <CategoryDefinition>[
+    name: seed(LearnAnywhereMessage.defaultMaskName),
+    direction1Label: seed(LearnAnywhereMessage.defaultDirection1Label),
+    direction2Label: seed(LearnAnywhereMessage.defaultDirection2Label),
+    categories: <CategoryDefinition>[
       CategoryDefinition(
         id: 0,
-        name: 'Category 1',
+        name: seed(LearnAnywhereMessage.defaultCategoryName).replaceAll(
+          '{n}',
+          '1',
+        ),
         fields: <FieldDefinition>[
           FieldDefinition(
             id: 0,
-            name: 'Question',
+            name: seed(LearnAnywhereMessage.defaultFieldQuestion),
             length: 40,
             equalGroup: 0,
             role1: FieldRole.question,
@@ -2002,7 +2094,7 @@ LearningMask _defaultMask() {
           ),
           FieldDefinition(
             id: 1,
-            name: 'Answer',
+            name: seed(LearnAnywhereMessage.defaultFieldAnswer),
             length: 40,
             equalGroup: 0,
             role1: FieldRole.answer,
@@ -2010,7 +2102,7 @@ LearningMask _defaultMask() {
           ),
           FieldDefinition(
             id: 2,
-            name: 'Remark',
+            name: seed(LearnAnywhereMessage.defaultFieldRemark),
             length: 40,
             equalGroup: 0,
             role1: FieldRole.remark,
@@ -2150,89 +2242,6 @@ final class _MenuSeparator extends StatelessWidget {
       ),
     );
   }
-}
-
-final class _RoutePlaceholder extends StatelessWidget {
-  const _RoutePlaceholder({required this.route});
-
-  final _DesktopRoute route;
-
-  @override
-  Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    final _RouteCopy copy = _copyFor(messages);
-    return ColoredBox(
-      color: Theme.of(context).colorScheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(copy.title, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: LearnAnywhereTokens.gapMedium),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 720),
-              child: Text(copy.body),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  _RouteCopy _copyFor(LearnAnywhereLocalizations messages) {
-    return switch (route) {
-      _DesktopRoute.home => _RouteCopy(
-        messages.message(LearnAnywhereMessage.desktopHomeTitle),
-        messages.message(LearnAnywhereMessage.desktopHomeBody),
-      ),
-      _DesktopRoute.fileOperations => _RouteCopy(
-        messages.message(LearnAnywhereMessage.routeFileOperationsTitle),
-        messages.message(LearnAnywhereMessage.routeFileOperationsBody),
-      ),
-      _DesktopRoute.editor => _RouteCopy(
-        messages.message(LearnAnywhereMessage.routeEditorTitle),
-        messages.message(LearnAnywhereMessage.routeEditorBody),
-      ),
-      _DesktopRoute.maskEditor => _RouteCopy(
-        messages.message(LearnAnywhereMessage.routeMaskEditorTitle),
-        messages.message(LearnAnywhereMessage.routeMaskEditorBody),
-      ),
-      _DesktopRoute.learn => _RouteCopy(
-        messages.message(LearnAnywhereMessage.routeLearnTitle),
-        messages.message(LearnAnywhereMessage.routeLearnBody),
-      ),
-      _DesktopRoute.queryOptions => _RouteCopy(
-        messages.message(LearnAnywhereMessage.routeQueryOptionsTitle),
-        messages.message(LearnAnywhereMessage.routeQueryOptionsBody),
-      ),
-      _DesktopRoute.statistics => _RouteCopy(
-        messages.message(LearnAnywhereMessage.routeStatisticsTitle),
-        messages.message(LearnAnywhereMessage.routeStatisticsBody),
-      ),
-      _DesktopRoute.lexicon => _RouteCopy(
-        messages.message(LearnAnywhereMessage.routeLexiconTitle),
-        messages.message(LearnAnywhereMessage.routeLexiconBody),
-      ),
-      _DesktopRoute.list => _RouteCopy(
-        messages.message(LearnAnywhereMessage.routeListTitle),
-        messages.message(LearnAnywhereMessage.routeListBody),
-      ),
-      _DesktopRoute.about => _RouteCopy(
-        messages.message(LearnAnywhereMessage.routeAboutTitle),
-        messages.message(LearnAnywhereMessage.routeAboutBody),
-      ),
-    };
-  }
-}
-
-final class _RouteCopy {
-  const _RouteCopy(this.title, this.body);
-
-  final String title;
-  final String body;
 }
 
 final class _FileOperationsStatus extends StatelessWidget {

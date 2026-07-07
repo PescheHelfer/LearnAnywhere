@@ -171,7 +171,11 @@ final class _LexiconPageState extends State<LexiconPage> {
                       messages.message(LearnAnywhereMessage.lexiconNoResults),
                     ),
                   )
-                : _ResultList(deck: widget.deck, results: _results),
+                : _ResultList(
+                    deck: widget.deck,
+                    results: _results,
+                    fileDecks: _fileDecks,
+                  ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
             Wrap(
               spacing: LearnAnywhereTokens.gapSmall,
@@ -301,6 +305,13 @@ final class _LexiconPageState extends State<LexiconPage> {
           ),
         ),
       );
+    } on _LexiconLoadException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(messages.message(error.messageId))),
+      );
     } on Object catch (error) {
       if (!mounted) {
         return;
@@ -311,6 +322,13 @@ final class _LexiconPageState extends State<LexiconPage> {
     }
   }
 
+  /// Builds an in-memory deck from the file-search hits.
+  ///
+  /// All hits must describe the SAME mask (equal [LearningMask.maskId]); the
+  /// first hit's mask is the reference. Each hit's unit is re-keyed onto the
+  /// reference mask via [applyMaskToDeck], but only when that is lossless (per
+  /// [checkMaskCompatibility]). A different maskId, or a lossy conversion, is
+  /// refused with a localized [_LexiconLoadException].
   LearningDeck _deckFromFileResults() {
     if (_results.isEmpty) {
       return LearningDeck(
@@ -325,7 +343,7 @@ final class _LexiconPageState extends State<LexiconPage> {
     if (firstDeck == null) {
       throw StateError('Missing source deck for search result.');
     }
-    final String maskJson = encodeMaskJson(firstDeck.mask);
+    final LearningMask reference = firstDeck.mask;
     final List<LearningUnit> units = <LearningUnit>[];
     for (final SearchResult result in _results) {
       final String? source = result.sourceFile;
@@ -335,25 +353,59 @@ final class _LexiconPageState extends State<LexiconPage> {
       if (sourceDeck == null) {
         throw StateError('Missing source deck for search result.');
       }
-      if (encodeMaskJson(sourceDeck.mask) != maskJson) {
-        throw StateError(
-          'Cannot load found units from decks with different masks.',
+      if (sourceDeck.mask.maskId != reference.maskId) {
+        throw const _LexiconLoadException(
+          LearnAnywhereMessage.lexiconLoadMaskMismatch,
         );
       }
-      units.add(sourceDeck.units[result.unitIndex - 1]);
+      final LearningUnit unit = sourceDeck.units[result.unitIndex - 1];
+      final MaskCompatibilityResult compat = checkMaskCompatibility(
+        oldMask: sourceDeck.mask,
+        newMask: reference,
+        units: <LearningUnit>[unit],
+      );
+      if (!compat.isCompatible) {
+        throw const _LexiconLoadException(
+          LearnAnywhereMessage.lexiconLoadWouldLoseData,
+        );
+      }
+      final LearningDeck converted = applyMaskToDeck(
+        LearningDeck(mask: sourceDeck.mask, units: <LearningUnit>[unit]),
+        reference,
+      );
+      if (converted.units.isNotEmpty) {
+        units.add(converted.units.first);
+      }
     }
     return LearningDeck(
-      mask: firstDeck.mask,
+      mask: reference,
       units: List<LearningUnit>.unmodifiable(units),
     );
   }
 }
 
+/// A localizable failure while loading found Lexicon units into memory.
+final class _LexiconLoadException implements Exception {
+  const _LexiconLoadException(this.messageId);
+
+  /// Catalog id of the user-facing message.
+  final LearnAnywhereMessage messageId;
+}
+
 final class _ResultList extends StatelessWidget {
-  const _ResultList({required this.deck, required this.results});
+  const _ResultList({
+    required this.deck,
+    required this.results,
+    required this.fileDecks,
+  });
 
   final LearningDeck deck;
   final List<SearchResult> results;
+
+  /// Decks loaded for a file-oriented search, keyed by source path. Used to
+  /// resolve each hit's category name against its OWN deck's mask (category ids
+  /// are only unique within one mask), falling back to the in-memory deck.
+  final Map<String, LearningDeck> fileDecks;
 
   @override
   Widget build(BuildContext context) {
@@ -368,7 +420,10 @@ final class _ResultList extends StatelessWidget {
           const Divider(height: 1),
       itemBuilder: (BuildContext context, int index) {
         final SearchResult result = results[index];
-        final CategoryDefinition? category = deck.mask.categoryById(
+        final String? source = result.sourceFile;
+        final LearningMask mask =
+            (source == null ? null : fileDecks[source]?.mask) ?? deck.mask;
+        final CategoryDefinition? category = mask.categoryById(
           result.categoryId,
         );
         return ListTile(

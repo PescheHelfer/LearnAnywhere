@@ -1,13 +1,11 @@
 /// Pure Dart learning, evaluation, statistics, and search engines.
 library;
 
-import 'dart:io';
 import 'dart:math';
 
 import 'package:diacritic/diacritic.dart';
 
 import '../models/models.dart';
-import '../serialization/serialization.dart';
 
 /// Field-level answer evaluation result.
 final class FieldEvaluation {
@@ -401,7 +399,7 @@ StatisticsSummary aggregateStatistics({
     }
     total += 1;
     final UnitStats unitStats = statsByIndex[index] ?? UnitStats(index: index);
-    final DirectionStats stats = _statsForView(unitStats, view);
+    final DirectionStats stats = statsForDirectionView(unitStats, view);
     final HitRateBucket bucket = bucketFor(stats);
     counts[bucket] = counts[bucket]! + 1;
     if (stats.attempts > 0) {
@@ -460,6 +458,85 @@ List<UnitStats> clearStatistics(LearningDeck deck) {
     (int index) => UnitStats(index: index + 1),
     growable: false,
   );
+}
+
+/// Returns [statistics] re-indexed to exactly [unitCount] units.
+///
+/// Existing per-unit counters are kept by their 1-based index; missing indices
+/// (e.g. after the deck grew) are filled with zeroed [UnitStats], and any
+/// entries beyond [unitCount] are dropped. Used whenever a deck's unit count
+/// changes without a positional insert/delete (open, merge, load-stats).
+List<UnitStats> resizeUnitStats(List<UnitStats> statistics, int unitCount) {
+  final Map<int, UnitStats> byIndex = <int, UnitStats>{
+    for (final UnitStats stats in statistics) stats.index: stats,
+  };
+  return List<UnitStats>.generate(
+    unitCount,
+    (int index) => byIndex[index + 1] ?? UnitStats(index: index + 1),
+    growable: false,
+  );
+}
+
+/// Remaps per-unit [statistics] after a unit is inserted at 1-based [position].
+///
+/// Counters for units at or after [position] shift up by one index; the newly
+/// inserted position gets zeroed stats. This keeps learning history attached to
+/// the units it belongs to when a unit is inserted mid-deck (see the editor's
+/// insert-before action). [newUnitCount] is the deck's unit count *after* the
+/// insertion.
+List<UnitStats> statsAfterInsert(
+  List<UnitStats> statistics,
+  int position,
+  int newUnitCount,
+) {
+  final Map<int, UnitStats> byIndex = <int, UnitStats>{
+    for (final UnitStats stats in statistics) stats.index: stats,
+  };
+  return List<UnitStats>.generate(newUnitCount, (int slot) {
+    final int index = slot + 1;
+    if (index < position) {
+      return byIndex[index] ?? UnitStats(index: index);
+    }
+    if (index == position) {
+      return UnitStats(index: index);
+    }
+    final UnitStats? old = byIndex[index - 1];
+    return old == null
+        ? UnitStats(index: index)
+        : UnitStats(
+            index: index,
+            direction1: old.direction1,
+            direction2: old.direction2,
+          );
+  }, growable: false);
+}
+
+/// Remaps per-unit [statistics] after the unit at 1-based [position] is removed.
+///
+/// The removed unit's counters are dropped and every later unit shifts down by
+/// one index, so surviving units keep their history. [newUnitCount] is the
+/// deck's unit count *after* the deletion.
+List<UnitStats> statsAfterDelete(
+  List<UnitStats> statistics,
+  int position,
+  int newUnitCount,
+) {
+  final Map<int, UnitStats> byIndex = <int, UnitStats>{
+    for (final UnitStats stats in statistics) stats.index: stats,
+  };
+  return List<UnitStats>.generate(newUnitCount, (int slot) {
+    final int index = slot + 1;
+    final UnitStats? source = index < position
+        ? byIndex[index]
+        : byIndex[index + 1];
+    return source == null
+        ? UnitStats(index: index)
+        : UnitStats(
+            index: index,
+            direction1: source.direction1,
+            direction2: source.direction2,
+          );
+  }, growable: false);
 }
 
 /// Searches the in-memory deck.
@@ -524,30 +601,6 @@ List<SearchResult> searchDeckFiles({
         options: options,
         categoryId: categoryId,
         sourceFile: entry.key,
-      ),
-    );
-  }
-  return List<SearchResult>.unmodifiable(results);
-}
-
-/// Searches deck files from disk and returns hits with source file paths.
-Future<List<SearchResult>> searchDeckFilesOnDisk({
-  required Iterable<String> filePaths,
-  required String query,
-  TextMatchOptions options = const TextMatchOptions(),
-  int? categoryId,
-}) async {
-  final List<SearchResult> results = <SearchResult>[];
-  for (final String filePath in filePaths) {
-    final String source = await File(filePath).readAsString();
-    final LearningDeck deck = decodeDeckJson(source);
-    results.addAll(
-      searchDeck(
-        deck: deck,
-        query: query,
-        options: options,
-        categoryId: categoryId,
-        sourceFile: filePath,
       ),
     );
   }
@@ -716,7 +769,15 @@ Map<int, UnitStats> _statsByIndex(List<UnitStats> statistics) {
   };
 }
 
-DirectionStats _statsForView(UnitStats stats, StatisticsDirectionView view) {
+/// Returns the [DirectionStats] for [stats] under a statistics [view].
+///
+/// The [StatisticsDirectionView.combined] view sums both directions. This is
+/// the single source of truth for the combined-direction rule; UI code must
+/// use it rather than re-summing.
+DirectionStats statsForDirectionView(
+  UnitStats stats,
+  StatisticsDirectionView view,
+) {
   return switch (view) {
     StatisticsDirectionView.direction1 => stats.direction1,
     StatisticsDirectionView.direction2 => stats.direction2,

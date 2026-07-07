@@ -88,7 +88,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     SingleActivator(LogicalKeyboardKey.escape): _LearnSetupIntent(),
   };
 
-  final Random _random = Random(1);
+  final Random _random = Random();
   final FocusNode _rootFocusNode = FocusNode();
   // Answer widgets are keyed by FieldDefinition.id (the same key unit values
   // use), so renaming or reordering a field never mismatches a controller.
@@ -119,6 +119,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   AttemptRating _selectedRating = AttemptRating.noCount;
   Timer? _clockTimer;
   int _elapsedSeconds = 0;
+  // Whether the time-limit warning tone has already sounded for the current
+  // unit; reset when a new unit is shown so the tone fires once per unit.
+  bool _timeTonePlayed = false;
   bool _completed = false;
 
   @override
@@ -388,6 +391,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _evaluation = null;
       _selectedRating = AttemptRating.noCount;
       _elapsedSeconds = 0;
+      _timeTonePlayed = false;
     });
   }
 
@@ -546,6 +550,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
           const AnswerEvaluation(correct: true, fields: <FieldEvaluation>[]);
       _selectedRating = defaultRating;
     });
+    // Revealing removes the answer text fields (they become read-only rich
+    // text), so focus would be left on a defunct node and the F-keys/Esc would
+    // stop working. Pull focus back to the session root.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _rootFocusNode.requestFocus();
+    });
   }
 
   void _continueShortcut() {
@@ -640,6 +650,13 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         return;
       }
       setState(() => _elapsedSeconds += 1);
+      // Sound a one-shot warning tone the first second the limit is reached
+      // (0 = no limit). The visual red pill is driven separately in the view.
+      final int limit = widget.options.timeLimitSeconds;
+      if (limit > 0 && _elapsedSeconds >= limit && !_timeTonePlayed) {
+        _timeTonePlayed = true;
+        SystemSound.play(SystemSoundType.alert);
+      }
     });
   }
 
@@ -1100,7 +1117,9 @@ final class _SessionView extends StatelessWidget {
                 if (options.showClock) ...<Widget>[
                   const SizedBox(width: LearnAnywhereTokens.gapSmall),
                   _StatPill(
-                    label: 'Time',
+                    label: messages.message(
+                      LearnAnywhereMessage.learnLiveTime,
+                    ),
                     value: _clockText(elapsedSeconds),
                     warning: timeWarning,
                   ),

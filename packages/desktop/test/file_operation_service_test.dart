@@ -31,6 +31,9 @@ void main() {
             direction1: DirectionStats(attempts: 1, correct: 1),
           ),
         ],
+        // This test exercises the auto-load/auto-save sidecar path explicitly.
+        autoLoadStatistics: true,
+        autoSaveStatistics: true,
       );
 
       final DesktopDocument saved = await service.saveDeck(

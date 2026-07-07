@@ -19,7 +19,6 @@ final class DesktopPrefs {
   static const String _keyLastDirVok = 'last_dir_vok';
   static const String _keyLastDirSta = 'last_dir_sta';
   static const String _keyLastDirInf = 'last_dir_inf';
-  static const String _keyLastPathOpenDeck = 'last_path_open_deck';
   static const String _keyAutoLoadStats = 'auto_load_stats';
   static const String _keyAutoSaveStats = 'auto_save_stats';
 
@@ -61,15 +60,6 @@ final class DesktopPrefs {
   /// Persists [value] as the last-used `.inf` dialog directory.
   void setLastDirInf(String value) =>
       unawaited(_prefs.setString(_keyLastDirInf, value));
-
-  // --- Last opened deck (N1) -------------------------------------------------
-
-  /// Absolute path of the deck last opened via File > Open, or null.
-  String? get lastPathOpenDeck => _prefs.getString(_keyLastPathOpenDeck);
-
-  /// Persists [value] as the path of the deck last opened.
-  void setLastPathOpenDeck(String value) =>
-      unawaited(_prefs.setString(_keyLastPathOpenDeck, value));
 
   // --- Auto-load / auto-save statistics toggles (C11) ------------------------
 

@@ -438,18 +438,12 @@ void main() {
   group('i18n', () {
     test('returns English and German framework-independent messages', () {
       expect(
-        LearnAnywhereCatalog.message(
-          LearnAnywhereMessage.desktopShellReady,
-          'en',
-        ),
-        'Desktop shell ready',
+        LearnAnywhereCatalog.message(LearnAnywhereMessage.learnPrompt, 'en'),
+        'Prompt',
       );
       expect(
-        LearnAnywhereCatalog.message(
-          LearnAnywhereMessage.desktopShellReady,
-          'de',
-        ),
-        'Desktop-Shell bereit',
+        LearnAnywhereCatalog.message(LearnAnywhereMessage.learnPrompt, 'de'),
+        'Frage',
       );
       expect(LearnAnywhereCatalog.supportedLanguageCodes, <String>['en', 'de']);
     });
@@ -717,23 +711,49 @@ void main() {
       );
     });
 
-    test('searches deck files from disk with source paths', () async {
-      final Directory tempDir = await Directory.systemTemp.createTemp(
-        'learn_anywhere_core_test',
-      );
-      final File deckFile = File(
-        '${tempDir.path}${Platform.pathSeparator}sample.vok',
-      );
-      await deckFile.writeAsString(encodeDeckJson(sampleDeck()));
+  });
 
-      final List<SearchResult> results = await searchDeckFilesOnDisk(
-        filePaths: <String>[deckFile.path],
-        query: 'lapin',
-      );
+  group('statistics remapping', () {
+    List<UnitStats> seed() => <UnitStats>[
+      const UnitStats(index: 1, direction1: DirectionStats(attempts: 1, correct: 1)),
+      const UnitStats(index: 2, direction1: DirectionStats(attempts: 2, correct: 2)),
+      const UnitStats(index: 3, direction1: DirectionStats(attempts: 3, correct: 3)),
+    ];
 
-      expect(results, hasLength(1));
-      expect(results.single.sourceFile, deckFile.path);
-      await tempDir.delete(recursive: true);
+    test('resizeUnitStats keeps indices, pads growth, trims shrink', () {
+      expect(resizeUnitStats(seed(), 5), hasLength(5));
+      expect(resizeUnitStats(seed(), 5)[2].direction1.attempts, 3);
+      expect(resizeUnitStats(seed(), 5)[3].direction1.attempts, 0);
+      expect(resizeUnitStats(seed(), 2), hasLength(2));
+      expect(resizeUnitStats(seed(), 2)[1].direction1.correct, 2);
+    });
+
+    test('statsAfterInsert shifts later units and zeroes the new slot', () {
+      final List<UnitStats> result = statsAfterInsert(seed(), 2, 4);
+      expect(result, hasLength(4));
+      // Unit 1 unchanged; new empty at index 2; old 2 and 3 shifted to 3 and 4.
+      expect(result[0].direction1.attempts, 1);
+      expect(result[1].direction1.attempts, 0);
+      expect(result[2].direction1.attempts, 2);
+      expect(result[3].direction1.attempts, 3);
+    });
+
+    test('statsAfterInsert at the end preserves all and appends empty', () {
+      final List<UnitStats> result = statsAfterInsert(seed(), 4, 4);
+      expect(result.take(3).map((UnitStats s) => s.direction1.attempts), <int>[
+        1,
+        2,
+        3,
+      ]);
+      expect(result[3].direction1.attempts, 0);
+    });
+
+    test('statsAfterDelete drops the removed unit and shifts later down', () {
+      final List<UnitStats> result = statsAfterDelete(seed(), 2, 2);
+      expect(result, hasLength(2));
+      // Unit 1 kept; old unit 3 shifts down into index 2.
+      expect(result[0].direction1.attempts, 1);
+      expect(result[1].direction1.attempts, 3);
     });
   });
 

@@ -28,12 +28,6 @@ enum LearnAnywhereMessage {
   /// Application title.
   appTitle,
 
-  /// Desktop shell readiness text.
-  desktopShellReady,
-
-  /// Mobile shell readiness text.
-  mobileShellReady,
-
   /// Mobile open deck action.
   mobileOpenDeck,
 
@@ -63,9 +57,6 @@ enum LearnAnywhereMessage {
 
   /// Home route title.
   desktopHomeTitle,
-
-  /// Home route body.
-  desktopHomeBody,
 
   /// Home screen: no file loaded message.
   homeNoFileLoaded,
@@ -97,9 +88,6 @@ enum LearnAnywhereMessage {
   /// Save as command.
   fileSaveAs,
 
-  /// Clear units command.
-  fileClearUnits,
-
   /// Load mask command.
   fileLoadMask,
 
@@ -130,23 +118,11 @@ enum LearnAnywhereMessage {
   /// Learn menu label.
   menuLearn,
 
-  /// Learn submenu: practice entry.
-  menuLearnPractice,
-
-  /// Learn submenu: advanced practice options entry.
-  menuLearnAdvancedOptions,
-
-  /// Learning options menu label.
-  menuQueryOptions,
-
   /// Statistics menu label.
   menuStatistics,
 
   /// Lexicon menu label.
   menuLexicon,
-
-  /// List menu label.
-  menuList,
 
   /// Help menu label.
   menuHelp,
@@ -196,56 +172,11 @@ enum LearnAnywhereMessage {
   /// File operations route title.
   routeFileOperationsTitle,
 
-  /// File operations route body.
-  routeFileOperationsBody,
-
-  /// Editor route title.
-  routeEditorTitle,
-
-  /// Editor route body.
-  routeEditorBody,
-
   /// Mask editor route title.
   routeMaskEditorTitle,
 
-  /// Mask editor route body.
-  routeMaskEditorBody,
-
-  /// Learn route title.
-  routeLearnTitle,
-
-  /// Learn route body.
-  routeLearnBody,
-
-  /// Learning options route title.
-  routeQueryOptionsTitle,
-
-  /// Learning options route body.
-  routeQueryOptionsBody,
-
-  /// Statistics route title.
-  routeStatisticsTitle,
-
-  /// Statistics route body.
-  routeStatisticsBody,
-
-  /// Lexicon route title.
-  routeLexiconTitle,
-
-  /// Lexicon route body.
-  routeLexiconBody,
-
-  /// List placeholder title.
-  routeListTitle,
-
-  /// List placeholder body.
-  routeListBody,
-
-  /// About placeholder title.
+  /// About page title.
   routeAboutTitle,
-
-  /// About placeholder body.
-  routeAboutBody,
 
   /// About page introduction.
   aboutIntro,
@@ -279,9 +210,6 @@ enum LearnAnywhereMessage {
 
   /// Unit editor unit header.
   editorUnitHeader,
-
-  /// Unit editor formatting toolbar label.
-  editorFormatting,
 
   /// Unit editor previous action.
   editorPrevious,
@@ -415,12 +343,6 @@ enum LearnAnywhereMessage {
   /// Learn direction selection label.
   learnDirection,
 
-  /// Learn direction 1 option.
-  learnDirection1,
-
-  /// Learn direction 2 option.
-  learnDirection2,
-
   /// Learn both directions option.
   learnBothDirections,
 
@@ -441,9 +363,6 @@ enum LearnAnywhereMessage {
 
   /// Once-through mode label.
   learnModeOnceThrough,
-
-  /// Practice each-once option.
-  learnPracticeEachOnce,
 
   /// Shuffle units option.
   learnShuffleUnits,
@@ -511,14 +430,14 @@ enum LearnAnywhereMessage {
   /// Live accuracy label.
   learnLiveAccuracy,
 
+  /// Live elapsed-time label.
+  learnLiveTime,
+
   /// Current unit header.
   learnUnitHeader,
 
   /// Completion extend action.
   learnExtendSession,
-
-  /// Return to setup action.
-  learnBackToSetup,
 
   /// Confirm cancel learn session.
   learnCancelConfirm,
@@ -943,6 +862,67 @@ enum LearnAnywhereMessage {
 
   /// Native file-picker filter caption for `.sta` statistics files.
   filePickerStatsType,
+
+  /// Confirm discarding editor changes (unit editor Cancel/Esc).
+  confirmDiscardEdits,
+
+  /// Error: a save was requested without a file path.
+  errorNoFilePath,
+
+  /// Error: merge refused because the deck belongs to a different mask.
+  errorMergeMaskMismatch,
+
+  /// Error: merge refused because converting the incoming units to the
+  /// current mask would lose data.
+  errorMergeWouldLoseData,
+
+  /// Error: the Lexicon search directory does not exist. Placeholder: {detail}.
+  errorSearchDirectoryMissing,
+
+  /// Error: no Lexicon search pattern was provided.
+  errorNoSearchPattern,
+
+  /// Error: the Lexicon search pattern lacks a file mask.
+  errorPatternNeedsFileMask,
+
+  /// Error: found units belong to different masks and cannot be loaded together.
+  lexiconLoadMaskMismatch,
+
+  /// Error: loading found units would lose data when updating them to the
+  /// newest mask revision among the source files.
+  lexiconLoadWouldLoseData,
+
+  /// Breaking mask change: category deleted. Placeholders: {category}, {count}.
+  maskBreakCategoryDeleted,
+
+  /// Breaking mask change: field deleted. Placeholders: {field}, {category},
+  /// {count}.
+  maskBreakFieldDeleted,
+
+  /// Breaking mask change: field shortened below stored data. Placeholders:
+  /// {field}, {category}, {length}, {count}.
+  maskBreakFieldTooShort,
+
+  /// Seed name for a mask created in this app (user data, locale-seeded once).
+  defaultMaskName,
+
+  /// Seed label for direction 1 of a new mask.
+  defaultDirection1Label,
+
+  /// Seed label for direction 2 of a new mask.
+  defaultDirection2Label,
+
+  /// Seed name for a new category. Placeholder: {n} (1-based position).
+  defaultCategoryName,
+
+  /// Seed name for the question field of a new mask.
+  defaultFieldQuestion,
+
+  /// Seed name for the answer field of a new mask.
+  defaultFieldAnswer,
+
+  /// Seed name for the remark field of a new mask.
+  defaultFieldRemark,
 }
 
 /// Localized message catalog for framework-independent strings.
@@ -953,8 +933,6 @@ final class LearnAnywhereCatalog {
   _messages = <LearnAnywhereLanguage, Map<LearnAnywhereMessage, String>>{
     LearnAnywhereLanguage.english: <LearnAnywhereMessage, String>{
       LearnAnywhereMessage.appTitle: 'Learn Anywhere',
-      LearnAnywhereMessage.desktopShellReady: 'Desktop shell ready',
-      LearnAnywhereMessage.mobileShellReady: 'Mobile shell ready',
       LearnAnywhereMessage.mobileOpenDeck: 'Open deck',
       LearnAnywhereMessage.mobileNoDeckTitle: 'No deck loaded',
       LearnAnywhereMessage.mobileNoDeckBody:
@@ -967,7 +945,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.superQueryCompleted:
           'You have now mastered all learning units in the selected range. Congratulations!',
       LearnAnywhereMessage.desktopHomeTitle: 'Workspace',
-      LearnAnywhereMessage.desktopHomeBody: 'Desktop shell ready',
       LearnAnywhereMessage.homeNoFileLoaded: 'No file loaded',
       LearnAnywhereMessage.homeMaskName: 'Mask',
       LearnAnywhereMessage.homeLastDeck: 'Last deck',
@@ -978,7 +955,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileAddMergeDeck: '&Add/merge deck...', // A
       LearnAnywhereMessage.fileSave: '&Save deck', // S
       LearnAnywhereMessage.fileSaveAs: 'Sa&ve deck as...', // V
-      LearnAnywhereMessage.fileClearUnits: '&Clear units in memory', // C
       LearnAnywhereMessage.fileLoadMask: '&Load mask...', // L
       LearnAnywhereMessage.fileSaveMask: 'Save &mask', // M
       LearnAnywhereMessage.fileSaveMaskAs: 'Save mas&k as...', // K
@@ -989,12 +965,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuEditJumpToNumber: '&Jump to number...', // J
       LearnAnywhereMessage.menuMaskEditor: '&Mask Editor', // top-bar M
       LearnAnywhereMessage.menuLearn: '&Learn', // top-bar L
-      LearnAnywhereMessage.menuLearnPractice: '&Practice', // P
-      LearnAnywhereMessage.menuLearnAdvancedOptions: '&Advanced practice options', // A
-      LearnAnywhereMessage.menuQueryOptions: 'Learning Options',
       LearnAnywhereMessage.menuStatistics: '&Statistics', // top-bar S
       LearnAnywhereMessage.menuLexicon: 'Le&xicon', // top-bar X
-      LearnAnywhereMessage.menuList: 'L&ist', // top-bar I
       LearnAnywhereMessage.menuHelp: '&Help', // top-bar H
       LearnAnywhereMessage.helpAbout: '&About', // A
       LearnAnywhereMessage.menuOptions: '&Options', // top-bar O
@@ -1013,32 +985,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.languageEnglish: '&English', // E
       LearnAnywhereMessage.languageGerman: '&German', // G
       LearnAnywhereMessage.routeFileOperationsTitle: 'File operations',
-      LearnAnywhereMessage.routeFileOperationsBody:
-          'Create, open, merge, save, and review deck and statistics files.',
-      LearnAnywhereMessage.routeEditorTitle: 'Editor',
-      LearnAnywhereMessage.routeEditorBody:
-          'Edit learning units, navigate the deck, search all matches, and maintain rich-text fields.',
       LearnAnywhereMessage.routeMaskEditorTitle: 'Mask Editor',
-      LearnAnywhereMessage.routeMaskEditorBody:
-          'Define categories, fields, roles, lengths, and direction labels for a deck.',
-      LearnAnywhereMessage.routeLearnTitle: 'Learn',
-      LearnAnywhereMessage.routeLearnBody:
-          'Run endless mode and drill mode sessions with answer entry or think-only review.',
-      LearnAnywhereMessage.routeQueryOptionsTitle: 'Learning Options',
-      LearnAnywhereMessage.routeQueryOptionsBody:
-          'Tune directions, answer checking, timing, thresholds, and rating rules.',
-      LearnAnywhereMessage.routeStatisticsTitle: 'Statistics',
-      LearnAnywhereMessage.routeStatisticsBody:
-          'Review buckets, detailed hit rates, chart summaries, and selected-unit exports.',
-      LearnAnywhereMessage.routeLexiconTitle: 'Lexicon',
-      LearnAnywhereMessage.routeLexiconBody:
-          'Search the current deck or matching deck files and load found units.',
-      LearnAnywhereMessage.routeListTitle: 'List',
-      LearnAnywhereMessage.routeListBody:
-          'Printer-friendly lists are deferred to a later version.',
       LearnAnywhereMessage.routeAboutTitle: 'About',
-      LearnAnywhereMessage.routeAboutBody:
-          'Learn Anywhere is a modern conversion of Lern PC plus.',
       LearnAnywhereMessage.aboutIntro:
           'Learn Anywhere is a modern conversion of Lern PC plus.',
       LearnAnywhereMessage.aboutOriginalCredit:
@@ -1047,11 +995,13 @@ final class LearnAnywhereCatalog {
           'Modern conversion: SbitFire Software',
       LearnAnywhereMessage.aboutVersionHistory: 'Version history',
       LearnAnywhereMessage.aboutVersionOldest:
-          '0.1.0 – Phase 2 desktop foundation: file operations, editor, learning, statistics, lexicon, and program info.',
-      LearnAnywhereMessage.aboutVersionPrevious:
           '0.2.0 – Compact grid-based editor and practice screen.',
-      LearnAnywhereMessage.aboutVersionCurrent:
+      LearnAnywhereMessage.aboutVersionPrevious:
           '0.3.0 – Statistics, mask editor, and menu accessibility improvements.',
+      LearnAnywhereMessage.aboutVersionCurrent:
+          '0.3.1 – Code audit fixes: mask-identity-aware merge/lexicon, editor '
+          'statistics preserved across insert/delete, window-close auto-save, '
+          'and menu/i18n cleanup.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1059,7 +1009,6 @@ final class LearnAnywhereCatalog {
           'Insert a unit to begin editing this deck.',
       LearnAnywhereMessage.editorUnitHeader:
           'Unit {index} of {total} - {category}',
-      LearnAnywhereMessage.editorFormatting: 'Formatting',
       LearnAnywhereMessage.editorPrevious: 'Previous',
       LearnAnywhereMessage.editorNext: 'Next',
       LearnAnywhereMessage.editorJump: 'Jump',
@@ -1107,8 +1056,6 @@ final class LearnAnywhereCatalog {
           'Create or open a deck with learning units before starting a session.',
       LearnAnywhereMessage.learnSetupTitle: 'Practice setup',
       LearnAnywhereMessage.learnDirection: 'Direction',
-      LearnAnywhereMessage.learnDirection1: 'Direction 1',
-      LearnAnywhereMessage.learnDirection2: 'Direction 2',
       LearnAnywhereMessage.learnBothDirections: 'Both',
       LearnAnywhereMessage.learnRangeStart: 'Start unit',
       LearnAnywhereMessage.learnRangeEnd: 'End unit',
@@ -1116,7 +1063,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnModePractice: 'Endless mode',
       LearnAnywhereMessage.learnModeSuperQuery: 'Drill mode',
       LearnAnywhereMessage.learnModeOnceThrough: 'Once through',
-      LearnAnywhereMessage.learnPracticeEachOnce: 'Each unit exactly once',
       LearnAnywhereMessage.learnShuffleUnits: 'Shuffle units',
       LearnAnywhereMessage.learnSuperThreshold: 'Super status threshold (%)',
       LearnAnywhereMessage.learnStartSession: 'Start session',
@@ -1141,10 +1087,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveMastered: 'Mastered',
       LearnAnywhereMessage.learnLiveRemaining: 'Remaining',
       LearnAnywhereMessage.learnLiveAccuracy: 'Accuracy',
+      LearnAnywhereMessage.learnLiveTime: 'Time',
       LearnAnywhereMessage.learnUnitHeader:
           'Unit {index} of {total} - {category} - {direction}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
-      LearnAnywhereMessage.learnBackToSetup: 'Back to setup',
       LearnAnywhereMessage.learnCancelConfirm: 'Cancel the current session?',
       LearnAnywhereMessage.learnEvaluateAs: 'Evaluate as:',
       LearnAnywhereMessage.queryOptionsTitle: 'Advanced Learning Options',
@@ -1253,8 +1199,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.confirmTitle: 'Please confirm',
       LearnAnywhereMessage.confirmNewDeck:
           'Clear units from memory? No file will be deleted.',
-      LearnAnywhereMessage.confirmClearUnits:
-          'Clear all units in memory? This does not delete any file.',
       LearnAnywhereMessage.confirmLoadMask:
           'Load a new mask? Current in-memory units will be cleared.',
       LearnAnywhereMessage.confirmCreateLinkedMask:
@@ -1292,25 +1236,54 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.confirmClearStatistics:
           'Clear all statistics for the current deck?',
       LearnAnywhereMessage.confirmExit: 'Exit Learn Anywhere?',
-      LearnAnywhereMessage.fileOperationDone: 'Done',
       LearnAnywhereMessage.fileOperationFailed: 'File operation failed',
       LearnAnywhereMessage.fileNewDeckDone: 'New deck created.',
       LearnAnywhereMessage.fileOpenDeckDone: 'Deck loaded.',
       LearnAnywhereMessage.fileMergeDeckDone: 'Deck merged.',
       LearnAnywhereMessage.fileSaveDeckDone: 'Deck saved.',
-      LearnAnywhereMessage.fileClearUnitsDone: 'Units cleared.',
       LearnAnywhereMessage.fileLoadMaskDone: 'Mask loaded.',
       LearnAnywhereMessage.fileSaveMaskDone: 'Mask saved.',
-      LearnAnywhereMessage.fileAutoLoadedStats: 'Statistics sidecar loaded.',
-      LearnAnywhereMessage.fileExitRequested: 'Exit requested.',
       LearnAnywhereMessage.filePickerDeckType: 'Vocabulary decks (*.vok)',
       LearnAnywhereMessage.filePickerMaskType: 'Mask files (*.inf)',
       LearnAnywhereMessage.filePickerStatsType: 'Statistics files (*.sta)',
+      LearnAnywhereMessage.confirmDiscardEdits:
+          'Discard the changes made in the editor?',
+      LearnAnywhereMessage.errorNoFilePath: 'No file path was provided.',
+      LearnAnywhereMessage.errorMergeMaskMismatch:
+          'Cannot merge: the selected deck belongs to a different mask.',
+      LearnAnywhereMessage.errorMergeWouldLoseData:
+          'Cannot merge: updating the added units to the current mask would '
+          'lose data.',
+      LearnAnywhereMessage.errorSearchDirectoryMissing:
+          'Search directory does not exist: {detail}',
+      LearnAnywhereMessage.errorNoSearchPattern:
+          'No search pattern was provided.',
+      LearnAnywhereMessage.errorPatternNeedsFileMask:
+          'The search pattern must include a file mask (e.g. *.vok).',
+      LearnAnywhereMessage.lexiconLoadMaskMismatch:
+          'The found units belong to different masks and cannot be loaded '
+          'together.',
+      LearnAnywhereMessage.lexiconLoadWouldLoseData:
+          'Loading the found units would lose data when updating them to the '
+          'newest mask revision.',
+      LearnAnywhereMessage.maskBreakCategoryDeleted:
+          'Deleting category "{category}" would orphan {count} unit(s).',
+      LearnAnywhereMessage.maskBreakFieldDeleted:
+          'Deleting field "{field}" in category "{category}" would drop data '
+          'in {count} unit(s).',
+      LearnAnywhereMessage.maskBreakFieldTooShort:
+          'Shortening field "{field}" in category "{category}" to {length} '
+          'would truncate {count} unit(s).',
+      LearnAnywhereMessage.defaultMaskName: 'Untitled mask',
+      LearnAnywhereMessage.defaultDirection1Label: 'Direction 1',
+      LearnAnywhereMessage.defaultDirection2Label: 'Direction 2',
+      LearnAnywhereMessage.defaultCategoryName: 'Category {n}',
+      LearnAnywhereMessage.defaultFieldQuestion: 'Question',
+      LearnAnywhereMessage.defaultFieldAnswer: 'Answer',
+      LearnAnywhereMessage.defaultFieldRemark: 'Remark',
     },
     LearnAnywhereLanguage.german: <LearnAnywhereMessage, String>{
       LearnAnywhereMessage.appTitle: 'Learn Anywhere',
-      LearnAnywhereMessage.desktopShellReady: 'Desktop-Shell bereit',
-      LearnAnywhereMessage.mobileShellReady: 'Mobile-Shell bereit',
       LearnAnywhereMessage.mobileOpenDeck: 'Lern-Datei laden',
       LearnAnywhereMessage.mobileNoDeckTitle: 'Keine Lern-Datei geladen',
       LearnAnywhereMessage.mobileNoDeckBody:
@@ -1324,7 +1297,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.superQueryCompleted:
           'Sie beherrschen nun alle Lerneinheiten im gewählten Bereich! Herzlichen Glückwunsch!',
       LearnAnywhereMessage.desktopHomeTitle: 'Arbeitsbereich',
-      LearnAnywhereMessage.desktopHomeBody: 'Desktop-Shell bereit',
       LearnAnywhereMessage.homeNoFileLoaded: 'Keine Datei geladen',
       LearnAnywhereMessage.homeMaskName: 'Maske',
       LearnAnywhereMessage.homeLastDeck: 'Letzte Lerneinheiten',
@@ -1338,8 +1310,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSave: 'Lerneinheiten &speichern', // S
       LearnAnywhereMessage.fileSaveAs:
           'Lerneinheiten speichern &unter...', // U
-      LearnAnywhereMessage.fileClearUnits:
-          'Lerneinheiten &im Speicher löschen', // I
       LearnAnywhereMessage.fileLoadMask: 'Neue &Masken-Datei laden...', // M
       LearnAnywhereMessage.fileSaveMask: 'Masken-&Datei speichern', // D
       LearnAnywhereMessage.fileSaveMaskAs:
@@ -1353,13 +1323,8 @@ final class LearnAnywhereCatalog {
           'Springe zu bestimmter &Nummer...', // N (avoids S conflict with Suchen)
       LearnAnywhereMessage.menuMaskEditor: '&Mask Editor', // top-bar M
       LearnAnywhereMessage.menuLearn: '&Lern', // top-bar L
-      LearnAnywhereMessage.menuLearnPractice: '&Üben', // Ü
-      LearnAnywhereMessage.menuLearnAdvancedOptions:
-          '&Erweiterte Abfrageoptionen', // E
-      LearnAnywhereMessage.menuQueryOptions: 'Abfrage',
       LearnAnywhereMessage.menuStatistics: '&Statistik', // top-bar S
       LearnAnywhereMessage.menuLexicon: 'Le&xikon', // top-bar X
-      LearnAnywhereMessage.menuList: 'L&iste', // top-bar I
       LearnAnywhereMessage.menuHelp: '&Hilfe', // top-bar H
       LearnAnywhereMessage.helpAbout: '&Programminfo', // P
       LearnAnywhereMessage.menuOptions: '&Optionen', // top-bar O
@@ -1378,32 +1343,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.languageEnglish: 'En&glisch', // G (avoids E = Erweiterte)
       LearnAnywhereMessage.languageGerman: 'De&utsch', // U
       LearnAnywhereMessage.routeFileOperationsTitle: 'Dateioperationen',
-      LearnAnywhereMessage.routeFileOperationsBody:
-          'Lern- und Statistikdateien erstellen, laden, hinzufügen, speichern und prüfen.',
-      LearnAnywhereMessage.routeEditorTitle: 'Editor',
-      LearnAnywhereMessage.routeEditorBody:
-          'Lerneinheiten bearbeiten, durch die Datei navigieren, alle Treffer suchen und Rich-Text-Felder pflegen.',
       LearnAnywhereMessage.routeMaskEditorTitle: 'Mask Editor',
-      LearnAnywhereMessage.routeMaskEditorBody:
-          'Kategorien, Felder, Rollen, Längen und Richtungsnamen für eine Lern-Datei definieren.',
-      LearnAnywhereMessage.routeLearnTitle: 'Lern',
-      LearnAnywhereMessage.routeLearnBody:
-          'Endlos-Modus- und Super-Abfrage-Sitzungen mit Eingabe oder reinem Denken starten.',
-      LearnAnywhereMessage.routeQueryOptionsTitle: 'Abfrage',
-      LearnAnywhereMessage.routeQueryOptionsBody:
-          'Richtungen, Antwortprüfung, Zeit, Schwellenwerte und Bewertungsregeln einstellen.',
-      LearnAnywhereMessage.routeStatisticsTitle: 'Statistik',
-      LearnAnywhereMessage.routeStatisticsBody:
-          'Bereiche, Detailquoten, Diagramme und Exporte ausgewählter Einheiten ansehen.',
-      LearnAnywhereMessage.routeLexiconTitle: 'Lexikon',
-      LearnAnywhereMessage.routeLexiconBody:
-          'In der aktuellen Lern-Datei oder passenden Dateien suchen und gefundene Einheiten laden.',
-      LearnAnywhereMessage.routeListTitle: 'Liste',
-      LearnAnywhereMessage.routeListBody:
-          'Druckfreundliche Listen sind für eine spätere Version vorgesehen.',
       LearnAnywhereMessage.routeAboutTitle: 'Programminfo',
-      LearnAnywhereMessage.routeAboutBody:
-          'Learn Anywhere ist eine moderne Umsetzung von Lern PC plus.',
       LearnAnywhereMessage.aboutIntro:
           'Learn Anywhere ist eine moderne Umsetzung von Lern PC plus.',
       LearnAnywhereMessage.aboutOriginalCredit:
@@ -1412,11 +1353,13 @@ final class LearnAnywhereCatalog {
           'Moderne Umsetzung: SbitFire Software',
       LearnAnywhereMessage.aboutVersionHistory: 'Versionsgeschichte',
       LearnAnywhereMessage.aboutVersionOldest:
-          '0.1.0 – Phase-2-Desktop-Grundlage: Dateioperationen, Editor, Lernen, Statistik, Lexikon und Programminfo.',
-      LearnAnywhereMessage.aboutVersionPrevious:
           '0.2.0 – Kompakter rasterbasierter Editor und Übungsbildschirm.',
-      LearnAnywhereMessage.aboutVersionCurrent:
+      LearnAnywhereMessage.aboutVersionPrevious:
           '0.3.0 – Verbesserungen bei Statistik, Maskeneditor und Menü-Zugänglichkeit.',
+      LearnAnywhereMessage.aboutVersionCurrent:
+          '0.3.1 – Code-Audit-Korrekturen: Masken-Identität bei Hinzuladen/'
+          'Lexikon, Statistik bleibt beim Einfügen/Löschen im Editor erhalten, '
+          'automatisches Speichern beim Schließen, Menü-/i18n-Bereinigung.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurück   F3 Weiter   F5 Suche   F6 Springen   F7 Löschen   F8 Einfügen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
@@ -1424,7 +1367,6 @@ final class LearnAnywhereCatalog {
           'Fügen Sie eine Lerneinheit ein, um diese Lern-Datei zu bearbeiten.',
       LearnAnywhereMessage.editorUnitHeader:
           'Einheit {index} von {total} - {category}',
-      LearnAnywhereMessage.editorFormatting: 'Formatierung',
       LearnAnywhereMessage.editorPrevious: 'Zurück',
       LearnAnywhereMessage.editorNext: 'Weiter',
       LearnAnywhereMessage.editorJump: 'Springen',
@@ -1473,8 +1415,6 @@ final class LearnAnywhereCatalog {
           'Erstellen oder laden Sie eine Lern-Datei mit Lerneinheiten, bevor Sie eine Sitzung starten.',
       LearnAnywhereMessage.learnSetupTitle: 'Übung einrichten',
       LearnAnywhereMessage.learnDirection: 'Richtung',
-      LearnAnywhereMessage.learnDirection1: 'Richtung 1',
-      LearnAnywhereMessage.learnDirection2: 'Richtung 2',
       LearnAnywhereMessage.learnBothDirections: 'Beide',
       LearnAnywhereMessage.learnRangeStart: 'Erste Einheit',
       LearnAnywhereMessage.learnRangeEnd: 'Letzte Einheit',
@@ -1482,7 +1422,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnModePractice: 'Endlos-Modus',
       LearnAnywhereMessage.learnModeSuperQuery: 'Drill-Modus',
       LearnAnywhereMessage.learnModeOnceThrough: 'Einmal durchgehen',
-      LearnAnywhereMessage.learnPracticeEachOnce: 'Jede Einheit genau einmal',
       LearnAnywhereMessage.learnShuffleUnits: 'Einheiten mischen',
       LearnAnywhereMessage.learnSuperThreshold: 'Super-Status (%)',
       LearnAnywhereMessage.learnStartSession: 'Sitzung starten',
@@ -1507,10 +1446,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveMastered: 'Beherrscht',
       LearnAnywhereMessage.learnLiveRemaining: 'Übrig',
       LearnAnywhereMessage.learnLiveAccuracy: 'Treffer',
+      LearnAnywhereMessage.learnLiveTime: 'Zeit',
       LearnAnywhereMessage.learnUnitHeader:
           'Einheit {index} von {total} - {category} - {direction}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
-      LearnAnywhereMessage.learnBackToSetup: 'Zur Einrichtung',
       LearnAnywhereMessage.learnCancelConfirm: 'Aktuelle Sitzung abbrechen?',
       LearnAnywhereMessage.learnEvaluateAs: 'Bewerten als:',
       LearnAnywhereMessage.queryOptionsTitle: 'Erweiterte Lernoptionen',
@@ -1625,8 +1564,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.confirmTitle: 'Bitte bestätigen',
       LearnAnywhereMessage.confirmNewDeck:
           'Lerneinheiten im Speicher löschen? Es wird keine Datei gelöscht.',
-      LearnAnywhereMessage.confirmClearUnits:
-          'Alle Lerneinheiten im Speicher löschen? Es wird keine Datei gelöscht.',
       LearnAnywhereMessage.confirmLoadMask:
           'Neue Maske laden? Aktuelle Lerneinheiten im Speicher werden gelöscht.',
       LearnAnywhereMessage.confirmCreateLinkedMask:
@@ -1667,20 +1604,55 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.confirmClearStatistics:
           'Alle Statistiken für das aktuelle Vokabular löschen?',
       LearnAnywhereMessage.confirmExit: 'Learn Anywhere beenden?',
-      LearnAnywhereMessage.fileOperationDone: 'Fertig',
       LearnAnywhereMessage.fileOperationFailed: 'Dateioperation fehlgeschlagen',
       LearnAnywhereMessage.fileNewDeckDone: 'Neue Lern-Datei erstellt.',
       LearnAnywhereMessage.fileOpenDeckDone: 'Lern-Datei geladen.',
       LearnAnywhereMessage.fileMergeDeckDone: 'Lern-Datei hinzugefügt.',
       LearnAnywhereMessage.fileSaveDeckDone: 'Lern-Datei gespeichert.',
-      LearnAnywhereMessage.fileClearUnitsDone: 'Lerneinheiten gelöscht.',
       LearnAnywhereMessage.fileLoadMaskDone: 'Maske geladen.',
       LearnAnywhereMessage.fileSaveMaskDone: 'Maske gespeichert.',
-      LearnAnywhereMessage.fileAutoLoadedStats: 'Statistik-Datei geladen.',
-      LearnAnywhereMessage.fileExitRequested: 'Beenden angefordert.',
       LearnAnywhereMessage.filePickerDeckType: 'Lern-Dateien (*.vok)',
       LearnAnywhereMessage.filePickerMaskType: 'Masken-Dateien (*.inf)',
       LearnAnywhereMessage.filePickerStatsType: 'Statistik-Dateien (*.sta)',
+      LearnAnywhereMessage.confirmDiscardEdits:
+          'Die im Editor gemachten Änderungen verwerfen?',
+      LearnAnywhereMessage.errorNoFilePath:
+          'Es wurde kein Dateipfad angegeben.',
+      LearnAnywhereMessage.errorMergeMaskMismatch:
+          'Hinzuladen nicht möglich: Die gewählte Lern-Datei gehört zu einer '
+          'anderen Maske.',
+      LearnAnywhereMessage.errorMergeWouldLoseData:
+          'Hinzuladen nicht möglich: Beim Angleichen an die aktuelle Maske '
+          'würden Daten verloren gehen.',
+      LearnAnywhereMessage.errorSearchDirectoryMissing:
+          'Suchordner existiert nicht: {detail}',
+      LearnAnywhereMessage.errorNoSearchPattern:
+          'Es wurde kein Suchmuster angegeben.',
+      LearnAnywhereMessage.errorPatternNeedsFileMask:
+          'Das Suchmuster muss eine Dateimaske enthalten (z. B. *.vok).',
+      LearnAnywhereMessage.lexiconLoadMaskMismatch:
+          'Die gefundenen Lerneinheiten gehören zu unterschiedlichen Masken '
+          'und können nicht gemeinsam geladen werden.',
+      LearnAnywhereMessage.lexiconLoadWouldLoseData:
+          'Beim Angleichen an die neueste Masken-Revision würden Daten '
+          'verloren gehen; die gefundenen Lerneinheiten können nicht geladen '
+          'werden.',
+      LearnAnywhereMessage.maskBreakCategoryDeleted:
+          'Das Löschen der Kategorie "{category}" würde {count} '
+          'Lerneinheit(en) verwaisen lassen.',
+      LearnAnywhereMessage.maskBreakFieldDeleted:
+          'Das Löschen des Feldes "{field}" in Kategorie "{category}" würde '
+          'Daten in {count} Lerneinheit(en) löschen.',
+      LearnAnywhereMessage.maskBreakFieldTooShort:
+          'Das Kürzen des Feldes "{field}" in Kategorie "{category}" auf '
+          '{length} würde Daten in {count} Lerneinheit(en) abschneiden.',
+      LearnAnywhereMessage.defaultMaskName: 'Unbenannte Maske',
+      LearnAnywhereMessage.defaultDirection1Label: 'Richtung 1',
+      LearnAnywhereMessage.defaultDirection2Label: 'Richtung 2',
+      LearnAnywhereMessage.defaultCategoryName: 'Kategorie {n}',
+      LearnAnywhereMessage.defaultFieldQuestion: 'Frage',
+      LearnAnywhereMessage.defaultFieldAnswer: 'Antwort',
+      LearnAnywhereMessage.defaultFieldRemark: 'Bemerkung',
     },
   };
 

@@ -49,6 +49,13 @@ final class DesktopFileService {
   }
 
   /// Merges units from another `.vok` into the current in-memory deck.
+  ///
+  /// The incoming deck must describe the SAME mask (equal [LearningMask.maskId]);
+  /// its embedded cache may be at a different revision. The incoming units are
+  /// converted to the current in-memory mask via [applyMaskToDeck], but only
+  /// when that conversion is lossless (per [checkMaskCompatibility]). A
+  /// different maskId, or a conversion that would drop/truncate data, is
+  /// refused with a user-facing message.
   Future<DesktopDocument> mergeDeck(
     DesktopDocument current,
     String path,
@@ -56,21 +63,37 @@ final class DesktopFileService {
     final LearningDeck incoming = decodeDeckJson(
       await File(path).readAsString(),
     );
-    if (encodeMaskJson(incoming.mask) != encodeMaskJson(current.mask)) {
+    if (incoming.mask.maskId != current.mask.maskId) {
       throw const FileOperationException(
-        'Cannot merge a deck whose embedded mask differs from the current mask.',
+        LearnAnywhereMessage.errorMergeMaskMismatch,
       );
     }
+    final MaskCompatibilityResult compat = checkMaskCompatibility(
+      oldMask: incoming.mask,
+      newMask: current.mask,
+      units: incoming.units,
+    );
+    if (!compat.isCompatible) {
+      throw const FileOperationException(
+        LearnAnywhereMessage.errorMergeWouldLoseData,
+      );
+    }
+    // Re-key the incoming units onto the current mask (ids are stable, so this
+    // is lossless given the compatibility check above).
+    final LearningDeck convertedIncoming = applyMaskToDeck(
+      incoming,
+      current.mask,
+    );
     final LearningDeck merged = LearningDeck(
       mask: current.mask,
       units: List<LearningUnit>.unmodifiable(<LearningUnit>[
         ...current.deck.units,
-        ...incoming.units,
+        ...convertedIncoming.units,
       ]),
     );
     return current.copyWith(
       deck: merged,
-      statistics: _resizeStats(current.statistics, merged),
+      statistics: resizeUnitStats(current.statistics, merged.units.length),
     );
   }
 
@@ -81,7 +104,7 @@ final class DesktopFileService {
   }) async {
     final String? targetPath = path ?? current.deckPath;
     if (targetPath == null) {
-      throw const FileOperationException('No deck path was provided.');
+      throw const FileOperationException(LearnAnywhereMessage.errorNoFilePath);
     }
     await File(targetPath).writeAsString(encodeDeckJson(current.deck));
     final DesktopDocument saved = current.copyWith(deckPath: targetPath);
@@ -100,7 +123,8 @@ final class DesktopFileService {
     final Directory directory = Directory(parsed.directoryPath);
     if (!await directory.exists()) {
       throw FileOperationException(
-        'Search directory does not exist: ${parsed.directoryPath}',
+        LearnAnywhereMessage.errorSearchDirectoryMissing,
+        detail: parsed.directoryPath,
       );
     }
     final RegExp fileNamePattern = parsed.fileNameRegex;
@@ -116,15 +140,6 @@ final class DesktopFileService {
       decks[entity.path] = decodeDeckJson(await entity.readAsString());
     }
     return decks;
-  }
-
-  /// Clears units in memory without deleting files.
-  DesktopDocument clearUnits(DesktopDocument current) {
-    final LearningDeck deck = LearningDeck(
-      mask: current.mask,
-      units: const <LearningUnit>[],
-    );
-    return current.copyWith(deck: deck, statistics: clearStatistics(deck));
   }
 
   /// Loads a standalone `.inf` mask and clears in-memory units.
@@ -396,7 +411,10 @@ final class DesktopFileService {
       await File(path).readAsString(),
     );
     return current.copyWith(
-      statistics: _resizeStats(statistics.perUnit, current.deck),
+      statistics: resizeUnitStats(
+        statistics.perUnit,
+        current.deck.units.length,
+      ),
       statisticsPath: path,
     );
   }
@@ -475,17 +493,6 @@ final class DesktopFileService {
       return '${deckPath.substring(0, dot)}.sta';
     }
     return '$deckPath.sta';
-  }
-
-  List<UnitStats> _resizeStats(List<UnitStats> current, LearningDeck deck) {
-    final Map<int, UnitStats> byIndex = <int, UnitStats>{
-      for (final UnitStats stats in current) stats.index: stats,
-    };
-    return List<UnitStats>.generate(
-      deck.units.length,
-      (int index) => byIndex[index + 1] ?? UnitStats(index: index + 1),
-      growable: false,
-    );
   }
 
   String _fileName(String path) {
@@ -574,16 +581,23 @@ final class MaskPropagationPlan {
   ];
 }
 
-/// File operation failure with a user-facing message.
+/// File operation failure carrying a localizable message id.
+///
+/// The message text is resolved by the UI layer from the i18n catalog (so
+/// business code stays language-agnostic). When [messageId] contains a
+/// `{detail}` placeholder, [detail] fills it.
 final class FileOperationException implements Exception {
-  /// Creates a file operation exception.
-  const FileOperationException(this.message);
+  /// Creates a file operation exception for [messageId].
+  const FileOperationException(this.messageId, {this.detail});
 
-  /// Failure message.
-  final String message;
+  /// Catalog id of the user-facing failure message.
+  final LearnAnywhereMessage messageId;
+
+  /// Optional value substituted into the message's `{detail}` placeholder.
+  final String? detail;
 
   @override
-  String toString() => message;
+  String toString() => detail == null ? messageId.name : '${messageId.name}: $detail';
 }
 
 final class _DeckPattern {
@@ -614,7 +628,9 @@ final class _DeckPattern {
   static _DeckPattern parse(String pattern) {
     final String trimmed = pattern.trim();
     if (trimmed.isEmpty) {
-      throw const FileOperationException('No search pattern was provided.');
+      throw const FileOperationException(
+        LearnAnywhereMessage.errorNoSearchPattern,
+      );
     }
     final int slash = trimmed.lastIndexOf('/');
     final int backslash = trimmed.lastIndexOf(r'\');
@@ -627,7 +643,7 @@ final class _DeckPattern {
         : trimmed.substring(separator + 1);
     if (fileNamePattern.isEmpty) {
       throw const FileOperationException(
-        'Search pattern must include a file mask.',
+        LearnAnywhereMessage.errorPatternNeedsFileMask,
       );
     }
     return _DeckPattern(

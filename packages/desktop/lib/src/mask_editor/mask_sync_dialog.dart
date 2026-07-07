@@ -121,7 +121,7 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
             Padding(
               padding: const EdgeInsets.only(left: 48, bottom: 2),
               child: Text(
-                '• ${reason.describe()}',
+                '• ${describeBreakingReason(messages, reason)}',
                 style: theme.textTheme.bodySmall,
               ),
             ),
@@ -157,4 +157,38 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
     final int separator = slash > backslash ? slash : backslash;
     return separator < 0 ? path : path.substring(separator + 1);
   }
+}
+
+/// Localizes a [MaskBreakingReason] from the app catalog using its structured
+/// fields, rather than its English [MaskBreakingReason.describe] fallback.
+///
+/// Shared by the tier-1 propagation dialog and the tier-2 sync dialog so the
+/// two present identical, translated wording.
+String describeBreakingReason(
+  LearnAnywhereLocalizations messages,
+  MaskBreakingReason reason,
+) {
+  final String category = reason.categoryName.isEmpty
+      ? '#${reason.categoryId}'
+      : reason.categoryName;
+  final String field = reason.fieldName.isEmpty
+      ? '#${reason.fieldId}'
+      : reason.fieldName;
+  return switch (reason.kind) {
+    MaskBreakingKind.categoryDeleted => messages
+        .message(LearnAnywhereMessage.maskBreakCategoryDeleted)
+        .replaceAll('{category}', category)
+        .replaceAll('{count}', reason.affectedUnits.toString()),
+    MaskBreakingKind.fieldDeleted => messages
+        .message(LearnAnywhereMessage.maskBreakFieldDeleted)
+        .replaceAll('{field}', field)
+        .replaceAll('{category}', category)
+        .replaceAll('{count}', reason.affectedUnits.toString()),
+    MaskBreakingKind.fieldLengthTooShort => messages
+        .message(LearnAnywhereMessage.maskBreakFieldTooShort)
+        .replaceAll('{field}', field)
+        .replaceAll('{category}', category)
+        .replaceAll('{length}', (reason.newLength ?? 0).toString())
+        .replaceAll('{count}', reason.affectedUnits.toString()),
+  };
 }

@@ -8,8 +8,8 @@ final class DesktopDocument {
     required this.statistics,
     this.deckPath,
     this.statisticsPath,
-    this.autoLoadStatistics = true,
-    this.autoSaveStatistics = true,
+    this.autoLoadStatistics = false,
+    this.autoSaveStatistics = false,
   });
 
   /// Current self-contained deck.
