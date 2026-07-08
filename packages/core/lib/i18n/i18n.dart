@@ -722,6 +722,9 @@ enum LearnAnywhereMessage {
   /// Limit reached text.
   maskEditorLimitReached,
 
+  /// Shown under the Mask Editor title when the mask has no linked file yet.
+  maskEditorUnsavedMask,
+
   /// Current deck path label.
   fileStatusDeck,
 
@@ -749,6 +752,21 @@ enum LearnAnywhereMessage {
   /// Prompt to create a linked `.inf` when a deck has none.
   confirmCreateLinkedMask,
 
+  /// Confirm re-linking the open deck to a freshly forked mask.
+  confirmForkRelinkDeck,
+
+  /// File→New: title of the dialog choosing how to seed a new deck's mask.
+  fileNewMaskChoiceTitle,
+
+  /// File→New: body text of the mask-choice dialog.
+  fileNewMaskChoiceBody,
+
+  /// File→New: action to load an existing mask file for the new deck.
+  actionLoadExistingMask,
+
+  /// File→New: action to mint a brand-new mask for the new deck.
+  actionCreateNewMask,
+
   /// Status shown after the linked `.inf` mask is saved.
   fileStatusMaskSaved,
 
@@ -761,6 +779,13 @@ enum LearnAnywhereMessage {
   /// Intro line of the breaking-propagation dialog.
   propagationBreakingBody,
 
+  /// Title of the tier-1 propagation confirm-selection dialog (compatible
+  /// sibling decks only; no breaking changes).
+  propagationConfirmTitle,
+
+  /// Body text of the tier-1 propagation confirm-selection dialog.
+  propagationConfirmBody,
+
   /// Fork action: save the `.inf` as a brand-new mask.
   actionForkMask,
 
@@ -772,6 +797,10 @@ enum LearnAnywhereMessage {
 
   /// Title of the cross-directory mask-sync review dialog.
   maskSyncTitle,
+
+  /// Subtitle showing the reference mask's own name in the tier-2 sync
+  /// dialog. Placeholder: {name}.
+  maskSyncReferenceLabel,
 
   /// Sync status: already identical to the current mask.
   maskSyncStatusUpToDate,
@@ -1196,6 +1225,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorCategoryCount: 'Categories: {count}/20',
       LearnAnywhereMessage.maskEditorFieldCount: 'Fields: {count}/20',
       LearnAnywhereMessage.maskEditorLimitReached: 'Limit reached',
+      LearnAnywhereMessage.maskEditorUnsavedMask: 'Not yet saved to a mask file',
       LearnAnywhereMessage.fileStatusDeck: 'Deck',
       LearnAnywhereMessage.fileStatusStats: 'Statistics',
       LearnAnywhereMessage.fileStatusUnsaved: 'Unsaved',
@@ -1208,6 +1238,15 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.confirmCreateLinkedMask:
           'No mask file found for this deck. Create one from the '
           "deck's embedded mask?",
+      LearnAnywhereMessage.confirmForkRelinkDeck:
+          'Re-link the currently open deck to this forked mask? The deck '
+          'file will be saved now to persist the new identity.',
+      LearnAnywhereMessage.fileNewMaskChoiceTitle: 'New deck: choose a mask',
+      LearnAnywhereMessage.fileNewMaskChoiceBody:
+          'Start this new deck from an existing mask file, or create a '
+          'brand-new mask?',
+      LearnAnywhereMessage.actionLoadExistingMask: 'Load existing mask...',
+      LearnAnywhereMessage.actionCreateNewMask: 'Create new mask',
       LearnAnywhereMessage.fileStatusMaskSaved: 'Mask saved',
       LearnAnywhereMessage.fileStatusDecksUpdated: 'Updated {count} deck(s)',
       LearnAnywhereMessage.propagationBreakingTitle: 'Some decks would lose data',
@@ -1215,12 +1254,18 @@ final class LearnAnywhereCatalog {
           'Applying this mask change would break the following deck(s). Save the '
           'mask as a new mask (leaving these decks on the old one), cancel, or '
           'force the update and lose the listed data.',
+      LearnAnywhereMessage.propagationConfirmTitle: 'Update linked decks?',
+      LearnAnywhereMessage.propagationConfirmBody:
+          'These deck(s) share this mask and can be updated without losing '
+          'data. Choose which to update now; unchecked decks are left '
+          'untouched.',
       LearnAnywhereMessage.actionForkMask: 'Save as new mask',
       LearnAnywhereMessage.actionForceUpdate: 'Force update (lose data)',
       LearnAnywhereMessage.menuEditUpdateMaskCopies:
           'U&pdate other copies of this mask...', // p
 
       LearnAnywhereMessage.maskSyncTitle: 'Update other copies of this mask',
+      LearnAnywhereMessage.maskSyncReferenceLabel: 'Reference mask: {name}',
       LearnAnywhereMessage.maskSyncStatusUpToDate: 'Up to date',
       LearnAnywhereMessage.maskSyncStatusWillUpdate: 'Will update',
       LearnAnywhereMessage.maskSyncStatusWouldBreak: 'Would break',
@@ -1562,6 +1607,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorCategoryCount: 'Kategorien: {count}/20',
       LearnAnywhereMessage.maskEditorFieldCount: 'Felder: {count}/20',
       LearnAnywhereMessage.maskEditorLimitReached: 'Grenze erreicht',
+      LearnAnywhereMessage.maskEditorUnsavedMask:
+          'Noch nicht in einer Maskendatei gespeichert',
       LearnAnywhereMessage.fileStatusDeck: 'Lern-Datei',
       LearnAnywhereMessage.fileStatusStats: 'Statistik',
       LearnAnywhereMessage.fileStatusUnsaved: 'Ungespeichert',
@@ -1574,6 +1621,16 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.confirmCreateLinkedMask:
           'Keine Maskendatei für dieses Deck gefunden. Aus der eingebetteten '
           'Maske des Decks eine erstellen?',
+      LearnAnywhereMessage.confirmForkRelinkDeck:
+          'Das aktuell geöffnete Deck mit dieser abgespaltenen Maske neu '
+          'verknüpfen? Die Deck-Datei wird jetzt gespeichert, um die neue '
+          'Identität dauerhaft festzuhalten.',
+      LearnAnywhereMessage.fileNewMaskChoiceTitle: 'Neues Deck: Maske wählen',
+      LearnAnywhereMessage.fileNewMaskChoiceBody:
+          'Dieses neue Deck aus einer vorhandenen Maskendatei starten oder '
+          'eine brandneue Maske erstellen?',
+      LearnAnywhereMessage.actionLoadExistingMask: 'Vorhandene Maske laden...',
+      LearnAnywhereMessage.actionCreateNewMask: 'Neue Maske erstellen',
       LearnAnywhereMessage.fileStatusMaskSaved: 'Maske gespeichert',
       LearnAnywhereMessage.fileStatusDecksUpdated:
           '{count} Deck(s) aktualisiert',
@@ -1583,6 +1640,13 @@ final class LearnAnywhereCatalog {
           'Diese Maskenänderung würde die folgenden Decks beschädigen. Maske als '
           'neue Maske speichern (die Decks bleiben auf der alten), abbrechen '
           'oder Aktualisierung erzwingen und die aufgeführten Daten verlieren.',
+      LearnAnywhereMessage.propagationConfirmTitle:
+          'Verknüpfte Decks aktualisieren?',
+      LearnAnywhereMessage.propagationConfirmBody:
+          'Diese Decks teilen sich diese Maske und können ohne '
+          'Datenverlust aktualisiert werden. Wählen Sie, welche jetzt '
+          'aktualisiert werden sollen; nicht ausgewählte Decks bleiben '
+          'unverändert.',
       LearnAnywhereMessage.actionForkMask: 'Als neue Maske speichern',
       LearnAnywhereMessage.actionForceUpdate: 'Erzwingen (Datenverlust)',
       LearnAnywhereMessage.menuEditUpdateMaskCopies:
@@ -1590,6 +1654,7 @@ final class LearnAnywhereCatalog {
 
       LearnAnywhereMessage.maskSyncTitle:
           'Andere Kopien dieser Maske aktualisieren',
+      LearnAnywhereMessage.maskSyncReferenceLabel: 'Referenzmaske: {name}',
       LearnAnywhereMessage.maskSyncStatusUpToDate: 'Aktuell',
       LearnAnywhereMessage.maskSyncStatusWillUpdate: 'Wird aktualisiert',
       LearnAnywhereMessage.maskSyncStatusWouldBreak: 'Würde beschädigen',
