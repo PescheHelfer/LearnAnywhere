@@ -195,9 +195,17 @@ final class DesktopFileService {
   /// existing maskId (never minting a new one), and returns the created path.
   ///
   /// Used when the Mask Editor opens for a deck that has no linked `.inf` yet
-  /// and the user opts to create one from the deck's embedded mask.
+  /// and the user opts to create one from the deck's embedded mask. When a
+  /// file already exists at the conventional path — an unrelated `.inf` that
+  /// happens to share the deck's base file name — a numbered-suffix path
+  /// (`_2`, `_3`, ...) is used instead of overwriting it.
   Future<String> createLinkedMask(String deckPath, LearningMask mask) async {
-    final String infPath = _withExtension(deckPath, 'inf');
+    String infPath = _withExtension(deckPath, 'inf');
+    var suffix = 2;
+    while (await File(infPath).exists()) {
+      infPath = _withExtension(deckPath, 'inf', suffix: suffix);
+      suffix += 1;
+    }
     await File(infPath).writeAsString(encodeMaskJson(mask));
     return infPath;
   }
@@ -311,6 +319,7 @@ final class DesktopFileService {
               revision: mask.revision,
               status: _classifyMaskCopy(mask, reference, referenceJson),
               reasons: const <MaskBreakingReason>[],
+              maskName: mask.name,
             ),
           );
         } else {
@@ -338,6 +347,7 @@ final class DesktopFileService {
               revision: deck.mask.revision,
               status: status,
               reasons: compat.reasons,
+              maskName: deck.mask.name,
             ),
           );
         }
@@ -395,11 +405,12 @@ final class DesktopFileService {
     return path.toLowerCase().endsWith('.${extension.toLowerCase()}');
   }
 
-  String _withExtension(String path, String extension) {
+  String _withExtension(String path, String extension, {int? suffix}) {
     final int separator = path.lastIndexOf(Platform.pathSeparator);
     final int dot = path.lastIndexOf('.');
     final String base = dot > separator ? path.substring(0, dot) : path;
-    return '$base.$extension';
+    final String suffixed = suffix == null ? base : '${base}_$suffix';
+    return '$suffixed.$extension';
   }
 
   /// Loads a `.sta` statistics file into the current document.
@@ -526,6 +537,7 @@ final class MaskSyncEntry {
     required this.revision,
     required this.status,
     required this.reasons,
+    required this.maskName,
   });
 
   /// Absolute path of the found file.
@@ -542,6 +554,10 @@ final class MaskSyncEntry {
 
   /// Breaking reasons when [status] is [MaskSyncStatus.wouldBreak].
   final List<MaskBreakingReason> reasons;
+
+  /// The copy's own mask name, so the review dialog can distinguish e.g. a
+  /// differently-named/differently-languaged mask before it is overwritten.
+  final String maskName;
 
   /// Whether the sync may update this copy (only older/compatible copies).
   bool get isUpdatable => status == MaskSyncStatus.willUpdate;

@@ -230,6 +230,39 @@ void main() {
       await temp.delete(recursive: true);
     });
 
+    test('createLinkedMask does not clobber an unrelated existing .inf', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_create_mask_collision',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String deckPath = '${temp.path}${sep}french.vok';
+      final String collidingPath = '${temp.path}${sep}french.inf';
+
+      // An unrelated .inf already sits at the exact path this deck's link
+      // would conventionally use.
+      final LearningMask unrelated = sampleMask(
+        name: 'Unrelated',
+      ).copyWith(maskId: 'm_new_unrelated');
+      await service.saveMask(unrelated, collidingPath);
+
+      final LearningMask embedded = sampleMask();
+      final String infPath = await service.createLinkedMask(deckPath, embedded);
+
+      expect(infPath, isNot(collidingPath));
+      expect(infPath, endsWith('french_2.inf'));
+      // The unrelated file survives untouched.
+      final LearningMask stillUnrelated = await service.readMask(
+        collidingPath,
+      );
+      expect(stillUnrelated.maskId, 'm_new_unrelated');
+      expect(stillUnrelated.name, 'Unrelated');
+      // The new file was created with the expected content instead.
+      final LearningMask created = await service.readMask(infPath);
+      expect(created.maskId, embedded.maskId);
+      await temp.delete(recursive: true);
+    });
+
     test('plans and applies tier-1 propagation to sibling decks', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
         'learn_anywhere_propagation',
@@ -302,6 +335,38 @@ void main() {
       await temp.delete(recursive: true);
     });
 
+    test('planMaskPropagation excludes the currently open deck', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_exclude_open',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String openPath = '${temp.path}${sep}open.vok';
+      final String siblingPath = '${temp.path}${sep}sibling.vok';
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{0: FieldValue.plain('Q')},
+          ),
+        ],
+      );
+      await service.saveDeckSnapshot(deck, openPath);
+      await service.saveDeckSnapshot(deck, siblingPath);
+
+      final MaskPropagationPlan plan = await service.planMaskPropagation(
+        maskDirectory: temp.path,
+        newMask: sampleMask(),
+        excludePaths: <String>[openPath],
+      );
+
+      // Only the sibling appears; the excluded "currently open" deck's
+      // on-disk copy is left for the app layer to handle separately.
+      expect(plan.compatible, <String>[siblingPath]);
+      await temp.delete(recursive: true);
+    });
+
     test('scans cross-directory copies and classifies each status', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
         'learn_anywhere_sync',
@@ -335,7 +400,10 @@ void main() {
       );
       await service.saveDeckSnapshot(
         LearningDeck(
-          mask: _withFirstFieldLength(sampleMask(), 40).copyWith(revision: 1),
+          mask: _withFirstFieldLength(
+            sampleMask(name: 'Ok Deck Mask'),
+            40,
+          ).copyWith(revision: 1),
           units: const <LearningUnit>[
             LearningUnit(categoryId: 1, fields: <int, FieldValue>{0: FieldValue.plain('Q')}),
           ],
@@ -371,6 +439,14 @@ void main() {
       expect(byPath[sameRevPath], MaskSyncStatus.differs);
       expect(byPath[okDeckPath], MaskSyncStatus.willUpdate);
       expect(byPath[breakDeckPath], MaskSyncStatus.wouldBreak);
+
+      // Each entry carries the copy's OWN mask name, not the reference's, so
+      // the review dialog can distinguish differently-named copies.
+      final Map<String, String> maskNameByPath = <String, String>{
+        for (final MaskSyncEntry e in entries) e.path: e.maskName,
+      };
+      expect(maskNameByPath[identicalPath], reference.name);
+      expect(maskNameByPath[okDeckPath], 'Ok Deck Mask');
 
       // Apply only the updatable (willUpdate) copies.
       final List<String> updatable = entries
