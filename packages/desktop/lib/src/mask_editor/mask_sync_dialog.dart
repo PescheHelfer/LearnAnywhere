@@ -13,19 +13,31 @@ import '../file_operations/desktop_file_service.dart';
 /// same-revision "differs" copies are shown for information and never merged.
 final class MaskSyncDialog extends StatefulWidget {
   /// Creates the sync review dialog.
-  const MaskSyncDialog({required this.entries, super.key});
+  const MaskSyncDialog({
+    required this.entries,
+    required this.referenceName,
+    super.key,
+  });
 
   /// The scanned copies to review.
   final List<MaskSyncEntry> entries;
 
+  /// The reference mask's own name, shown so the user knows what is about to
+  /// be applied to the checked copies.
+  final String referenceName;
+
   /// Shows the dialog; returns the selected paths, or `null` when cancelled.
   static Future<List<String>?> show(
     BuildContext context,
-    List<MaskSyncEntry> entries,
-  ) {
+    List<MaskSyncEntry> entries, {
+    required String referenceName,
+  }) {
     return showDialog<List<String>>(
       context: context,
-      builder: (BuildContext context) => MaskSyncDialog(entries: entries),
+      builder: (BuildContext context) => MaskSyncDialog(
+        entries: entries,
+        referenceName: referenceName,
+      ),
     );
   }
 
@@ -34,10 +46,9 @@ final class MaskSyncDialog extends StatefulWidget {
 }
 
 class _MaskSyncDialogState extends State<MaskSyncDialog> {
-  late final Set<String> _selected = <String>{
-    for (final MaskSyncEntry entry in widget.entries)
-      if (entry.isUpdatable) entry.path,
-  };
+  // Every update must be explicitly opted into; a single misclick on Apply
+  // must never mass-overwrite every willUpdate copy found under the folder.
+  final Set<String> _selected = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +65,15 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              Text(
+                messages
+                    .message(LearnAnywhereMessage.maskSyncReferenceLabel)
+                    .replaceAll('{name}', widget.referenceName),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
               for (final MaskSyncEntry entry in widget.entries)
                 _row(context, messages, theme, entry),
             ],
@@ -104,9 +124,21 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
                     : null,
               ),
               Expanded(
-                child: Text(
-                  '${_fileName(entry.path)}  (rev ${entry.revision})',
-                  style: theme.textTheme.bodyMedium,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '${entry.maskName}  (rev ${entry.revision})',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    Text(
+                      entry.path,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
               Text(
@@ -151,12 +183,6 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
     };
   }
 
-  String _fileName(String path) {
-    final int slash = path.lastIndexOf('/');
-    final int backslash = path.lastIndexOf(r'\');
-    final int separator = slash > backslash ? slash : backslash;
-    return separator < 0 ? path : path.substring(separator + 1);
-  }
 }
 
 /// Localizes a [MaskBreakingReason] from the app catalog using its structured
