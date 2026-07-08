@@ -10,6 +10,8 @@ final class MaskEditorPage extends StatefulWidget {
     required this.mask,
     required this.onChanged,
     this.onClose,
+    this.linkedPath,
+    this.onFork,
     super.key,
   });
 
@@ -21,6 +23,15 @@ final class MaskEditorPage extends StatefulWidget {
 
   /// Called when the user closes this page.
   final VoidCallback? onClose;
+
+  /// The `.inf` file this session edits, or `null` when the mask has not yet
+  /// been saved anywhere. Shown under the title so it is always clear which
+  /// file (if any) will be overwritten on close.
+  final String? linkedPath;
+
+  /// Called when the user chooses to fork this mask into a brand-new one.
+  /// The fork toolbar button is hidden when this is `null`.
+  final VoidCallback? onFork;
 
   @override
   State<MaskEditorPage> createState() => _MaskEditorPageState();
@@ -57,6 +68,13 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
           Text(
             messages.message(LearnAnywhereMessage.routeMaskEditorTitle),
             style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          Text(
+            widget.linkedPath ??
+                messages.message(LearnAnywhereMessage.maskEditorUnsavedMask),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: LearnAnywhereTokens.gapMedium),
           _MaskHeader(mask: mask, onChanged: _emitMask),
@@ -106,10 +124,25 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
             const SizedBox(height: LearnAnywhereTokens.gapLarge),
             Align(
               alignment: Alignment.centerLeft,
-              child: FilledButton(
-                key: const ValueKey<String>('mask-editor-close-button'),
-                onPressed: close,
-                child: Text(messages.message(LearnAnywhereMessage.actionClose)),
+              child: Wrap(
+                spacing: LearnAnywhereTokens.gapSmall,
+                children: <Widget>[
+                  FilledButton(
+                    key: const ValueKey<String>('mask-editor-close-button'),
+                    onPressed: close,
+                    child: Text(
+                      messages.message(LearnAnywhereMessage.actionClose),
+                    ),
+                  ),
+                  if (widget.onFork != null)
+                    OutlinedButton(
+                      key: const ValueKey<String>('mask-editor-fork-button'),
+                      onPressed: widget.onFork,
+                      child: Text(
+                        messages.message(LearnAnywhereMessage.actionForkMask),
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
@@ -251,7 +284,7 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
         FieldDefinition(
           id: _nextFieldId(widget.mask),
           name: '',
-          length: 20,
+          length: 60,
           equalGroup: 0,
           role1: FieldRole.question,
           role2: FieldRole.answer,

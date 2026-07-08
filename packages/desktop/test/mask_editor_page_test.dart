@@ -151,6 +151,129 @@ void main() {
     expect(closeCount, 2);
   });
 
+  testWidgets('adding a field defaults its length to 60', (
+    WidgetTester tester,
+  ) async {
+    const LearningMask mask = LearningMask(
+      maskId: 'm_new_add-field-fixture',
+      name: 'AddField',
+      direction1Label: 'A',
+      direction2Label: 'B',
+      categories: <CategoryDefinition>[
+        CategoryDefinition(id: 0, name: 'C0', fields: <FieldDefinition>[]),
+      ],
+    );
+    LearningMask emitted = mask;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates:
+            LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return MaskEditorPage(
+                mask: emitted,
+                onChanged: (LearningMask value) =>
+                    setState(() => emitted = value),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('add-field-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('add-field-button')));
+    await tester.pumpAndSettle();
+
+    expect(emitted.categories.single.fields.single.length, 60);
+  });
+
+  testWidgets(
+    'shows the linked .inf path, or an unsaved indicator when null',
+    (WidgetTester tester) async {
+      const LearningMask mask = LearningMask(
+        maskId: 'm_new_linked-path-fixture',
+        name: 'Linked',
+        direction1Label: 'A',
+        direction2Label: 'B',
+        categories: <CategoryDefinition>[],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: MaskEditorPage(
+              mask: mask,
+              onChanged: (LearningMask _) {},
+              linkedPath: 'C:/decks/french.inf',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('C:/decks/french.inf'), findsOneWidget);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: MaskEditorPage(mask: mask, onChanged: (LearningMask _) {}),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Not yet saved to a mask file'), findsOneWidget);
+    },
+  );
+
+  testWidgets('fork button appears with onFork and invokes the callback', (
+    WidgetTester tester,
+  ) async {
+    const LearningMask mask = LearningMask(
+      maskId: 'm_new_fork-fixture',
+      name: 'Fork',
+      direction1Label: 'A',
+      direction2Label: 'B',
+      categories: <CategoryDefinition>[],
+    );
+    var forkCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates:
+            LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: Scaffold(
+          body: MaskEditorPage(
+            mask: mask,
+            onChanged: (LearningMask _) {},
+            onClose: () {},
+            onFork: () => forkCount += 1,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('mask-editor-fork-button')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('mask-editor-fork-button')),
+    );
+    await tester.pumpAndSettle();
+    expect(forkCount, 1);
+  });
+
   testWidgets('reordering categories and fields swaps order, keeps ids', (
     WidgetTester tester,
   ) async {
