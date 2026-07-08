@@ -457,6 +457,13 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
       }
     });
     widget.onCurrentIndexChanged?.call(_currentIndex);
+    if (units.isEmpty) {
+      // The empty-editor state has no focusable widget of its own, so
+      // reclaim root focus for the page's Shortcuts (Enter/F1/F10/Esc).
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _rootFocusNode.requestFocus();
+      });
+    }
   }
 
   Future<void> _search() async {
