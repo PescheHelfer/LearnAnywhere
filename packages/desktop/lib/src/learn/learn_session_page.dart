@@ -364,6 +364,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _currentItem = null;
       _completed = false;
     });
+    // The "Extend session" button that triggered this is disposed by the
+    // view switch, so reclaim root focus for the setup view's shortcuts.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _rootFocusNode.requestFocus();
+    });
   }
 
   /// Stores the edited draft and pushes it to the shell so it is persisted.
@@ -383,6 +388,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         _completed = true;
         _evaluation = null;
       });
+      // The completion view has no focusable answer fields; the button that
+      // triggered this transition may be disposed, so reclaim root focus.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _rootFocusNode.requestFocus();
+      });
       return;
     }
     _resetAnswerControllers(next);
@@ -393,6 +403,13 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _elapsedSeconds = 0;
       _timeTonePlayed = false;
     });
+    // When withInput is off, _resetAnswerControllers claims no focus itself
+    // (no answer fields exist), so reclaim root focus here instead.
+    if (_answerFocusNodes.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _rootFocusNode.requestFocus();
+      });
+    }
   }
 
   /// Returns the next item from the precomputed presentation order.
