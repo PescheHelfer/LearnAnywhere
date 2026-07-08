@@ -284,25 +284,32 @@ void main() {
     expect(find.text('Fields: 1/20'), findsOneWidget);
   });
 
-  testWidgets('file menu clear units asks for confirmation and shows status', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'file menu clear units asks for confirmation then a mask choice',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('File'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Clear units from memory...'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('File'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Clear units from memory...'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Please confirm'), findsOneWidget);
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
+      expect(find.text('Please confirm'), findsOneWidget);
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('File operations'), findsOneWidget);
-    expect(find.text('Units: 0'), findsOneWidget);
-    expect(find.text('New deck created.'), findsWidgets);
-  });
+      // B1: File->New no longer silently carries the current mask over; it
+      // asks whether to load an existing mask or mint a brand-new one.
+      expect(find.text('New deck: choose a mask'), findsOneWidget);
+      await tester.tap(find.text('Create new mask'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mask Editor'), findsWidgets);
+      // A fresh mask has no linked file yet (B6).
+      expect(find.text('Not yet saved to a mask file'), findsOneWidget);
+    },
+  );
 
   testWidgets('desktop shell switches language at runtime', (
     WidgetTester tester,

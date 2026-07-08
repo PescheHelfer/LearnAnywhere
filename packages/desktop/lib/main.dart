@@ -1022,6 +1022,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _editorInitialIndex = null;
       _route = route;
     });
+    // Learn/Statistics/Lexicon/Edit are opened from MenuBar entries outside
+    // the content FocusScope; re-assert focus so the destination page's
+    // F-key/Esc shortcuts are live immediately.
+    _restoreContentFocus();
   }
 
   /// Finishes editing (F10/Done): keeps the changes and drops the snapshot.
@@ -1071,9 +1075,32 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   Future<void> _openMaskEditor() async {
     final String? deckPath = _document.deckPath;
     if (deckPath == null) {
+      // _lastMaskPath is "the last .inf this app touched" — unrelated to the
+      // in-memory mask's identity unless it demonstrably describes the SAME
+      // mask. Reusing it blindly can silently overwrite a completely
+      // different mask file (see B8). Only reuse it when its own maskId
+      // matches; otherwise the editor targets no file and prompts for a save
+      // destination on close.
+      String? resolvedPath;
+      final String? candidate = _lastMaskPath;
+      if (candidate != null) {
+        try {
+          final LearningMask candidateMask = await _fileService.readMask(
+            candidate,
+          );
+          if (candidateMask.maskId == _document.mask.maskId) {
+            resolvedPath = candidate;
+          }
+        } on Object {
+          resolvedPath = null;
+        }
+      }
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _maskEditorMask = _document.mask;
-        _maskEditorPath = _lastMaskPath;
+        _maskEditorPath = resolvedPath;
         _maskEditorDirty = false;
         _editorInitialIndex = null;
         _route = _DesktopRoute.maskEditor;
@@ -1158,6 +1185,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       final MaskPropagationPlan plan = await _fileService.planMaskPropagation(
         maskDirectory: directory,
         newMask: saved,
+        excludePaths: <String>[
+          if (_document.deckPath != null) _document.deckPath!,
+        ],
       );
 
       if (plan.hasBreaking) {
@@ -1186,19 +1216,108 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         return;
       }
 
-      // No breaking decks: save and auto-update every compatible deck.
+      // No breaking decks: ask which compatible siblings to update (unless
+      // there are none, in which case there is nothing to confirm).
+      List<String> toUpdate = plan.compatible;
+      if (plan.compatible.isNotEmpty) {
+        final List<String>? checked = await _showPropagationConfirmDialog(
+          plan.compatible,
+        );
+        if (checked == null) {
+          // Cancelled: nothing written; stay in the editor with edits intact.
+          return;
+        }
+        toUpdate = checked;
+      }
       await _fileService.saveMask(saved, infPath);
       await _fileService.applyMaskPropagation(
         newMask: saved,
-        deckPaths: plan.compatible,
+        deckPaths: toUpdate,
       );
       _applyMaskToLoadedDeck(saved, force: false);
       _finishMaskSave(
         infPath,
         saved,
-        updatedDeckCount: plan.compatible.length,
+        updatedDeckCount: toUpdate.length,
       );
     });
+  }
+
+  /// Confirms which compatible sibling decks to update before writing
+  /// anything (Step 6 tier-1 propagation). All entries are checked by
+  /// default; unchecking one leaves that deck's file untouched. Returns
+  /// `null` on cancel.
+  Future<List<String>?> _showPropagationConfirmDialog(
+    List<String> paths,
+  ) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final Set<String> selected = paths.toSet();
+    return showDialog<List<String>>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setInnerState) {
+            return AlertDialog(
+              title: Text(
+                messages.message(LearnAnywhereMessage.propagationConfirmTitle),
+              ),
+              content: SizedBox(
+                width: 480,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        messages.message(
+                          LearnAnywhereMessage.propagationConfirmBody,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      for (final String path in paths)
+                        Row(
+                          children: <Widget>[
+                            Checkbox(
+                              value: selected.contains(path),
+                              onChanged: (bool? value) {
+                                setInnerState(() {
+                                  if (value ?? false) {
+                                    selected.add(path);
+                                  } else {
+                                    selected.remove(path);
+                                  }
+                                });
+                              },
+                            ),
+                            Expanded(
+                              child: Text(_filePicker.fileNameOf(path)),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    messages.message(LearnAnywhereMessage.actionCancel),
+                  ),
+                ),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(selected.toList()),
+                  child: Text(messages.message(LearnAnywhereMessage.maskSyncApply)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   /// Common bookkeeping after a mask save completes.
@@ -1335,6 +1454,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       final List<String>? selected = await MaskSyncDialog.show(
         context,
         entries,
+        referenceName: reference.name,
       );
       if (selected == null || selected.isEmpty) {
         return;
@@ -1350,6 +1470,61 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         });
       }
       _setFileStatus(LearnAnywhereMessage.maskSyncDone, count: selected.length);
+    });
+  }
+
+  /// Forks the mask currently open in the Mask Editor into a brand-new,
+  /// independent mask (fresh `maskId`, revision reset to 0), written to a
+  /// user-chosen `.inf` path. The original file is left untouched. This is
+  /// the only way to give a mask a new identity on demand — the recovery
+  /// path for decks whose identity got tangled by a prior sharing bug.
+  Future<void> _forkMask() async {
+    final LearningMask? mask = _maskEditorMask;
+    if (mask == null) {
+      return;
+    }
+    final String? newPath = await _pickSavePath(
+      extension: 'inf',
+      typeLabel: LearnAnywhereMessage.filePickerMaskType,
+      suggestedName: _suggestedName(_maskEditorPath, 'learn_anywhere.inf'),
+    );
+    if (newPath == null) {
+      return;
+    }
+    final String infPath = _ensureExtension(newPath, 'inf');
+    final LearningMask forked = mask.copyWith(
+      maskId: mintNewMaskId(),
+      revision: 0,
+    );
+    await _guardedFileOperation(() async {
+      await _fileService.saveMask(forked, infPath);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _maskEditorMask = forked;
+        _maskEditorPath = infPath;
+        _maskEditorDirty = false;
+      });
+      _setLastDir('inf', infPath);
+      // Only offer to re-link when the currently loaded deck is actually the
+      // mask being forked — never relink an unrelated in-memory document.
+      if (_document.mask.maskId == mask.maskId &&
+          _document.deck.units.isNotEmpty) {
+        final bool relink = await _confirm(
+          LearnAnywhereMessage.confirmForkRelinkDeck,
+        );
+        if (relink && mounted) {
+          setState(() {
+            _document = _document.copyWith(
+              deck: applyMaskToDeck(_document.deck, forked),
+            );
+          });
+          if (_document.deckPath != null) {
+            _document = await _fileService.saveDeck(_document);
+          }
+        }
+      }
     });
   }
 
@@ -1373,6 +1548,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         _editorInitialIndex = index;
         _route = _DesktopRoute.editor;
       });
+      _restoreContentFocus();
     }
   }
 
@@ -1390,6 +1566,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         _editorInitialIndex = index;
         _route = _DesktopRoute.editor;
       });
+      _restoreContentFocus();
     }
   }
 
@@ -1425,6 +1602,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           });
         },
         onClose: _closeMaskEditor,
+        linkedPath: _maskEditorPath,
+        onFork: _forkMask,
       ),
       _DesktopRoute.learn => LearnSessionPage(
         deck: _document.deck,
@@ -1584,6 +1763,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     }
   }
 
+  /// New deck: replaces the silent mask carry-over (which let two unrelated
+  /// decks accidentally share a `maskId`) with an explicit choice between
+  /// reusing an existing mask file or minting a brand-new mask identity.
   Future<void> _newDeck() async {
     final bool confirmed = await _confirm(LearnAnywhereMessage.confirmNewDeck);
     if (!confirmed) {
@@ -1592,13 +1774,91 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     if (!await _confirmAndAutoSaveStats()) {
       return;
     }
+    final _NewMaskChoice? choice = await _showNewMaskChoiceDialog();
+    if (choice == null || choice == _NewMaskChoice.cancel) {
+      return;
+    }
+    if (choice == _NewMaskChoice.loadExisting) {
+      final String? path = await _pickOpenPath(
+        extension: 'inf',
+        typeLabel: LearnAnywhereMessage.filePickerMaskType,
+      );
+      if (path == null) {
+        return;
+      }
+      await _guardedFileOperation(() async {
+        final LearningMask loadedMask = await _fileService.readMask(path);
+        _document = await _fileService.newDeck(_document, mask: loadedMask);
+        _lastMaskPath = path;
+        _resetRangeForDeck();
+        _selectRoute(_DesktopRoute.fileOperations);
+        _setFileStatus(LearnAnywhereMessage.fileNewDeckDone);
+        _setLastDir('inf', path);
+        unawaited(_saveSettings());
+      });
+      return;
+    }
+    // Create new mask: mint a fresh identity and go straight into the Mask
+    // Editor so the user can shape it before saving.
     await _guardedFileOperation(() async {
-      _document = await _fileService.newDeck(_document);
+      final LearningMask freshMask = _defaultMask(widget.locale.languageCode);
+      _document = await _fileService.newDeck(_document, mask: freshMask);
       _resetRangeForDeck();
-      _selectRoute(_DesktopRoute.fileOperations);
-      _setFileStatus(LearnAnywhereMessage.fileNewDeckDone);
+      setState(() {
+        _maskEditorMask = freshMask;
+        // Explicitly null (never _lastMaskPath, which is an unrelated file
+        // from a previous session — see B8): a brand-new mask must prompt
+        // for a save target on close.
+        _maskEditorPath = null;
+        _maskEditorDirty = false;
+        _editorInitialIndex = null;
+        _route = _DesktopRoute.maskEditor;
+      });
       unawaited(_saveSettings());
     });
+  }
+
+  /// Offers a choice between loading an existing mask or minting a new one
+  /// for a brand-new deck; returns `null` when the dialog is dismissed.
+  Future<_NewMaskChoice?> _showNewMaskChoiceDialog() async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return showDialog<_NewMaskChoice>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            messages.message(LearnAnywhereMessage.fileNewMaskChoiceTitle),
+          ),
+          content: Text(
+            messages.message(LearnAnywhereMessage.fileNewMaskChoiceBody),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(_NewMaskChoice.cancel),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(_NewMaskChoice.loadExisting),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionLoadExistingMask),
+              ),
+            ),
+            FilledButton(
+              autofocus: true,
+              onPressed: () =>
+                  Navigator.of(context).pop(_NewMaskChoice.createNew),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionCreateNewMask),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _openDeck() async {
@@ -2381,3 +2641,6 @@ final class _GoHomeIntent extends Intent {
 
 /// User choice from the auto-save overwrite prompt (C11).
 enum _OverwriteChoice { yes, no, cancel }
+
+/// User choice from the File→New mask dialog (B1).
+enum _NewMaskChoice { loadExisting, createNew, cancel }
