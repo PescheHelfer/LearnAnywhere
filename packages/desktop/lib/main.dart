@@ -398,18 +398,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     super.dispose();
   }
 
-  /// Auto-saves statistics (with the overwrite prompt) and settings before the
-  /// window closes via the title-bar X, then destroys the window. Cancelling
-  /// the overwrite prompt aborts the close. `setPreventClose(true)` in `main`
-  /// is what routes the close through here (see §4.6 auto-save on app exit).
+  /// Handles the title-bar X close.
+  ///
+  /// Routes through the same [_confirmAndExit] sequence as File→Exit — confirm,
+  /// auto-save statistics/settings, then `exit(0)` — so the two paths cannot
+  /// drift apart. `setPreventClose(true)` in `main` is what routes the close
+  /// here; cancelling any prompt leaves the window open.
   @override
-  Future<void> onWindowClose() async {
-    if (!await _confirmAndAutoSaveStats()) {
-      return;
-    }
-    await _saveSettings();
-    await windowManager.destroy();
-  }
+  Future<void> onWindowClose() => _confirmAndExit();
 
   /// Re-asserts keyboard focus into the main content area so the active page's
   /// Shortcuts/Actions keep receiving F-key and Esc events.
@@ -1749,7 +1745,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       case LearnAnywhereMessage.statisticsClear:
         await _clearStatistics();
       case LearnAnywhereMessage.fileExit:
-        await _exit();
+        await _confirmAndExit();
       default:
         _selectRoute(_DesktopRoute.fileOperations);
     }
@@ -2112,8 +2108,17 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     });
   }
 
-  // B1: Use exit(0) so the process actually terminates on Windows/Linux.
-  Future<void> _exit() async {
+  /// Shared shutdown sequence used by both File→Exit and the title-bar X.
+  ///
+  /// Confirms the exit, auto-saves statistics (with the overwrite prompt) and
+  /// settings, then terminates via `exit(0)`. Cancelling any prompt aborts the
+  /// shutdown and leaves the app running.
+  ///
+  /// `exit(0)` is used rather than `windowManager.destroy()` because destroy()
+  /// can hang for ~30s on Windows and end in a crash dump (window_manager issue
+  /// #478); exit(0) terminates cleanly. `setPreventClose(true)` in `main` routes
+  /// the X through here (via [onWindowClose]).
+  Future<void> _confirmAndExit() async {
     final bool confirmed = await _confirm(LearnAnywhereMessage.confirmExit);
     if (!confirmed) return;
     // Auto-save (with overwrite prompt) before leaving; Cancel aborts exit.
