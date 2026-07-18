@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -999,7 +1000,7 @@ void main() {
         direction: DirectionSelection.direction2,
         shuffle: true,
         requireTypedAnswers: false,
-        superStatusThreshold: 0.6,
+        masteryThreshold: 0.6,
         lastDeckPath: '/decks/french1.vok',
         lastMaskPath: '/masks/french.inf',
       );
@@ -1068,6 +1069,374 @@ void main() {
       expect(
         autoExpandEndUnit(manualFull, previousCount: 10, newCount: 15).endUnit,
         10,
+      );
+    });
+
+    test('round-trips entryLevelCap and level names', () {
+      const LearnAnywhereSettings settings = LearnAnywhereSettings(
+        entryLevelCap: 2,
+        levelNamesEn: <String>['A', 'B', 'C', 'D'],
+        levelNamesDe: <String>['E', 'F', 'G', 'H'],
+      );
+      final LearnAnywhereSettings restored = decodeSettingsJson(
+        encodeSettingsJson(settings),
+      );
+      expect(restored.entryLevelCap, 2);
+      expect(restored.levelNamesEn, <String>['A', 'B', 'C', 'D']);
+      expect(restored.levelNamesDe, <String>['E', 'F', 'G', 'H']);
+      expect(restored, settings);
+    });
+
+    test('level-learning settings fall back to defaults when invalid', () {
+      const LearnAnywhereSettings defaults = LearnAnywhereSettings();
+      // Missing keys use defaults.
+      final LearnAnywhereSettings empty = decodeSettings(<String, Object?>{});
+      expect(empty.entryLevelCap, kMaxSupportLevel);
+      expect(empty.levelNamesEn, kDefaultLevelNamesEn);
+      expect(empty.levelNamesDe, kDefaultLevelNamesDe);
+      // Out-of-range cap and wrong-length / wrong-typed name lists fall back.
+      final LearnAnywhereSettings broken = decodeSettings(<String, Object?>{
+        'entryLevelCap': 9,
+        'levelNamesEn': <Object?>['only', 'three', 'names'],
+        'levelNamesDe': <Object?>[1, 2, 3, 4],
+      });
+      expect(broken.entryLevelCap, defaults.entryLevelCap);
+      expect(broken.levelNamesEn, kDefaultLevelNamesEn);
+      expect(broken.levelNamesDe, kDefaultLevelNamesDe);
+    });
+  });
+
+  group('level-learning masking', () {
+    // Renders a mask template compactly: blanks become '_', every other cell
+    // keeps its source character (shown structural chars and revealed letters).
+    String render(String text, int level) => maskFieldValue(text, level)
+        .map(
+          (MaskCell cell) =>
+              cell.kind == MaskCellKind.blank ? '_' : cell.char,
+        )
+        .join();
+
+    test('applies each level to a single word', () {
+      expect(render('CHOCOLAT', 3), 'CHOCOLAT');
+      expect(render('CHOCOLAT', 2), 'C_O_O_A_');
+      expect(render('CHOCOLAT', 1), 'C______T');
+      expect(render('CHOCOLAT', 0), '________');
+    });
+
+    test('restarts the pattern per word and always shows whitespace', () {
+      final List<MaskCell> cells = maskFieldValue('le petit chat', 1);
+      expect(render('le petit chat', 1), 'le p___t c__t');
+      // The two spaces are shown verbatim, never blanks.
+      final Iterable<MaskCell> spaces = cells.where(
+        (MaskCell cell) => cell.char == ' ',
+      );
+      expect(spaces.length, 2);
+      expect(
+        spaces.every((MaskCell cell) => cell.kind == MaskCellKind.shown),
+        isTrue,
+      );
+    });
+
+    test('shows punctuation without counting it as a candidate', () {
+      // Apostrophe is shown; candidates are l,e,a,u → level 2 reveals l,a.
+      expect(render("l'eau", 2), "l'_a_");
+      final List<MaskCell> cells = maskFieldValue("l'eau", 2);
+      expect(cells[1].char, "'");
+      expect(cells[1].kind, MaskCellKind.shown);
+    });
+
+    test('fully reveals 1- and 2-candidate words at level 1', () {
+      expect(render('an', 1), 'an');
+      expect(render('a', 1), 'a');
+      expect(
+        maskFieldValue('an', 1)
+            .every((MaskCell cell) => cell.kind == MaskCellKind.revealed),
+        isTrue,
+      );
+    });
+
+    test('rejects an out-of-range level', () {
+      expect(() => maskFieldValue('word', 4), throwsArgumentError);
+      expect(() => maskFieldValue('word', -1), throwsArgumentError);
+    });
+  });
+
+  group('level-learning engine', () {
+    const SessionParameters params = SessionParameters(
+      mode: SessionMode.levelLearning,
+      masteryThreshold: 0.5,
+    );
+
+    test('maps prior buckets to start levels', () {
+      expect(levelForBucket(HitRateBucket.perfect), 0);
+      expect(levelForBucket(HitRateBucket.good), 0);
+      expect(levelForBucket(HitRateBucket.fair), 1);
+      expect(levelForBucket(HitRateBucket.unsure), 2);
+      expect(levelForBucket(HitRateBucket.veryUnsure), 3);
+      expect(levelForBucket(HitRateBucket.neverKnown), 3);
+      expect(levelForBucket(HitRateBucket.notYetQueried), 3);
+    });
+
+    test('seeds from prior bucket and applies the entry-level cap', () {
+      expect(
+        seedLevelLearningStats(
+          const DirectionStats(attempts: 2, correct: 2),
+        ).currentLevel,
+        0,
+      );
+      expect(
+        seedLevelLearningStats(
+          const DirectionStats(attempts: 2, correct: 1),
+        ).currentLevel,
+        1,
+      );
+      expect(
+        seedLevelLearningStats(
+          const DirectionStats(attempts: 4, correct: 1),
+        ).currentLevel,
+        2,
+      );
+      expect(seedLevelLearningStats(const DirectionStats()).currentLevel, 3);
+      // The cap lowers the *maximum* support (min), but never raises it.
+      expect(
+        seedLevelLearningStats(
+          const DirectionStats(),
+          entryLevelCap: 2,
+        ).currentLevel,
+        2,
+      );
+      expect(
+        seedLevelLearningStats(
+          const DirectionStats(attempts: 2, correct: 2),
+          entryLevelCap: 2,
+        ).currentLevel,
+        0,
+      );
+      // Every seeded level starts with a fresh 0/0 track record.
+      final LevelDirectionStats seeded = seedLevelLearningStats(
+        const DirectionStats(attempts: 2, correct: 2),
+      );
+      expect(
+        seeded.levels.values
+            .every((DirectionStats s) => s == const DirectionStats()),
+        isTrue,
+      );
+    });
+
+    test('promotes on reaching the threshold with a fresh lower level', () {
+      final LevelDirectionStats start = LevelDirectionStats.fresh(3);
+      final LevelDirectionStats afterOne = recordLevelLearningAttempt(
+        start,
+        AttemptRating.correct,
+        parameters: params,
+      );
+      // 1/1 at level 3 meets the 0.5 threshold → promote to level 2.
+      expect(afterOne.currentLevel, 2);
+      expect(afterOne.levels[3], const DirectionStats(attempts: 1, correct: 1));
+      expect(afterOne.levels[2], const DirectionStats());
+
+      // Cascade continues down to level 0.
+      var s = afterOne;
+      for (var i = 0; i < 3; i += 1) {
+        s = recordLevelLearningAttempt(
+          s,
+          AttemptRating.correct,
+          parameters: params,
+        );
+      }
+      expect(s.currentLevel, 0);
+    });
+
+    test('does not demote on a wrong answer', () {
+      final LevelDirectionStats start = LevelDirectionStats.fresh(2);
+      final LevelDirectionStats afterWrong = recordLevelLearningAttempt(
+        start,
+        AttemptRating.wrong,
+        parameters: params,
+      );
+      expect(afterWrong.currentLevel, 2);
+      expect(afterWrong.levels[2], const DirectionStats(attempts: 1));
+    });
+
+    test('level-0 single correct answer is mastered', () {
+      final LevelDirectionStats start = LevelDirectionStats.fresh(0);
+      expect(isLevelLearningMastered(start, parameters: params), isFalse);
+      final LevelDirectionStats mastered = recordLevelLearningAttempt(
+        start,
+        AttemptRating.correct,
+        parameters: params,
+      );
+      expect(mastered.currentLevel, 0);
+      expect(isLevelLearningMastered(mastered, parameters: params), isTrue);
+    });
+
+    test('manual override moves the level and resets that level to 0/0', () {
+      final LevelDirectionStats start = LevelDirectionStats.fresh(3)
+          .withLevelStats(3, const DirectionStats(attempts: 5, correct: 5));
+      final LevelDirectionStats moved = setLevelLearningLevel(start, 1);
+      expect(moved.currentLevel, 1);
+      expect(moved.levels[1], const DirectionStats());
+      // The other levels are untouched.
+      expect(moved.levels[3], const DirectionStats(attempts: 5, correct: 5));
+      expect(() => setLevelLearningLevel(start, 4), throwsArgumentError);
+    });
+
+    test('derives the active pool and needs both directions when both', () {
+      final LearningDeck deck = sampleDeck();
+      // Unit 1: dir1 mastered at level 0, dir2 still at level 2.
+      final LevelDirectionStats masteredDir = LevelDirectionStats.fresh(0)
+          .withLevelStats(0, const DirectionStats(attempts: 1, correct: 1));
+      final List<LevelUnitStats> levelStats = <LevelUnitStats>[
+        LevelUnitStats(
+          index: 1,
+          dir1: masteredDir,
+          dir2: LevelDirectionStats.fresh(2),
+        ),
+      ];
+      // Unit 2 has no entry yet → seeded (not-yet-queried → level 3, active).
+      final List<SessionItem> pool = activeLevelLearningPool(
+        deck: deck,
+        statistics: const <UnitStats>[],
+        levelStatistics: levelStats,
+        parameters: params,
+      );
+      expect(
+        pool,
+        const <SessionItem>[
+          SessionItem(unitIndex: 1, direction: QueryDirection.direction2),
+          SessionItem(unitIndex: 2, direction: QueryDirection.direction1),
+          SessionItem(unitIndex: 2, direction: QueryDirection.direction2),
+        ],
+      );
+    });
+  });
+
+  group('level-learning statistics serialization', () {
+    LevelLearningStats sampleLevelStats() => const LevelLearningStats(
+      perUnit: <LevelUnitStats>[
+        LevelUnitStats(
+          index: 1,
+          dir1: LevelDirectionStats(
+            currentLevel: 1,
+            levels: <int, DirectionStats>{
+              3: DirectionStats(attempts: 1, correct: 1),
+              2: DirectionStats(attempts: 2, correct: 1),
+              1: DirectionStats(),
+              0: DirectionStats(),
+            },
+          ),
+          dir2: LevelDirectionStats(
+            currentLevel: 3,
+            levels: <int, DirectionStats>{
+              3: DirectionStats(),
+              2: DirectionStats(),
+              1: DirectionStats(),
+              0: DirectionStats(),
+            },
+          ),
+        ),
+      ],
+    );
+
+    test('round-trips a v2 file with a levelLearning section', () {
+      final StatisticsFile file = StatisticsFile(
+        deckRef: 'french1.vok',
+        perUnit: const <UnitStats>[UnitStats(index: 1)],
+        levelLearning: sampleLevelStats(),
+      );
+      final String encoded = encodeStatisticsJson(file);
+      final Map<String, Object?> raw =
+          jsonDecode(encoded) as Map<String, Object?>;
+      expect(raw['version'], currentStatisticsVersion);
+
+      final StatisticsFile restored = decodeStatisticsJson(encoded);
+      expect(restored.levelLearning, isNotNull);
+      final LevelDirectionStats dir1 =
+          restored.levelLearning!.perUnit.single.dir1;
+      expect(dir1.currentLevel, 1);
+      expect(dir1.levels[2], const DirectionStats(attempts: 2, correct: 1));
+      expect(restored.levelLearning!.perUnit.single.dir2.currentLevel, 3);
+    });
+
+    test('round-trips a v2 file without a levelLearning section', () {
+      const StatisticsFile file = StatisticsFile(
+        deckRef: 'french1.vok',
+        perUnit: <UnitStats>[UnitStats(index: 1)],
+      );
+      final StatisticsFile restored = decodeStatisticsJson(
+        encodeStatisticsJson(file),
+      );
+      expect(restored.levelLearning, isNull);
+    });
+
+    test('accepts a legacy v1 file as an empty level-learning section', () {
+      final StatisticsFile restored = decodeStatistics(<String, Object?>{
+        'format': statisticsFormat,
+        'version': 1,
+        'deckRef': 'french1.vok',
+        'perUnit': <Object?>[
+          <String, Object?>{
+            'index': 1,
+            'dir1': <String, Object?>{'attempts': 0, 'correct': 0},
+            'dir2': <String, Object?>{'attempts': 0, 'correct': 0},
+          },
+        ],
+      });
+      expect(restored.levelLearning, isNull);
+    });
+
+    test('rejects an invalid currentLevel or missing level key', () {
+      Map<String, Object?> withDir1(Object? dir1) => <String, Object?>{
+        'format': statisticsFormat,
+        'version': currentStatisticsVersion,
+        'deckRef': 'd.vok',
+        'perUnit': <Object?>[],
+        'levelLearning': <String, Object?>{
+          'perUnit': <Object?>[
+            <String, Object?>{
+              'index': 1,
+              'dir1': dir1,
+              'dir2': <String, Object?>{
+                'currentLevel': 0,
+                'levels': <String, Object?>{
+                  '3': <String, Object?>{'attempts': 0, 'correct': 0},
+                  '2': <String, Object?>{'attempts': 0, 'correct': 0},
+                  '1': <String, Object?>{'attempts': 0, 'correct': 0},
+                  '0': <String, Object?>{'attempts': 0, 'correct': 0},
+                },
+              },
+            },
+          ],
+        },
+      };
+      // currentLevel out of range.
+      expect(
+        () => decodeStatistics(
+          withDir1(<String, Object?>{
+            'currentLevel': 4,
+            'levels': <String, Object?>{
+              '3': <String, Object?>{'attempts': 0, 'correct': 0},
+              '2': <String, Object?>{'attempts': 0, 'correct': 0},
+              '1': <String, Object?>{'attempts': 0, 'correct': 0},
+              '0': <String, Object?>{'attempts': 0, 'correct': 0},
+            },
+          }),
+        ),
+        throwsA(isA<ValidationException>()),
+      );
+      // Missing the "0" level key.
+      expect(
+        () => decodeStatistics(
+          withDir1(<String, Object?>{
+            'currentLevel': 1,
+            'levels': <String, Object?>{
+              '3': <String, Object?>{'attempts': 0, 'correct': 0},
+              '2': <String, Object?>{'attempts': 0, 'correct': 0},
+              '1': <String, Object?>{'attempts': 0, 'correct': 0},
+            },
+          }),
+        ),
+        throwsA(isA<ValidationException>()),
       );
     });
   });

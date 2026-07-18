@@ -370,8 +370,8 @@ enum LearnAnywhereMessage {
   /// Shuffle units option.
   learnShuffleUnits,
 
-  /// Super status threshold label.
-  learnSuperThreshold,
+  /// Mastery threshold label.
+  learnMasteryThreshold,
 
   /// Start or resume session action.
   learnStartSession,
@@ -1097,7 +1097,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnModeSuperQuery: 'Drill mode',
       LearnAnywhereMessage.learnModeOnceThrough: 'Once through',
       LearnAnywhereMessage.learnShuffleUnits: 'Shuffle units',
-      LearnAnywhereMessage.learnSuperThreshold: 'Super status threshold (%)',
+      LearnAnywhereMessage.learnMasteryThreshold: 'Mastery threshold (%)',
       LearnAnywhereMessage.learnStartSession: 'Start session',
       LearnAnywhereMessage.learnPrompt: 'Prompt',
       LearnAnywhereMessage.learnYourAnswer: 'Your answer',
@@ -1473,7 +1473,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnModeSuperQuery: 'Drill-Modus',
       LearnAnywhereMessage.learnModeOnceThrough: 'Einmal durchgehen',
       LearnAnywhereMessage.learnShuffleUnits: 'Einheiten mischen',
-      LearnAnywhereMessage.learnSuperThreshold: 'Super-Status (%)',
+      LearnAnywhereMessage.learnMasteryThreshold: 'Beherrschungsschwelle (%)',
       LearnAnywhereMessage.learnStartSession: 'Sitzung starten',
       LearnAnywhereMessage.learnPrompt: 'Frage',
       LearnAnywhereMessage.learnYourAnswer: 'Ihre Antwort',

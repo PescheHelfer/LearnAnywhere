@@ -15,6 +15,41 @@ const int currentSettingsVersion = 1;
 /// Conventional settings file name stored in the user-data directory.
 const String settingsFileName = 'learn_anywhere.settings.json';
 
+/// Number of Level-Learning levels (support level 3 down to free recall 0).
+const int levelNameCount = 4;
+
+/// Default English Level-Learning level names, ordered engine level 3 → 0.
+const List<String> kDefaultLevelNamesEn = <String>[
+  'Beginner',
+  'Learner',
+  'Almost There',
+  'Champion',
+];
+
+/// Default German Level-Learning level names, ordered engine level 3 → 0.
+const List<String> kDefaultLevelNamesDe = <String>[
+  'Anfänger',
+  'Lerner',
+  'Fast geschafft',
+  'Meister',
+];
+
+/// Alternative English space-launch level-name preset (UI offers it), 3 → 0.
+const List<String> kSpaceLaunchLevelNamesEn = <String>[
+  'Launchpad',
+  'Lift-Off',
+  'In Orbit',
+  'Moon Landing',
+];
+
+/// Alternative German space-launch level-name preset (UI offers it), 3 → 0.
+const List<String> kSpaceLaunchLevelNamesDe = <String>[
+  'Startrampe',
+  'Abflug',
+  'Umlaufbahn',
+  'Mondlandung',
+];
+
 /// Persisted, framework-independent user settings.
 ///
 /// Holds the advanced practice options, the practice-setup choices, and the
@@ -38,7 +73,10 @@ final class LearnAnywhereSettings {
     this.direction = DirectionSelection.direction1,
     this.shuffle = true,
     this.requireTypedAnswers = true,
-    this.superStatusThreshold = 0.4,
+    this.masteryThreshold = 0.4,
+    this.entryLevelCap = kMaxSupportLevel,
+    this.levelNamesEn = kDefaultLevelNamesEn,
+    this.levelNamesDe = kDefaultLevelNamesDe,
     this.lastDeckPath,
     this.lastMaskPath,
   });
@@ -85,8 +123,20 @@ final class LearnAnywhereSettings {
   /// Whether the user types answers before reveal.
   final bool requireTypedAnswers;
 
-  /// Required hit rate for super-query mastery.
-  final double superStatusThreshold;
+  /// Required hit rate for mastery.
+  final double masteryThreshold;
+
+  /// Highest Level-Learning support level a seeded unit may start at (`0..3`).
+  ///
+  /// A higher number means more support, so this caps the *most* support a new
+  /// unit gets. The default [kMaxSupportLevel] imposes no restriction.
+  final int entryLevelCap;
+
+  /// English Level-Learning level names, ordered engine level 3 → 0.
+  final List<String> levelNamesEn;
+
+  /// German Level-Learning level names, ordered engine level 3 → 0.
+  final List<String> levelNamesDe;
 
   /// Last loaded `.vok` deck path, if any.
   final String? lastDeckPath;
@@ -110,7 +160,10 @@ final class LearnAnywhereSettings {
     DirectionSelection? direction,
     bool? shuffle,
     bool? requireTypedAnswers,
-    double? superStatusThreshold,
+    double? masteryThreshold,
+    int? entryLevelCap,
+    List<String>? levelNamesEn,
+    List<String>? levelNamesDe,
     String? lastDeckPath,
     String? lastMaskPath,
     bool clearLastDeckPath = false,
@@ -135,7 +188,10 @@ final class LearnAnywhereSettings {
       direction: direction ?? this.direction,
       shuffle: shuffle ?? this.shuffle,
       requireTypedAnswers: requireTypedAnswers ?? this.requireTypedAnswers,
-      superStatusThreshold: superStatusThreshold ?? this.superStatusThreshold,
+      masteryThreshold: masteryThreshold ?? this.masteryThreshold,
+      entryLevelCap: entryLevelCap ?? this.entryLevelCap,
+      levelNamesEn: levelNamesEn ?? this.levelNamesEn,
+      levelNamesDe: levelNamesDe ?? this.levelNamesDe,
       lastDeckPath: clearLastDeckPath ? null : lastDeckPath ?? this.lastDeckPath,
       lastMaskPath: clearLastMaskPath ? null : lastMaskPath ?? this.lastMaskPath,
     );
@@ -158,7 +214,10 @@ final class LearnAnywhereSettings {
         other.direction == direction &&
         other.shuffle == shuffle &&
         other.requireTypedAnswers == requireTypedAnswers &&
-        other.superStatusThreshold == superStatusThreshold &&
+        other.masteryThreshold == masteryThreshold &&
+        other.entryLevelCap == entryLevelCap &&
+        _stringListEquals(other.levelNamesEn, levelNamesEn) &&
+        _stringListEquals(other.levelNamesDe, levelNamesDe) &&
         other.lastDeckPath == lastDeckPath &&
         other.lastMaskPath == lastMaskPath;
   }
@@ -179,10 +238,28 @@ final class LearnAnywhereSettings {
     direction,
     shuffle,
     requireTypedAnswers,
-    superStatusThreshold,
+    masteryThreshold,
+    entryLevelCap,
+    Object.hashAll(levelNamesEn),
+    Object.hashAll(levelNamesDe),
     lastDeckPath,
     lastMaskPath,
   ]);
+}
+
+bool _stringListEquals(List<String> a, List<String> b) {
+  if (identical(a, b)) {
+    return true;
+  }
+  if (a.length != b.length) {
+    return false;
+  }
+  for (var index = 0; index < a.length; index += 1) {
+    if (a[index] != b[index]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /// Encodes [settings] as a settings JSON object.
@@ -204,7 +281,10 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
     'direction': settings.direction.name,
     'shuffle': settings.shuffle,
     'requireTypedAnswers': settings.requireTypedAnswers,
-    'superStatusThreshold': settings.superStatusThreshold,
+    'masteryThreshold': settings.masteryThreshold,
+    'entryLevelCap': settings.entryLevelCap,
+    'levelNamesEn': settings.levelNamesEn,
+    'levelNamesDe': settings.levelNamesDe,
     if (settings.lastDeckPath != null) 'lastDeckPath': settings.lastDeckPath,
     if (settings.lastMaskPath != null) 'lastMaskPath': settings.lastMaskPath,
   };
@@ -254,10 +334,16 @@ LearnAnywhereSettings decodeSettings(Object? value) {
       json['requireTypedAnswers'],
       defaults.requireTypedAnswers,
     ),
-    superStatusThreshold: _double(
-      json['superStatusThreshold'],
-      defaults.superStatusThreshold,
+    masteryThreshold: _double(
+      json['masteryThreshold'],
+      defaults.masteryThreshold,
     ),
+    entryLevelCap: _clampLevel(
+      _int(json['entryLevelCap'], defaults.entryLevelCap),
+      defaults.entryLevelCap,
+    ),
+    levelNamesEn: _levelNames(json['levelNamesEn'], defaults.levelNamesEn),
+    levelNamesDe: _levelNames(json['levelNamesDe'], defaults.levelNamesDe),
     lastDeckPath: _nullableString(json['lastDeckPath']),
     lastMaskPath: _nullableString(json['lastMaskPath']),
   );
@@ -381,6 +467,32 @@ double _double(Object? value, double fallback) {
 }
 
 String? _nullableString(Object? value) => value is String ? value : null;
+
+/// Clamps a decoded level into `0..3`, falling back to [fallback] on failure.
+int _clampLevel(int value, int fallback) {
+  if (value < kFreeRecallLevel || value > kMaxSupportLevel) {
+    return fallback;
+  }
+  return value;
+}
+
+/// Decodes a level-name list, requiring exactly [levelNameCount] strings.
+///
+/// Anything else (missing key, wrong length, non-string entries) falls back to
+/// [fallback] so a partial or corrupt file still yields a usable ladder.
+List<String> _levelNames(Object? value, List<String> fallback) {
+  if (value is! List || value.length != levelNameCount) {
+    return fallback;
+  }
+  final List<String> names = <String>[];
+  for (final Object? entry in value) {
+    if (entry is! String) {
+      return fallback;
+    }
+    names.add(entry);
+  }
+  return List<String>.unmodifiable(names);
+}
 
 T _enumByName<T extends Enum>(List<T> values, Object? value, T fallback) {
   if (value is String) {

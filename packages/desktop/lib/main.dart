@@ -446,7 +446,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       withInput: settings.requireTypedAnswers,
       mode: settings.mode,
       shuffle: settings.shuffle,
-      superStatusThreshold: settings.superStatusThreshold,
+      masteryThreshold: settings.masteryThreshold,
       startIndex: _range.startUnit,
       endIndex: _range.endUnit,
     );
@@ -481,7 +481,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       direction: _learnParameters.directionSelection,
       shuffle: _learnParameters.shuffle,
       requireTypedAnswers: _learnParameters.withInput,
-      superStatusThreshold: _learnParameters.superStatusThreshold,
+      masteryThreshold: _learnParameters.masteryThreshold,
       lastDeckPath: _document.deckPath ?? _settings.lastDeckPath,
       lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
     );

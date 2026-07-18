@@ -14,8 +14,14 @@ const String lessonFormat = 'learn-anywhere/lessons';
 /// Statistics file format marker.
 const String statisticsFormat = 'learn-anywhere/statistics';
 
-/// Current supported file format version.
+/// Current supported file format version for `.inf` masks and `.vok` decks.
 const int currentFormatVersion = 1;
+
+/// Current supported `.sta` statistics format version.
+///
+/// Version 2 adds the optional `levelLearning` section. Decoding accepts both
+/// version 1 (no Level-Learning data) and version 2.
+const int currentStatisticsVersion = 2;
 
 /// A user-facing validation failure for a loaded file.
 final class ValidationException implements Exception {
@@ -124,16 +130,23 @@ Map<String, Object?> encodeDeck(LearningDeck deck) {
 StatisticsFile decodeStatistics(Object? value) {
   final Map<String, Object?> json = _asMap(value, r'$');
   _expectFormat(json, statisticsFormat, r'$');
-  _expectVersion(json, r'$');
+  _expectStatisticsVersion(json, r'$');
   final String deckRef = _asString(json['deckRef'], r'$.deckRef');
   final List<Object?> unitValues = _asList(json['perUnit'], r'$.perUnit');
   final List<UnitStats> perUnit = <UnitStats>[];
   for (var index = 0; index < unitValues.length; index += 1) {
     perUnit.add(_decodeUnitStats(unitValues[index], '\$.perUnit[$index]'));
   }
+  // The Level-Learning section is optional: absent in version-1 files and
+  // omittable in version-2 files. A missing section decodes to null.
+  final Object? rawLevelLearning = json['levelLearning'];
+  final LevelLearningStats? levelLearning = rawLevelLearning == null
+      ? null
+      : _decodeLevelLearning(rawLevelLearning, r'$.levelLearning');
   return StatisticsFile(
     deckRef: deckRef,
     perUnit: List<UnitStats>.unmodifiable(perUnit),
+    levelLearning: levelLearning,
   );
 }
 
@@ -141,9 +154,11 @@ StatisticsFile decodeStatistics(Object? value) {
 Map<String, Object?> encodeStatistics(StatisticsFile statistics) {
   return <String, Object?>{
     'format': statisticsFormat,
-    'version': currentFormatVersion,
+    'version': currentStatisticsVersion,
     'deckRef': statistics.deckRef,
     'perUnit': statistics.perUnit.map(_encodeUnitStats).toList(growable: false),
+    if (statistics.levelLearning != null)
+      'levelLearning': _encodeLevelLearning(statistics.levelLearning!),
   };
 }
 
@@ -521,6 +536,93 @@ Map<String, Object?> _encodeDirectionStats(DirectionStats stats) {
   };
 }
 
+LevelLearningStats _decodeLevelLearning(Object? value, String path) {
+  final Map<String, Object?> json = _asMap(value, path);
+  final List<Object?> unitValues = _asList(json['perUnit'], '$path.perUnit');
+  final List<LevelUnitStats> perUnit = <LevelUnitStats>[];
+  for (var index = 0; index < unitValues.length; index += 1) {
+    perUnit.add(
+      _decodeLevelUnitStats(unitValues[index], '$path.perUnit[$index]'),
+    );
+  }
+  return LevelLearningStats(
+    perUnit: List<LevelUnitStats>.unmodifiable(perUnit),
+  );
+}
+
+Map<String, Object?> _encodeLevelLearning(LevelLearningStats stats) {
+  return <String, Object?>{
+    'perUnit': stats.perUnit
+        .map(_encodeLevelUnitStats)
+        .toList(growable: false),
+  };
+}
+
+LevelUnitStats _decodeLevelUnitStats(Object? value, String path) {
+  final Map<String, Object?> json = _asMap(value, path);
+  final int index = _asInt(json['index'], '$path.index');
+  if (index <= 0) {
+    throw ValidationException(
+      'Unit index must be positive.',
+      path: '$path.index',
+    );
+  }
+  return LevelUnitStats(
+    index: index,
+    dir1: _decodeLevelDirectionStats(json['dir1'], '$path.dir1'),
+    dir2: _decodeLevelDirectionStats(json['dir2'], '$path.dir2'),
+  );
+}
+
+Map<String, Object?> _encodeLevelUnitStats(LevelUnitStats stats) {
+  return <String, Object?>{
+    'index': stats.index,
+    'dir1': _encodeLevelDirectionStats(stats.dir1),
+    'dir2': _encodeLevelDirectionStats(stats.dir2),
+  };
+}
+
+LevelDirectionStats _decodeLevelDirectionStats(Object? value, String path) {
+  final Map<String, Object?> json = _asMap(value, path);
+  final int currentLevel = _asInt(json['currentLevel'], '$path.currentLevel');
+  if (currentLevel < kFreeRecallLevel || currentLevel > kMaxSupportLevel) {
+    throw ValidationException(
+      'currentLevel must be between $kFreeRecallLevel and $kMaxSupportLevel.',
+      path: '$path.currentLevel',
+    );
+  }
+  final Map<String, Object?> levelsJson = _asMap(json['levels'], '$path.levels');
+  // The four level keys 3,2,1,0 are all required; unknown extra keys are
+  // tolerated (ignored) so future additions do not break older readers.
+  final Map<int, DirectionStats> levels = <int, DirectionStats>{};
+  for (var level = kMaxSupportLevel; level >= kFreeRecallLevel; level -= 1) {
+    final String key = level.toString();
+    if (!levelsJson.containsKey(key)) {
+      throw ValidationException(
+        'Level key "$key" is required.',
+        path: '$path.levels',
+      );
+    }
+    levels[level] = _decodeDirectionStats(
+      levelsJson[key],
+      '$path.levels.$key',
+    );
+  }
+  return LevelDirectionStats(currentLevel: currentLevel, levels: levels);
+}
+
+Map<String, Object?> _encodeLevelDirectionStats(LevelDirectionStats stats) {
+  return <String, Object?>{
+    'currentLevel': stats.currentLevel,
+    'levels': <String, Object?>{
+      for (var level = kMaxSupportLevel; level >= kFreeRecallLevel; level -= 1)
+        level.toString(): _encodeDirectionStats(
+          stats.levels[level] ?? const DirectionStats(),
+        ),
+    },
+  };
+}
+
 FieldRole _decodeRole(Object? value, String path) {
   final String code = _asString(value, path);
   try {
@@ -543,6 +645,17 @@ void _expectFormat(Map<String, Object?> json, String expected, String path) {
 void _expectVersion(Map<String, Object?> json, String path) {
   final int version = _asInt(json['version'], '$path.version');
   if (version != currentFormatVersion) {
+    throw ValidationException(
+      'Unsupported version $version.',
+      path: '$path.version',
+    );
+  }
+}
+
+/// Accepts any `.sta` version from 1 up to [currentStatisticsVersion].
+void _expectStatisticsVersion(Map<String, Object?> json, String path) {
+  final int version = _asInt(json['version'], '$path.version');
+  if (version < 1 || version > currentStatisticsVersion) {
     throw ValidationException(
       'Unsupported version $version.',
       path: '$path.version',

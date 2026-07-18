@@ -130,7 +130,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     _draftParameters = _optionsApplied(widget.parameters);
     _startIndex = _draftParameters.startIndex ?? 1;
     _endIndex = _draftParameters.endIndex ?? widget.deck.units.length;
-    _thresholdPercent = (_draftParameters.superStatusThreshold * 100).round();
+    _thresholdPercent = (_draftParameters.masteryThreshold * 100).round();
     if (widget.options.showClock) {
       _startClock();
     }
@@ -380,7 +380,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   void _selectNextItem() {
     final SessionItem? next = switch (_draftParameters.mode) {
       SessionMode.superQuery => _firstSuperQueryItem(),
-      SessionMode.practice || SessionMode.onceThrough => _nextOrderedItem(),
+      // Level Learning has no desktop UI yet (Batch 2); fall back to ordered
+      // presentation so the app compiles and behaves sanely if selected.
+      SessionMode.levelLearning ||
+      SessionMode.practice ||
+      SessionMode.onceThrough => _nextOrderedItem(),
     };
     if (next == null) {
       setState(() {
@@ -655,7 +659,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       withInput: withInput ?? _draftParameters.withInput,
       mode: mode ?? _draftParameters.mode,
       shuffle: shuffle ?? _draftParameters.shuffle,
-      superStatusThreshold: threshold ?? _draftParameters.superStatusThreshold,
+      masteryThreshold: threshold ?? _draftParameters.masteryThreshold,
       minimumAttemptsGuardEnabled: widget.options.minimumAttemptsGuardEnabled,
       minAttempts: widget.options.minAttempts,
     );
@@ -969,7 +973,7 @@ final class _SetupView extends StatelessWidget {
           onChanged: onShuffleChanged,
         ),
         _NumberRow(
-          label: messages.message(LearnAnywhereMessage.learnSuperThreshold),
+          label: messages.message(LearnAnywhereMessage.learnMasteryThreshold),
           value: thresholdPercent,
           minimum: 1,
           maximum: 100,

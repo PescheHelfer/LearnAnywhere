@@ -284,7 +284,7 @@ DirectionStats recordAttempt(
 /// Returns whether [stats] meets super-query mastery requirements.
 bool isMastered(DirectionStats stats, SessionParameters parameters) {
   final double? hitRate = stats.hitRate;
-  if (hitRate == null || hitRate < parameters.superStatusThreshold) {
+  if (hitRate == null || hitRate < parameters.masteryThreshold) {
     return false;
   }
   if (parameters.minimumAttemptsGuardEnabled &&
@@ -449,6 +449,228 @@ HitRateBucket bucketFor(DirectionStats stats) {
     return HitRateBucket.veryUnsure;
   }
   return HitRateBucket.neverKnown;
+}
+
+// --- Level Learning: masking ------------------------------------------------
+
+final RegExp _maskWhitespace = RegExp(r'\s');
+final RegExp _maskCandidate = RegExp(r'[\p{L}\p{N}]', unicode: true);
+
+/// Builds a per-character scaffold template for one answer field at [level].
+///
+/// Scaffolding is applied **per word**: whitespace runs are always
+/// [MaskCellKind.shown] verbatim and reset the reveal pattern, so it restarts at
+/// the start of each word. Within a word only letters and digits are mask
+/// candidates (enumerated 0,1,2…); all other characters (punctuation) are always
+/// [MaskCellKind.shown] and do not advance the candidate counter.
+///
+/// Per candidate, by [level] (higher = more support):
+/// - **3** every candidate [MaskCellKind.revealed];
+/// - **2** even candidate index revealed, odd [MaskCellKind.blank];
+/// - **1** first and last candidate revealed, middle blank (a 1–2-candidate word
+///   is fully revealed);
+/// - **0** every candidate blank.
+///
+/// This is a pure rendering concern; grading still runs the student's full typed
+/// string through [evaluateAnswer].
+List<MaskCell> maskFieldValue(String expectedPlainText, int level) {
+  if (!isValidLevel(level)) {
+    throw ArgumentError.value(level, 'level', 'Level must be 0..3');
+  }
+  final List<String> chars = expectedPlainText.runes
+      .map(String.fromCharCode)
+      .toList(growable: false);
+  final List<MaskCell> cells = <MaskCell>[];
+  var i = 0;
+  while (i < chars.length) {
+    if (_maskWhitespace.hasMatch(chars[i])) {
+      cells.add(MaskCell(chars[i], MaskCellKind.shown));
+      i += 1;
+      continue;
+    }
+    // Collect one word run (up to the next whitespace) and index its candidates.
+    final int wordStart = i;
+    final Map<int, int> candidateIndexAt = <int, int>{};
+    var candidateCount = 0;
+    while (i < chars.length && !_maskWhitespace.hasMatch(chars[i])) {
+      if (_maskCandidate.hasMatch(chars[i])) {
+        candidateIndexAt[i] = candidateCount;
+        candidateCount += 1;
+      }
+      i += 1;
+    }
+    for (var j = wordStart; j < i; j += 1) {
+      final int? candidateIndex = candidateIndexAt[j];
+      if (candidateIndex == null) {
+        cells.add(MaskCell(chars[j], MaskCellKind.shown));
+        continue;
+      }
+      cells.add(
+        MaskCell(chars[j], _maskCellKind(level, candidateIndex, candidateCount)),
+      );
+    }
+  }
+  return List<MaskCell>.unmodifiable(cells);
+}
+
+MaskCellKind _maskCellKind(int level, int candidateIndex, int candidateCount) {
+  switch (level) {
+    case 3:
+      return MaskCellKind.revealed;
+    case 2:
+      return candidateIndex.isEven ? MaskCellKind.revealed : MaskCellKind.blank;
+    case 1:
+      final bool isEdge =
+          candidateIndex == 0 || candidateIndex == candidateCount - 1;
+      return isEdge ? MaskCellKind.revealed : MaskCellKind.blank;
+    default: // 0
+      return MaskCellKind.blank;
+  }
+}
+
+// --- Level Learning: leveling engine ----------------------------------------
+
+/// Maps a prior hit-rate [bucket] to a Level-Learning start level (`0..3`).
+///
+/// Higher level = more support. This table is a first guess (roadmap §11 flag);
+/// it lives in one function so it is easy to tune later.
+int levelForBucket(HitRateBucket bucket) {
+  return switch (bucket) {
+    HitRateBucket.perfect || HitRateBucket.good => 0,
+    HitRateBucket.fair => 1,
+    HitRateBucket.unsure => 2,
+    HitRateBucket.veryUnsure ||
+    HitRateBucket.neverKnown ||
+    HitRateBucket.notYetQueried => kMaxSupportLevel,
+  };
+}
+
+/// Seeds fresh Level-Learning stats for a unit+direction new to Level Learning.
+///
+/// The start level is [levelForBucket] of [priorStats]'s bucket (its existing,
+/// mode-agnostic per-direction counters), then capped by [entryLevelCap]. Since a
+/// higher number means more support, `min` applies the cap correctly (cap 3 = no
+/// restriction). All four level counters start 0/0. Seeding runs once; afterward
+/// the promotion cascade owns the level.
+LevelDirectionStats seedLevelLearningStats(
+  DirectionStats priorStats, {
+  int entryLevelCap = kMaxSupportLevel,
+}) {
+  final int mapped = levelForBucket(bucketFor(priorStats));
+  return LevelDirectionStats.fresh(min(mapped, entryLevelCap));
+}
+
+/// Records a Level-Learning attempt at the current level, then auto-promotes.
+///
+/// The attempt is applied to `levels[currentLevel]` with [recordAttempt]
+/// semantics ([AttemptRating.noCount] records nothing). Then, if the current
+/// level now meets mastery ([isMastered] against [parameters]) and it is not
+/// already the free-recall level, the unit promotes one level down; that lower
+/// level's counters are already fresh 0/0. There is no auto-demotion — a wrong
+/// answer only adds to the current level's attempts.
+LevelDirectionStats recordLevelLearningAttempt(
+  LevelDirectionStats stats,
+  AttemptRating rating, {
+  required SessionParameters parameters,
+}) {
+  final DirectionStats updatedLevel = recordAttempt(
+    stats.currentLevelStats,
+    rating,
+  );
+  var next = stats.withLevelStats(stats.currentLevel, updatedLevel);
+  if (next.currentLevel > kFreeRecallLevel &&
+      isMastered(updatedLevel, parameters)) {
+    next = next.withCurrentLevel(next.currentLevel - 1);
+  }
+  return next;
+}
+
+/// Whether [stats] has reached free-recall (level 0) mastery and leaves the pool.
+///
+/// True only when the unit is at [kFreeRecallLevel] and its level-0 track record
+/// meets mastery under [parameters]. With the min-attempts guard off (default) a
+/// single correct level-0 answer (1/1) already qualifies.
+bool isLevelLearningMastered(
+  LevelDirectionStats stats, {
+  required SessionParameters parameters,
+}) {
+  return stats.currentLevel == kFreeRecallLevel &&
+      isMastered(
+        stats.levels[kFreeRecallLevel] ?? const DirectionStats(),
+        parameters,
+      );
+}
+
+/// Moves [stats] to [newLevel] and resets THAT level's counters to 0/0.
+///
+/// This is the manual override (§10.4): the unit starts building a fresh track
+/// record at [newLevel] like any newly-arrived unit, with no penalty. The other
+/// levels' counters — and all other-mode statistics — are untouched.
+LevelDirectionStats setLevelLearningLevel(
+  LevelDirectionStats stats,
+  int newLevel,
+) {
+  if (!isValidLevel(newLevel)) {
+    throw ArgumentError.value(newLevel, 'newLevel', 'Level must be 0..3');
+  }
+  return LevelDirectionStats(
+    currentLevel: newLevel,
+    levels: <int, DirectionStats>{
+      ...stats.levels,
+      newLevel: const DirectionStats(),
+    },
+  );
+}
+
+/// Recomputes the active Level-Learning pool from current statistics.
+///
+/// Every `(unit, direction)` in range and in the direction selection is included
+/// unless it has reached level-0 mastery ([isLevelLearningMastered]). A unit with
+/// no [levelStatistics] entry yet is seeded on the fly from its prior [statistics]
+/// bucket (see [seedLevelLearningStats]) so a fresh deck yields the full pool. For
+/// `direction = both` a unit leaves the pool only when both directions are
+/// mastered, because each direction is evaluated independently here.
+List<SessionItem> activeLevelLearningPool({
+  required LearningDeck deck,
+  required List<UnitStats> statistics,
+  required List<LevelUnitStats> levelStatistics,
+  required SessionParameters parameters,
+  int entryLevelCap = kMaxSupportLevel,
+}) {
+  final List<SessionItem> items = <SessionItem>[];
+  final Set<QueryDirection> directions = _directionsFor(
+    parameters.directionSelection,
+  );
+  final int start = parameters.startIndex ?? 1;
+  final int end = parameters.endIndex ?? deck.units.length;
+  final Map<int, UnitStats> statsByIndex = _statsByIndex(statistics);
+  final Map<int, LevelUnitStats> levelByIndex = <int, LevelUnitStats>{
+    for (final LevelUnitStats stats in levelStatistics) stats.index: stats,
+  };
+
+  for (
+    var index = start;
+    index <= end && index <= deck.units.length;
+    index += 1
+  ) {
+    if (index < 1) {
+      continue;
+    }
+    final LevelUnitStats? levelStats = levelByIndex[index];
+    final UnitStats unitStats = statsByIndex[index] ?? UnitStats(index: index);
+    for (final QueryDirection direction in directions) {
+      final LevelDirectionStats dirStats = levelStats != null
+          ? levelStats.statsFor(direction)
+          : seedLevelLearningStats(
+              unitStats.statsFor(direction),
+              entryLevelCap: entryLevelCap,
+            );
+      if (!isLevelLearningMastered(dirStats, parameters: parameters)) {
+        items.add(SessionItem(unitIndex: index, direction: direction));
+      }
+    }
+  }
+  return List<SessionItem>.unmodifiable(items);
 }
 
 /// Returns zeroed statistics for every unit in [deck].

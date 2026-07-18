@@ -59,6 +59,61 @@ const int minFieldLength = 1;
 /// The maximum stored field length.
 const int maxFieldLength = 80;
 
+/// The maximum Level-Learning support level (most scaffolding shown).
+///
+/// Levels run `0..3` where a higher number means MORE support: level 3 shows the
+/// full solution, level 0 is free recall. The `.sta` per-level maps key on these
+/// same integers.
+const int kMaxSupportLevel = 3;
+
+/// The minimum Level-Learning level: free recall, no scaffolding.
+const int kFreeRecallLevel = 0;
+
+/// Whether [level] is a valid Level-Learning level (`0..3`).
+bool isValidLevel(int level) =>
+    level >= kFreeRecallLevel && level <= kMaxSupportLevel;
+
+/// The kind of a single [MaskCell] in a Level-Learning scaffold template.
+enum MaskCellKind {
+  /// An always-visible structural character (whitespace/punctuation).
+  ///
+  /// Rendered verbatim, not as an editable cell, and never counted as a mask
+  /// candidate.
+  shown,
+
+  /// A locked, greyed letter the student sees but cannot edit.
+  revealed,
+
+  /// A cell the student must type into.
+  blank,
+}
+
+/// One character of a Level-Learning scaffold template for an answer field.
+///
+/// Produced by `maskFieldValue`. The UI renders [char] according to [kind]:
+/// [MaskCellKind.shown] verbatim, [MaskCellKind.revealed] as a locked letter, and
+/// [MaskCellKind.blank] as an input the student fills.
+final class MaskCell {
+  /// Creates a mask cell.
+  const MaskCell(this.char, this.kind);
+
+  /// The source character this cell represents.
+  final String char;
+
+  /// How the UI should render this cell.
+  final MaskCellKind kind;
+
+  @override
+  bool operator ==(Object other) =>
+      other is MaskCell && other.char == char && other.kind == kind;
+
+  @override
+  int get hashCode => Object.hash(char, kind);
+
+  @override
+  String toString() => 'MaskCell($char, ${kind.name})';
+}
+
 /// A query direction in a bidirectional deck.
 enum QueryDirection {
   /// The first mask-defined query direction.
@@ -550,16 +605,151 @@ final class UnitStats {
   }
 }
 
+/// Level-Learning statistics for one direction of one unit.
+///
+/// [currentLevel] is the unit's active support level (`0..3`). [levels] holds one
+/// [DirectionStats] per level, keyed by the level integers `3, 2, 1, 0` — each a
+/// track record built while the unit sat at that level. When a level is mastered
+/// the unit promotes to the next lower level, whose counters start fresh at 0/0.
+final class LevelDirectionStats {
+  /// Creates Level-Learning direction statistics.
+  const LevelDirectionStats({
+    required this.currentLevel,
+    required this.levels,
+  });
+
+  /// Returns fresh stats at [startLevel] with all four level counters at 0/0.
+  factory LevelDirectionStats.fresh(int startLevel) {
+    return LevelDirectionStats(
+      currentLevel: startLevel,
+      levels: <int, DirectionStats>{
+        for (var level = kMaxSupportLevel; level >= kFreeRecallLevel; level -= 1)
+          level: const DirectionStats(),
+      },
+    );
+  }
+
+  /// The active support level, `0..3`.
+  final int currentLevel;
+
+  /// Per-level statistics keyed by level integer (`3, 2, 1, 0`).
+  final Map<int, DirectionStats> levels;
+
+  /// The statistics for the [currentLevel].
+  DirectionStats get currentLevelStats =>
+      levels[currentLevel] ?? const DirectionStats();
+
+  /// Returns a copy with [level]'s stats replaced.
+  LevelDirectionStats withLevelStats(int level, DirectionStats stats) {
+    return LevelDirectionStats(
+      currentLevel: currentLevel,
+      levels: <int, DirectionStats>{...levels, level: stats},
+    );
+  }
+
+  /// Returns a copy with [currentLevel] replaced.
+  LevelDirectionStats withCurrentLevel(int level) {
+    return LevelDirectionStats(currentLevel: level, levels: levels);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! LevelDirectionStats ||
+        other.currentLevel != currentLevel ||
+        other.levels.length != levels.length) {
+      return false;
+    }
+    for (final MapEntry<int, DirectionStats> entry in levels.entries) {
+      if (other.levels[entry.key] != entry.value) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    currentLevel,
+    Object.hashAllUnordered(
+      levels.entries.map(
+        (MapEntry<int, DirectionStats> e) => Object.hash(e.key, e.value),
+      ),
+    ),
+  );
+}
+
+/// Level-Learning statistics for one unit in both directions.
+final class LevelUnitStats {
+  /// Creates Level-Learning unit statistics.
+  const LevelUnitStats({
+    required this.index,
+    required this.dir1,
+    required this.dir2,
+  });
+
+  /// One-based unit index.
+  final int index;
+
+  /// Level-Learning statistics for direction 1.
+  final LevelDirectionStats dir1;
+
+  /// Level-Learning statistics for direction 2.
+  final LevelDirectionStats dir2;
+
+  /// Returns the Level-Learning stats for [direction].
+  LevelDirectionStats statsFor(QueryDirection direction) {
+    return switch (direction) {
+      QueryDirection.direction1 => dir1,
+      QueryDirection.direction2 => dir2,
+    };
+  }
+
+  /// Returns a copy with the stats for [direction] replaced.
+  LevelUnitStats withDirectionStats(
+    QueryDirection direction,
+    LevelDirectionStats stats,
+  ) {
+    return switch (direction) {
+      QueryDirection.direction1 => LevelUnitStats(
+        index: index,
+        dir1: stats,
+        dir2: dir2,
+      ),
+      QueryDirection.direction2 => LevelUnitStats(
+        index: index,
+        dir1: dir1,
+        dir2: stats,
+      ),
+    };
+  }
+}
+
+/// The optional Level-Learning section of a `.sta` file (format v2).
+final class LevelLearningStats {
+  /// Creates a Level-Learning statistics section.
+  const LevelLearningStats({required this.perUnit});
+
+  /// Per-unit Level-Learning statistics.
+  final List<LevelUnitStats> perUnit;
+}
+
 /// A `.sta` sidecar file model.
 final class StatisticsFile {
   /// Creates a statistics sidecar model.
-  const StatisticsFile({required this.deckRef, required this.perUnit});
+  const StatisticsFile({
+    required this.deckRef,
+    required this.perUnit,
+    this.levelLearning,
+  });
 
   /// Deck path or file name referenced by this statistics file.
   final String deckRef;
 
   /// Per-unit statistics.
   final List<UnitStats> perUnit;
+
+  /// Optional Level-Learning section (present in format v2 files only).
+  final LevelLearningStats? levelLearning;
 }
 
 /// Query options shared by evaluation and search normalization.
@@ -614,6 +804,9 @@ final class SessionItem {
 
 /// Learning session mode.
 enum SessionMode {
+  /// Level-Learning: a per-word scaffold ladder from full solution to free recall.
+  levelLearning,
+
   /// Endless random practice.
   practice,
 
@@ -634,7 +827,7 @@ final class SessionParameters {
     this.withInput = true,
     this.mode = SessionMode.practice,
     this.shuffle = false,
-    this.superStatusThreshold = 0.4,
+    this.masteryThreshold = 0.4,
     this.minimumAttemptsGuardEnabled = false,
     this.minAttempts = 2,
   });
@@ -659,8 +852,8 @@ final class SessionParameters {
   /// When `false`, units are presented in the order they are stored in the deck.
   final bool shuffle;
 
-  /// Required hit rate for super-query mastery.
-  final double superStatusThreshold;
+  /// Required hit rate for mastery.
+  final double masteryThreshold;
 
   /// Whether mastery additionally requires [minAttempts].
   final bool minimumAttemptsGuardEnabled;
@@ -676,7 +869,7 @@ final class SessionParameters {
     bool? withInput,
     SessionMode? mode,
     bool? shuffle,
-    double? superStatusThreshold,
+    double? masteryThreshold,
     bool? minimumAttemptsGuardEnabled,
     int? minAttempts,
   }) {
@@ -687,7 +880,7 @@ final class SessionParameters {
       withInput: withInput ?? this.withInput,
       mode: mode ?? this.mode,
       shuffle: shuffle ?? this.shuffle,
-      superStatusThreshold: superStatusThreshold ?? this.superStatusThreshold,
+      masteryThreshold: masteryThreshold ?? this.masteryThreshold,
       minimumAttemptsGuardEnabled:
           minimumAttemptsGuardEnabled ?? this.minimumAttemptsGuardEnabled,
       minAttempts: minAttempts ?? this.minAttempts,
