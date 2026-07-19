@@ -24,6 +24,18 @@ rules in [`../../docs/menu-alt-mnemonics.md`](../../docs/menu-alt-mnemonics.md),
 and keep the inline `// top-bar X` / `// X` mnemonic comments in the i18n catalog
 (`packages/core/lib/i18n/i18n.dart`) accurate.
 
+## Bumping the app version
+
+Whenever the app version changes, update both of these together — never just one:
+
+- `version:` in `pubspec.yaml` (`X.Y.Z+B`; this also drives the Windows exe's
+  `FileVersion`/`ProductVersion` automatically at build time, no `Runner.rc` edit
+  needed).
+- The version history in the About box: add a new `aboutVersionNNN` entry to the
+  `LearnAnywhereMessage` enum and both catalogs (EN + DE) in
+  `packages/core/lib/i18n/i18n.dart`, then prepend it (newest first) to the
+  `labels` list in `packages/desktop/lib/src/about/about_page.dart`.
+
 ## Keep `test/*.dart` in sync with UI drift
 
 Widget tests here find things by exact string/key, so they silently rot when the UI

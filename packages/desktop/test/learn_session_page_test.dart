@@ -262,6 +262,112 @@ void main() {
           ._levelStats
           .singleWhere((LevelUnitStats s) => s.index == 1);
       expect(entry.dir1.currentLevel, kFreeRecallLevel);
+
+      // Choosing Learn again from the completion screen returns to the setup
+      // screen (so a fresh session/mode can be configured) without needing to
+      // Extend + cancel first.
+      harnessState().chooseLearn();
+      await tester.pumpAndSettle();
+      expect(find.text('Extend session'), findsNothing);
+      expect(find.text('Start session'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'level learning: Enter on an earlier answer field advances instead of '
+    'checking; only the last field submits',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // A mask whose direction 1 has two answer fields (like infinitive +
+      // past tense), each masked to a single blank cell at level 2.
+      const LearningMask twoAnswerMask = LearningMask(
+        maskId: 'm_new_two-answer-fixture',
+        name: 'Verbs',
+        direction1Label: 'DE',
+        direction2Label: 'EN',
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 0,
+            name: 'Verb',
+            fields: <FieldDefinition>[
+              FieldDefinition(
+                id: 0,
+                name: 'German',
+                length: 40,
+                equalGroup: 0,
+                role1: FieldRole.question,
+                role2: FieldRole.answer,
+              ),
+              FieldDefinition(
+                id: 1,
+                name: 'Infinitive',
+                length: 40,
+                equalGroup: 1,
+                role1: FieldRole.answer,
+                role2: FieldRole.question,
+              ),
+              FieldDefinition(
+                id: 2,
+                name: 'Past',
+                length: 40,
+                equalGroup: 2,
+                role1: FieldRole.answer,
+                role2: FieldRole.question,
+              ),
+            ],
+          ),
+        ],
+      );
+      final LearningDeck twoAnswerDeck = LearningDeck(
+        mask: twoAnswerMask,
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{
+              0: FieldValue.plain('essen'),
+              1: FieldValue.plain('eat'),
+              2: FieldValue.plain('ate'),
+            },
+          ),
+        ],
+      );
+
+      // entryLevelCap 2 seeds fresh units straight at level 2 (editable cells).
+      await tester.pumpWidget(
+        _LevelLearningHarness(deck: twoAnswerDeck, entryLevelCap: 2),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // 'eat' -> e[a]t, 'ate' -> a[t]e: one blank cell per answer field.
+      expect(find.byType(TextField), findsNWidgets(2));
+
+      // Fill the first field's blank and press Enter. This must NOT check the
+      // answer (the second field is still empty) — it advances to it.
+      await tester.enterText(find.byType(TextField).at(0), 'a');
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.text('The answer is unfortunately wrong.'), findsNothing);
+      expect(
+        find.text('Your answer is correct. Congratulations!'),
+        findsNothing,
+      );
+
+      // Fill the last field's blank and Enter: now the answer is checked.
+      await tester.enterText(find.byType(TextField).at(1), 't');
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Your answer is correct. Congratulations!'),
+        findsOneWidget,
+      );
     },
   );
 }
@@ -269,9 +375,13 @@ void main() {
 /// Minimal shell that holds the mutable Level-Learning state the page pushes
 /// back, so promotions and live counters survive across prompts in the test.
 class _LevelLearningHarness extends StatefulWidget {
-  const _LevelLearningHarness({required this.deck});
+  const _LevelLearningHarness({
+    required this.deck,
+    this.entryLevelCap = kMaxSupportLevel,
+  });
 
   final LearningDeck deck;
+  final int entryLevelCap;
 
   @override
   State<_LevelLearningHarness> createState() => _LevelLearningHarnessState();
@@ -281,9 +391,13 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
   List<LevelUnitStats> _levelStats = const <LevelUnitStats>[];
   int _attempts = 0;
   int _correct = 0;
+  int _resetSignal = 0;
 
   /// Whether the page ever pushed drill-mode statistics (it must not in LL).
   bool drillStatsChanged = false;
+
+  /// Mimics choosing the Learn menu again (bumps the reset signal).
+  void chooseLearn() => setState(() => _resetSignal++);
 
   @override
   Widget build(BuildContext context) {
@@ -295,6 +409,8 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
           deck: widget.deck,
           statistics: const <UnitStats>[],
           levelStatistics: _levelStats,
+          entryLevelCap: widget.entryLevelCap,
+          resetToSetupSignal: _resetSignal,
           options: const DesktopQueryOptions(),
           parameters: const SessionParameters(
             mode: SessionMode.levelLearning,

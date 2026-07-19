@@ -28,6 +28,7 @@ final class LearnSessionPage extends StatefulWidget {
     this.levelStatistics = const <LevelUnitStats>[],
     this.levelNames = kDefaultLevelNamesEn,
     this.entryLevelCap = kMaxSupportLevel,
+    this.resetToSetupSignal = 0,
     this.onLevelStatisticsChanged,
     this.onEntryLevelCapChanged,
     this.onStartUnitChanged,
@@ -50,6 +51,10 @@ final class LearnSessionPage extends StatefulWidget {
 
   /// Highest support level a newly seeded Level-Learning unit may start at.
   final int entryLevelCap;
+
+  /// Increments when the Learn menu is chosen; when it changes while this page
+  /// is at rest (setup or completion), the page returns to its practice setup.
+  final int resetToSetupSignal;
 
   /// Called when Level-Learning statistics change (attempt or manual override).
   final ValueChanged<List<LevelUnitStats>>? onLevelStatisticsChanged;
@@ -194,6 +199,17 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         _currentItem!.unitIndex > widget.deck.units.length) {
       _currentItem = null;
       _completed = false;
+    }
+    // Choosing Learn again from a resting screen (setup or, notably, the
+    // completion view) returns to the practice setup so a new session can be
+    // configured. A live session is left alone (Esc handles leaving that).
+    if (widget.resetToSetupSignal != oldWidget.resetToSetupSignal &&
+        _currentItem == null &&
+        _completed) {
+      _completed = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _rootFocusNode.requestFocus();
+      });
     }
   }
 
@@ -1545,10 +1561,11 @@ final class _SessionView extends StatelessWidget {
   ) {
     final ColorScheme colors = Theme.of(context).colorScheme;
     int? firstAnswerId;
+    int? lastAnswerId;
     for (final FieldDefinition f in visibleFields) {
       if (f.roleFor(item.direction) == FieldRole.answer) {
-        firstAnswerId = f.id;
-        break;
+        firstAnswerId ??= f.id;
+        lastAnswerId = f.id;
       }
     }
     return DecoratedBox(
@@ -1605,6 +1622,7 @@ final class _SessionView extends StatelessWidget {
                           field,
                           unit,
                           field.id == firstAnswerId,
+                          field.id == lastAnswerId,
                         )
                       : null;
 
@@ -1637,6 +1655,7 @@ final class _SessionView extends StatelessWidget {
     FieldDefinition field,
     LearningUnit unit,
     bool autofocus,
+    bool isLastAnswer,
   ) {
     final String plain = unit.valueForFieldId(field.id).plainText;
     final int level = activeLevel;
@@ -1666,6 +1685,7 @@ final class _SessionView extends StatelessWidget {
         cells: maskFieldValue(plain, level),
         textStyle: style,
         autofocus: autofocus,
+        isLastAnswer: isLastAnswer,
         onChanged: (String value) => onCellAnswerChanged(field.id, value),
         onSubmit: onReveal,
       );
@@ -2166,14 +2186,15 @@ final class _StaticCell extends StatelessWidget {
   }
 }
 
-/// The editable level-2 scaffold: locked revealed letters interleaved with
-/// per-blank single-character inputs the student fills. Reconstructs the full
-/// answer string (revealed + typed + shown) and reports it via [onChanged].
+/// The editable scaffold (levels 1 and 2): locked revealed letters interleaved
+/// with per-blank single-character inputs the student fills. Reconstructs the
+/// full answer string (revealed + typed + shown) and reports it via [onChanged].
 final class _LevelScaffoldInput extends StatefulWidget {
   const _LevelScaffoldInput({
     required this.cells,
     required this.textStyle,
     required this.autofocus,
+    required this.isLastAnswer,
     required this.onChanged,
     required this.onSubmit,
     super.key,
@@ -2182,6 +2203,10 @@ final class _LevelScaffoldInput extends StatefulWidget {
   final List<MaskCell> cells;
   final TextStyle textStyle;
   final bool autofocus;
+
+  /// Whether this scaffold is the last answer field of the unit. Only then does
+  /// Enter on the final blank submit; otherwise it advances to the next field.
+  final bool isLastAnswer;
   final ValueChanged<String> onChanged;
   final VoidCallback onSubmit;
 
@@ -2266,10 +2291,14 @@ final class _LevelScaffoldInputState extends State<_LevelScaffoldInput> {
     final bool isTab = key == LogicalKeyboardKey.tab;
     if (isEnter || isTab) {
       if (index < _nodes.length - 1) {
+        // More blanks in this field: advance to the next one.
         _nodes[index + 1].requestFocus();
-      } else if (isEnter) {
+      } else if (isEnter && widget.isLastAnswer) {
+        // Final blank of the last answer field: Enter checks the answer.
         widget.onSubmit();
       } else {
+        // Final blank of an earlier field (or Tab): move to the next field,
+        // so Enter never checks while other answer lines are still empty.
         _nodes[index].nextFocus();
       }
       return KeyEventResult.handled;

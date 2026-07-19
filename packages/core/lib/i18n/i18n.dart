@@ -202,6 +202,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.3.1.
   aboutVersion031,
 
+  /// About page version history entry for 0.4.0.
+  aboutVersion040,
+
   /// Desktop bottom shortcut hint bar text.
   desktopHintBar,
 
@@ -1077,6 +1080,7 @@ final class LearnAnywhereCatalog {
           '0.3.0 – Statistics, mask editor, and menu accessibility improvements.',
       LearnAnywhereMessage.aboutVersion031:
           '0.3.1 – Code audit fixes and clean-ups.',
+      LearnAnywhereMessage.aboutVersion040: '0.4.0 – Add Level learning mode.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1470,6 +1474,8 @@ final class LearnAnywhereCatalog {
           '0.3.0 – Verbesserungen bei Statistik, Maskeneditor und Menü-Zugänglichkeit.',
       LearnAnywhereMessage.aboutVersion031:
           '0.3.1 – Korrekturen und Bereinigungen im Rahmen des Code-Audits.',
+      LearnAnywhereMessage.aboutVersion040:
+          '0.4.0 – Stufenlernen-Modus hinzugefügt.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurück   F3 Weiter   F5 Suche   F6 Springen   F7 Löschen   F8 Einfügen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

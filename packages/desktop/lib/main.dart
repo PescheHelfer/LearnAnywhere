@@ -246,6 +246,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   String? _lastInfDir;
   int _learnSessionAttempts = 0;
   int _learnSessionCorrect = 0;
+  // Bumped each time the Learn menu is chosen; lets an already-open learn page
+  // (e.g. showing the completion screen) drop back to its practice setup.
+  int _learnResetSignal = 0;
   String? _lastFileStatus;
   int? _editorInitialIndex;
   int? _editorLastIndex;
@@ -689,10 +692,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         <(LearnAnywhereMessage, VoidCallback)>[
           (LearnAnywhereMessage.menuFile, () => _fileMenuController.open()),
           (LearnAnywhereMessage.menuEdit, () => _editMenuController.open()),
-          (
-            LearnAnywhereMessage.menuLearn,
-            () => _selectRoute(_DesktopRoute.learn),
-          ),
+          (LearnAnywhereMessage.menuLearn, _openLearn),
           (
             LearnAnywhereMessage.menuStatistics,
             () => _selectRoute(_DesktopRoute.statistics),
@@ -822,6 +822,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         LearnAnywhereMessage.menuLearn,
         _DesktopRoute.learn,
         _learnMenuFocusNode,
+        onPressed: _openLearn,
       ),
       // 4. Statistics (direct)
       _routeMenu(
@@ -1001,16 +1002,25 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     LearnAnywhereLocalizations messages,
     LearnAnywhereMessage message,
     _DesktopRoute route,
-    FocusNode focusNode,
-  ) {
+    FocusNode focusNode, {
+    VoidCallback? onPressed,
+  }) {
     return MenuItemButton(
-      onPressed: () => _selectRoute(route),
+      onPressed: onPressed ?? () => _selectRoute(route),
       // Skip-traversal node so arrow navigation jumps over this submenu-less entry.
       focusNode: focusNode,
       // Top-level direct action: display-only label; activation is handled by
       // [_handleMenuAccelerator] so it doesn't collide with open-submenu items.
       child: MenuAcceleratorDisplayLabel(messages.message(message)),
     );
+  }
+
+  /// Opens the Learn page. Re-selecting it while already there (e.g. from the
+  /// completion screen) returns the page to its practice setup via the reset
+  /// signal, so a new session with a different mode can be configured.
+  void _openLearn() {
+    setState(() => _learnResetSignal++);
+    _selectRoute(_DesktopRoute.learn);
   }
 
   void _selectRoute(_DesktopRoute route) {
@@ -1615,6 +1625,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             ? _settings.levelNamesDe
             : _settings.levelNamesEn,
         entryLevelCap: _settings.entryLevelCap,
+        resetToSetupSignal: _learnResetSignal,
         options: _queryOptions,
         parameters: _learnParameters,
         sessionAttempts: _learnSessionAttempts,
