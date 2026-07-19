@@ -2095,6 +2095,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     }
     setState(() {
       _document = _fileService.clearStatisticsInMemory(_document);
+      // Clearing statistics also resets the live session counters so the
+      // Attempts/Accuracy pills start from zero again.
+      _learnSessionAttempts = 0;
+      _learnSessionCorrect = 0;
     });
     _showStatus(LearnAnywhereMessage.statisticsCleared);
   }

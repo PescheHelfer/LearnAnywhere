@@ -225,7 +225,7 @@ void main() {
     await tester.tap(find.text('Start session'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Unit 1 of 1 - Category 1'), findsOneWidget);
+    expect(find.textContaining('Unit 1/1 - Category 1'), findsOneWidget);
     // Before Check, the prompt is read-only rich text and the single answer
     // cell is the only editable field, so target it by type.
     if (tester.any(find.text('hello', findRichText: true))) {

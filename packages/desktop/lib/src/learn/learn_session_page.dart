@@ -484,8 +484,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     final int level = _isLevelLearning
         ? _levelStatsFor(next).currentLevel
         : kFreeRecallLevel;
-    final bool editableNow =
-        !_isLevelLearning || level == kFreeRecallLevel || level == 1;
+    final bool editableNow = !_isLevelLearning || level == kFreeRecallLevel;
     final bool scaffold = _usesScaffoldInput(level);
     final bool focusHandled =
         _answerFocusNodes.isNotEmpty && (editableNow || scaffold);
@@ -570,9 +569,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   bool get _isLevelLearning =>
       _draftParameters.mode == SessionMode.levelLearning;
 
-  /// Whether [level] uses the editable cell scaffold (level 2), which owns its
-  /// own per-cell focus.
-  bool _usesScaffoldInput(int level) => _isLevelLearning && level == 2;
+  /// Whether [level] uses the editable cell scaffold (levels 1 and 2), which
+  /// owns its own per-cell focus.
+  bool _usesScaffoldInput(int level) =>
+      _isLevelLearning && (level == 1 || level == 2);
 
   /// Enters the level-3 "type it from memory" step: hides the shown solution
   /// and focuses the (now editable) answer field.
@@ -683,6 +683,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _evaluation = null;
       _selectedRating = AttemptRating.noCount;
       _level3Memorized = false;
+      // Force a fresh scaffold (new key) so switching level 1<->2 clears cells.
+      _serveNonce += 1;
     });
   }
 
@@ -714,14 +716,13 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
             _handleAnswerFieldKey(node, event, isLast),
       );
     }
-    // A reset always begins a fresh prompt, so level 3 is never "memorized"
-    // yet: only levels 0 and 1 (or any non-LL field) take focus immediately.
-    // The level-2 scaffold and the level-3 memorize step claim focus later.
+    // A reset always begins a fresh prompt: only the normal text field (any
+    // non-LL field, or LL level 0) takes focus immediately. The level-1/2
+    // scaffold and the level-3 memorize step claim focus themselves.
     final int level = _isLevelLearning
         ? _levelStatsFor(item).currentLevel
         : kFreeRecallLevel;
-    final bool editableNow =
-        !_isLevelLearning || level == kFreeRecallLevel || level == 1;
+    final bool editableNow = !_isLevelLearning || level == kFreeRecallLevel;
     if (_answerFocusNodes.isNotEmpty && editableNow) {
       final FocusNode firstNode = _answerFocusNodes.values.first;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1438,10 +1439,12 @@ final class _SessionView extends StatelessWidget {
     ];
     if (_isLevelLearning) {
       final Map<int, int> counts = _levelCounts();
+      var inPool = 0;
       for (int level = kMaxSupportLevel;
           level >= kFreeRecallLevel;
           level -= 1) {
         final int count = counts[level] ?? 0;
+        inPool += count;
         final int pct =
             totalItems == 0 ? 0 : ((count / totalItems) * 100).round();
         pills.add(
@@ -1451,6 +1454,16 @@ final class _SessionView extends StatelessWidget {
           ),
         );
       }
+      // Units that have left the pool (mastered at level 0).
+      final int mastered = (totalItems - inPool).clamp(0, totalItems);
+      final int masteredPct =
+          totalItems == 0 ? 0 : ((mastered / totalItems) * 100).round();
+      pills.add(
+        _StatPill(
+          label: messages.message(LearnAnywhereMessage.learnLiveMastered),
+          value: '$mastered ($masteredPct%)',
+        ),
+      );
     } else {
       final List<SessionItem> pool = activeSuperQueryPool(
         deck: deck,
@@ -1643,7 +1656,9 @@ final class _SessionView extends StatelessWidget {
       }
       return null;
     }
-    if (level == 2) {
+    if (level == 1 || level == 2) {
+      // Both fill blanks in place: level 2 reveals every other letter, level 1
+      // only the first and last. The student types into the empty cells.
       return _LevelScaffoldInput(
         // The nonce guarantees a fresh scaffold (empty cells) on every serve,
         // even when the same unit+level is presented twice in a row.
@@ -1653,21 +1668,6 @@ final class _SessionView extends StatelessWidget {
         autofocus: autofocus,
         onChanged: (String value) => onCellAnswerChanged(field.id, value),
         onSubmit: onReveal,
-      );
-    }
-    if (level == 1) {
-      // Locked context (first & last letters), typed as a whole word below.
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          _ScaffoldPreview(cells: maskFieldValue(plain, 1), textStyle: style),
-          const SizedBox(height: 6),
-          _AnswerTextField(
-            controller: answerControllers[field.id],
-            focusNode: answerFocusNodes[field.id],
-            maxLength: field.length,
-          ),
-        ],
       );
     }
     return null;
@@ -1775,17 +1775,15 @@ final class _SessionView extends StatelessWidget {
         options.timeLimitSeconds > 0 &&
         elapsedSeconds >= options.timeLimitSeconds;
 
-    // Header shows the current unit, and for Level Learning its level name.
-    String headerText = _learnUnitHeader(
-      messages,
-      item.unitIndex,
-      deck.units.length,
+    // Header: "Unit x/y", the level name (for Level Learning, right after the
+    // unit), then category and direction.
+    final List<String> headerParts = <String>[
+      _learnUnitHeader(messages, item.unitIndex, deck.units.length),
+      if (_isLevelLearning) levelNameFor(levelNames, activeLevel),
       category.name,
       _directionLabel(deck, item.direction),
-    );
-    if (_isLevelLearning) {
-      headerText = '$headerText - ${levelNameFor(levelNames, activeLevel)}';
-    }
+    ];
+    final String headerText = headerParts.join(' - ');
 
     return Scrollbar(
       child: SingleChildScrollView(
@@ -1793,16 +1791,16 @@ final class _SessionView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // ── Header: unit title + live stats ────────────────────────────
-            Text(
-              headerText,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: LearnAnywhereTokens.gapSmall),
+            // ── Header: live (global) stats on top, then the unit line ─────
             Wrap(
               spacing: LearnAnywhereTokens.gapSmall,
               runSpacing: LearnAnywhereTokens.gapSmall,
               children: _statPills(messages, timeWarning),
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapSmall),
+            Text(
+              headerText,
+              style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),
             // ── Field grid ────────────────────────────────────────────────
@@ -2033,6 +2031,15 @@ const Color _kBlankCellColor = Color.fromRGBO(40, 110, 240, 1);
 const double _kCellWidth = 22;
 const double _kCellHeight = 30;
 
+/// Colour for a locked/revealed letter. Kept muted (it's context, not input),
+/// but nudged brighter in dark themes where `onSurfaceVariant` reads too dim.
+Color _revealedTextColor(BuildContext context, ColorScheme colors) {
+  if (Theme.of(context).brightness == Brightness.dark) {
+    return Color.lerp(colors.onSurfaceVariant, colors.onSurface, 0.5)!;
+  }
+  return colors.onSurfaceVariant;
+}
+
 /// Splits [cells] into per-word runs (whitespace `shown` cells become gaps) and
 /// lays the words out in a [Wrap] so word boundaries stay intact. Each cell is
 /// turned into a widget by [cellBuilder], which receives a blank cell's running
@@ -2143,7 +2150,7 @@ final class _StaticCell extends StatelessWidget {
       child: Text(
         char,
         style: textStyle.copyWith(
-          color: revealed ? colors.onSurfaceVariant : null,
+          color: revealed ? _revealedTextColor(context, colors) : null,
         ),
       ),
     );
@@ -2337,12 +2344,15 @@ final class _BlankInputCell extends StatelessWidget {
             controller: controller,
             focusNode: focusNode,
             textAlign: TextAlign.center,
+            // Centre the glyph vertically so typed letters sit at the same
+            // height as the locked (revealed) cells beside them.
+            textAlignVertical: TextAlignVertical.center,
             maxLength: 1,
             style: textStyle,
             cursorWidth: 1,
             decoration: const InputDecoration(
               counterText: '',
-              isDense: true,
+              isCollapsed: true,
               contentPadding: EdgeInsets.zero,
               border: InputBorder.none,
             ),
@@ -2574,15 +2584,11 @@ String _learnUnitHeader(
   LearnAnywhereLocalizations messages,
   int index,
   int total,
-  String category,
-  String direction,
 ) {
   return messages
       .message(LearnAnywhereMessage.learnUnitHeader)
       .replaceAll('{index}', index.toString())
-      .replaceAll('{total}', total.toString())
-      .replaceAll('{category}', category)
-      .replaceAll('{direction}', direction);
+      .replaceAll('{total}', total.toString());
 }
 
 int _totalItems(LearningDeck deck, SessionParameters parameters) {

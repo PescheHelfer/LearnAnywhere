@@ -1171,8 +1171,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveRemaining: 'Remaining',
       LearnAnywhereMessage.learnLiveAccuracy: 'Accuracy',
       LearnAnywhereMessage.learnLiveTime: 'Time',
-      LearnAnywhereMessage.learnUnitHeader:
-          'Unit {index} of {total} - {category} - {direction}',
+      LearnAnywhereMessage.learnUnitHeader: 'Unit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
       LearnAnywhereMessage.learnCancelConfirm: 'Cancel the current session?',
       LearnAnywhereMessage.learnEvaluateAs: 'Evaluate as:',
@@ -1566,8 +1565,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveRemaining: 'Übrig',
       LearnAnywhereMessage.learnLiveAccuracy: 'Korrekt',
       LearnAnywhereMessage.learnLiveTime: 'Zeit',
-      LearnAnywhereMessage.learnUnitHeader:
-          'Einheit {index} von {total} - {category} - {direction}',
+      LearnAnywhereMessage.learnUnitHeader: 'Einheit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
       LearnAnywhereMessage.learnCancelConfirm: 'Aktuelle Sitzung abbrechen?',
       LearnAnywhereMessage.learnEvaluateAs: 'Bewerten als:',

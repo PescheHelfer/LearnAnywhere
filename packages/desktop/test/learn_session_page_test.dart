@@ -236,14 +236,15 @@ void main() {
       expect(find.text('Attempts: 2'), findsOneWidget);
       expect(find.text('Almost There: 1 (100%)'), findsOneWidget);
 
-      // Level 1: first/last revealed as context, whole word typed.
-      await tester.enterText(find.byType(TextField), 'one');
+      // Level 1: first/last revealed, middle blank filled in place (one cell).
+      await tester.enterText(find.byType(TextField), 'n');
       await tester.tap(find.text('Check'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
       expect(find.text('Attempts: 3'), findsOneWidget);
       expect(find.text('Champion: 1 (100%)'), findsOneWidget);
+      expect(find.text('Mastered: 0 (0%)'), findsOneWidget);
 
       // Level 0: free recall; a correct answer masters the unit and, with an
       // empty pool, completes the session.
