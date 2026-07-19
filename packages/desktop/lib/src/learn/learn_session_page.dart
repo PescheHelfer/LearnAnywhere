@@ -25,6 +25,11 @@ final class LearnSessionPage extends StatefulWidget {
     required this.onStatisticsChanged,
     required this.onSessionProgressChanged,
     required this.onOpenEditor,
+    this.levelStatistics = const <LevelUnitStats>[],
+    this.levelNames = kDefaultLevelNamesEn,
+    this.entryLevelCap = kMaxSupportLevel,
+    this.onLevelStatisticsChanged,
+    this.onEntryLevelCapChanged,
     this.onStartUnitChanged,
     this.onEndUnitChanged,
     this.onExit,
@@ -36,6 +41,21 @@ final class LearnSessionPage extends StatefulWidget {
 
   /// Current statistics.
   final List<UnitStats> statistics;
+
+  /// Current Level-Learning statistics (`.sta` v2 section, may be empty).
+  final List<LevelUnitStats> levelStatistics;
+
+  /// Level names for the active locale, ordered engine level 3 → 0.
+  final List<String> levelNames;
+
+  /// Highest support level a newly seeded Level-Learning unit may start at.
+  final int entryLevelCap;
+
+  /// Called when Level-Learning statistics change (attempt or manual override).
+  final ValueChanged<List<LevelUnitStats>>? onLevelStatisticsChanged;
+
+  /// Called when the user changes the Level-Learning entry-level cap in setup.
+  final ValueChanged<int>? onEntryLevelCapChanged;
 
   /// Current query options.
   final DesktopQueryOptions options;
@@ -123,6 +143,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   // unit; reset when a new unit is shown so the tone fires once per unit.
   bool _timeTonePlayed = false;
   bool _completed = false;
+
+  // Level Learning: at level 3 the full solution is shown first; the student
+  // presses "Hide & type" to memorize it, then types it from an empty field.
+  // Reset to false whenever a new unit is shown.
+  bool _level3Memorized = false;
 
   @override
   void initState() {
@@ -277,11 +302,16 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         startIndex: _startIndex,
         endIndex: _endIndex,
         thresholdPercent: _thresholdPercent,
+        levelNames: widget.levelNames,
+        entryLevelCap: widget.entryLevelCap,
         onDirectionChanged: (DirectionSelection value) {
           _applyDraft(_parametersWith(direction: value));
         },
         onModeChanged: (SessionMode value) {
           _applyDraft(_parametersWith(mode: value));
+        },
+        onEntryLevelCapChanged: (int value) {
+          widget.onEntryLevelCapChanged?.call(value);
         },
         onShuffleChanged: (bool value) {
           _applyDraft(_parametersWith(shuffle: value));
@@ -310,11 +340,16 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     return _SessionView(
       deck: widget.deck,
       statistics: widget.statistics,
+      levelStatistics: widget.levelStatistics,
+      levelNames: widget.levelNames,
+      entryLevelCap: widget.entryLevelCap,
       options: widget.options,
       parameters: _draftParameters,
       item: _currentItem!,
       evaluation: _evaluation,
       selectedRating: _selectedRating,
+      activeLevel: _isLevelLearning ? _activeLevel : kFreeRecallLevel,
+      level3Memorized: _level3Memorized,
       ratingEntries: _evaluation != null
           ? _computeRatingEntries(messages)
           : const <MapEntry<AttemptRating, String>>[],
@@ -325,7 +360,14 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       sessionAttempts: widget.sessionAttempts,
       sessionCorrect: widget.sessionCorrect,
       showSolution: _showSolution,
-      onReveal: _reveal,
+      onReveal: _primaryPreCheck,
+      onCellAnswerChanged: (int fieldId, String value) {
+        _answerControllers[fieldId]?.value = TextEditingValue(
+          text: value,
+          selection: TextSelection.collapsed(offset: value.length),
+        );
+      },
+      onSetLevel: _setLevelManually,
       onRatingChanged: (AttemptRating value) {
         setState(() => _selectedRating = value);
       },
@@ -377,14 +419,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     widget.onParametersChanged(next);
   }
 
-  void _selectNextItem() {
+  void _selectNextItem({List<LevelUnitStats>? levelStats}) {
     final SessionItem? next = switch (_draftParameters.mode) {
       SessionMode.superQuery => _firstSuperQueryItem(),
-      // Level Learning has no desktop UI yet (Batch 2); fall back to ordered
-      // presentation so the app compiles and behaves sanely if selected.
-      SessionMode.levelLearning ||
-      SessionMode.practice ||
-      SessionMode.onceThrough => _nextOrderedItem(),
+      SessionMode.levelLearning => _firstLevelLearningItem(levelStats),
+      SessionMode.practice || SessionMode.onceThrough => _nextOrderedItem(),
     };
     if (next == null) {
       setState(() {
@@ -406,10 +445,21 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _selectedRating = AttemptRating.noCount;
       _elapsedSeconds = 0;
       _timeTonePlayed = false;
+      _level3Memorized = false;
     });
-    // When withInput is off, _resetAnswerControllers claims no focus itself
-    // (no answer fields exist), so reclaim root focus here instead.
-    if (_answerFocusNodes.isEmpty) {
+    // Reclaim root focus unless an answer field (or the level-2 scaffold, which
+    // autofocuses itself) will claim it. This covers think-only mode (no fields)
+    // and the level-3 pre-memorize step, keeping the F-keys/Esc/primary action
+    // live there.
+    final int level = _isLevelLearning
+        ? _levelStatsFor(next).currentLevel
+        : kFreeRecallLevel;
+    final bool editableNow =
+        !_isLevelLearning || level == kFreeRecallLevel || level == 1;
+    final bool scaffold = _usesScaffoldInput(level);
+    final bool focusHandled =
+        _answerFocusNodes.isNotEmpty && (editableNow || scaffold);
+    if (!focusHandled) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _rootFocusNode.requestFocus();
       });
@@ -447,6 +497,122 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     return pool[_random.nextInt(pool.length)];
   }
 
+  SessionItem? _firstLevelLearningItem([List<LevelUnitStats>? levelStats]) {
+    final List<SessionItem> pool = activeLevelLearningPool(
+      deck: widget.deck,
+      statistics: widget.statistics,
+      levelStatistics: levelStats ?? widget.levelStatistics,
+      parameters: _draftParameters,
+      entryLevelCap: widget.entryLevelCap,
+    );
+    if (pool.isEmpty) {
+      return null;
+    }
+    return pool[_random.nextInt(pool.length)];
+  }
+
+  /// Returns the Level-Learning stats for [item], seeding on the fly (from the
+  /// unit's prior bucket, capped by the entry level) when it has no entry yet.
+  LevelDirectionStats _levelStatsFor(SessionItem item) {
+    for (final LevelUnitStats stats in widget.levelStatistics) {
+      if (stats.index == item.unitIndex) {
+        return stats.statsFor(item.direction);
+      }
+    }
+    final UnitStats unitStats = _normalizedStats()[item.unitIndex - 1];
+    return seedLevelLearningStats(
+      unitStats.statsFor(item.direction),
+      entryLevelCap: widget.entryLevelCap,
+    );
+  }
+
+  /// The active support level (`0..3`) for the current Level-Learning unit.
+  int get _activeLevel {
+    final SessionItem? item = _currentItem;
+    if (item == null) return kFreeRecallLevel;
+    return _levelStatsFor(item).currentLevel;
+  }
+
+  bool get _isLevelLearning =>
+      _draftParameters.mode == SessionMode.levelLearning;
+
+  /// Whether [level] uses the editable cell scaffold (level 2), which owns its
+  /// own per-cell focus.
+  bool _usesScaffoldInput(int level) => _isLevelLearning && level == 2;
+
+  /// Enters the level-3 "type it from memory" step: hides the shown solution
+  /// and focuses the (now editable) answer field.
+  void _memorizeLevel3() {
+    setState(() => _level3Memorized = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final FocusNode? node = _answerFocusNodes.values.isEmpty
+          ? null
+          : _answerFocusNodes.values.first;
+      (node ?? _rootFocusNode).requestFocus();
+    });
+  }
+
+  /// Returns the level statistics with [item]'s direction replaced by [stats],
+  /// materializing a per-unit entry (seeding the other direction) when the unit
+  /// was still relying on on-the-fly seeding.
+  List<LevelUnitStats> _levelStatsWith(
+    SessionItem item,
+    LevelDirectionStats stats,
+  ) {
+    final Map<int, LevelUnitStats> byIndex = <int, LevelUnitStats>{
+      for (final LevelUnitStats s in widget.levelStatistics) s.index: s,
+    };
+    final LevelUnitStats existing =
+        byIndex[item.unitIndex] ??
+        LevelUnitStats(
+          index: item.unitIndex,
+          dir1: _levelStatsFor(
+            SessionItem(
+              unitIndex: item.unitIndex,
+              direction: QueryDirection.direction1,
+            ),
+          ),
+          dir2: _levelStatsFor(
+            SessionItem(
+              unitIndex: item.unitIndex,
+              direction: QueryDirection.direction2,
+            ),
+          ),
+        );
+    byIndex[item.unitIndex] = existing.withDirectionStats(item.direction, stats);
+    final List<LevelUnitStats> next =
+        byIndex.values.toList(growable: false)
+          ..sort((LevelUnitStats a, LevelUnitStats b) => a.index - b.index);
+    return List<LevelUnitStats>.unmodifiable(next);
+  }
+
+  /// Writes [stats] for [item] back through the shell.
+  void _pushLevelStats(SessionItem item, LevelDirectionStats stats) {
+    widget.onLevelStatisticsChanged?.call(_levelStatsWith(item, stats));
+  }
+
+  /// Manual level override (no penalty): moves the current unit to [newLevel]
+  /// and restarts that level's track record. Also restarts the unit locally.
+  void _setLevelManually(int newLevel) {
+    final SessionItem? item = _currentItem;
+    if (item == null || newLevel == _activeLevel || !isValidLevel(newLevel)) {
+      return;
+    }
+    final LevelDirectionStats moved = setLevelLearningLevel(
+      _levelStatsFor(item),
+      newLevel,
+    );
+    _pushLevelStats(item, moved);
+    // Restart the current prompt so the new level's scaffold is shown fresh.
+    _resetAnswerControllers(item);
+    setState(() {
+      _evaluation = null;
+      _selectedRating = AttemptRating.noCount;
+      _level3Memorized = false;
+    });
+  }
+
   void _resetAnswerControllers(SessionItem item) {
     for (final TextEditingController c in _answerControllers.values) {
       c.dispose();
@@ -475,7 +641,15 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
             _handleAnswerFieldKey(node, event, isLast),
       );
     }
-    if (_answerFocusNodes.isNotEmpty) {
+    // A reset always begins a fresh prompt, so level 3 is never "memorized"
+    // yet: only levels 0 and 1 (or any non-LL field) take focus immediately.
+    // The level-2 scaffold and the level-3 memorize step claim focus later.
+    final int level = _isLevelLearning
+        ? _levelStatsFor(item).currentLevel
+        : kFreeRecallLevel;
+    final bool editableNow =
+        !_isLevelLearning || level == kFreeRecallLevel || level == 1;
+    if (_answerFocusNodes.isNotEmpty && editableNow) {
       final FocusNode firstNode = _answerFocusNodes.values.first;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) firstNode.requestFocus();
@@ -521,7 +695,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       // Last answer field: trigger Check or Continue.
       setState(() => _enterAwaitingRelease = true);
       if (_evaluation == null) {
-        _reveal();
+        _primaryPreCheck();
       } else {
         _continueAfterRating();
       }
@@ -534,6 +708,19 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     }
 
     return KeyEventResult.ignored;
+  }
+
+  /// The pre-check primary action. In Level Learning at level 3 before the
+  /// solution has been memorized this hides it and starts typing; otherwise it
+  /// checks/reveals the answer.
+  void _primaryPreCheck() {
+    if (_isLevelLearning &&
+        _activeLevel == kMaxSupportLevel &&
+        !_level3Memorized) {
+      _memorizeLevel3();
+      return;
+    }
+    _reveal();
   }
 
   void _reveal() {
@@ -583,7 +770,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     if (_currentItem == null) {
       _startSession();
     } else if (_evaluation == null) {
-      _reveal();
+      _primaryPreCheck();
     } else {
       _continueAfterRating();
     }
@@ -596,13 +783,27 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     }
     final List<UnitStats> updated = _recordRating(item, _selectedRating);
     widget.onStatisticsChanged(updated);
-    final bool counted = _selectedRating != AttemptRating.noCount;
+    // Record the Level-Learning attempt (auto-promotes) and hand the freshly
+    // updated level stats straight to the next selection so a just-mastered
+    // unit is not re-served for one prompt on stale props.
+    List<LevelUnitStats>? nextLevelStats;
+    if (_isLevelLearning) {
+      final LevelDirectionStats after = recordLevelLearningAttempt(
+        _levelStatsFor(item),
+        _selectedRating,
+        parameters: _draftParameters,
+      );
+      nextLevelStats = _levelStatsWith(item, after);
+      _pushLevelStats(item, after);
+    }
+    // Attempts counts every check→continue cycle; correct counts only
+    // correct-rated attempts (accuracy is correct/attempts).
     final bool correct = _selectedRating == AttemptRating.correct;
     widget.onSessionProgressChanged(
-      widget.sessionAttempts + (counted ? 1 : 0),
+      widget.sessionAttempts + 1,
       widget.sessionCorrect + (correct ? 1 : 0),
     );
-    _selectNextItem();
+    _selectNextItem(levelStats: nextLevelStats);
   }
 
   List<UnitStats> _recordRating(SessionItem item, AttemptRating rating) {
@@ -638,6 +839,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   /// minimum-attempts guard still comes from the advanced options.
   SessionParameters _optionsApplied(SessionParameters parameters) {
     return parameters.copyWith(
+      // Level Learning is always "with input" (every level ends in typing).
+      withInput:
+          parameters.mode == SessionMode.levelLearning
+          ? true
+          : parameters.withInput,
       minimumAttemptsGuardEnabled: widget.options.minimumAttemptsGuardEnabled,
       minAttempts: widget.options.minAttempts,
     );
@@ -652,12 +858,16 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     bool? shuffle,
     double? threshold,
   }) {
+    final SessionMode nextMode = mode ?? _draftParameters.mode;
     return SessionParameters(
       directionSelection: direction ?? _draftParameters.directionSelection,
       startIndex: startIndex ?? _draftParameters.startIndex,
       endIndex: endIndex ?? _draftParameters.endIndex,
-      withInput: withInput ?? _draftParameters.withInput,
-      mode: mode ?? _draftParameters.mode,
+      // Level Learning always types its answers; force the flag on there.
+      withInput: nextMode == SessionMode.levelLearning
+          ? true
+          : (withInput ?? _draftParameters.withInput),
+      mode: nextMode,
       shuffle: shuffle ?? _draftParameters.shuffle,
       masteryThreshold: threshold ?? _draftParameters.masteryThreshold,
       minimumAttemptsGuardEnabled: widget.options.minimumAttemptsGuardEnabled,
@@ -855,8 +1065,11 @@ final class _SetupView extends StatelessWidget {
     required this.startIndex,
     required this.endIndex,
     required this.thresholdPercent,
+    required this.levelNames,
+    required this.entryLevelCap,
     required this.onDirectionChanged,
     required this.onModeChanged,
+    required this.onEntryLevelCapChanged,
     required this.onShuffleChanged,
     required this.onWithInputChanged,
     required this.onStartChanged,
@@ -871,8 +1084,11 @@ final class _SetupView extends StatelessWidget {
   final int startIndex;
   final int endIndex;
   final int thresholdPercent;
+  final List<String> levelNames;
+  final int entryLevelCap;
   final ValueChanged<DirectionSelection> onDirectionChanged;
   final ValueChanged<SessionMode> onModeChanged;
+  final ValueChanged<int> onEntryLevelCapChanged;
   final ValueChanged<bool> onShuffleChanged;
   final ValueChanged<bool> onWithInputChanged;
   final ValueChanged<int> onStartChanged;
@@ -886,6 +1102,7 @@ final class _SetupView extends StatelessWidget {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
+    final bool isLevelLearning = parameters.mode == SessionMode.levelLearning;
     return ListView(
       padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
       children: <Widget>[
@@ -920,6 +1137,12 @@ final class _SetupView extends StatelessWidget {
           value: parameters.mode,
           items: <DropdownMenuItem<SessionMode>>[
             DropdownMenuItem<SessionMode>(
+              value: SessionMode.levelLearning,
+              child: Text(
+                messages.message(LearnAnywhereMessage.learnModeLevelLearning),
+              ),
+            ),
+            DropdownMenuItem<SessionMode>(
               value: SessionMode.superQuery,
               child: Text(
                 messages.message(LearnAnywhereMessage.learnModeSuperQuery),
@@ -940,6 +1163,40 @@ final class _SetupView extends StatelessWidget {
           ],
           onChanged: onModeChanged,
         ),
+        // Level Learning caps the highest starting support; the whole ladder
+        // always ends in typing, so the think-only toggle does not apply.
+        if (isLevelLearning) ...<Widget>[
+          _DropdownRow<int>(
+            label: messages.message(LearnAnywhereMessage.learnEntryLevel),
+            value: entryLevelCap.clamp(kFreeRecallLevel, kMaxSupportLevel),
+            items: <DropdownMenuItem<int>>[
+              for (int level = kMaxSupportLevel;
+                  level >= kFreeRecallLevel;
+                  level -= 1)
+                DropdownMenuItem<int>(
+                  value: level,
+                  child: Text(
+                    level == kMaxSupportLevel
+                        ? levelNameFor(levelNames, level) +
+                              messages.message(
+                                LearnAnywhereMessage.learnEntryLevelNoCapSuffix,
+                              )
+                        : levelNameFor(levelNames, level),
+                  ),
+                ),
+            ],
+            onChanged: onEntryLevelCapChanged,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(
+              bottom: LearnAnywhereTokens.gapMedium,
+            ),
+            child: Text(
+              messages.message(LearnAnywhereMessage.learnEntryLevelHint),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -958,13 +1215,15 @@ final class _SetupView extends StatelessWidget {
             ),
           ],
         ),
-        SwitchListTile(
-          title: Text(
-            messages.message(LearnAnywhereMessage.queryOptionWithAnswerInput),
+        // Level Learning is always "with input", so the toggle is hidden there.
+        if (!isLevelLearning)
+          SwitchListTile(
+            title: Text(
+              messages.message(LearnAnywhereMessage.queryOptionWithAnswerInput),
+            ),
+            value: parameters.withInput,
+            onChanged: onWithInputChanged,
           ),
-          value: parameters.withInput,
-          onChanged: onWithInputChanged,
-        ),
         SwitchListTile(
           title: Text(
             messages.message(LearnAnywhereMessage.learnShuffleUnits),
@@ -1016,11 +1275,16 @@ final class _SessionView extends StatelessWidget {
   const _SessionView({
     required this.deck,
     required this.statistics,
+    required this.levelStatistics,
+    required this.levelNames,
+    required this.entryLevelCap,
     required this.options,
     required this.parameters,
     required this.item,
     required this.evaluation,
     required this.selectedRating,
+    required this.activeLevel,
+    required this.level3Memorized,
     required this.ratingEntries,
     required this.answerControllers,
     required this.answerFocusNodes,
@@ -1030,6 +1294,8 @@ final class _SessionView extends StatelessWidget {
     required this.sessionCorrect,
     required this.showSolution,
     required this.onReveal,
+    required this.onCellAnswerChanged,
+    required this.onSetLevel,
     required this.onRatingChanged,
     required this.onToggleView,
     required this.onRestoreFocus,
@@ -1039,11 +1305,20 @@ final class _SessionView extends StatelessWidget {
 
   final LearningDeck deck;
   final List<UnitStats> statistics;
+  final List<LevelUnitStats> levelStatistics;
+  final List<String> levelNames;
+  final int entryLevelCap;
   final DesktopQueryOptions options;
   final SessionParameters parameters;
   final SessionItem item;
   final AnswerEvaluation? evaluation;
   final AttemptRating selectedRating;
+
+  /// The active support level (`0..3`) when in Level Learning; ignored otherwise.
+  final int activeLevel;
+
+  /// Whether the level-3 solution has been memorized (typing phase reached).
+  final bool level3Memorized;
   final List<MapEntry<AttemptRating, String>> ratingEntries;
   final Map<int, TextEditingController> answerControllers;
   final Map<int, FocusNode> answerFocusNodes;
@@ -1053,18 +1328,347 @@ final class _SessionView extends StatelessWidget {
   final int sessionCorrect;
   final bool showSolution;
   final VoidCallback onReveal;
+
+  /// Called by the editable level-2 scaffold with the reconstructed answer.
+  final void Function(int fieldId, String value) onCellAnswerChanged;
+
+  /// Manual level override (More/Less help) for the current unit+direction.
+  final ValueChanged<int> onSetLevel;
   final ValueChanged<AttemptRating> onRatingChanged;
   final VoidCallback onToggleView;
   final VoidCallback onRestoreFocus;
   final VoidCallback onContinue;
   final VoidCallback onCancel;
 
+  bool get _isLevelLearning => parameters.mode == SessionMode.levelLearning;
+
+  /// Builds the live-stats pills: Attempts first, then mode-specific fields.
+  ///
+  /// Non-Level-Learning: Mastered / Remaining / Accuracy `x/y (z%)`. Level
+  /// Learning: one pill per level (highest support first) with the count of
+  /// in-scope units at that level and its share. The clock pill is appended for
+  /// both when enabled.
+  List<Widget> _statPills(
+    LearnAnywhereLocalizations messages,
+    bool timeWarning,
+  ) {
+    final int totalItems = _totalItems(deck, parameters);
+    final List<Widget> pills = <Widget>[
+      _StatPill(
+        label: messages.message(LearnAnywhereMessage.learnLiveAttempts),
+        value: '$sessionAttempts',
+      ),
+    ];
+    if (_isLevelLearning) {
+      final Map<int, int> counts = _levelCounts();
+      for (int level = kMaxSupportLevel;
+          level >= kFreeRecallLevel;
+          level -= 1) {
+        final int count = counts[level] ?? 0;
+        final int pct =
+            totalItems == 0 ? 0 : ((count / totalItems) * 100).round();
+        pills.add(
+          _StatPill(
+            label: levelNameFor(levelNames, level),
+            value: '$count ($pct%)',
+          ),
+        );
+      }
+    } else {
+      final List<SessionItem> pool = activeSuperQueryPool(
+        deck: deck,
+        statistics: statistics,
+        parameters: parameters,
+      );
+      final int mastered = (totalItems - pool.length).clamp(0, totalItems);
+      final int pct = sessionAttempts == 0
+          ? 0
+          : ((sessionCorrect / sessionAttempts) * 100).round();
+      pills.addAll(<Widget>[
+        _StatPill(
+          label: messages.message(LearnAnywhereMessage.learnLiveMastered),
+          value: '$mastered/$totalItems',
+        ),
+        _StatPill(
+          label: messages.message(LearnAnywhereMessage.learnLiveRemaining),
+          value: '${pool.length}',
+        ),
+        _StatPill(
+          label: messages.message(LearnAnywhereMessage.learnLiveAccuracy),
+          value: '$sessionCorrect/$sessionAttempts ($pct%)',
+        ),
+      ]);
+    }
+    if (options.showClock) {
+      pills.add(
+        _StatPill(
+          label: messages.message(LearnAnywhereMessage.learnLiveTime),
+          value: _clockText(elapsedSeconds),
+          warning: timeWarning,
+        ),
+      );
+    }
+    return pills;
+  }
+
+  /// Counts in-scope, not-yet-mastered Level-Learning units by current level.
+  Map<int, int> _levelCounts() {
+    final List<SessionItem> pool = activeLevelLearningPool(
+      deck: deck,
+      statistics: statistics,
+      levelStatistics: levelStatistics,
+      parameters: parameters,
+      entryLevelCap: entryLevelCap,
+    );
+    final Map<int, LevelUnitStats> byIndex = <int, LevelUnitStats>{
+      for (final LevelUnitStats s in levelStatistics) s.index: s,
+    };
+    final Map<int, UnitStats> statsByIndex = <int, UnitStats>{
+      for (final UnitStats s in statistics) s.index: s,
+    };
+    final Map<int, int> counts = <int, int>{
+      for (int level = kMaxSupportLevel;
+          level >= kFreeRecallLevel;
+          level -= 1)
+        level: 0,
+    };
+    for (final SessionItem poolItem in pool) {
+      final LevelUnitStats? ls = byIndex[poolItem.unitIndex];
+      final LevelDirectionStats dir = ls != null
+          ? ls.statsFor(poolItem.direction)
+          : seedLevelLearningStats(
+              (statsByIndex[poolItem.unitIndex] ??
+                      UnitStats(index: poolItem.unitIndex))
+                  .statsFor(poolItem.direction),
+              entryLevelCap: entryLevelCap,
+            );
+      counts[dir.currentLevel] = (counts[dir.currentLevel] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  /// Builds the bordered field grid (one row per visible field).
+  Widget _fieldGrid(
+    BuildContext context,
+    List<FieldDefinition> visibleFields,
+    LearningUnit unit,
+  ) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    int? firstAnswerId;
+    for (final FieldDefinition f in visibleFields) {
+      if (f.roleFor(item.direction) == FieldRole.answer) {
+        firstAnswerId = f.id;
+        break;
+      }
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: colors.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7),
+        child: Column(
+          children: <Widget>[
+            for (int i = 0; i < visibleFields.length; i++) ...<Widget>[
+              if (i > 0) Container(height: 1, color: colors.outlineVariant),
+              Builder(
+                builder: (BuildContext ctx) {
+                  final FieldDefinition field = visibleFields[i];
+                  final FieldRole role = field.roleFor(item.direction);
+                  final double bgOpacity =
+                      Theme.of(ctx).brightness == Brightness.light ? 0.15 : 0.10;
+
+                  final bool showUserAnswer =
+                      role == FieldRole.answer &&
+                      evaluation != null &&
+                      parameters.withInput &&
+                      !showSolution;
+
+                  final Color accentColor;
+                  final Color bgColor;
+                  final FieldValue displayValue;
+
+                  if (showUserAnswer) {
+                    final ColorScheme rowColors = Theme.of(ctx).colorScheme;
+                    accentColor = rowColors.outline;
+                    bgColor = rowColors.surfaceContainerHighest;
+                    displayValue = FieldValue.plain(
+                      enteredAnswers[field.id] ?? '',
+                    );
+                  } else {
+                    accentColor = switch (role) {
+                      FieldRole.question => const Color.fromRGBO(0, 150, 180, 1),
+                      FieldRole.answer => const Color.fromRGBO(0, 160, 80, 1),
+                      FieldRole.remark => const Color.fromRGBO(200, 140, 0, 1),
+                    };
+                    bgColor = accentColor.withValues(alpha: bgOpacity);
+                    displayValue = unit.valueForFieldId(field.id);
+                  }
+
+                  final Widget? override =
+                      (_isLevelLearning &&
+                          role == FieldRole.answer &&
+                          evaluation == null)
+                      ? _levelAnswerContent(
+                          ctx,
+                          field,
+                          unit,
+                          field.id == firstAnswerId,
+                        )
+                      : null;
+
+                  return _PracticeGridRow(
+                    field: field,
+                    role: role,
+                    value: displayValue,
+                    bgColor: bgColor,
+                    accentColor: accentColor,
+                    evaluation: evaluation,
+                    withInput: parameters.withInput,
+                    enteredText: enteredAnswers[field.id],
+                    controller: answerControllers[field.id],
+                    focusNode: answerFocusNodes[field.id],
+                    contentOverride: override,
+                  );
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The Level-Learning answer widget for [field] at the active level, or null
+  /// to fall back to a normal editable text field (levels 0 and memorized 3).
+  Widget? _levelAnswerContent(
+    BuildContext ctx,
+    FieldDefinition field,
+    LearningUnit unit,
+    bool autofocus,
+  ) {
+    final String plain = unit.valueForFieldId(field.id).plainText;
+    final int level = activeLevel;
+    final TextStyle style =
+        Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+          fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
+        ) ??
+        const TextStyle();
+
+    if (level == kMaxSupportLevel) {
+      // Show the full solution to read; typing starts only after Hide & type.
+      if (!level3Memorized) {
+        return _ScaffoldPreview(
+          cells: maskFieldValue(plain, kMaxSupportLevel),
+          textStyle: style,
+        );
+      }
+      return null;
+    }
+    if (level == 2) {
+      return _LevelScaffoldInput(
+        key: ValueKey<String>(
+          'scaffold-${item.unitIndex}-${item.direction.name}-${field.id}-$level',
+        ),
+        cells: maskFieldValue(plain, level),
+        textStyle: style,
+        autofocus: autofocus,
+        onChanged: (String value) => onCellAnswerChanged(field.id, value),
+        onSubmit: onReveal,
+      );
+    }
+    if (level == 1) {
+      // Locked context (first & last letters), typed as a whole word below.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _ScaffoldPreview(cells: maskFieldValue(plain, 1), textStyle: style),
+          const SizedBox(height: 6),
+          _AnswerTextField(
+            controller: answerControllers[field.id],
+            focusNode: answerFocusNodes[field.id],
+            maxLength: field.length,
+          ),
+        ],
+      );
+    }
+    return null;
+  }
+
+  /// Pre-check button row: Cancel, the Level-Learning help override (More/Less
+  /// help), and the primary action (Check / Reveal, or Hide & type at level 3).
+  Widget _preCheckButtons(
+    BuildContext context,
+    LearnAnywhereLocalizations messages,
+  ) {
+    final bool level3Pending =
+        _isLevelLearning &&
+        activeLevel == kMaxSupportLevel &&
+        !level3Memorized;
+    return Wrap(
+      spacing: LearnAnywhereTokens.gapSmall,
+      runSpacing: LearnAnywhereTokens.gapSmall,
+      children: <Widget>[
+        FilledButton.tonalIcon(
+          onPressed: onCancel,
+          icon: const Icon(Icons.close),
+          label: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(messages.message(LearnAnywhereMessage.actionCancel)),
+              const Text('Esc', style: TextStyle(fontSize: 10)),
+            ],
+          ),
+        ),
+        if (_isLevelLearning) ...<Widget>[
+          OutlinedButton.icon(
+            onPressed: activeLevel > kFreeRecallLevel
+                ? () => onSetLevel(activeLevel - 1)
+                : null,
+            icon: const Icon(Icons.remove),
+            label: Text(messages.message(LearnAnywhereMessage.learnLessHelp)),
+          ),
+          OutlinedButton.icon(
+            onPressed: activeLevel < kMaxSupportLevel
+                ? () => onSetLevel(activeLevel + 1)
+                : null,
+            icon: const Icon(Icons.add),
+            label: Text(messages.message(LearnAnywhereMessage.learnMoreHelp)),
+          ),
+        ],
+        FilledButton.icon(
+          onPressed: onReveal,
+          icon: Icon(
+            level3Pending
+                ? Icons.visibility_off
+                : (parameters.withInput ? Icons.check : Icons.visibility),
+          ),
+          label: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                messages.message(
+                  level3Pending
+                      ? LearnAnywhereMessage.learnHideAndType
+                      : (parameters.withInput
+                            ? LearnAnywhereMessage.learnCheckAnswer
+                            : LearnAnywhereMessage.learnReveal),
+                ),
+              ),
+              const Text('F10', style: TextStyle(fontSize: 10)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final ColorScheme colors = Theme.of(context).colorScheme;
     final LearningUnit unit = deck.units[item.unitIndex - 1];
     final CategoryDefinition category = deck.categoryForUnit(unit);
 
@@ -1089,21 +1693,22 @@ final class _SessionView extends StatelessWidget {
         })
         .toList(growable: false);
 
-    // Compute stat values for the header row.
-    final List<SessionItem> pool = activeSuperQueryPool(
-      deck: deck,
-      statistics: statistics,
-      parameters: parameters,
-    );
-    final int totalItems = _totalItems(deck, parameters);
-    final int mastered = (totalItems - pool.length).clamp(0, totalItems);
-    final int accuracy = sessionAttempts == 0
-        ? 0
-        : ((sessionCorrect / sessionAttempts) * 100).round();
     final bool timeWarning =
         options.showClock &&
         options.timeLimitSeconds > 0 &&
         elapsedSeconds >= options.timeLimitSeconds;
+
+    // Header shows the current unit, and for Level Learning its level name.
+    String headerText = _learnUnitHeader(
+      messages,
+      item.unitIndex,
+      deck.units.length,
+      category.name,
+      _directionLabel(deck, item.direction),
+    );
+    if (_isLevelLearning) {
+      headerText = '$headerText - ${levelNameFor(levelNames, activeLevel)}';
+    }
 
     return Scrollbar(
       child: SingleChildScrollView(
@@ -1111,130 +1716,20 @@ final class _SessionView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // ── Header: stats + inline title ───────────────────────────────
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                _StatPill(
-                  label: messages.message(
-                    LearnAnywhereMessage.learnLiveMastered,
-                  ),
-                  value: '$mastered/$totalItems',
-                ),
-                const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                _StatPill(
-                  label: messages.message(
-                    LearnAnywhereMessage.learnLiveRemaining,
-                  ),
-                  value: pool.length.toString(),
-                ),
-                const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                _StatPill(
-                  label: messages.message(
-                    LearnAnywhereMessage.learnLiveAccuracy,
-                  ),
-                  value: '$accuracy%',
-                ),
-                if (options.showClock) ...<Widget>[
-                  const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                  _StatPill(
-                    label: messages.message(
-                      LearnAnywhereMessage.learnLiveTime,
-                    ),
-                    value: _clockText(elapsedSeconds),
-                    warning: timeWarning,
-                  ),
-                ],
-                const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                Expanded(
-                  child: Text(
-                    _learnUnitHeader(
-                      messages,
-                      item.unitIndex,
-                      deck.units.length,
-                      category.name,
-                      _directionLabel(deck, item.direction),
-                    ),
-                    style: Theme.of(context).textTheme.titleMedium,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
+            // ── Header: unit title + live stats ────────────────────────────
+            Text(
+              headerText,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapSmall),
+            Wrap(
+              spacing: LearnAnywhereTokens.gapSmall,
+              runSpacing: LearnAnywhereTokens.gapSmall,
+              children: _statPills(messages, timeWarning),
             ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),
             // ── Field grid ────────────────────────────────────────────────
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border.all(color: colors.outlineVariant),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(7),
-                child: Column(
-                  children: <Widget>[
-                    for (int i = 0; i < visibleFields.length; i++) ...<Widget>[
-                      if (i > 0)
-                        Container(height: 1, color: colors.outlineVariant),
-                      Builder(
-                        builder: (BuildContext ctx) {
-                          final FieldDefinition field = visibleFields[i];
-                          final FieldRole role = field.roleFor(item.direction);
-                          final double bgOpacity =
-                              Theme.of(ctx).brightness == Brightness.light
-                                  ? 0.15
-                                  : 0.10;
-
-                          final bool showUserAnswer =
-                              role == FieldRole.answer &&
-                              evaluation != null &&
-                              parameters.withInput &&
-                              !showSolution;
-
-                          final Color accentColor;
-                          final Color bgColor;
-                          final FieldValue displayValue;
-
-                          if (showUserAnswer) {
-                            final ColorScheme rowColors =
-                                Theme.of(ctx).colorScheme;
-                            accentColor = rowColors.outline;
-                            bgColor = rowColors.surfaceContainerHighest;
-                            displayValue = FieldValue.plain(
-                              enteredAnswers[field.id] ?? '',
-                            );
-                          } else {
-                            accentColor = switch (role) {
-                              FieldRole.question =>
-                                const Color.fromRGBO(0, 150, 180, 1),
-                              FieldRole.answer =>
-                                const Color.fromRGBO(0, 160, 80, 1),
-                              FieldRole.remark =>
-                                const Color.fromRGBO(200, 140, 0, 1),
-                            };
-                            bgColor = accentColor.withValues(alpha: bgOpacity);
-                            displayValue = unit.valueForFieldId(field.id);
-                          }
-
-                          return _PracticeGridRow(
-                            field: field,
-                            role: role,
-                            value: displayValue,
-                            bgColor: bgColor,
-                            accentColor: accentColor,
-                            evaluation: evaluation,
-                            withInput: parameters.withInput,
-                            enteredText: enteredAnswers[field.id],
-                            controller: answerControllers[field.id],
-                            focusNode: answerFocusNodes[field.id],
-                          );
-                        },
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+            _fieldGrid(context, visibleFields, unit),
             // ── Post-reveal results ────────────────────────────────────────
             if (evaluation != null) ...<Widget>[
               const SizedBox(height: LearnAnywhereTokens.gapMedium),
@@ -1322,43 +1817,7 @@ final class _SessionView extends StatelessWidget {
             ] else ...<Widget>[
               const SizedBox(height: LearnAnywhereTokens.gapLarge),
               // ── Pre-check buttons ──────────────────────────────────────
-              Wrap(
-                spacing: LearnAnywhereTokens.gapSmall,
-                children: <Widget>[
-                  FilledButton.tonalIcon(
-                    onPressed: onCancel,
-                    icon: const Icon(Icons.close),
-                    label: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          messages.message(LearnAnywhereMessage.actionCancel),
-                        ),
-                        const Text('Esc', style: TextStyle(fontSize: 10)),
-                      ],
-                    ),
-                  ),
-                  FilledButton.icon(
-                    onPressed: onReveal,
-                    icon: Icon(
-                      parameters.withInput ? Icons.check : Icons.visibility,
-                    ),
-                    label: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          messages.message(
-                            parameters.withInput
-                                ? LearnAnywhereMessage.learnCheckAnswer
-                                : LearnAnywhereMessage.learnReveal,
-                          ),
-                        ),
-                        const Text('F10', style: TextStyle(fontSize: 10)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              _preCheckButtons(context, messages),
             ],
           ],
         ),
@@ -1382,6 +1841,7 @@ final class _PracticeGridRow extends StatelessWidget {
     required this.enteredText,
     required this.controller,
     required this.focusNode,
+    this.contentOverride,
   });
 
   final FieldDefinition field;
@@ -1395,11 +1855,31 @@ final class _PracticeGridRow extends StatelessWidget {
   final TextEditingController? controller;
   final FocusNode? focusNode;
 
+  /// A Level-Learning answer widget (scaffold or preview) that replaces the
+  /// default text field / rich-text value for this row when non-null.
+  final Widget? contentOverride;
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final bool isEditable =
         role == FieldRole.answer && evaluation == null && withInput;
+
+    final Widget content =
+        contentOverride ??
+        (isEditable
+            ? _AnswerTextField(
+                controller: controller,
+                focusNode: focusNode,
+                maxLength: field.length,
+              )
+            : LearnAnywhereRichText(
+                value: value,
+                maxLines: 3,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
+                ),
+              ));
 
     return IntrinsicHeight(
       child: Row(
@@ -1426,35 +1906,7 @@ final class _PracticeGridRow extends StatelessWidget {
                   horizontal: 8,
                   vertical: 6,
                 ),
-                child: isEditable
-                    ? TextField(
-                        focusNode: focusNode,
-                        controller: controller,
-                        maxLines: 1,
-                        inputFormatters: <TextInputFormatter>[
-                          LengthLimitingTextInputFormatter(field.length),
-                        ],
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontFamilyFallback:
-                              LearnAnywhereTokens.monospaceFallback,
-                        ),
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 0,
-                          ),
-                          border: InputBorder.none,
-                        ),
-                      )
-                    : LearnAnywhereRichText(
-                        value: value,
-                        maxLines: 3,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontFamilyFallback:
-                              LearnAnywhereTokens.monospaceFallback,
-                        ),
-                      ),
+                child: content,
               ),
             ),
           ),
@@ -1462,6 +1914,404 @@ final class _PracticeGridRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The plain single-line answer text field used pre-check.
+final class _AnswerTextField extends StatelessWidget {
+  const _AnswerTextField({
+    required this.controller,
+    required this.focusNode,
+    required this.maxLength,
+  });
+
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
+  final int maxLength;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      focusNode: focusNode,
+      controller: controller,
+      maxLines: 1,
+      inputFormatters: <TextInputFormatter>[
+        LengthLimitingTextInputFormatter(maxLength),
+      ],
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
+      ),
+      decoration: const InputDecoration(
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+        border: InputBorder.none,
+      ),
+    );
+  }
+}
+
+// ─── Level-Learning scaffold cells ────────────────────────────────────────────
+
+/// Blue used for the "type here" dashed cell outline (matches the mockups).
+const Color _kBlankCellColor = Color.fromRGBO(40, 110, 240, 1);
+const double _kCellWidth = 22;
+const double _kCellHeight = 30;
+
+/// Splits [cells] into per-word runs (whitespace `shown` cells become gaps) and
+/// lays the words out in a [Wrap] so word boundaries stay intact. Each cell is
+/// turned into a widget by [cellBuilder], which receives a blank cell's running
+/// 0-based blank index (−1 for non-blank cells).
+Widget _scaffoldLayout(
+  List<MaskCell> cells,
+  Widget Function(MaskCell cell, int blankIndex) cellBuilder,
+) {
+  final List<Widget> words = <Widget>[];
+  List<Widget> current = <Widget>[];
+  void flush() {
+    if (current.isNotEmpty) {
+      words.add(
+        Row(mainAxisSize: MainAxisSize.min, children: current),
+      );
+      current = <Widget>[];
+    }
+  }
+
+  int blankIndex = 0;
+  for (final MaskCell cell in cells) {
+    final bool isWhitespace =
+        cell.kind == MaskCellKind.shown && cell.char.trim().isEmpty;
+    if (isWhitespace) {
+      flush();
+      words.add(const SizedBox(width: 12));
+      continue;
+    }
+    current.add(
+      cellBuilder(cell, cell.kind == MaskCellKind.blank ? blankIndex : -1),
+    );
+    if (cell.kind == MaskCellKind.blank) blankIndex += 1;
+  }
+  flush();
+  return Wrap(
+    spacing: 0,
+    runSpacing: 4,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: words,
+  );
+}
+
+/// A read-only Level-Learning scaffold: locked revealed letters and empty
+/// dashed "type here" cells. Used for level-3 (full solution) and as context
+/// for level 1; also for any level's revealed context.
+final class _ScaffoldPreview extends StatelessWidget {
+  const _ScaffoldPreview({required this.cells, required this.textStyle});
+
+  final List<MaskCell> cells;
+  final TextStyle textStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return _scaffoldLayout(cells, (MaskCell cell, int _) {
+      switch (cell.kind) {
+        case MaskCellKind.shown:
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1),
+            child: Text(cell.char, style: textStyle),
+          );
+        case MaskCellKind.revealed:
+          return _StaticCell(
+            char: cell.char,
+            revealed: true,
+            textStyle: textStyle,
+            colors: colors,
+          );
+        case MaskCellKind.blank:
+          return _StaticCell(
+            char: '',
+            revealed: false,
+            textStyle: textStyle,
+            colors: colors,
+          );
+      }
+    });
+  }
+}
+
+/// A single fixed-size scaffold cell: greyed locked letter or dashed blank box.
+final class _StaticCell extends StatelessWidget {
+  const _StaticCell({
+    required this.char,
+    required this.revealed,
+    required this.textStyle,
+    required this.colors,
+  });
+
+  final String char;
+  final bool revealed;
+  final TextStyle textStyle;
+  final ColorScheme colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget inner = Container(
+      width: _kCellWidth,
+      height: _kCellHeight,
+      alignment: Alignment.center,
+      decoration: revealed
+          ? BoxDecoration(
+              color: colors.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: colors.outlineVariant),
+            )
+          : null,
+      child: Text(
+        char,
+        style: textStyle.copyWith(
+          color: revealed ? colors.onSurfaceVariant : null,
+        ),
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 1),
+      child: revealed
+          ? inner
+          : CustomPaint(
+              painter: const _DashedRectPainter(color: _kBlankCellColor),
+              child: inner,
+            ),
+    );
+  }
+}
+
+/// The editable level-2 scaffold: locked revealed letters interleaved with
+/// per-blank single-character inputs the student fills. Reconstructs the full
+/// answer string (revealed + typed + shown) and reports it via [onChanged].
+final class _LevelScaffoldInput extends StatefulWidget {
+  const _LevelScaffoldInput({
+    required this.cells,
+    required this.textStyle,
+    required this.autofocus,
+    required this.onChanged,
+    required this.onSubmit,
+    super.key,
+  });
+
+  final List<MaskCell> cells;
+  final TextStyle textStyle;
+  final bool autofocus;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onSubmit;
+
+  @override
+  State<_LevelScaffoldInput> createState() => _LevelScaffoldInputState();
+}
+
+final class _LevelScaffoldInputState extends State<_LevelScaffoldInput> {
+  final List<TextEditingController> _controllers = <TextEditingController>[];
+  final List<FocusNode> _nodes = <FocusNode>[];
+
+  int get _blankCount =>
+      widget.cells.where((MaskCell c) => c.kind == MaskCellKind.blank).length;
+
+  @override
+  void initState() {
+    super.initState();
+    _build();
+    if (widget.autofocus && _nodes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _nodes.first.requestFocus();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(_LevelScaffoldInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_blankCount != _controllers.length) {
+      _dispose();
+      _build();
+    }
+  }
+
+  void _build() {
+    for (int i = 0; i < _blankCount; i++) {
+      _controllers.add(TextEditingController());
+      final int index = i;
+      _nodes.add(FocusNode(onKeyEvent: (_, KeyEvent e) => _onKey(index, e)));
+    }
+  }
+
+  void _dispose() {
+    for (final TextEditingController c in _controllers) {
+      c.dispose();
+    }
+    for (final FocusNode n in _nodes) {
+      n.dispose();
+    }
+    _controllers.clear();
+    _nodes.clear();
+  }
+
+  @override
+  void dispose() {
+    _dispose();
+    super.dispose();
+  }
+
+  /// Rebuilds the full answer string from revealed/shown characters and the
+  /// typed blank cells, then reports it upward.
+  void _report() {
+    final StringBuffer buffer = StringBuffer();
+    int blank = 0;
+    for (final MaskCell cell in widget.cells) {
+      if (cell.kind == MaskCellKind.blank) {
+        buffer.write(_controllers[blank].text);
+        blank += 1;
+      } else {
+        buffer.write(cell.char);
+      }
+    }
+    widget.onChanged(buffer.toString());
+  }
+
+  KeyEventResult _onKey(int index, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final LogicalKeyboardKey key = event.logicalKey;
+    final bool isEnter =
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter;
+    final bool isTab = key == LogicalKeyboardKey.tab;
+    if (isEnter || isTab) {
+      if (index < _nodes.length - 1) {
+        _nodes[index + 1].requestFocus();
+      } else if (isEnter) {
+        widget.onSubmit();
+      } else {
+        _nodes[index].nextFocus();
+      }
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.backspace &&
+        _controllers[index].text.isEmpty &&
+        index > 0) {
+      _nodes[index - 1].requestFocus();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return _scaffoldLayout(widget.cells, (MaskCell cell, int blankIndex) {
+      switch (cell.kind) {
+        case MaskCellKind.shown:
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1),
+            child: Text(cell.char, style: widget.textStyle),
+          );
+        case MaskCellKind.revealed:
+          return _StaticCell(
+            char: cell.char,
+            revealed: true,
+            textStyle: widget.textStyle,
+            colors: colors,
+          );
+        case MaskCellKind.blank:
+          return _BlankInputCell(
+            controller: _controllers[blankIndex],
+            focusNode: _nodes[blankIndex],
+            textStyle: widget.textStyle,
+            onChanged: (String value) {
+              if (value.isNotEmpty && blankIndex < _nodes.length - 1) {
+                _nodes[blankIndex + 1].requestFocus();
+              }
+              _report();
+            },
+          );
+      }
+    });
+  }
+}
+
+/// A single editable blank cell (one character) with a dashed blue outline.
+final class _BlankInputCell extends StatelessWidget {
+  const _BlankInputCell({
+    required this.controller,
+    required this.focusNode,
+    required this.textStyle,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final TextStyle textStyle;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 1),
+      child: CustomPaint(
+        painter: const _DashedRectPainter(color: _kBlankCellColor),
+        child: SizedBox(
+          width: _kCellWidth,
+          height: _kCellHeight,
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            textAlign: TextAlign.center,
+            maxLength: 1,
+            style: textStyle,
+            cursorWidth: 1,
+            decoration: const InputDecoration(
+              counterText: '',
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+              border: InputBorder.none,
+            ),
+            onChanged: onChanged,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Paints a dashed rounded rectangle just inside the given size.
+final class _DashedRectPainter extends CustomPainter {
+  const _DashedRectPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double dash = 3;
+    const double gap = 3;
+    final Paint paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    final RRect rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(4),
+    );
+    final Path path = Path()..addRRect(rrect);
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final double next = distance + dash;
+        canvas.drawPath(
+          metric.extractPath(distance, next.clamp(0, metric.length)),
+          paint,
+        );
+        distance = next + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedRectPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 final class _CompletionView extends StatelessWidget {

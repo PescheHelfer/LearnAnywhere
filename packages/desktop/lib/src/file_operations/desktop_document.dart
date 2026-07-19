@@ -6,6 +6,7 @@ final class DesktopDocument {
   const DesktopDocument({
     required this.deck,
     required this.statistics,
+    this.levelStatistics = const <LevelUnitStats>[],
     this.deckPath,
     this.statisticsPath,
     this.autoLoadStatistics = false,
@@ -17,6 +18,13 @@ final class DesktopDocument {
 
   /// Current in-memory statistics.
   final List<UnitStats> statistics;
+
+  /// Current in-memory Level-Learning statistics (`.sta` v2 section).
+  ///
+  /// Empty when the deck has no Level-Learning history yet; entries are seeded
+  /// on demand by the engine (`activeLevelLearningPool`) and materialized here
+  /// as the student answers Level-Learning units.
+  final List<LevelUnitStats> levelStatistics;
 
   /// Current `.vok` path, if any.
   final String? deckPath;
@@ -46,6 +54,7 @@ final class DesktopDocument {
   DesktopDocument copyWith({
     LearningDeck? deck,
     List<UnitStats>? statistics,
+    List<LevelUnitStats>? levelStatistics,
     String? deckPath,
     String? statisticsPath,
     bool clearDeckPath = false,
@@ -56,6 +65,7 @@ final class DesktopDocument {
     return DesktopDocument(
       deck: deck ?? this.deck,
       statistics: statistics ?? this.statistics,
+      levelStatistics: levelStatistics ?? this.levelStatistics,
       deckPath: clearDeckPath ? null : deckPath ?? this.deckPath,
       statisticsPath: clearStatisticsPath
           ? null

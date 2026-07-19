@@ -29,18 +29,25 @@ final class DesktopFileService {
   Future<DesktopDocument> openDeck(DesktopDocument current, String path) async {
     final LearningDeck deck = decodeDeckJson(await File(path).readAsString());
     var statistics = clearStatistics(deck);
+    var levelStatistics = const <LevelUnitStats>[];
     String? statisticsPath;
     if (current.autoLoadStatistics) {
       final String sidecarPath = statisticsSidecarPath(path);
       final File sidecar = File(sidecarPath);
       if (await sidecar.exists()) {
-        statistics = decodeStatisticsJson(await sidecar.readAsString()).perUnit;
+        final StatisticsFile loaded = decodeStatisticsJson(
+          await sidecar.readAsString(),
+        );
+        statistics = loaded.perUnit;
+        levelStatistics =
+            loaded.levelLearning?.perUnit ?? const <LevelUnitStats>[];
         statisticsPath = sidecarPath;
       }
     }
     return DesktopDocument(
       deck: deck,
       statistics: statistics,
+      levelStatistics: levelStatistics,
       deckPath: path,
       statisticsPath: statisticsPath,
       autoLoadStatistics: current.autoLoadStatistics,
@@ -426,6 +433,8 @@ final class DesktopFileService {
         statistics.perUnit,
         current.deck.units.length,
       ),
+      levelStatistics:
+          statistics.levelLearning?.perUnit ?? const <LevelUnitStats>[],
       statisticsPath: path,
     );
   }
@@ -442,6 +451,7 @@ final class DesktopFileService {
               ? 'unsaved.vok'
               : _fileName(current.deckPath!),
           perUnit: current.statistics,
+          levelLearning: _levelSection(current.levelStatistics),
         ),
       ),
     );
@@ -450,7 +460,10 @@ final class DesktopFileService {
 
   /// Clears all current statistics.
   DesktopDocument clearStatisticsInMemory(DesktopDocument current) {
-    return current.copyWith(statistics: clearStatistics(current.deck));
+    return current.copyWith(
+      statistics: clearStatistics(current.deck),
+      levelStatistics: const <LevelUnitStats>[],
+    );
   }
 
   /// Auto-saves statistics for [document] when configured and a deck path exists.
@@ -465,9 +478,19 @@ final class DesktopFileService {
         StatisticsFile(
           deckRef: _fileName(document.deckPath!),
           perUnit: document.statistics,
+          levelLearning: _levelSection(document.levelStatistics),
         ),
       ),
     );
+  }
+
+  /// Wraps [levelStatistics] in a [LevelLearningStats] section, or null when
+  /// empty so the `.sta` file stays a v1 document with no Level-Learning data.
+  LevelLearningStats? _levelSection(List<LevelUnitStats> levelStatistics) {
+    if (levelStatistics.isEmpty) {
+      return null;
+    }
+    return LevelLearningStats(perUnit: levelStatistics);
   }
 
   /// Returns the platform-appropriate path of the user settings file.

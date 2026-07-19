@@ -50,6 +50,20 @@ const List<String> kSpaceLaunchLevelNamesDe = <String>[
   'Mondlandung',
 ];
 
+/// Returns the custom name for engine [level] (`0..3`) from [names].
+///
+/// [names] is ordered engine level 3 → 0 (as stored in the settings'
+/// `levelNamesEn`/`levelNamesDe`), so level 3 maps to `names[0]` and level 0
+/// to `names[3]`. Out-of-range input yields an empty string rather than
+/// throwing, so the UI never crashes on malformed data.
+String levelNameFor(List<String> names, int level) {
+  final int index = kMaxSupportLevel - level;
+  if (index < 0 || index >= names.length) {
+    return '';
+  }
+  return names[index];
+}
+
 /// Persisted, framework-independent user settings.
 ///
 /// Holds the advanced practice options, the practice-setup choices, and the

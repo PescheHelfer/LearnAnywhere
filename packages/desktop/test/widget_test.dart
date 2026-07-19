@@ -250,7 +250,8 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Accuracy: 100%'), findsOneWidget);
+    expect(find.text('Accuracy: 1/1 (100%)'), findsOneWidget);
+    expect(find.text('Attempts: 1'), findsOneWidget);
   });
 
   testWidgets('mask editor edits mask metadata and adds schema items', (

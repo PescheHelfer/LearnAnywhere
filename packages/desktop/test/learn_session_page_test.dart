@@ -178,4 +178,105 @@ void main() {
       expect(find.text('Start session'), findsNothing);
     },
   );
+
+  testWidgets(
+    'level learning: level-3 shows the solution, hides on type, then promotes',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_LevelLearningHarness(deck: deck));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // A fresh deck seeds level 3 (Beginner): full solution shown, no input,
+      // and the primary action is "Hide & type".
+      expect(find.text('Attempts: 0'), findsOneWidget);
+      expect(find.text('Beginner: 1 (100%)'), findsOneWidget);
+      expect(find.text('Hide & type'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+
+      await tester.tap(find.text('Hide & type'));
+      await tester.pumpAndSettle();
+
+      // The solution is hidden; the student now types it from memory.
+      expect(find.byType(TextField), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'one');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Check'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Your answer is correct. Congratulations!'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      // A correct level-3 answer promotes the unit to level 2 (Learner) and
+      // the attempt is counted.
+      expect(find.text('Attempts: 1'), findsOneWidget);
+      expect(find.text('Learner: 1 (100%)'), findsOneWidget);
+    },
+  );
+}
+
+/// Minimal shell that holds the mutable Level-Learning state the page pushes
+/// back, so promotions and live counters survive across prompts in the test.
+class _LevelLearningHarness extends StatefulWidget {
+  const _LevelLearningHarness({required this.deck});
+
+  final LearningDeck deck;
+
+  @override
+  State<_LevelLearningHarness> createState() => _LevelLearningHarnessState();
+}
+
+class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
+  List<LevelUnitStats> _levelStats = const <LevelUnitStats>[];
+  int _attempts = 0;
+  int _correct = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
+      supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+      home: Scaffold(
+        body: LearnSessionPage(
+          deck: widget.deck,
+          statistics: const <UnitStats>[],
+          levelStatistics: _levelStats,
+          options: const DesktopQueryOptions(),
+          parameters: const SessionParameters(
+            mode: SessionMode.levelLearning,
+            directionSelection: DirectionSelection.direction1,
+            startIndex: 1,
+            endIndex: 1,
+            shuffle: false,
+          ),
+          sessionAttempts: _attempts,
+          sessionCorrect: _correct,
+          onParametersChanged: (SessionParameters _) {},
+          onStatisticsChanged: (List<UnitStats> _) {},
+          onLevelStatisticsChanged: (List<LevelUnitStats> value) {
+            setState(() => _levelStats = value);
+          },
+          onSessionProgressChanged: (int attempts, int correct) {
+            setState(() {
+              _attempts = attempts;
+              _correct = correct;
+            });
+          },
+          onOpenEditor: () {},
+          onExit: () {},
+        ),
+      ),
+    );
+  }
 }

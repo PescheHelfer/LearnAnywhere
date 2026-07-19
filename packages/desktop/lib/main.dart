@@ -482,6 +482,12 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       shuffle: _learnParameters.shuffle,
       requireTypedAnswers: _learnParameters.withInput,
       masteryThreshold: _learnParameters.masteryThreshold,
+      // Level-Learning settings are edited elsewhere (setup entry-level control
+      // and the level-name panel) and live only on _settings, so carry them
+      // forward here rather than resetting them to defaults on every save.
+      entryLevelCap: _settings.entryLevelCap,
+      levelNamesEn: _settings.levelNamesEn,
+      levelNamesDe: _settings.levelNamesDe,
       lastDeckPath: _document.deckPath ?? _settings.lastDeckPath,
       lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
     );
@@ -1604,6 +1610,11 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _DesktopRoute.learn => LearnSessionPage(
         deck: _document.deck,
         statistics: _document.statistics,
+        levelStatistics: _document.levelStatistics,
+        levelNames: widget.locale.languageCode == 'de'
+            ? _settings.levelNamesDe
+            : _settings.levelNamesEn,
+        entryLevelCap: _settings.entryLevelCap,
         options: _queryOptions,
         parameters: _learnParameters,
         sessionAttempts: _learnSessionAttempts,
@@ -1611,6 +1622,15 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onParametersChanged: (SessionParameters value) {
           setState(() => _learnParameters = value);
           unawaited(_saveSettings());
+        },
+        onEntryLevelCapChanged: (int value) {
+          setState(() => _settings = _settings.copyWith(entryLevelCap: value));
+          unawaited(_saveSettings());
+        },
+        onLevelStatisticsChanged: (List<LevelUnitStats> value) {
+          setState(
+            () => _document = _document.copyWith(levelStatistics: value),
+          );
         },
         onStartUnitChanged: (int value) {
           setState(() {
@@ -1648,8 +1668,20 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       ),
       _DesktopRoute.queryOptions => QueryOptionsPage(
         options: _queryOptions,
+        levelNamesEn: _settings.levelNamesEn,
+        levelNamesDe: _settings.levelNamesDe,
         onChanged: (DesktopQueryOptions value) {
           setState(() => _queryOptions = value);
+          unawaited(_saveSettings());
+        },
+        onLevelNamesChanged:
+            (List<String> levelNamesEn, List<String> levelNamesDe) {
+          setState(
+            () => _settings = _settings.copyWith(
+              levelNamesEn: levelNamesEn,
+              levelNamesDe: levelNamesDe,
+            ),
+          );
           unawaited(_saveSettings());
         },
         onClose: () => _selectRoute(_DesktopRoute.home),

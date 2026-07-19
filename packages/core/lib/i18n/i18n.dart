@@ -367,6 +367,18 @@ enum LearnAnywhereMessage {
   /// Once-through mode label.
   learnModeOnceThrough,
 
+  /// Level-Learning mode label.
+  learnModeLevelLearning,
+
+  /// Entry-level cap label (Level Learning setup).
+  learnEntryLevel,
+
+  /// Entry-level cap helper tooltip.
+  learnEntryLevelHint,
+
+  /// Suffix appended to the no-cap entry-level option.
+  learnEntryLevelNoCapSuffix,
+
   /// Shuffle units option.
   learnShuffleUnits,
 
@@ -424,6 +436,9 @@ enum LearnAnywhereMessage {
   /// Think-only did-not-know option.
   learnRatingDidNotKnow,
 
+  /// Live attempts count label.
+  learnLiveAttempts,
+
   /// Live mastered count label.
   learnLiveMastered,
 
@@ -447,6 +462,33 @@ enum LearnAnywhereMessage {
 
   /// "Evaluate as:" label before the rating buttons.
   learnEvaluateAs,
+
+  /// Level-Learning "more help" (raise support) action.
+  learnMoreHelp,
+
+  /// Level-Learning "less help" (lower support) action.
+  learnLessHelp,
+
+  /// Level-Learning level-3 "hide the solution and type it" action.
+  learnHideAndType,
+
+  /// Level-name customization panel title.
+  learnLevelNamesTitle,
+
+  /// Level-name English column label.
+  learnLevelNamesEnglish,
+
+  /// Level-name German column label.
+  learnLevelNamesGerman,
+
+  /// Apply the space-launch level-name preset action.
+  learnLevelNamesApplyPreset,
+
+  /// Reset level names to defaults action.
+  learnLevelNamesReset,
+
+  /// Level-name panel ordering + length helper text.
+  learnLevelNamesOrderHint,
 
   /// Learning options title.
   queryOptionsTitle,
@@ -1096,6 +1138,13 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnModePractice: 'Endless mode',
       LearnAnywhereMessage.learnModeSuperQuery: 'Drill mode',
       LearnAnywhereMessage.learnModeOnceThrough: 'Once through',
+      LearnAnywhereMessage.learnModeLevelLearning: 'Level learning',
+      LearnAnywhereMessage.learnEntryLevel: 'Entry level',
+      LearnAnywhereMessage.learnEntryLevelHint:
+          'Caps the highest support a newly seeded unit may start at. '
+          'No cap lets each unit start with as much support as its prior '
+          'results suggest.',
+      LearnAnywhereMessage.learnEntryLevelNoCapSuffix: ' (no cap)',
       LearnAnywhereMessage.learnShuffleUnits: 'Shuffle units',
       LearnAnywhereMessage.learnMasteryThreshold: 'Mastery threshold (%)',
       LearnAnywhereMessage.learnStartSession: 'Start session',
@@ -1117,6 +1166,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnRatingNoCount: 'No count',
       LearnAnywhereMessage.learnRatingKnewIt: 'Knew it',
       LearnAnywhereMessage.learnRatingDidNotKnow: "Didn't know",
+      LearnAnywhereMessage.learnLiveAttempts: 'Attempts',
       LearnAnywhereMessage.learnLiveMastered: 'Mastered',
       LearnAnywhereMessage.learnLiveRemaining: 'Remaining',
       LearnAnywhereMessage.learnLiveAccuracy: 'Accuracy',
@@ -1126,6 +1176,17 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
       LearnAnywhereMessage.learnCancelConfirm: 'Cancel the current session?',
       LearnAnywhereMessage.learnEvaluateAs: 'Evaluate as:',
+      LearnAnywhereMessage.learnMoreHelp: 'More help',
+      LearnAnywhereMessage.learnLessHelp: 'Less help',
+      LearnAnywhereMessage.learnHideAndType: 'Hide & type',
+      LearnAnywhereMessage.learnLevelNamesTitle: 'Level names',
+      LearnAnywhereMessage.learnLevelNamesEnglish: 'English',
+      LearnAnywhereMessage.learnLevelNamesGerman: 'German',
+      LearnAnywhereMessage.learnLevelNamesApplyPreset: 'Apply space preset',
+      LearnAnywhereMessage.learnLevelNamesReset: 'Reset to defaults',
+      LearnAnywhereMessage.learnLevelNamesOrderHint:
+          'Ordered from most support (top) to free recall (bottom). '
+          'Up to 20 characters each.',
       LearnAnywhereMessage.queryOptionsTitle: 'Advanced Learning Options',
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Wrong input correctable',
@@ -1472,6 +1533,13 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnModePractice: 'Endlos-Modus',
       LearnAnywhereMessage.learnModeSuperQuery: 'Drill-Modus',
       LearnAnywhereMessage.learnModeOnceThrough: 'Einmal durchgehen',
+      LearnAnywhereMessage.learnModeLevelLearning: 'Stufenlernen',
+      LearnAnywhereMessage.learnEntryLevel: 'Einstiegsstufe',
+      LearnAnywhereMessage.learnEntryLevelHint:
+          'Begrenzt die höchste Unterstützung, mit der eine neu eingestufte '
+          'Einheit starten darf. Ohne Begrenzung startet jede Einheit mit so '
+          'viel Unterstützung, wie ihre bisherigen Ergebnisse nahelegen.',
+      LearnAnywhereMessage.learnEntryLevelNoCapSuffix: ' (keine Begrenzung)',
       LearnAnywhereMessage.learnShuffleUnits: 'Einheiten mischen',
       LearnAnywhereMessage.learnMasteryThreshold: 'Beherrschungsschwelle (%)',
       LearnAnywhereMessage.learnStartSession: 'Sitzung starten',
@@ -1493,15 +1561,27 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnRatingNoCount: 'Nicht zählen',
       LearnAnywhereMessage.learnRatingKnewIt: 'Gewusst',
       LearnAnywhereMessage.learnRatingDidNotKnow: 'Nicht gewusst',
+      LearnAnywhereMessage.learnLiveAttempts: 'Versuche',
       LearnAnywhereMessage.learnLiveMastered: 'Beherrscht',
       LearnAnywhereMessage.learnLiveRemaining: 'Übrig',
-      LearnAnywhereMessage.learnLiveAccuracy: 'Treffer',
+      LearnAnywhereMessage.learnLiveAccuracy: 'Korrekt',
       LearnAnywhereMessage.learnLiveTime: 'Zeit',
       LearnAnywhereMessage.learnUnitHeader:
           'Einheit {index} von {total} - {category} - {direction}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
       LearnAnywhereMessage.learnCancelConfirm: 'Aktuelle Sitzung abbrechen?',
       LearnAnywhereMessage.learnEvaluateAs: 'Bewerten als:',
+      LearnAnywhereMessage.learnMoreHelp: 'Mehr Hilfe',
+      LearnAnywhereMessage.learnLessHelp: 'Weniger Hilfe',
+      LearnAnywhereMessage.learnHideAndType: 'Verdecken & tippen',
+      LearnAnywhereMessage.learnLevelNamesTitle: 'Stufennamen',
+      LearnAnywhereMessage.learnLevelNamesEnglish: 'Englisch',
+      LearnAnywhereMessage.learnLevelNamesGerman: 'Deutsch',
+      LearnAnywhereMessage.learnLevelNamesApplyPreset: 'Weltraum-Vorlage',
+      LearnAnywhereMessage.learnLevelNamesReset: 'Auf Standard zurücksetzen',
+      LearnAnywhereMessage.learnLevelNamesOrderHint:
+          'Geordnet von meiste Hilfe (oben) bis freies Erinnern (unten). '
+          'Je bis zu 20 Zeichen.',
       LearnAnywhereMessage.queryOptionsTitle: 'Erweiterte Lernoptionen',
       LearnAnywhereMessage.queryOptionWrongInputCorrectable:
           'Falsche Eingabe korrigierbar',
