@@ -149,9 +149,21 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   // Reset to false whenever a new unit is shown.
   bool _level3Memorized = false;
 
+  // Session-local Level-Learning ladder: the single source of truth while this
+  // page lives, so levels never depend on parent-rebuild timing. Every change
+  // is pushed to the shell; the widget value is adopted back only when an
+  // external replacement (loading/clearing a .sta) hands us a list instance we
+  // did not push ourselves.
+  late List<LevelUnitStats> _levelStats;
+
+  // Monotonic serve counter: keys the level-2 scaffold so re-serving the same
+  // unit at the same level still starts from empty cells.
+  int _serveNonce = 0;
+
   @override
   void initState() {
     super.initState();
+    _levelStats = widget.levelStatistics;
     _draftParameters = _optionsApplied(widget.parameters);
     _startIndex = _draftParameters.startIndex ?? 1;
     _endIndex = _draftParameters.endIndex ?? widget.deck.units.length;
@@ -164,6 +176,13 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   @override
   void didUpdateWidget(LearnSessionPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Adopt an externally replaced ladder (loading/clearing statistics). The
+    // lists we push ourselves come back as the identical instance and must not
+    // overwrite newer local state.
+    if (!identical(widget.levelStatistics, oldWidget.levelStatistics) &&
+        !identical(widget.levelStatistics, _levelStats)) {
+      _levelStats = widget.levelStatistics;
+    }
     _draftParameters = _optionsApplied(_draftParameters);
     if (widget.options.showClock && _clockTimer == null) {
       _startClock();
@@ -234,7 +253,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
             ),
             _LearnRevealIntent: CallbackAction<_LearnRevealIntent>(
               onInvoke: (_) {
-                _reveal();
+                // Must go through the pre-check dispatcher so F10 respects the
+                // level-3 "Hide & type" step instead of evaluating empty input.
+                _primaryPreCheck();
                 return null;
               },
             ),
@@ -340,7 +361,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     return _SessionView(
       deck: widget.deck,
       statistics: widget.statistics,
-      levelStatistics: widget.levelStatistics,
+      levelStatistics: _levelStats,
       levelNames: widget.levelNames,
       entryLevelCap: widget.entryLevelCap,
       options: widget.options,
@@ -350,6 +371,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       selectedRating: _selectedRating,
       activeLevel: _isLevelLearning ? _activeLevel : kFreeRecallLevel,
       level3Memorized: _level3Memorized,
+      serveNonce: _serveNonce,
       ratingEntries: _evaluation != null
           ? _computeRatingEntries(messages)
           : const <MapEntry<AttemptRating, String>>[],
@@ -391,6 +413,13 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       threshold: _thresholdPercent / 100,
     );
     widget.onParametersChanged(_draftParameters);
+    if (_isLevelLearning) {
+      // Seed once for every in-scope unit, then persist the ladder: from here
+      // on, levels come exclusively from the ladder (promotion moves one level
+      // down; only the manual override moves up).
+      _levelStats = _materializedLevelStats();
+      widget.onLevelStatisticsChanged?.call(_levelStats);
+    }
     _order = sessionItemOrder(
       deck: widget.deck,
       parameters: _draftParameters,
@@ -419,10 +448,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     widget.onParametersChanged(next);
   }
 
-  void _selectNextItem({List<LevelUnitStats>? levelStats}) {
+  void _selectNextItem() {
     final SessionItem? next = switch (_draftParameters.mode) {
       SessionMode.superQuery => _firstSuperQueryItem(),
-      SessionMode.levelLearning => _firstLevelLearningItem(levelStats),
+      SessionMode.levelLearning => _firstLevelLearningItem(),
       SessionMode.practice || SessionMode.onceThrough => _nextOrderedItem(),
     };
     if (next == null) {
@@ -446,6 +475,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _elapsedSeconds = 0;
       _timeTonePlayed = false;
       _level3Memorized = false;
+      _serveNonce += 1;
     });
     // Reclaim root focus unless an answer field (or the level-2 scaffold, which
     // autofocuses itself) will claim it. This covers think-only mode (no fields)
@@ -497,11 +527,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     return pool[_random.nextInt(pool.length)];
   }
 
-  SessionItem? _firstLevelLearningItem([List<LevelUnitStats>? levelStats]) {
+  SessionItem? _firstLevelLearningItem() {
     final List<SessionItem> pool = activeLevelLearningPool(
       deck: widget.deck,
       statistics: widget.statistics,
-      levelStatistics: levelStats ?? widget.levelStatistics,
+      levelStatistics: _levelStats,
       parameters: _draftParameters,
       entryLevelCap: widget.entryLevelCap,
     );
@@ -511,10 +541,14 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     return pool[_random.nextInt(pool.length)];
   }
 
-  /// Returns the Level-Learning stats for [item], seeding on the fly (from the
-  /// unit's prior bucket, capped by the entry level) when it has no entry yet.
+  /// Returns the Level-Learning stats for [item] from the session ladder.
+  ///
+  /// Falls back to a fresh seed (from the unit's prior drill bucket, capped by
+  /// the entry level) only for units without an entry — after
+  /// [_materializedLevelStats] ran at session start this is a rare safety net,
+  /// not the normal path, so levels stay stable.
   LevelDirectionStats _levelStatsFor(SessionItem item) {
-    for (final LevelUnitStats stats in widget.levelStatistics) {
+    for (final LevelUnitStats stats in _levelStats) {
       if (stats.index == item.unitIndex) {
         return stats.statsFor(item.direction);
       }
@@ -561,7 +595,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     LevelDirectionStats stats,
   ) {
     final Map<int, LevelUnitStats> byIndex = <int, LevelUnitStats>{
-      for (final LevelUnitStats s in widget.levelStatistics) s.index: s,
+      for (final LevelUnitStats s in _levelStats) s.index: s,
     };
     final LevelUnitStats existing =
         byIndex[item.unitIndex] ??
@@ -587,9 +621,48 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     return List<LevelUnitStats>.unmodifiable(next);
   }
 
-  /// Writes [stats] for [item] back through the shell.
+  /// Applies [stats] for [item] to the session ladder and pushes it upstream.
   void _pushLevelStats(SessionItem item, LevelDirectionStats stats) {
-    widget.onLevelStatisticsChanged?.call(_levelStatsWith(item, stats));
+    _levelStats = _levelStatsWith(item, stats);
+    widget.onLevelStatisticsChanged?.call(_levelStats);
+  }
+
+  /// Returns the ladder with fresh seeds materialized for every in-scope unit
+  /// that has no entry yet.
+  ///
+  /// Runs once per session start so the seeding (from the unit's prior drill
+  /// bucket, capped by the entry level) is a one-time assignment; afterwards
+  /// the ladder alone owns each unit's level. Existing entries are untouched,
+  /// so re-starting or extending a session never resets progress.
+  List<LevelUnitStats> _materializedLevelStats() {
+    final Map<int, LevelUnitStats> byIndex = <int, LevelUnitStats>{
+      for (final LevelUnitStats s in _levelStats) s.index: s,
+    };
+    final List<UnitStats> normalized = _normalizedStats();
+    final int maxUnit = widget.deck.units.length;
+    final int start = (_draftParameters.startIndex ?? 1).clamp(1, maxUnit);
+    final int end = (_draftParameters.endIndex ?? maxUnit).clamp(start, maxUnit);
+    for (var index = start; index <= end; index += 1) {
+      if (byIndex.containsKey(index)) {
+        continue;
+      }
+      final UnitStats unitStats = normalized[index - 1];
+      byIndex[index] = LevelUnitStats(
+        index: index,
+        dir1: seedLevelLearningStats(
+          unitStats.statsFor(QueryDirection.direction1),
+          entryLevelCap: widget.entryLevelCap,
+        ),
+        dir2: seedLevelLearningStats(
+          unitStats.statsFor(QueryDirection.direction2),
+          entryLevelCap: widget.entryLevelCap,
+        ),
+      );
+    }
+    final List<LevelUnitStats> next =
+        byIndex.values.toList(growable: false)
+          ..sort((LevelUnitStats a, LevelUnitStats b) => a.index - b.index);
+    return List<LevelUnitStats>.unmodifiable(next);
   }
 
   /// Manual level override (no penalty): moves the current unit to [newLevel]
@@ -781,20 +854,19 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     if (item == null || _evaluation == null) {
       return;
     }
-    final List<UnitStats> updated = _recordRating(item, _selectedRating);
-    widget.onStatisticsChanged(updated);
-    // Record the Level-Learning attempt (auto-promotes) and hand the freshly
-    // updated level stats straight to the next selection so a just-mastered
-    // unit is not re-served for one prompt on stale props.
-    List<LevelUnitStats>? nextLevelStats;
     if (_isLevelLearning) {
+      // Level Learning records exclusively into the level ladder. The drill
+      // statistics stay untouched — they only influence the one-time initial
+      // level assignment at session start.
       final LevelDirectionStats after = recordLevelLearningAttempt(
         _levelStatsFor(item),
         _selectedRating,
         parameters: _draftParameters,
       );
-      nextLevelStats = _levelStatsWith(item, after);
       _pushLevelStats(item, after);
+    } else {
+      final List<UnitStats> updated = _recordRating(item, _selectedRating);
+      widget.onStatisticsChanged(updated);
     }
     // Attempts counts every check→continue cycle; correct counts only
     // correct-rated attempts (accuracy is correct/attempts).
@@ -803,7 +875,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       widget.sessionAttempts + 1,
       widget.sessionCorrect + (correct ? 1 : 0),
     );
-    _selectNextItem(levelStats: nextLevelStats);
+    _selectNextItem();
   }
 
   List<UnitStats> _recordRating(SessionItem item, AttemptRating rating) {
@@ -1285,6 +1357,7 @@ final class _SessionView extends StatelessWidget {
     required this.selectedRating,
     required this.activeLevel,
     required this.level3Memorized,
+    required this.serveNonce,
     required this.ratingEntries,
     required this.answerControllers,
     required this.answerFocusNodes,
@@ -1319,6 +1392,10 @@ final class _SessionView extends StatelessWidget {
 
   /// Whether the level-3 solution has been memorized (typing phase reached).
   final bool level3Memorized;
+
+  /// Monotonic serve counter; keys the level-2 scaffold so re-serving the same
+  /// unit at the same level starts from empty cells.
+  final int serveNonce;
   final List<MapEntry<AttemptRating, String>> ratingEntries;
   final Map<int, TextEditingController> answerControllers;
   final Map<int, FocusNode> answerFocusNodes;
@@ -1568,9 +1645,9 @@ final class _SessionView extends StatelessWidget {
     }
     if (level == 2) {
       return _LevelScaffoldInput(
-        key: ValueKey<String>(
-          'scaffold-${item.unitIndex}-${item.direction.name}-${field.id}-$level',
-        ),
+        // The nonce guarantees a fresh scaffold (empty cells) on every serve,
+        // even when the same unit+level is presented twice in a row.
+        key: ValueKey<String>('scaffold-$serveNonce-${field.id}'),
         cells: maskFieldValue(plain, level),
         textStyle: style,
         autofocus: autofocus,

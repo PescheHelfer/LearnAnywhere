@@ -180,13 +180,16 @@ void main() {
   );
 
   testWidgets(
-    'level learning: level-3 shows the solution, hides on type, then promotes',
+    'level learning: F10 respects Hide & type, the ladder promotes 3->0 to '
+    'mastery, and drill statistics are never touched',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
+      final _LevelLearningHarnessState Function() harnessState =
+          () => tester.state(find.byType(_LevelLearningHarness));
       await tester.pumpWidget(_LevelLearningHarness(deck: deck));
       await tester.pumpAndSettle();
 
@@ -200,28 +203,64 @@ void main() {
       expect(find.text('Hide & type'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
 
-      await tester.tap(find.text('Hide & type'));
+      // F10 must enter the memorize step — NOT evaluate the empty input.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
       await tester.pumpAndSettle();
-
-      // The solution is hidden; the student now types it from memory.
+      expect(find.text('The answer is unfortunately wrong.'), findsNothing);
       expect(find.byType(TextField), findsOneWidget);
-      await tester.enterText(find.byType(TextField), 'one');
-      await tester.pumpAndSettle();
 
+      // Type from memory, check via F10, continue: promotes to level 2.
+      await tester.enterText(find.byType(TextField), 'one');
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Your answer is correct. Congratulations!'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Attempts: 1'), findsOneWidget);
+      expect(find.text('Learner: 1 (100%)'), findsOneWidget);
+
+      // Level 2: 'one' shows o/e revealed and one blank cell for 'n'.
+      await tester.enterText(find.byType(TextField), 'n');
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Check'));
       await tester.pumpAndSettle();
       expect(
         find.text('Your answer is correct. Congratulations!'),
         findsOneWidget,
       );
-
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
+      expect(find.text('Attempts: 2'), findsOneWidget);
+      expect(find.text('Almost There: 1 (100%)'), findsOneWidget);
 
-      // A correct level-3 answer promotes the unit to level 2 (Learner) and
-      // the attempt is counted.
-      expect(find.text('Attempts: 1'), findsOneWidget);
-      expect(find.text('Learner: 1 (100%)'), findsOneWidget);
+      // Level 1: first/last revealed as context, whole word typed.
+      await tester.enterText(find.byType(TextField), 'one');
+      await tester.tap(find.text('Check'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Attempts: 3'), findsOneWidget);
+      expect(find.text('Champion: 1 (100%)'), findsOneWidget);
+
+      // Level 0: free recall; a correct answer masters the unit and, with an
+      // empty pool, completes the session.
+      await tester.enterText(find.byType(TextField), 'one');
+      await tester.tap(find.text('Check'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Extend session'), findsOneWidget);
+
+      // Level Learning must never write into the drill-mode statistics.
+      expect(harnessState().drillStatsChanged, isFalse);
+      // The ladder was materialized and the unit ends mastered at level 0.
+      final LevelUnitStats entry = harnessState()
+          ._levelStats
+          .singleWhere((LevelUnitStats s) => s.index == 1);
+      expect(entry.dir1.currentLevel, kFreeRecallLevel);
     },
   );
 }
@@ -241,6 +280,9 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
   List<LevelUnitStats> _levelStats = const <LevelUnitStats>[];
   int _attempts = 0;
   int _correct = 0;
+
+  /// Whether the page ever pushed drill-mode statistics (it must not in LL).
+  bool drillStatsChanged = false;
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +305,9 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
           sessionAttempts: _attempts,
           sessionCorrect: _correct,
           onParametersChanged: (SessionParameters _) {},
-          onStatisticsChanged: (List<UnitStats> _) {},
+          onStatisticsChanged: (List<UnitStats> _) {
+            drillStatsChanged = true;
+          },
           onLevelStatisticsChanged: (List<LevelUnitStats> value) {
             setState(() => _levelStats = value);
           },
