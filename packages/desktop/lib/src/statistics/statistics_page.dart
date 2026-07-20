@@ -142,6 +142,8 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       selectedUnitIndices: _selectedUnitIndices,
                       onSelectionChanged: _replaceSelection,
                       onSaveSelected: _saveSelected,
+                      showBucketColumn: true,
+                      unitIndices: null,
                     ),
                   ],
                 ),
@@ -224,6 +226,8 @@ final class _PracticeList extends StatefulWidget {
     required this.selectedUnitIndices,
     required this.onSelectionChanged,
     required this.onSaveSelected,
+    this.showBucketColumn = true,
+    this.unitIndices,
   });
 
   final LearningDeck deck;
@@ -232,6 +236,13 @@ final class _PracticeList extends StatefulWidget {
   final Set<int> selectedUnitIndices;
   final ValueChanged<Set<int>> onSelectionChanged;
   final VoidCallback onSaveSelected;
+
+  /// Whether to show the Bucket column (hidden when the bucket is constant
+  /// for all shown rows, e.g. a Level×Bucket cell).
+  final bool showBucketColumn;
+
+  /// Explicit one-based unit indices to show; defaults to every deck unit.
+  final List<int>? unitIndices;
 
   @override
   State<_PracticeList> createState() => _PracticeListState();
@@ -290,6 +301,7 @@ final class _PracticeListState extends State<_PracticeList> {
       widget.deck,
       widget.statistics,
       widget.view,
+      unitIndices: widget.unitIndices,
     );
     final List<_UnitStatisticsRow> visibleRows = _applyFilters(rows);
     return SingleChildScrollView(
@@ -301,26 +313,16 @@ final class _PracticeListState extends State<_PracticeList> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
+              columnSpacing: LearnAnywhereTokens.gapSmall,
+              horizontalMargin: LearnAnywhereTokens.gapSmall,
+              dataRowMinHeight: 32,
+              dataRowMaxHeight: 36,
+              headingRowHeight: 36,
               columns: <DataColumn>[
                 const DataColumn(label: SizedBox.shrink()),
                 DataColumn(
                   label: Text(
                     messages.message(LearnAnywhereMessage.statisticsUnit),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    messages.message(LearnAnywhereMessage.statisticsCategory),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    messages.message(LearnAnywhereMessage.statisticsBucket),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    messages.message(LearnAnywhereMessage.statisticsHitRate),
                   ),
                 ),
                 DataColumn(
@@ -331,6 +333,24 @@ final class _PracticeListState extends State<_PracticeList> {
                 DataColumn(
                   label: Text(
                     messages.message(LearnAnywhereMessage.statisticsAnswer),
+                  ),
+                ),
+                if (widget.showBucketColumn)
+                  DataColumn(
+                    label: Text(
+                      messages.message(LearnAnywhereMessage.statisticsBucket),
+                    ),
+                  ),
+                DataColumn(
+                  numeric: true,
+                  label: Text(
+                    messages.message(LearnAnywhereMessage.statisticsAttempts),
+                  ),
+                ),
+                DataColumn(
+                  numeric: true,
+                  label: Text(
+                    messages.message(LearnAnywhereMessage.statisticsAccuracy),
                   ),
                 ),
               ],
@@ -357,14 +377,18 @@ final class _PracticeListState extends State<_PracticeList> {
                           ),
                         ),
                         _tipCell(row.tooltip, Text(row.index.toString())),
-                        _tipCell(row.tooltip, Text(row.categoryName)),
-                        _tipCell(
-                          row.tooltip,
-                          Text(_bucketLabel(messages, row.bucket)),
-                        ),
-                        _tipCell(row.tooltip, Text(_hitRateLabel(row.stats))),
                         _tipCell(row.tooltip, Text(row.question)),
                         _tipCell(row.tooltip, Text(row.answer)),
+                        if (widget.showBucketColumn)
+                          _tipCell(
+                            row.tooltip,
+                            Text(_bucketLabel(messages, row.bucket)),
+                          ),
+                        _tipCell(
+                          row.tooltip,
+                          Text(row.stats.attempts.toString()),
+                        ),
+                        _tipCell(row.tooltip, Text(_accuracyLabel(row.stats))),
                       ],
                     );
                   })
@@ -764,7 +788,6 @@ final class _StatPill extends StatelessWidget {
 final class _UnitStatisticsRow {
   const _UnitStatisticsRow({
     required this.index,
-    required this.categoryName,
     required this.bucket,
     required this.stats,
     required this.question,
@@ -773,7 +796,6 @@ final class _UnitStatisticsRow {
   });
 
   final int index;
-  final String categoryName;
   final HitRateBucket bucket;
   final DirectionStats stats;
 
@@ -787,23 +809,26 @@ final class _UnitStatisticsRow {
   final String tooltip;
 }
 
+/// Builds display rows for [unitIndices] (defaults to every deck unit).
 List<_UnitStatisticsRow> _rowsFor(
   LearningDeck deck,
   List<UnitStats> statistics,
-  StatisticsDirectionView view,
-) {
+  StatisticsDirectionView view, {
+  List<int>? unitIndices,
+}) {
   final Map<int, UnitStats> byIndex = <int, UnitStats>{
     for (final UnitStats stats in statistics) stats.index: stats,
   };
-  return List<_UnitStatisticsRow>.generate(deck.units.length, (int offset) {
-    final int index = offset + 1;
-    final LearningUnit unit = deck.units[offset];
+  final List<int> indices =
+      unitIndices ??
+      List<int>.generate(deck.units.length, (int offset) => offset + 1);
+  return indices.map((int index) {
+    final LearningUnit unit = deck.units[index - 1];
     final CategoryDefinition category = deck.categoryForUnit(unit);
     final UnitStats unitStats = byIndex[index] ?? UnitStats(index: index);
     final DirectionStats stats = _statsForView(unitStats, view);
     return _UnitStatisticsRow(
       index: index,
-      categoryName: category.name,
       bucket: bucketFor(stats),
       stats: stats,
       question: _fieldPreview(
@@ -820,7 +845,7 @@ List<_UnitStatisticsRow> _rowsFor(
       ),
       tooltip: _fieldsTooltip(unit, category),
     );
-  }, growable: false);
+  }).toList(growable: false);
 }
 
 /// Returns the truncated plain text of the first [role] field in [direction].
@@ -893,12 +918,14 @@ String _bucketLabel(LearnAnywhereLocalizations messages, HitRateBucket bucket) {
   };
 }
 
-String _hitRateLabel(DirectionStats stats) {
+/// Formats "correct (hitRate%)", or a neutral placeholder when not yet
+/// queried.
+String _accuracyLabel(DirectionStats stats) {
   final double? hitRate = stats.hitRate;
   if (hitRate == null) {
-    return '-';
+    return '—';
   }
-  return _percent(hitRate);
+  return '${stats.correct} (${_percent(hitRate)})';
 }
 
 String _percent(double value) {

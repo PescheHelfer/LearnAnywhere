@@ -574,11 +574,11 @@ enum LearnAnywhereMessage {
   /// Statistics unit column label.
   statisticsUnit,
 
-  /// Statistics category column label.
-  statisticsCategory,
+  /// Statistics attempts column label (Keep practicing).
+  statisticsAttempts,
 
-  /// Statistics hit rate column label.
-  statisticsHitRate,
+  /// Statistics accuracy column label (Keep practicing).
+  statisticsAccuracy,
 
   /// Statistics hit-rate range column label (Detailed view).
   statisticsRange,
@@ -1222,8 +1222,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsPercentAll: '% of all',
       LearnAnywhereMessage.statisticsPercentQueried: '% of practiced',
       LearnAnywhereMessage.statisticsUnit: 'Unit',
-      LearnAnywhereMessage.statisticsCategory: 'Category',
-      LearnAnywhereMessage.statisticsHitRate: 'Hit rate',
+      LearnAnywhereMessage.statisticsAttempts: 'Attempts',
+      LearnAnywhereMessage.statisticsAccuracy: 'Accuracy',
       LearnAnywhereMessage.statisticsRange: 'Range',
       LearnAnywhereMessage.statisticsQuestion: 'Question',
       LearnAnywhereMessage.statisticsAnswer: 'Answer',
@@ -1620,8 +1620,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsPercentAll: '% von allen',
       LearnAnywhereMessage.statisticsPercentQueried: '% der abgefragten',
       LearnAnywhereMessage.statisticsUnit: 'Einheit',
-      LearnAnywhereMessage.statisticsCategory: 'Kategorie',
-      LearnAnywhereMessage.statisticsHitRate: 'Trefferquote',
+      LearnAnywhereMessage.statisticsAttempts: 'Abfrage-Versuche',
+      LearnAnywhereMessage.statisticsAccuracy: 'Korrekt',
       LearnAnywhereMessage.statisticsRange: 'Bereich',
       LearnAnywhereMessage.statisticsQuestion: 'Frage',
       LearnAnywhereMessage.statisticsAnswer: 'Antwort',
