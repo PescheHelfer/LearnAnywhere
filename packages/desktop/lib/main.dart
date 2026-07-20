@@ -1700,6 +1700,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _DesktopRoute.statistics => StatisticsPage(
         deck: _document.deck,
         statistics: _document.statistics,
+        levelStatistics: _document.levelStatistics,
+        levelNames: widget.locale.languageCode == 'de'
+            ? _settings.levelNamesDe
+            : _settings.levelNamesEn,
         onLoadStatistics: _loadStatistics,
         onSaveStatistics: _saveStatistics,
         onSaveStatisticsAs: () => _saveStatistics(saveAs: true),

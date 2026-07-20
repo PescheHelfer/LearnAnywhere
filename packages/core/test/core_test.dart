@@ -1311,6 +1311,101 @@ void main() {
     });
   });
 
+  group('level-learning statistics matrix', () {
+    // Unit 1: dir1 sits at level 2 (4/2 → fair), dir2 at level 0 (2/2 →
+    // perfect). Unit 2: dir1 at level 3 fresh (0/0 → not yet practiced), dir2
+    // at level 3 with 1/0 (→ never known). Unit 3 has no entry (excluded).
+    const List<LevelUnitStats> levelStats = <LevelUnitStats>[
+      LevelUnitStats(
+        index: 1,
+        dir1: LevelDirectionStats(
+          currentLevel: 2,
+          levels: <int, DirectionStats>{
+            2: DirectionStats(attempts: 4, correct: 2),
+          },
+        ),
+        dir2: LevelDirectionStats(
+          currentLevel: 0,
+          levels: <int, DirectionStats>{
+            0: DirectionStats(attempts: 2, correct: 2),
+          },
+        ),
+      ),
+      LevelUnitStats(
+        index: 2,
+        dir1: LevelDirectionStats(
+          currentLevel: 3,
+          levels: <int, DirectionStats>{3: DirectionStats()},
+        ),
+        dir2: LevelDirectionStats(
+          currentLevel: 3,
+          levels: <int, DirectionStats>{3: DirectionStats(attempts: 1)},
+        ),
+      ),
+    ];
+    const List<int> scope = <int>[1, 2, 3];
+
+    test('single-direction view places each unit by its current level', () {
+      final LevelBucketMatrix matrix = levelBucketMatrix(
+        levelStatistics: levelStats,
+        unitIndices: scope,
+        view: StatisticsDirectionView.direction1,
+      );
+      expect(matrix.grandTotal, 2);
+      expect(matrix.rowTotals[2], 1);
+      expect(matrix.rowTotals[3], 1);
+      expect(matrix.rowTotals[0], 0);
+      expect(matrix.columnTotals[HitRateBucket.fair], 1);
+      expect(matrix.columnTotals[HitRateBucket.notYetQueried], 1);
+
+      final List<LevelMatrixEntry> fairAtTwo = matrix.entriesAt(
+        2,
+        HitRateBucket.fair,
+      );
+      expect(fairAtTwo, hasLength(1));
+      expect(fairAtTwo.single.unitIndex, 1);
+      expect(fairAtTwo.single.direction, QueryDirection.direction1);
+      // The drill-down carries that level's own counters, not other-mode ones.
+      expect(
+        fairAtTwo.single.stats,
+        const DirectionStats(attempts: 4, correct: 2),
+      );
+    });
+
+    test('combined view counts both directions independently', () {
+      final LevelBucketMatrix matrix = levelBucketMatrix(
+        levelStatistics: levelStats,
+        unitIndices: scope,
+        view: StatisticsDirectionView.combined,
+      );
+      // Unit 3 has no entry, so only 2 units × 2 directions = 4 entries.
+      expect(matrix.grandTotal, 4);
+      expect(matrix.rowTotals[3], 2);
+      expect(matrix.rowTotals[2], 1);
+      expect(matrix.rowTotals[0], 1);
+      expect(matrix.countAt(0, HitRateBucket.perfect), 1);
+      expect(matrix.countAt(3, HitRateBucket.notYetQueried), 1);
+      expect(matrix.countAt(3, HitRateBucket.neverKnown), 1);
+      // Column totals sum to the grand total.
+      expect(
+        matrix.columnTotals.values.reduce((int a, int b) => a + b),
+        matrix.grandTotal,
+      );
+    });
+
+    test('excludes out-of-scope and entry-less units', () {
+      final LevelBucketMatrix matrix = levelBucketMatrix(
+        levelStatistics: levelStats,
+        unitIndices: const <int>[1],
+        view: StatisticsDirectionView.combined,
+      );
+      expect(matrix.grandTotal, 2);
+      expect(matrix.rowTotals[3], 0);
+      // Every level/bucket cell is present even when empty.
+      expect(matrix.entriesAt(1, HitRateBucket.good), isEmpty);
+    });
+  });
+
   group('level-learning statistics serialization', () {
     LevelLearningStats sampleLevelStats() => const LevelLearningStats(
       perUnit: <LevelUnitStats>[

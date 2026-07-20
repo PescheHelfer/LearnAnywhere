@@ -659,6 +659,21 @@ enum LearnAnywhereMessage {
   /// Not yet practiced hit-rate bucket.
   statisticsBucketNotYetQueried,
 
+  /// Level-Learning statistics tab.
+  statisticsLevelLearning,
+
+  /// Total row/column header (Level-Learning matrix).
+  statisticsTotal,
+
+  /// Level row-header column label (Level-Learning matrix).
+  statisticsLevel,
+
+  /// Numeric level secondary label / breadcrumb. Placeholder: {level}.
+  statisticsLevelNumber,
+
+  /// Back-to-matrix action (Level-Learning drill-down).
+  statisticsBack,
+
   /// Lexicon page title.
   lexiconTitle,
 
@@ -1251,6 +1266,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsBucketVeryUnsure: 'Very unsure',
       LearnAnywhereMessage.statisticsBucketNeverKnown: 'Never known',
       LearnAnywhereMessage.statisticsBucketNotYetQueried: 'Not yet practiced',
+      LearnAnywhereMessage.statisticsLevelLearning: 'Level Learning',
+      LearnAnywhereMessage.statisticsTotal: 'Total',
+      LearnAnywhereMessage.statisticsLevel: 'Level',
+      LearnAnywhereMessage.statisticsLevelNumber: 'Level {level}',
+      LearnAnywhereMessage.statisticsBack: 'Back',
       LearnAnywhereMessage.lexiconTitle: 'Lexicon',
       LearnAnywhereMessage.lexiconSearchText: 'Search text',
       LearnAnywhereMessage.lexiconCategoryScope: 'Category',
@@ -1653,6 +1673,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsBucketNeverKnown: 'Nie gewusst',
       LearnAnywhereMessage.statisticsBucketNotYetQueried:
           'Noch nicht abgefragt',
+      LearnAnywhereMessage.statisticsLevelLearning: 'Stufenlernen',
+      LearnAnywhereMessage.statisticsTotal: 'Gesamt',
+      LearnAnywhereMessage.statisticsLevel: 'Stufe',
+      LearnAnywhereMessage.statisticsLevelNumber: 'Stufe {level}',
+      LearnAnywhereMessage.statisticsBack: 'Zurück',
       LearnAnywhereMessage.lexiconTitle: 'Lexikon',
       LearnAnywhereMessage.lexiconSearchText: 'Suchtext',
       LearnAnywhereMessage.lexiconCategoryScope: 'Kategorie',

@@ -14,6 +14,8 @@ final class StatisticsPage extends StatefulWidget {
   const StatisticsPage({
     required this.deck,
     required this.statistics,
+    required this.levelStatistics,
+    required this.levelNames,
     required this.onLoadStatistics,
     required this.onSaveStatistics,
     required this.onSaveStatisticsAs,
@@ -28,6 +30,12 @@ final class StatisticsPage extends StatefulWidget {
 
   /// Current statistics.
   final List<UnitStats> statistics;
+
+  /// Current Level-Learning statistics (empty when the deck has none).
+  final List<LevelUnitStats> levelStatistics;
+
+  /// Custom level names for the active locale, ordered level 3 → 0.
+  final List<String> levelNames;
 
   /// Loads statistics from disk.
   final Future<void> Function() onLoadStatistics;
@@ -68,7 +76,7 @@ final class _StatisticsPageState extends State<StatisticsPage> {
     return Material(
       color: Theme.of(context).colorScheme.surface,
       child: DefaultTabController(
-        length: 3,
+        length: 4,
         child: Padding(
           padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
           child: Column(
@@ -127,6 +135,11 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       LearnAnywhereMessage.statisticsKeepPracticing,
                     ),
                   ),
+                  Tab(
+                    text: messages.message(
+                      LearnAnywhereMessage.statisticsLevelLearning,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: LearnAnywhereTokens.gapMedium),
@@ -144,6 +157,15 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       onSaveSelected: _saveSelected,
                       showBucketColumn: true,
                       unitIndices: null,
+                    ),
+                    _LevelLearningStats(
+                      deck: widget.deck,
+                      levelStatistics: widget.levelStatistics,
+                      levelNames: widget.levelNames,
+                      view: _view,
+                      selectedUnitIndices: _selectedUnitIndices,
+                      onSelectionChanged: _replaceSelection,
+                      onSaveSelected: _saveSelected,
                     ),
                   ],
                 ),
@@ -228,6 +250,7 @@ final class _PracticeList extends StatefulWidget {
     required this.onSaveSelected,
     this.showBucketColumn = true,
     this.unitIndices,
+    this.levelStatsOverride,
   });
 
   final LearningDeck deck;
@@ -238,11 +261,19 @@ final class _PracticeList extends StatefulWidget {
   final VoidCallback onSaveSelected;
 
   /// Whether to show the Bucket column (hidden when the bucket is constant
-  /// for all shown rows, e.g. a Level×Bucket cell).
+  /// for all shown rows, e.g. a Level×Bucket cell). The bucket filter chips are
+  /// hidden alongside it, since they cannot vary the result.
   final bool showBucketColumn;
 
   /// Explicit one-based unit indices to show; defaults to every deck unit.
   final List<int>? unitIndices;
+
+  /// Per-index stats to show instead of the mode's per-unit counters.
+  ///
+  /// Used by the Level-Learning drill-down to display *that level's* attempts
+  /// and accuracy. When set, each row's Attempts/Accuracy and bucket come from
+  /// this map (missing indices fall back to empty stats) rather than [view].
+  final Map<int, DirectionStats>? levelStatsOverride;
 
   @override
   State<_PracticeList> createState() => _PracticeListState();
@@ -302,6 +333,7 @@ final class _PracticeListState extends State<_PracticeList> {
       widget.statistics,
       widget.view,
       unitIndices: widget.unitIndices,
+      statsOverride: widget.levelStatsOverride,
     );
     final List<_UnitStatisticsRow> visibleRows = _applyFilters(rows);
     return SingleChildScrollView(
@@ -441,30 +473,33 @@ final class _PracticeListState extends State<_PracticeList> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          messages.message(LearnAnywhereMessage.statisticsFilterBuckets),
-          style: Theme.of(context).textTheme.labelLarge,
-        ),
-        const SizedBox(height: LearnAnywhereTokens.gapSmall),
+        if (widget.showBucketColumn) ...<Widget>[
+          Text(
+            messages.message(LearnAnywhereMessage.statisticsFilterBuckets),
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapSmall),
+        ],
         Wrap(
           spacing: LearnAnywhereTokens.gapSmall,
           runSpacing: LearnAnywhereTokens.gapSmall,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
-            for (final HitRateBucket bucket in HitRateBucket.values)
-              FilterChip(
-                label: Text(_bucketLabel(messages, bucket)),
-                selected: _visibleBuckets.contains(bucket),
-                onSelected: (bool selected) {
-                  setState(() {
-                    if (selected) {
-                      _visibleBuckets.add(bucket);
-                    } else {
-                      _visibleBuckets.remove(bucket);
-                    }
-                  });
-                },
-              ),
+            if (widget.showBucketColumn)
+              for (final HitRateBucket bucket in HitRateBucket.values)
+                FilterChip(
+                  label: Text(_bucketLabel(messages, bucket)),
+                  selected: _visibleBuckets.contains(bucket),
+                  onSelected: (bool selected) {
+                    setState(() {
+                      if (selected) {
+                        _visibleBuckets.add(bucket);
+                      } else {
+                        _visibleBuckets.remove(bucket);
+                      }
+                    });
+                  },
+                ),
             SizedBox(
               width: 90,
               child: TextField(
@@ -498,6 +533,270 @@ final class _PracticeListState extends State<_PracticeList> {
       ],
     );
   }
+}
+
+/// Level-Learning statistics tab: a Level×Bucket matrix with a cell drill-down.
+///
+/// Rows are the four support levels (3 → 0, most → least support) plus a Total
+/// row; columns are the seven hit-rate buckets plus a Total column. The scope is
+/// the whole deck (the Statistics page has no range selector); the direction
+/// [view] is shared with the other tabs. Tapping a non-total cell opens the
+/// filtered unit list (a [_PracticeList] with the Bucket column hidden) showing
+/// that level's own attempts/accuracy.
+final class _LevelLearningStats extends StatefulWidget {
+  const _LevelLearningStats({
+    required this.deck,
+    required this.levelStatistics,
+    required this.levelNames,
+    required this.view,
+    required this.selectedUnitIndices,
+    required this.onSelectionChanged,
+    required this.onSaveSelected,
+  });
+
+  final LearningDeck deck;
+  final List<LevelUnitStats> levelStatistics;
+  final List<String> levelNames;
+  final StatisticsDirectionView view;
+  final Set<int> selectedUnitIndices;
+  final ValueChanged<Set<int>> onSelectionChanged;
+  final VoidCallback onSaveSelected;
+
+  @override
+  State<_LevelLearningStats> createState() => _LevelLearningStatsState();
+}
+
+final class _LevelLearningStatsState extends State<_LevelLearningStats> {
+  /// Levels ordered most → least support, top to bottom.
+  static const List<int> _levelsTopDown = <int>[3, 2, 1, 0];
+
+  /// The drilled-into cell, or null while the matrix is shown.
+  int? _drillLevel;
+  HitRateBucket? _drillBucket;
+
+  @override
+  void didUpdateWidget(covariant _LevelLearningStats oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A direction-view switch or a stats change can invalidate the open cell;
+    // drop back to the matrix rather than show a stale, mismatched list.
+    if (_drillLevel != null &&
+        (oldWidget.view != widget.view ||
+            !identical(oldWidget.levelStatistics, widget.levelStatistics))) {
+      _drillLevel = null;
+      _drillBucket = null;
+    }
+  }
+
+  List<int> get _scopeIndices =>
+      List<int>.generate(widget.deck.units.length, (int i) => i + 1);
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final LevelBucketMatrix matrix = levelBucketMatrix(
+      levelStatistics: widget.levelStatistics,
+      unitIndices: _scopeIndices,
+      view: widget.view,
+    );
+    if (_drillLevel != null && _drillBucket != null) {
+      return _buildDrillDown(messages, matrix, _drillLevel!, _drillBucket!);
+    }
+    return _buildMatrix(messages, matrix);
+  }
+
+  Widget _buildMatrix(
+    LearnAnywhereLocalizations messages,
+    LevelBucketMatrix matrix,
+  ) {
+    return SingleChildScrollView(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columnSpacing: LearnAnywhereTokens.gapSmall,
+          horizontalMargin: LearnAnywhereTokens.gapSmall,
+          dataRowMinHeight: 40,
+          dataRowMaxHeight: 56,
+          headingRowHeight: 40,
+          columns: <DataColumn>[
+            DataColumn(
+              label: Text(messages.message(LearnAnywhereMessage.statisticsLevel)),
+            ),
+            for (final HitRateBucket bucket in HitRateBucket.values)
+              DataColumn(
+                numeric: true,
+                label: Text(_bucketLabel(messages, bucket)),
+              ),
+            DataColumn(
+              numeric: true,
+              label: Text(messages.message(LearnAnywhereMessage.statisticsTotal)),
+            ),
+          ],
+          rows: <DataRow>[
+            for (final int level in _levelsTopDown)
+              _levelRow(messages, matrix, level),
+            _totalRow(messages, matrix),
+          ],
+        ),
+      ),
+    );
+  }
+
+  DataRow _levelRow(
+    LearnAnywhereLocalizations messages,
+    LevelBucketMatrix matrix,
+    int level,
+  ) {
+    final int rowTotal = matrix.rowTotals[level] ?? 0;
+    return DataRow(
+      cells: <DataCell>[
+        DataCell(_levelHeader(messages, level)),
+        for (final HitRateBucket bucket in HitRateBucket.values)
+          _matrixCell(matrix, level, bucket, rowTotal),
+        DataCell(Text('$rowTotal', style: _boldStyle)),
+      ],
+    );
+  }
+
+  /// A clickable `count (row-%)` cell, or a plain `0` when the cell is empty.
+  DataCell _matrixCell(
+    LevelBucketMatrix matrix,
+    int level,
+    HitRateBucket bucket,
+    int rowTotal,
+  ) {
+    final int count = matrix.countAt(level, bucket);
+    if (count == 0) {
+      return const DataCell(Text('0'));
+    }
+    final int percent = rowTotal == 0 ? 0 : (count / rowTotal * 100).round();
+    return DataCell(
+      Text('$count ($percent%)'),
+      onTap: () => setState(() {
+        _drillLevel = level;
+        _drillBucket = bucket;
+      }),
+    );
+  }
+
+  DataRow _totalRow(
+    LearnAnywhereLocalizations messages,
+    LevelBucketMatrix matrix,
+  ) {
+    return DataRow(
+      cells: <DataCell>[
+        DataCell(
+          Text(
+            messages.message(LearnAnywhereMessage.statisticsTotal),
+            style: _boldStyle,
+          ),
+        ),
+        for (final HitRateBucket bucket in HitRateBucket.values)
+          DataCell(_totalCell(matrix, bucket)),
+        DataCell(Text('${matrix.grandTotal}', style: _boldStyle)),
+      ],
+    );
+  }
+
+  /// A `count (deck-wide-%)` total-row cell for [bucket].
+  Widget _totalCell(LevelBucketMatrix matrix, HitRateBucket bucket) {
+    final int colTotal = matrix.columnTotals[bucket] ?? 0;
+    if (matrix.grandTotal == 0) {
+      return Text('0', style: _boldStyle);
+    }
+    final int percent = (colTotal / matrix.grandTotal * 100).round();
+    return Text('$colTotal ($percent%)', style: _boldStyle);
+  }
+
+  /// Level row header: the custom name with the numeric level as a subtitle.
+  Widget _levelHeader(LearnAnywhereLocalizations messages, int level) {
+    final String name = levelNameFor(widget.levelNames, level);
+    final String numberLabel = _levelNumberLabel(messages, level);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(name.isEmpty ? numberLabel : name),
+        if (name.isNotEmpty)
+          Text(
+            '($numberLabel)',
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDrillDown(
+    LearnAnywhereLocalizations messages,
+    LevelBucketMatrix matrix,
+    int level,
+    HitRateBucket bucket,
+  ) {
+    final List<LevelMatrixEntry> entries = matrix.entriesAt(level, bucket);
+    // In combined view a unit can reach one cell via both directions; list it
+    // once, using the first direction's level stats for its Attempts/Accuracy.
+    final List<int> unitIndices = <int>[];
+    final Map<int, DirectionStats> override = <int, DirectionStats>{};
+    for (final LevelMatrixEntry entry in entries) {
+      if (override.containsKey(entry.unitIndex)) {
+        continue;
+      }
+      override[entry.unitIndex] = entry.stats;
+      unitIndices.add(entry.unitIndex);
+    }
+    final String name = levelNameFor(widget.levelNames, level);
+    final String crumbLevel = name.isEmpty
+        ? _levelNumberLabel(messages, level)
+        : name;
+    final String breadcrumb = '$crumbLevel — ${_bucketLabel(messages, bucket)}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            FilledButton.tonalIcon(
+              onPressed: () => setState(() {
+                _drillLevel = null;
+                _drillBucket = null;
+              }),
+              icon: const Icon(Icons.arrow_back),
+              label: Text(messages.message(LearnAnywhereMessage.statisticsBack)),
+            ),
+            const SizedBox(width: LearnAnywhereTokens.gapMedium),
+            Expanded(
+              child: Text(
+                breadcrumb,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: LearnAnywhereTokens.gapMedium),
+        Expanded(
+          child: _PracticeList(
+            deck: widget.deck,
+            statistics: const <UnitStats>[],
+            view: widget.view,
+            selectedUnitIndices: widget.selectedUnitIndices,
+            onSelectionChanged: widget.onSelectionChanged,
+            onSaveSelected: widget.onSaveSelected,
+            showBucketColumn: false,
+            unitIndices: unitIndices,
+            levelStatsOverride: override,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _levelNumberLabel(LearnAnywhereLocalizations messages, int level) {
+    return messages
+        .message(LearnAnywhereMessage.statisticsLevelNumber)
+        .replaceAll('{level}', '$level');
+  }
+
+  static const TextStyle _boldStyle = TextStyle(fontWeight: FontWeight.bold);
 }
 
 /// Wraps a cell child in a [Tooltip] listing all of the unit's fields.
@@ -815,6 +1114,7 @@ List<_UnitStatisticsRow> _rowsFor(
   List<UnitStats> statistics,
   StatisticsDirectionView view, {
   List<int>? unitIndices,
+  Map<int, DirectionStats>? statsOverride,
 }) {
   final Map<int, UnitStats> byIndex = <int, UnitStats>{
     for (final UnitStats stats in statistics) stats.index: stats,
@@ -826,7 +1126,10 @@ List<_UnitStatisticsRow> _rowsFor(
     final LearningUnit unit = deck.units[index - 1];
     final CategoryDefinition category = deck.categoryForUnit(unit);
     final UnitStats unitStats = byIndex[index] ?? UnitStats(index: index);
-    final DirectionStats stats = _statsForView(unitStats, view);
+    final DirectionStats stats =
+        statsOverride != null
+        ? (statsOverride[index] ?? const DirectionStats())
+        : _statsForView(unitStats, view);
     return _UnitStatisticsRow(
       index: index,
       bucket: bucketFor(stats),

@@ -451,6 +451,156 @@ HitRateBucket bucketFor(DirectionStats stats) {
   return HitRateBucket.neverKnown;
 }
 
+// --- Level Learning: statistics matrix --------------------------------------
+
+/// One `(unit, direction)` placement in the Level×Bucket matrix.
+///
+/// Carries the direction that placed the unit and that level's own track-record
+/// [stats], so the drill-down list can show the level-specific attempts/accuracy
+/// (not the unit's other-mode counters).
+final class LevelMatrixEntry {
+  /// Creates a matrix cell entry.
+  const LevelMatrixEntry({
+    required this.unitIndex,
+    required this.direction,
+    required this.stats,
+  });
+
+  /// One-based unit index.
+  final int unitIndex;
+
+  /// Direction whose Level-Learning stats placed the unit in this cell.
+  final QueryDirection direction;
+
+  /// The unit's `levels[currentLevel]` counters for [direction].
+  final DirectionStats stats;
+}
+
+/// A Level×Bucket count matrix for the Level-Learning statistics tab.
+///
+/// Rows are the four support levels (`0..3`), columns the seven
+/// [HitRateBucket]s. Counts are over `(unit, direction)` entries, so in the
+/// combined view a unit at different levels per direction contributes twice.
+final class LevelBucketMatrix {
+  /// Creates a Level×Bucket matrix.
+  const LevelBucketMatrix({
+    required this.cells,
+    required this.rowTotals,
+    required this.columnTotals,
+    required this.grandTotal,
+  });
+
+  /// Per-cell entries keyed by level then bucket (every level/bucket present).
+  final Map<int, Map<HitRateBucket, List<LevelMatrixEntry>>> cells;
+
+  /// Entry count per level (the row's own total).
+  final Map<int, int> rowTotals;
+
+  /// Entry count per bucket across all levels (the column's own total).
+  final Map<HitRateBucket, int> columnTotals;
+
+  /// Total entries in scope.
+  final int grandTotal;
+
+  /// Entries currently at [level] in [bucket] (empty when none).
+  List<LevelMatrixEntry> entriesAt(int level, HitRateBucket bucket) {
+    return cells[level]?[bucket] ?? const <LevelMatrixEntry>[];
+  }
+
+  /// Count of entries currently at [level] in [bucket].
+  int countAt(int level, HitRateBucket bucket) {
+    return entriesAt(level, bucket).length;
+  }
+}
+
+/// Builds the Level×Bucket matrix for the Level-Learning statistics tab.
+///
+/// Each in-scope unit ([unitIndices]) that has a [levelStatistics] entry
+/// contributes one entry per selected direction ([view]); the combined view
+/// counts both directions independently (Batch 1 pool convention — see
+/// [activeLevelLearningPool]), so a unit at different levels per direction lands
+/// in two rows. An entry sits in the row of its `currentLevel` and the column of
+/// `bucketFor(levels[currentLevel])`. Units without a Level-Learning entry are
+/// excluded (they have not yet entered Level Learning). Row, column, and grand
+/// totals count entries, not distinct units.
+LevelBucketMatrix levelBucketMatrix({
+  required List<LevelUnitStats> levelStatistics,
+  required List<int> unitIndices,
+  StatisticsDirectionView view = StatisticsDirectionView.combined,
+}) {
+  final Map<int, LevelUnitStats> byIndex = <int, LevelUnitStats>{
+    for (final LevelUnitStats stats in levelStatistics) stats.index: stats,
+  };
+  final Map<int, Map<HitRateBucket, List<LevelMatrixEntry>>> cells =
+      <int, Map<HitRateBucket, List<LevelMatrixEntry>>>{
+        for (var level = kMaxSupportLevel; level >= kFreeRecallLevel; level -= 1)
+          level: <HitRateBucket, List<LevelMatrixEntry>>{
+            for (final HitRateBucket bucket in HitRateBucket.values)
+              bucket: <LevelMatrixEntry>[],
+          },
+      };
+  final Map<int, int> rowTotals = <int, int>{
+    for (var level = kMaxSupportLevel; level >= kFreeRecallLevel; level -= 1)
+      level: 0,
+  };
+  final Map<HitRateBucket, int> columnTotals = <HitRateBucket, int>{
+    for (final HitRateBucket bucket in HitRateBucket.values) bucket: 0,
+  };
+  var grandTotal = 0;
+
+  final List<QueryDirection> directions = switch (view) {
+    StatisticsDirectionView.direction1 => <QueryDirection>[
+      QueryDirection.direction1,
+    ],
+    StatisticsDirectionView.direction2 => <QueryDirection>[
+      QueryDirection.direction2,
+    ],
+    StatisticsDirectionView.combined => <QueryDirection>[
+      QueryDirection.direction1,
+      QueryDirection.direction2,
+    ],
+  };
+
+  for (final int index in unitIndices) {
+    final LevelUnitStats? levelStats = byIndex[index];
+    if (levelStats == null) {
+      continue;
+    }
+    for (final QueryDirection direction in directions) {
+      final LevelDirectionStats dirStats = levelStats.statsFor(direction);
+      final int level = dirStats.currentLevel;
+      final DirectionStats levelCounters =
+          dirStats.levels[level] ?? const DirectionStats();
+      final HitRateBucket bucket = bucketFor(levelCounters);
+      cells[level]![bucket]!.add(
+        LevelMatrixEntry(
+          unitIndex: index,
+          direction: direction,
+          stats: levelCounters,
+        ),
+      );
+      rowTotals[level] = rowTotals[level]! + 1;
+      columnTotals[bucket] = columnTotals[bucket]! + 1;
+      grandTotal += 1;
+    }
+  }
+
+  return LevelBucketMatrix(
+    cells: <int, Map<HitRateBucket, List<LevelMatrixEntry>>>{
+      for (final MapEntry<int, Map<HitRateBucket, List<LevelMatrixEntry>>> row
+          in cells.entries)
+        row.key: <HitRateBucket, List<LevelMatrixEntry>>{
+          for (final MapEntry<HitRateBucket, List<LevelMatrixEntry>> cell
+              in row.value.entries)
+            cell.key: List<LevelMatrixEntry>.unmodifiable(cell.value),
+        },
+    },
+    rowTotals: Map<int, int>.unmodifiable(rowTotals),
+    columnTotals: Map<HitRateBucket, int>.unmodifiable(columnTotals),
+    grandTotal: grandTotal,
+  );
+}
+
 // --- Level Learning: masking ------------------------------------------------
 
 final RegExp _maskWhitespace = RegExp(r'\s');

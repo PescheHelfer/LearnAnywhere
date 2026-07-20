@@ -30,6 +30,8 @@ void main() {
             ),
             UnitStats(index: 2),
           ],
+          levelStatistics: const <LevelUnitStats>[],
+          levelNames: kDefaultLevelNamesEn,
           onLoadStatistics: () async {},
           onSaveStatistics: () async {},
           onClearStatistics: () async {},
@@ -60,6 +62,82 @@ void main() {
     await tester.tap(find.text('Chart'));
     await tester.pumpAndSettle();
     expect(find.byType(CustomPaint), findsWidgets);
+  });
+
+  testWidgets('level learning tab shows the matrix and drills into a cell', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    // Unit 1 sits at level 2 (2/1 → Fair) in both directions; unit 2 at level 0
+    // (2/2 → Perfect). Combined view counts both directions, so each cell holds
+    // two entries and reads "2 (100%)".
+    const LevelDirectionStats atLevelTwoFair = LevelDirectionStats(
+      currentLevel: 2,
+      levels: <int, DirectionStats>{2: DirectionStats(attempts: 2, correct: 1)},
+    );
+    const LevelDirectionStats atLevelZeroPerfect = LevelDirectionStats(
+      currentLevel: 0,
+      levels: <int, DirectionStats>{0: DirectionStats(attempts: 2, correct: 2)},
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates:
+            LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: StatisticsPage(
+          deck: sampleDeck(),
+          statistics: const <UnitStats>[],
+          levelStatistics: const <LevelUnitStats>[
+            LevelUnitStats(
+              index: 1,
+              dir1: atLevelTwoFair,
+              dir2: atLevelTwoFair,
+            ),
+            LevelUnitStats(
+              index: 2,
+              dir1: atLevelZeroPerfect,
+              dir2: atLevelZeroPerfect,
+            ),
+          ],
+          levelNames: kDefaultLevelNamesEn,
+          onLoadStatistics: () async {},
+          onSaveStatistics: () async {},
+          onClearStatistics: () async {},
+          onSaveSelectedUnits: (List<int> unitIndices) async {},
+          onSaveStatisticsAs: () async {},
+          onClose: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Level Learning'));
+    await tester.pumpAndSettle();
+
+    // Level row headers (custom names) and the Total row/column are present.
+    expect(find.text('Beginner'), findsOneWidget); // level 3
+    expect(find.text('Learner'), findsOneWidget); // level 2
+    expect(find.text('Champion'), findsOneWidget); // level 0
+    expect(find.text('Total'), findsWidgets);
+    // Two populated cells: (level 2, Fair) and (level 0, Perfect).
+    expect(find.text('2 (100%)'), findsNWidgets(2));
+
+    // The first populated cell is (level 2, Fair); drilling in opens its list.
+    await tester.tap(find.text('2 (100%)').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Learner — Fair'), findsOneWidget); // breadcrumb
+    expect(find.text('Back'), findsOneWidget);
+    expect(find.text('Q1'), findsOneWidget); // unit 1 in the drill-down
+    expect(find.text('1 (50%)'), findsOneWidget); // that level's accuracy
+
+    await tester.tap(find.text('Back'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 (100%)'), findsNWidgets(2)); // back at the matrix
   });
 }
 
