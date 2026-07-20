@@ -23,4 +23,14 @@ final class LearnAnywhereTokens {
     'DejaVu Sans Mono',
     'monospace',
   ];
+
+  /// Minimum width of a field row's label column.
+  static const double fieldLabelMinWidth = 64;
+
+  /// Maximum width of a field row's label column, so one very long field name
+  /// can't dominate the row layout.
+  static const double fieldLabelMaxWidth = 220;
+
+  /// Minimum width of a field row's value column.
+  static const double fieldValueMinWidth = 48;
 }

@@ -1,6 +1,7 @@
 /// Shared Flutter UI primitives for Learn Anywhere.
 library;
 
+export 'src/fields/field_row.dart';
 export 'src/i18n/learn_anywhere_localizations.dart';
 export 'src/menu/menu_accelerator_builder.dart';
 export 'src/menu/menu_accelerator_display_label.dart';

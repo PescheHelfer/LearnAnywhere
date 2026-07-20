@@ -51,8 +51,9 @@ final class UnitEditorPage extends StatefulWidget {
     int currentIndex = 0,
   }) async {
     if (deck.units.isEmpty) return null;
-    final LearnAnywhereLocalizations messages =
-        LearnAnywhereLocalizations.of(context);
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
     final TextEditingController controller = TextEditingController(
       text: (currentIndex + 1).toString(),
     );
@@ -69,9 +70,7 @@ final class UnitEditorPage extends StatefulWidget {
               FilteringTextInputFormatter.digitsOnly,
             ],
             decoration: InputDecoration(
-              labelText: messages.message(
-                LearnAnywhereMessage.editorJumpLabel,
-              ),
+              labelText: messages.message(LearnAnywhereMessage.editorJumpLabel),
             ),
             onSubmitted: (String value) =>
                 Navigator.of(ctx).pop(int.tryParse(value)),
@@ -102,16 +101,15 @@ final class UnitEditorPage extends StatefulWidget {
     BuildContext context,
     LearningDeck deck,
   ) async {
-    final LearnAnywhereLocalizations messages =
-        LearnAnywhereLocalizations.of(context);
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
     final TextEditingController controller = TextEditingController();
     final String? query = await showDialog<String>(
       context: context,
       builder: (BuildContext ctx) {
         return AlertDialog(
-          title: Text(
-            messages.message(LearnAnywhereMessage.editorSearchTitle),
-          ),
+          title: Text(messages.message(LearnAnywhereMessage.editorSearchTitle)),
           content: TextField(
             autofocus: true,
             controller: controller,
@@ -120,8 +118,7 @@ final class UnitEditorPage extends StatefulWidget {
                 LearnAnywhereMessage.editorSearchQuery,
               ),
             ),
-            onSubmitted: (String value) =>
-                Navigator.of(ctx).pop(value.trim()),
+            onSubmitted: (String value) => Navigator.of(ctx).pop(value.trim()),
           ),
           actions: <Widget>[
             TextButton(
@@ -129,8 +126,7 @@ final class UnitEditorPage extends StatefulWidget {
               child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.of(ctx).pop(controller.text.trim()),
+              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
               child: Text(messages.message(LearnAnywhereMessage.editorSearch)),
             ),
           ],
@@ -168,8 +164,9 @@ final class UnitEditorPage extends StatefulWidget {
               itemCount: results.length,
               itemBuilder: (BuildContext _, int index) {
                 final SearchResult result = results[index];
-                final CategoryDefinition? category =
-                    deck.mask.categoryById(result.categoryId);
+                final CategoryDefinition? category = deck.mask.categoryById(
+                  result.categoryId,
+                );
                 return ListTile(
                   title: Text(
                     _unitHeader(
@@ -197,17 +194,17 @@ final class UnitEditorPage extends StatefulWidget {
 final class _UnitEditorPageState extends State<UnitEditorPage> {
   static const Map<ShortcutActivator, Intent> _kShortcuts =
       <ShortcutActivator, Intent>{
-    SingleActivator(LogicalKeyboardKey.enter): _EnterIntent(),
-    SingleActivator(LogicalKeyboardKey.f1): _HelpIntent(),
-    SingleActivator(LogicalKeyboardKey.f2): _PreviousIntent(),
-    SingleActivator(LogicalKeyboardKey.f3): _NextIntent(),
-    SingleActivator(LogicalKeyboardKey.f5): _SearchIntent(),
-    SingleActivator(LogicalKeyboardKey.f6): _JumpIntent(),
-    SingleActivator(LogicalKeyboardKey.f7): _DeleteIntent(),
-    SingleActivator(LogicalKeyboardKey.f8): _InsertIntent(),
-    SingleActivator(LogicalKeyboardKey.f10): _DoneIntent(),
-    SingleActivator(LogicalKeyboardKey.escape): _CancelIntent(),
-  };
+        SingleActivator(LogicalKeyboardKey.enter): _EnterIntent(),
+        SingleActivator(LogicalKeyboardKey.f1): _HelpIntent(),
+        SingleActivator(LogicalKeyboardKey.f2): _PreviousIntent(),
+        SingleActivator(LogicalKeyboardKey.f3): _NextIntent(),
+        SingleActivator(LogicalKeyboardKey.f5): _SearchIntent(),
+        SingleActivator(LogicalKeyboardKey.f6): _JumpIntent(),
+        SingleActivator(LogicalKeyboardKey.f7): _DeleteIntent(),
+        SingleActivator(LogicalKeyboardKey.f8): _InsertIntent(),
+        SingleActivator(LogicalKeyboardKey.f10): _DoneIntent(),
+        SingleActivator(LogicalKeyboardKey.escape): _CancelIntent(),
+      };
 
   int _currentIndex = 0;
   CategoryDefinition? _lastUsedCategory;
@@ -804,6 +801,8 @@ final class _EditorBodyState extends State<_EditorBody> {
     final LearnAnywhereRichTextEditingController? ac = _activeController;
     final RunFormat activeFormat = ac?.activeFormat ?? RunFormat.none;
 
+    final double labelWidth = computeFieldLabelWidth(context, widget.deck.mask);
+
     return Scrollbar(
       controller: _scrollController,
       child: SingleChildScrollView(
@@ -827,9 +826,7 @@ final class _EditorBodyState extends State<_EditorBody> {
                         ),
                         icon: Icons.format_bold,
                         selected:
-                            ac?.selectionSatisfies(
-                              (RunFormat f) => f.bold,
-                            ) ??
+                            ac?.selectionSatisfies((RunFormat f) => f.bold) ??
                             false,
                         onPressed: ac != null ? _toggleBold : null,
                       ),
@@ -839,9 +836,7 @@ final class _EditorBodyState extends State<_EditorBody> {
                         ),
                         icon: Icons.format_italic,
                         selected:
-                            ac?.selectionSatisfies(
-                              (RunFormat f) => f.italic,
-                            ) ??
+                            ac?.selectionSatisfies((RunFormat f) => f.italic) ??
                             false,
                         onPressed: ac != null ? _toggleItalic : null,
                       ),
@@ -917,37 +912,43 @@ final class _EditorBodyState extends State<_EditorBody> {
             ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),
             // ── Field grid ────────────────────────────────────────────────
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border.all(color: colors.outlineVariant),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(7),
-                child: Column(
-                  children: <Widget>[
-                    for (int i = 0; i < fields.length; i++) ...<Widget>[
-                      if (i > 0)
-                        Container(height: 1, color: colors.outlineVariant),
-                      _GridRow(
-                        key: ValueKey<String>(
-                          'editor-field-${widget.currentIndex}-$i-${fields[i].name}',
+            // Fixed monospace column widths (see FieldRow) can exceed the
+            // viewport for long fields, so the grid scrolls horizontally
+            // rather than shrinking the value boxes to fit.
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: colors.outlineVariant),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(7),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      for (int i = 0; i < fields.length; i++) ...<Widget>[
+                        if (i > 0)
+                          Container(height: 1, color: colors.outlineVariant),
+                        _GridRow(
+                          key: ValueKey<String>(
+                            'editor-field-${widget.currentIndex}-$i-${fields[i].name}',
+                          ),
+                          field: fields[i],
+                          value: unit.valueForFieldId(fields[i].id),
+                          colorMemory: widget.colorMemory,
+                          labelWidth: labelWidth,
+                          autofocus: i == autoFocusIndex,
+                          moveToEnd: allFilled && i == autoFocusIndex,
+                          onNext: i == fields.length - 1 ? widget.onNext : null,
+                          onChanged: (FieldValue v) {
+                            widget.onFieldChanged(fields[i].id, v);
+                          },
+                          onFocusGained: _registerActive,
                         ),
-                        field: fields[i],
-                        value: unit.valueForFieldId(fields[i].id),
-                        colorMemory: widget.colorMemory,
-                        autofocus: i == autoFocusIndex,
-                        moveToEnd: allFilled && i == autoFocusIndex,
-                        onNext: i == fields.length - 1
-                            ? widget.onNext
-                            : null,
-                        onChanged: (FieldValue v) {
-                          widget.onFieldChanged(fields[i].id, v);
-                        },
-                        onFocusGained: _registerActive,
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -961,7 +962,9 @@ final class _EditorBodyState extends State<_EditorBody> {
                   icon: Icons.arrow_back,
                   label: messages.message(LearnAnywhereMessage.editorPrevious),
                   shortcut: 'F2',
-                  onPressed: widget.currentIndex == 0 ? null : widget.onPrevious,
+                  onPressed: widget.currentIndex == 0
+                      ? null
+                      : widget.onPrevious,
                 ),
                 _ActionButton(
                   icon: Icons.arrow_forward,
@@ -1023,6 +1026,7 @@ final class _GridRow extends StatefulWidget {
     required this.field,
     required this.value,
     required this.colorMemory,
+    required this.labelWidth,
     required this.onChanged,
     required this.onFocusGained,
     this.autofocus = false,
@@ -1034,6 +1038,9 @@ final class _GridRow extends StatefulWidget {
   final FieldDefinition field;
   final FieldValue value;
   final _ColorMemory colorMemory;
+
+  /// Shared label-column width, computed once for the whole mask.
+  final double labelWidth;
   final ValueChanged<FieldValue> onChanged;
 
   /// Called when this row's text field gains focus; lets the parent toolbar
@@ -1042,7 +1049,8 @@ final class _GridRow extends StatefulWidget {
     LearnAnywhereRichTextEditingController,
     _ColorMemory,
     FocusNode,
-  ) onFocusGained;
+  )
+  onFocusGained;
 
   /// Whether this field should claim keyboard focus when it first appears.
   final bool autofocus;
@@ -1140,9 +1148,9 @@ final class _GridRowState extends State<_GridRow> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    final double bgOpacity =
-        Theme.of(context).brightness == Brightness.light ? 0.15 : 0.10;
+    final double bgOpacity = Theme.of(context).brightness == Brightness.light
+        ? 0.15
+        : 0.10;
 
     final Color accentColor;
     switch (widget.field.role1) {
@@ -1155,68 +1163,44 @@ final class _GridRowState extends State<_GridRow> {
     }
     final Color bgColor = accentColor.withValues(alpha: bgOpacity);
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // Left accent bar
-          Container(width: 4, color: accentColor),
-          // Label (fixed width)
-          Container(
-            width: 120,
-            color: bgColor,
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              widget.field.name,
-              style: Theme.of(context).textTheme.bodySmall,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Container(width: 1, color: colors.outlineVariant),
-          // Editable cell
-          Expanded(
-            child: ColoredBox(
-              color: bgColor,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: TextField(
-                        focusNode: _focusNode,
-                        controller: _controller,
-                        maxLines: 1,
-                        inputFormatters: <TextInputFormatter>[
-                          LengthLimitingTextInputFormatter(widget.field.length),
-                        ],
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontFamilyFallback:
-                              LearnAnywhereTokens.monospaceFallback,
-                        ),
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 0,
-                          ),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${_controller.text.length}/${widget.field.length}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    final TextStyle valueStyle =
+        Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
+        ) ??
+        const TextStyle();
+    final double charWidth = measureMonospaceCharWidth(valueStyle);
+    final double counterReserve =
+        measureTextWidth(
+          '${widget.field.length}/${widget.field.length}',
+          Theme.of(context).textTheme.bodySmall ?? const TextStyle(),
+        ) +
+        4;
+    final double valueWidth = computeFieldValueWidth(
+      fieldLength: widget.field.length,
+      charWidth: charWidth,
+      extraWidth: counterReserve,
+    );
+
+    return FieldRow(
+      label: widget.field.name,
+      labelWidth: widget.labelWidth,
+      valueWidth: valueWidth,
+      accentColor: accentColor,
+      backgroundColor: bgColor,
+      counterText: '${_controller.text.length}/${widget.field.length}',
+      value: TextField(
+        focusNode: _focusNode,
+        controller: _controller,
+        maxLines: 1,
+        inputFormatters: <TextInputFormatter>[
+          LengthLimitingTextInputFormatter(widget.field.length),
         ],
+        style: valueStyle,
+        decoration: const InputDecoration(
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 0),
+          border: InputBorder.none,
+        ),
       ),
     );
   }
@@ -1352,19 +1336,18 @@ final class _ColorPickerButtonState extends State<_ColorPickerButton> {
     );
     final ColorScheme colors = Theme.of(context).colorScheme;
     return MenuAnchor(
-      menuChildren: widget.swatches.map((LearnAnywhereColorSwatch swatch) {
-        final bool selected = swatch.hex == widget.selectedHex;
-        return MenuItemButton(
-          leadingIcon: _SwatchDot(
-            color: swatch.color,
-            selected: selected,
-          ),
-          onPressed: widget.onSelected == null
-              ? null
-              : () => widget.onSelected!(swatch.hex),
-          child: Text(messages.message(swatch.label)),
-        );
-      }).toList(growable: false),
+      menuChildren: widget.swatches
+          .map((LearnAnywhereColorSwatch swatch) {
+            final bool selected = swatch.hex == widget.selectedHex;
+            return MenuItemButton(
+              leadingIcon: _SwatchDot(color: swatch.color, selected: selected),
+              onPressed: widget.onSelected == null
+                  ? null
+                  : () => widget.onSelected!(swatch.hex),
+              child: Text(messages.message(swatch.label)),
+            );
+          })
+          .toList(growable: false),
       builder:
           (BuildContext context, MenuController controller, Widget? child) {
             return IconButton(
