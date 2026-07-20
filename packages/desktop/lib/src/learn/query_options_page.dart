@@ -124,6 +124,30 @@ final class QueryOptionsPage extends StatelessWidget {
             },
           ),
           _SwitchOption(
+            title: messages.message(
+              LearnAnywhereMessage.queryOptionAlmostEnabled,
+            ),
+            value: options.almostEnabled,
+            onChanged: (bool value) {
+              onChanged(options.copyWith(almostEnabled: value));
+            },
+          ),
+          _NumberOption(
+            title: messages.message(
+              LearnAnywhereMessage.queryOptionAlmostThreshold,
+            ),
+            value: (options.almostThreshold * 100).round(),
+            minimum: 1,
+            maximum: 100,
+            onChanged: (int value) {
+              onChanged(
+                options.copyWith(
+                  almostThreshold: value.clamp(1, 100) / 100,
+                ),
+              );
+            },
+          ),
+          _SwitchOption(
             title: messages.message(LearnAnywhereMessage.queryOptionShowClock),
             value: options.showClock,
             onChanged: (bool value) {
@@ -406,11 +430,13 @@ final class _NumberOption extends StatefulWidget {
     required this.value,
     required this.onChanged,
     this.minimum = 0,
+    this.maximum,
   });
 
   final String title;
   final int value;
   final int minimum;
+  final int? maximum;
   final ValueChanged<int> onChanged;
 
   @override
@@ -458,8 +484,15 @@ final class _NumberOptionState extends State<_NumberOption> {
           ],
           decoration: InputDecoration(labelText: widget.title),
           onChanged: (String value) {
-            final int parsed = int.tryParse(value) ?? widget.minimum;
-            widget.onChanged(parsed < widget.minimum ? widget.minimum : parsed);
+            var parsed = int.tryParse(value) ?? widget.minimum;
+            if (parsed < widget.minimum) {
+              parsed = widget.minimum;
+            }
+            final int? maximum = widget.maximum;
+            if (maximum != null && parsed > maximum) {
+              parsed = maximum;
+            }
+            widget.onChanged(parsed);
           },
         ),
       ),

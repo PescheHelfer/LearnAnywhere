@@ -418,6 +418,9 @@ enum LearnAnywhereMessage {
   /// Wrong answer message.
   learnWrongMessage,
 
+  /// Near-miss ("Almost") answer message.
+  learnAlmostMessage,
+
   /// Rating correct option.
   learnRatingCorrect,
 
@@ -426,6 +429,9 @@ enum LearnAnywhereMessage {
 
   /// Rating actually correct option.
   learnRatingActuallyCorrect,
+
+  /// Rating "close enough" option for a near-miss (records as correct).
+  learnRatingCloseEnough,
 
   /// Rating actually wrong option.
   learnRatingActuallyWrong,
@@ -507,6 +513,12 @@ enum LearnAnywhereMessage {
 
   /// Accent sensitive option.
   queryOptionAccentSensitive,
+
+  /// "Accept near-misses as Almost" option.
+  queryOptionAlmostEnabled,
+
+  /// "Almost" similarity threshold (percent) option.
+  queryOptionAlmostThreshold,
 
   /// Show clock option.
   queryOptionShowClock,
@@ -1178,9 +1190,11 @@ final class LearnAnywhereCatalog {
           'Your answer is correct. Congratulations!',
       LearnAnywhereMessage.learnWrongMessage:
           'The answer is unfortunately wrong.',
+      LearnAnywhereMessage.learnAlmostMessage: 'Almost! So close.',
       LearnAnywhereMessage.learnRatingCorrect: 'Correct',
       LearnAnywhereMessage.learnRatingWrong: 'Wrong',
       LearnAnywhereMessage.learnRatingActuallyCorrect: 'Actually correct',
+      LearnAnywhereMessage.learnRatingCloseEnough: 'Close enough',
       LearnAnywhereMessage.learnRatingActuallyWrong: 'Actually wrong',
       LearnAnywhereMessage.learnRatingNoCount: 'No count',
       LearnAnywhereMessage.learnRatingKnewIt: 'Knew it',
@@ -1212,6 +1226,10 @@ final class LearnAnywhereCatalog {
           'Complete input required',
       LearnAnywhereMessage.queryOptionCaseSensitive: 'Case sensitive',
       LearnAnywhereMessage.queryOptionAccentSensitive: 'Accent sensitive',
+      LearnAnywhereMessage.queryOptionAlmostEnabled:
+          "Accept near-misses as 'Almost'",
+      LearnAnywhereMessage.queryOptionAlmostThreshold:
+          "'Almost' similarity threshold (%)",
       LearnAnywhereMessage.queryOptionShowClock: 'Show clock',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Time limit (seconds)',
       LearnAnywhereMessage.queryOptionWithAnswerInput: 'Require typed answers',
@@ -1579,9 +1597,11 @@ final class LearnAnywhereCatalog {
           'Die Eingabe ist richtig! Glückwunsch!',
       LearnAnywhereMessage.learnWrongMessage:
           'Die Eingabe ist leider falsch! Schade!',
+      LearnAnywhereMessage.learnAlmostMessage: 'Fast! Ganz knapp daneben.',
       LearnAnywhereMessage.learnRatingCorrect: 'Richtig',
       LearnAnywhereMessage.learnRatingWrong: 'Falsch',
       LearnAnywhereMessage.learnRatingActuallyCorrect: 'Eigentlich richtig',
+      LearnAnywhereMessage.learnRatingCloseEnough: 'Nah genug',
       LearnAnywhereMessage.learnRatingActuallyWrong: 'Eigentlich falsch',
       LearnAnywhereMessage.learnRatingNoCount: 'Nicht zählen',
       LearnAnywhereMessage.learnRatingKnewIt: 'Gewusst',
@@ -1614,6 +1634,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.queryOptionCaseSensitive:
           'Groß-/Kleinschreibung beachten',
       LearnAnywhereMessage.queryOptionAccentSensitive: 'Akzente beachten',
+      LearnAnywhereMessage.queryOptionAlmostEnabled:
+          'Beinahe-Treffer als „Fast“ akzeptieren',
+      LearnAnywhereMessage.queryOptionAlmostThreshold:
+          'Ähnlichkeitsschwelle für „Fast“ (%)',
       LearnAnywhereMessage.queryOptionShowClock: 'Uhr anzeigen',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Zeitlimit (Sekunden)',
       LearnAnywhereMessage.queryOptionWithAnswerInput:

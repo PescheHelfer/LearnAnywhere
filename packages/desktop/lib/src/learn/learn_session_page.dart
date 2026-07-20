@@ -141,6 +141,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
 
   SessionItem? _currentItem;
   AnswerEvaluation? _evaluation;
+  // Display classification of the revealed answer (correct/almost/wrong). Drives
+  // the result message and which rating labels are offered; never recorded.
+  AnswerOutcome _outcome = AnswerOutcome.correct;
   AttemptRating _selectedRating = AttemptRating.noCount;
   Timer? _clockTimer;
   int _elapsedSeconds = 0;
@@ -385,6 +388,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       parameters: _draftParameters,
       item: _currentItem!,
       evaluation: _evaluation,
+      outcome: _outcome,
       selectedRating: _selectedRating,
       activeLevel: _isLevelLearning ? _activeLevel : kFreeRecallLevel,
       level3Memorized: _level3Memorized,
@@ -843,6 +847,16 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
             options: widget.options.evaluationOptions,
           )
         : null;
+    final AnswerOutcome outcome = evaluation != null
+        ? classifyOutcome(
+            evaluation,
+            similarityEnabled: widget.options.almostEnabled,
+            similarityThreshold: widget.options.almostThreshold,
+          )
+        : AnswerOutcome.correct;
+    // An exact match (or think-only) preselects Correct; a near-miss and a plain
+    // wrong both default to Wrong (the user opts up to Close enough / Actually
+    // correct).
     final AttemptRating defaultRating = _draftParameters.withInput
         ? (evaluation!.correct ? AttemptRating.correct : AttemptRating.wrong)
         : AttemptRating.correct;
@@ -851,6 +865,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _evaluation =
           evaluation ??
           const AnswerEvaluation(correct: true, fields: <FieldEvaluation>[]);
+      _outcome = outcome;
       _selectedRating = defaultRating;
     });
     // Revealing removes the answer text fields (they become read-only rich
@@ -1016,7 +1031,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         ),
       ];
     }
-    if (_evaluation!.correct) {
+    if (_outcome == AnswerOutcome.correct) {
       return <MapEntry<AttemptRating, String>>[
         MapEntry<AttemptRating, String>(
           AttemptRating.correct,
@@ -1025,6 +1040,24 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         MapEntry<AttemptRating, String>(
           AttemptRating.wrong,
           messages.message(LearnAnywhereMessage.learnRatingActuallyWrong),
+        ),
+        MapEntry<AttemptRating, String>(
+          AttemptRating.noCount,
+          messages.message(LearnAnywhereMessage.learnRatingNoCount),
+        ),
+      ];
+    }
+    if (_outcome == AnswerOutcome.almost) {
+      // Near-miss: Wrong is preselected; "Close enough" is the relabeled
+      // Actually-correct (attempts += 1; correct += 1) and always offered here.
+      return <MapEntry<AttemptRating, String>>[
+        MapEntry<AttemptRating, String>(
+          AttemptRating.wrong,
+          messages.message(LearnAnywhereMessage.learnRatingWrong),
+        ),
+        MapEntry<AttemptRating, String>(
+          AttemptRating.correct,
+          messages.message(LearnAnywhereMessage.learnRatingCloseEnough),
         ),
         MapEntry<AttemptRating, String>(
           AttemptRating.noCount,
@@ -1062,10 +1095,18 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       ];
       return index < r.length ? r[index] : null;
     }
-    if (_evaluation!.correct) {
+    if (_outcome == AnswerOutcome.correct) {
       const List<AttemptRating> r = <AttemptRating>[
         AttemptRating.correct,
         AttemptRating.wrong,
+        AttemptRating.noCount,
+      ];
+      return index < r.length ? r[index] : null;
+    }
+    if (_outcome == AnswerOutcome.almost) {
+      const List<AttemptRating> r = <AttemptRating>[
+        AttemptRating.wrong,
+        AttemptRating.correct,
         AttemptRating.noCount,
       ];
       return index < r.length ? r[index] : null;
@@ -1377,6 +1418,7 @@ final class _SessionView extends StatelessWidget {
     required this.parameters,
     required this.item,
     required this.evaluation,
+    required this.outcome,
     required this.selectedRating,
     required this.activeLevel,
     required this.level3Memorized,
@@ -1408,6 +1450,9 @@ final class _SessionView extends StatelessWidget {
   final SessionParameters parameters;
   final SessionItem item;
   final AnswerEvaluation? evaluation;
+
+  /// Display classification of the revealed answer (correct/almost/wrong).
+  final AnswerOutcome outcome;
   final AttemptRating selectedRating;
 
   /// The active support level (`0..3`) when in Level Learning; ignored otherwise.
@@ -1441,6 +1486,17 @@ final class _SessionView extends StatelessWidget {
   final VoidCallback onCancel;
 
   bool get _isLevelLearning => parameters.mode == SessionMode.levelLearning;
+
+  /// The rich-text runs of [value] (a plain value becomes a single run), used as
+  /// the base for the reveal-screen diff overlay.
+  static List<RichTextRun> _runsOf(FieldValue value) {
+    return switch (value) {
+      PlainFieldValue(:final String text) => <RichTextRun>[
+        RichTextRun(text: text),
+      ],
+      RichFieldValue(:final List<RichTextRun> runs) => runs,
+    };
+  }
 
   /// Builds the live-stats pills: Attempts first, then mode-specific fields.
   ///
@@ -1637,7 +1693,25 @@ final class _SessionView extends StatelessWidget {
                         ),
                       };
                       bgColor = accentColor.withValues(alpha: bgOpacity);
-                      displayValue = unit.valueForFieldId(field.id);
+                      final FieldValue expectedValue = unit.valueForFieldId(
+                        field.id,
+                      );
+                      // On the solution view, overlay the student's mistakes on
+                      // the answer field's runs (substitutions red, missing chars
+                      // as red "_", extras as red strikethrough). A fully correct
+                      // answer diffs to the unchanged solution.
+                      displayValue =
+                          (role == FieldRole.answer &&
+                              evaluation != null &&
+                              parameters.withInput)
+                          ? FieldValue.rich(
+                              buildDiffRuns(
+                                expectedRuns: _runsOf(expectedValue),
+                                enteredPlain: enteredAnswers[field.id] ?? '',
+                                options: options.evaluationOptions,
+                              ),
+                            )
+                          : expectedValue;
                     }
 
                     final Widget? override =
@@ -1887,18 +1961,23 @@ final class _SessionView extends StatelessWidget {
               Row(
                 children: <Widget>[
                   Text(
-                    evaluation!.correct
-                        ? messages.message(
-                            LearnAnywhereMessage.learnCorrectMessage,
-                          )
-                        : messages.message(
-                            LearnAnywhereMessage.learnWrongMessage,
-                          ),
+                    messages.message(switch (outcome) {
+                      AnswerOutcome.correct =>
+                        LearnAnywhereMessage.learnCorrectMessage,
+                      AnswerOutcome.almost =>
+                        LearnAnywhereMessage.learnAlmostMessage,
+                      AnswerOutcome.wrong =>
+                        LearnAnywhereMessage.learnWrongMessage,
+                    }),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    evaluation!.correct ? '😊' : '😔',
+                    switch (outcome) {
+                      AnswerOutcome.correct => '😊',
+                      AnswerOutcome.almost => '🤏',
+                      AnswerOutcome.wrong => '😔',
+                    },
                     style: const TextStyle(fontSize: 40),
                   ),
                 ],

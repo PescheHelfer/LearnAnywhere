@@ -5,6 +5,7 @@
 /// core so the UI layer never embeds business rules. No Flutter imports.
 library;
 
+import '../engine/engine.dart';
 import '../models/models.dart';
 
 /// The formatting attributes of a rich-text run, without its text.
@@ -17,6 +18,7 @@ final class RunFormat {
     this.bold = false,
     this.italic = false,
     this.underline = false,
+    this.strikethrough = false,
     this.color,
     this.highlight,
   });
@@ -27,6 +29,7 @@ final class RunFormat {
       bold: run.bold,
       italic: run.italic,
       underline: run.underline,
+      strikethrough: run.strikethrough,
       color: run.color,
       highlight: run.highlight,
     );
@@ -41,6 +44,9 @@ final class RunFormat {
   /// Whether the run is underlined.
   final bool underline;
 
+  /// Whether the run is struck through.
+  final bool strikethrough;
+
   /// Optional foreground color as `#RRGGBB`.
   final String? color;
 
@@ -52,7 +58,12 @@ final class RunFormat {
 
   /// Whether this format carries no formatting at all.
   bool get isPlain =>
-      !bold && !italic && !underline && color == null && highlight == null;
+      !bold &&
+      !italic &&
+      !underline &&
+      !strikethrough &&
+      color == null &&
+      highlight == null;
 
   /// Returns a run combining this formatting with [text].
   RichTextRun applyTo(String text) {
@@ -61,6 +72,7 @@ final class RunFormat {
       bold: bold,
       italic: italic,
       underline: underline,
+      strikethrough: strikethrough,
       color: color,
       highlight: highlight,
     );
@@ -70,11 +82,17 @@ final class RunFormat {
   ///
   /// Colors are left untouched; use [withColor] and [withHighlight] to change
   /// them (so that clearing to `null` is expressible).
-  RunFormat copyWith({bool? bold, bool? italic, bool? underline}) {
+  RunFormat copyWith({
+    bool? bold,
+    bool? italic,
+    bool? underline,
+    bool? strikethrough,
+  }) {
     return RunFormat(
       bold: bold ?? this.bold,
       italic: italic ?? this.italic,
       underline: underline ?? this.underline,
+      strikethrough: strikethrough ?? this.strikethrough,
       color: color,
       highlight: highlight,
     );
@@ -86,6 +104,7 @@ final class RunFormat {
       bold: bold,
       italic: italic,
       underline: underline,
+      strikethrough: strikethrough,
       color: value,
       highlight: highlight,
     );
@@ -97,6 +116,7 @@ final class RunFormat {
       bold: bold,
       italic: italic,
       underline: underline,
+      strikethrough: strikethrough,
       color: color,
       highlight: value,
     );
@@ -108,12 +128,14 @@ final class RunFormat {
         other.bold == bold &&
         other.italic == italic &&
         other.underline == underline &&
+        other.strikethrough == strikethrough &&
         other.color == color &&
         other.highlight == highlight;
   }
 
   @override
-  int get hashCode => Object.hash(bold, italic, underline, color, highlight);
+  int get hashCode =>
+      Object.hash(bold, italic, underline, strikethrough, color, highlight);
 }
 
 /// The total plain-text length of [runs] (in UTF-16 code units).
@@ -291,4 +313,69 @@ List<RichTextRun> reconcileRuns({
     formats.add(i >= 0 && i < oldFormats.length ? oldFormats[i] : insertedFormat);
   }
   return runsFromFormats(newText, formats);
+}
+
+/// The colour used to mark diff deviations on the reveal screen (`#RRGGBB`).
+const String kDiffMarkColor = '#D32F2F';
+
+/// Overlays the student's mistakes onto the expected value's rich-text runs.
+///
+/// Returns the expected [expectedRuns] with the diff against [enteredPlain]
+/// painted on top, preserving every original run attribute except where a
+/// deviation is flagged:
+/// - a **substituted** character keeps its formatting but its `color` is set to
+///   [kDiffMarkColor];
+/// - a **missing** character (in the solution, absent from the entry) is marked
+///   by a synthetic red `_` run inserted at that position;
+/// - **extra** characters the student typed are appended after the solution as a
+///   red, struck-through run.
+///
+/// Alignment runs on [normalizeForDiff] of both texts (the same case/accent
+/// folding used for scoring), so a difference the evaluator ignores — a case or
+/// accent mismatch when the corresponding option is off — aligns as a match and
+/// is never painted. A fully correct answer yields the expected runs unchanged.
+List<RichTextRun> buildDiffRuns({
+  required List<RichTextRun> expectedRuns,
+  required String enteredPlain,
+  TextMatchOptions options = const TextMatchOptions(),
+}) {
+  final String expected = runsText(expectedRuns);
+  final List<RunFormat> expectedFormats = formatsFromRuns(expectedRuns);
+  final List<DiffOp> ops = alignTexts(
+    normalizeForDiff(expected, options),
+    normalizeForDiff(enteredPlain, options),
+  );
+
+  final List<RichTextRun> result = <RichTextRun>[];
+  final StringBuffer extras = StringBuffer();
+  for (final DiffOp op in ops) {
+    switch (op.kind) {
+      case DiffOpKind.match:
+        result.add(
+          expectedFormats[op.expectedIndex].applyTo(
+            expected[op.expectedIndex],
+          ),
+        );
+      case DiffOpKind.substitute:
+        result.add(
+          expectedFormats[op.expectedIndex]
+              .withColor(kDiffMarkColor)
+              .applyTo(expected[op.expectedIndex]),
+        );
+      case DiffOpKind.delete:
+        result.add(const RichTextRun(text: '_', color: kDiffMarkColor));
+      case DiffOpKind.insert:
+        extras.write(enteredPlain[op.enteredIndex]);
+    }
+  }
+  if (extras.isNotEmpty) {
+    result.add(
+      RichTextRun(
+        text: extras.toString(),
+        color: kDiffMarkColor,
+        strikethrough: true,
+      ),
+    );
+  }
+  return normalizeRuns(result);
 }

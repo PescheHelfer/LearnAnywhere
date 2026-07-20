@@ -929,6 +929,198 @@ void main() {
       final LearningDeck restored = decodeDeckJson(encodeDeckJson(deck));
       expect(restored.units.single.fields[0], value); // DE
     });
+
+    test('strikethrough survives a serialization round-trip', () {
+      final FieldValue value = FieldValue.rich(<RichTextRun>[
+        const RichTextRun(text: 'kept'),
+        const RichTextRun(
+          text: 'struck',
+          strikethrough: true,
+          underline: true,
+          color: '#D32F2F',
+        ),
+      ]);
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: <LearningUnit>[
+          LearningUnit(categoryId: 1, fields: <int, FieldValue>{0: value}),
+        ],
+      );
+
+      // Only the true attribute is emitted, and it decodes back intact.
+      final String json = encodeDeckJson(deck);
+      expect(json.contains('"strikethrough": true'), isTrue);
+      final LearningDeck restored = decodeDeckJson(json);
+      expect(restored.units.single.fields[0], value);
+    });
+
+    test('a decoded run without strikethrough defaults to false', () {
+      const RichTextRun run = RichTextRun(text: 'plain');
+      expect(run.strikethrough, isFalse);
+    });
+  });
+
+  group('answer similarity and Almost classification', () {
+    test('levenshteinDistance on known pairs', () {
+      expect(levenshteinDistance('kitten', 'kitten'), 0);
+      expect(levenshteinDistance('kitten', 'sitten'), 1); // substitution
+      expect(levenshteinDistance('kitten', 'kittens'), 1); // insertion
+      expect(levenshteinDistance('kitten', 'itten'), 1); // deletion
+      expect(levenshteinDistance('kitten', 'sitting'), 3);
+      expect(levenshteinDistance('', 'abc'), 3);
+    });
+
+    test('normalizedSimilarity in 0..1 with empty-string edge', () {
+      expect(normalizedSimilarity('', ''), 1.0);
+      expect(normalizedSimilarity('house', 'house'), 1.0);
+      // One substitution in five characters → 0.8.
+      expect(normalizedSimilarity('house', 'mouse'), closeTo(0.8, 1e-9));
+      expect(normalizedSimilarity('abc', 'xyz'), 0.0);
+    });
+
+    AnswerEvaluation evalOf(String expected, String entered) {
+      return AnswerEvaluation(
+        correct: expected == entered,
+        fields: <FieldEvaluation>[
+          FieldEvaluation(
+            fieldName: 'A',
+            expected: expected,
+            entered: entered,
+            correct: expected == entered,
+          ),
+        ],
+      );
+    }
+
+    test('classifyOutcome: exact is always correct', () {
+      expect(
+        classifyOutcome(evalOf('haus', 'haus'), similarityEnabled: true),
+        AnswerOutcome.correct,
+      );
+    });
+
+    test('classifyOutcome: near-miss is Almost only when enabled', () {
+      final AnswerEvaluation nearMiss = evalOf('mouse', 'house'); // sim 0.8
+      expect(classifyOutcome(nearMiss), AnswerOutcome.wrong);
+      expect(
+        classifyOutcome(nearMiss, similarityEnabled: true),
+        AnswerOutcome.almost,
+      );
+    });
+
+    test('classifyOutcome: below threshold is plain wrong', () {
+      expect(
+        classifyOutcome(
+          evalOf('elephant', 'ant'),
+          similarityEnabled: true,
+        ),
+        AnswerOutcome.wrong,
+      );
+    });
+
+    test('Close enough rating records like Actually correct', () {
+      const DirectionStats before = DirectionStats(attempts: 2, correct: 1);
+      // "Close enough" is the relabeled AttemptRating.correct.
+      final DirectionStats after = recordAttempt(before, AttemptRating.correct);
+      expect(after.attempts, 3);
+      expect(after.correct, 2);
+    });
+  });
+
+  group('diff alignment and overlay', () {
+    test('alignTexts yields substitution/deletion/insertion ops', () {
+      expect(
+        alignTexts('cat', 'cot').map((DiffOp o) => o.kind).toList(),
+        <DiffOpKind>[
+          DiffOpKind.match,
+          DiffOpKind.substitute,
+          DiffOpKind.match,
+        ],
+      );
+      // "hello" vs "helo": the second 'l' is missing from the entry.
+      expect(
+        alignTexts('hello', 'helo').where(
+          (DiffOp o) => o.kind == DiffOpKind.delete,
+        ),
+        hasLength(1),
+      );
+      // "cat" vs "cats": trailing 's' is extra in the entry.
+      final List<DiffOp> extra = alignTexts('cat', 'cats')
+          .where((DiffOp o) => o.kind == DiffOpKind.insert)
+          .toList();
+      expect(extra, hasLength(1));
+      expect(extra.single.enteredIndex, 3);
+    });
+
+    test('buildDiffRuns paints only the substituted character red', () {
+      final List<RichTextRun> runs = buildDiffRuns(
+        expectedRuns: <RichTextRun>[
+          const RichTextRun(text: 'ca', bold: true),
+          const RichTextRun(text: 't', bold: true, italic: true),
+        ],
+        enteredPlain: 'cot',
+      );
+      // Expected plain stays "cat"; the 'a'→'o' substitution reddens only 'a'.
+      expect(runsText(runs), 'cat');
+      RunFormat formatAtChar(int index) =>
+          formatsFromRuns(runs)[index];
+      expect(formatAtChar(0).color, isNull); // 'c' untouched
+      expect(formatAtChar(0).bold, isTrue); // original bold kept
+      expect(formatAtChar(1).color, kDiffMarkColor); // 'a' reddened
+      expect(formatAtChar(1).bold, isTrue); // formatting otherwise preserved
+      expect(formatAtChar(2).color, isNull); // 't' untouched
+      expect(formatAtChar(2).italic, isTrue);
+    });
+
+    test('buildDiffRuns inserts a red underscore for a missing character', () {
+      final List<RichTextRun> runs = buildDiffRuns(
+        expectedRuns: <RichTextRun>[const RichTextRun(text: 'hello')],
+        enteredPlain: 'helo',
+      );
+      final String text = runsText(runs);
+      // The omitted character is rendered AS a single red "_" (it replaces the
+      // missed letter); either identical 'l' is a valid deletion site.
+      expect(text, anyOf('he_lo', 'hel_o'));
+      expect('_'.allMatches(text), hasLength(1));
+      final int underscore = text.indexOf('_');
+      expect(formatsFromRuns(runs)[underscore].color, kDiffMarkColor);
+    });
+
+    test('buildDiffRuns appends extras as red strikethrough', () {
+      final List<RichTextRun> runs = buildDiffRuns(
+        expectedRuns: <RichTextRun>[const RichTextRun(text: 'cat')],
+        enteredPlain: 'cats',
+      );
+      expect(runsText(runs), 'cats');
+      final RichTextRun extra = runs.last;
+      expect(extra.text, 's');
+      expect(extra.strikethrough, isTrue);
+      expect(extra.color, kDiffMarkColor);
+    });
+
+    test('buildDiffRuns paints nothing for normalization-ignored differences', () {
+      // Case- and accent-only differences with both options off must not be
+      // painted: the diff must equal the untouched expected runs.
+      const List<RichTextRun> expected = <RichTextRun>[
+        RichTextRun(text: 'Café', bold: true),
+      ];
+      final List<RichTextRun> runs = buildDiffRuns(
+        expectedRuns: expected,
+        enteredPlain: 'cafe',
+      );
+      expect(runs, expected);
+      expect(runs.every((RichTextRun r) => r.color == null), isTrue);
+    });
+
+    test('a fully correct answer diffs to the unchanged solution', () {
+      const List<RichTextRun> expected = <RichTextRun>[
+        RichTextRun(text: 'right', italic: true),
+      ];
+      expect(
+        buildDiffRuns(expectedRuns: expected, enteredPlain: 'right'),
+        expected,
+      );
+    });
   });
 
   group('session item ordering', () {

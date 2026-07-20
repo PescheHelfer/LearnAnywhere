@@ -49,14 +49,20 @@ final class LearnAnywhereRichTextRenderer {
     Color? fallbackDecorationColor,
   }) {
     final Color? explicitColor = _colorFromHex(run.color);
+    // Underline and strikethrough can both be on; combine them so neither is
+    // dropped.
+    final List<TextDecoration> decorations = <TextDecoration>[
+      if (run.underline) TextDecoration.underline,
+      if (run.strikethrough) TextDecoration.lineThrough,
+    ];
     return TextSpan(
       text: run.text,
       style: TextStyle(
         fontWeight: run.bold ? FontWeight.bold : FontWeight.normal,
         fontStyle: run.italic ? FontStyle.italic : FontStyle.normal,
-        decoration: run.underline
-            ? TextDecoration.underline
-            : TextDecoration.none,
+        decoration: decorations.isEmpty
+            ? TextDecoration.none
+            : TextDecoration.combine(decorations),
         decorationColor: explicitColor ?? fallbackDecorationColor,
         color: explicitColor,
         backgroundColor: _highlightColor(run.highlight, brightness),

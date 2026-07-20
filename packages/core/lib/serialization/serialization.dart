@@ -461,6 +461,7 @@ RichTextRun _decodeRichTextRun(Object? value, String path) {
     bold: _optionalBool(json['bold'], '$path.bold'),
     italic: _optionalBool(json['italic'], '$path.italic'),
     underline: _optionalBool(json['underline'], '$path.underline'),
+    strikethrough: _optionalBool(json['strikethrough'], '$path.strikethrough'),
     color: color,
     highlight: highlight,
   );
@@ -476,6 +477,9 @@ Map<String, Object?> _encodeRichTextRun(RichTextRun run) {
   }
   if (run.underline) {
     json['underline'] = true;
+  }
+  if (run.strikethrough) {
+    json['strikethrough'] = true;
   }
   if (run.color != null) {
     json['color'] = run.color;

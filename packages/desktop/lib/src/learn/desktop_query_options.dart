@@ -8,6 +8,8 @@ final class DesktopQueryOptions {
     this.completeInputRequired = true,
     this.caseSensitive = false,
     this.accentSensitive = false,
+    this.almostEnabled = false,
+    this.almostThreshold = kDefaultAlmostThreshold,
     this.showClock = false,
     this.timeLimitSeconds = 0,
     this.minimumAttemptsGuardEnabled = false,
@@ -27,6 +29,14 @@ final class DesktopQueryOptions {
 
   /// Whether accent differences are significant.
   final bool accentSensitive;
+
+  /// Whether a near-miss answer is flagged as "Almost" (offering "Close
+  /// enough") instead of a plain wrong.
+  final bool almostEnabled;
+
+  /// Similarity threshold (`0.0..1.0`) at or above which a non-exact answer is
+  /// classified as "Almost".
+  final double almostThreshold;
 
   /// Whether to show a running clock during learning.
   final bool showClock;
@@ -69,6 +79,8 @@ final class DesktopQueryOptions {
     bool? completeInputRequired,
     bool? caseSensitive,
     bool? accentSensitive,
+    bool? almostEnabled,
+    double? almostThreshold,
     bool? showClock,
     int? timeLimitSeconds,
     bool? minimumAttemptsGuardEnabled,
@@ -83,6 +95,8 @@ final class DesktopQueryOptions {
           completeInputRequired ?? this.completeInputRequired,
       caseSensitive: caseSensitive ?? this.caseSensitive,
       accentSensitive: accentSensitive ?? this.accentSensitive,
+      almostEnabled: almostEnabled ?? this.almostEnabled,
+      almostThreshold: almostThreshold ?? this.almostThreshold,
       showClock: showClock ?? this.showClock,
       timeLimitSeconds: timeLimitSeconds ?? this.timeLimitSeconds,
       minimumAttemptsGuardEnabled:

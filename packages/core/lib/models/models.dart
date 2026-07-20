@@ -170,6 +170,7 @@ final class RichTextRun {
     this.bold = false,
     this.italic = false,
     this.underline = false,
+    this.strikethrough = false,
     this.color,
     this.highlight,
   });
@@ -186,6 +187,9 @@ final class RichTextRun {
   /// Whether the run is underlined.
   final bool underline;
 
+  /// Whether the run is struck through.
+  final bool strikethrough;
+
   /// Optional foreground color as `#RRGGBB`.
   final String? color;
 
@@ -198,6 +202,7 @@ final class RichTextRun {
     bool? bold,
     bool? italic,
     bool? underline,
+    bool? strikethrough,
     String? color,
     String? highlight,
   }) {
@@ -206,6 +211,7 @@ final class RichTextRun {
       bold: bold ?? this.bold,
       italic: italic ?? this.italic,
       underline: underline ?? this.underline,
+      strikethrough: strikethrough ?? this.strikethrough,
       color: color ?? this.color,
       highlight: highlight ?? this.highlight,
     );
@@ -218,13 +224,14 @@ final class RichTextRun {
         other.bold == bold &&
         other.italic == italic &&
         other.underline == underline &&
+        other.strikethrough == strikethrough &&
         other.color == color &&
         other.highlight == highlight;
   }
 
   @override
   int get hashCode =>
-      Object.hash(text, bold, italic, underline, color, highlight);
+      Object.hash(text, bold, italic, underline, strikethrough, color, highlight);
 }
 
 /// A stored field value, either plain text or rich text runs.

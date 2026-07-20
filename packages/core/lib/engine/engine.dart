@@ -262,6 +262,236 @@ AnswerEvaluation evaluateAnswer({
   );
 }
 
+// --- Answer similarity and the "Almost" outcome -----------------------------
+
+/// The default similarity threshold for the "Almost" outcome (§9.1).
+const double kDefaultAlmostThreshold = 0.8;
+
+/// A display-only classification of a revealed answer.
+///
+/// This never changes what is recorded; it only drives the reveal-screen
+/// messaging and which rating labels are shown (see [classifyOutcome]).
+enum AnswerOutcome {
+  /// An exact match after normalization.
+  correct,
+
+  /// Not exact, but similar enough to flag as a near-miss (scored as wrong
+  /// unless the user overrides with "Close enough").
+  almost,
+
+  /// A plain wrong answer.
+  wrong,
+}
+
+/// The Levenshtein edit distance between [a] and [b] (in UTF-16 code units).
+///
+/// Insertions, deletions, and substitutions each cost 1. Runs in `O(a·b)` time
+/// with two rolling rows.
+int levenshteinDistance(String a, String b) {
+  if (identical(a, b) || a == b) {
+    return 0;
+  }
+  if (a.isEmpty) {
+    return b.length;
+  }
+  if (b.isEmpty) {
+    return a.length;
+  }
+  List<int> previous = List<int>.generate(b.length + 1, (int j) => j);
+  List<int> current = List<int>.filled(b.length + 1, 0);
+  for (var i = 1; i <= a.length; i += 1) {
+    current[0] = i;
+    for (var j = 1; j <= b.length; j += 1) {
+      final int cost = a[i - 1] == b[j - 1] ? 0 : 1;
+      current[j] = min(
+        min(current[j - 1] + 1, previous[j] + 1),
+        previous[j - 1] + cost,
+      );
+    }
+    final List<int> swap = previous;
+    previous = current;
+    current = swap;
+  }
+  return previous[b.length];
+}
+
+/// Normalized similarity of [a] and [b] in `0.0..1.0`.
+///
+/// Defined as `1 - editDistance / max(len(a), len(b))`. Two empty strings are
+/// perfectly similar (`1.0`). Callers pass already-normalized text so the
+/// similarity matches the case/accent rules used for scoring.
+double normalizedSimilarity(String a, String b) {
+  final int maxLen = max(a.length, b.length);
+  if (maxLen == 0) {
+    return 1;
+  }
+  return 1 - levenshteinDistance(a, b) / maxLen;
+}
+
+/// The whole-answer similarity of an [evaluation] in `0.0..1.0`.
+///
+/// The already-normalized per-field expected and entered values are joined (so
+/// a single-field answer is compared directly) and run through
+/// [normalizedSimilarity].
+double answerSimilarity(AnswerEvaluation evaluation) {
+  final String expected = evaluation.fields
+      .map((FieldEvaluation f) => f.expected)
+      .join('\n');
+  final String entered = evaluation.fields
+      .map((FieldEvaluation f) => f.entered)
+      .join('\n');
+  return normalizedSimilarity(expected, entered);
+}
+
+/// Classifies [evaluation] as correct, almost, or wrong (display only).
+///
+/// An exact match is always [AnswerOutcome.correct]. When [similarityEnabled]
+/// is on, a non-exact answer whose [answerSimilarity] reaches
+/// [similarityThreshold] is [AnswerOutcome.almost]; otherwise it is
+/// [AnswerOutcome.wrong]. This adds no stored statistic — it only selects the
+/// reveal messaging and rating labels.
+AnswerOutcome classifyOutcome(
+  AnswerEvaluation evaluation, {
+  bool similarityEnabled = false,
+  double similarityThreshold = kDefaultAlmostThreshold,
+}) {
+  if (evaluation.correct) {
+    return AnswerOutcome.correct;
+  }
+  if (!similarityEnabled) {
+    return AnswerOutcome.wrong;
+  }
+  return answerSimilarity(evaluation) >= similarityThreshold
+      ? AnswerOutcome.almost
+      : AnswerOutcome.wrong;
+}
+
+// --- Diff alignment (for reveal-screen highlighting) ------------------------
+
+/// The kind of a single [DiffOp] in an expected↔entered alignment.
+enum DiffOpKind {
+  /// The expected and entered characters match (after normalization).
+  match,
+
+  /// The student typed a different character in this position.
+  substitute,
+
+  /// A character present in the expected text but missing from the entry.
+  delete,
+
+  /// An extra character the student typed that the expected text lacks.
+  insert,
+}
+
+/// One aligned operation between the expected and entered text.
+///
+/// [expectedIndex] indexes the expected string (or `-1` for [DiffOpKind.insert]);
+/// [enteredIndex] indexes the entered string (or `-1` for [DiffOpKind.delete]).
+final class DiffOp {
+  /// Creates a diff operation.
+  const DiffOp(this.kind, this.expectedIndex, this.enteredIndex);
+
+  /// The kind of operation.
+  final DiffOpKind kind;
+
+  /// Index into the expected string, or `-1` for an insert.
+  final int expectedIndex;
+
+  /// Index into the entered string, or `-1` for a delete.
+  final int enteredIndex;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DiffOp &&
+      other.kind == kind &&
+      other.expectedIndex == expectedIndex &&
+      other.enteredIndex == enteredIndex;
+
+  @override
+  int get hashCode => Object.hash(kind, expectedIndex, enteredIndex);
+}
+
+/// Aligns [expected] to [entered] via Levenshtein backtrace, in text order.
+///
+/// [DiffOpKind.delete] marks a character present in [expected] but missing from
+/// [entered]; [DiffOpKind.insert] marks an extra character in [entered]. Pass
+/// the same normalization used for scoring (see [normalizeForDiff]) so that
+/// differences the evaluator ignores align as matches.
+List<DiffOp> alignTexts(String expected, String entered) {
+  final int m = expected.length;
+  final int n = entered.length;
+  final List<List<int>> dp = List<List<int>>.generate(
+    m + 1,
+    (int i) => List<int>.filled(n + 1, 0),
+  );
+  for (var i = 0; i <= m; i += 1) {
+    dp[i][0] = i;
+  }
+  for (var j = 0; j <= n; j += 1) {
+    dp[0][j] = j;
+  }
+  for (var i = 1; i <= m; i += 1) {
+    for (var j = 1; j <= n; j += 1) {
+      if (expected[i - 1] == entered[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] =
+            1 + min(dp[i - 1][j - 1], min(dp[i - 1][j], dp[i][j - 1]));
+      }
+    }
+  }
+
+  final List<DiffOp> ops = <DiffOp>[];
+  var i = m;
+  var j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && expected[i - 1] == entered[j - 1]) {
+      ops.add(DiffOp(DiffOpKind.match, i - 1, j - 1));
+      i -= 1;
+      j -= 1;
+    } else if (i > 0 && j > 0 && dp[i][j] == dp[i - 1][j - 1] + 1) {
+      ops.add(DiffOp(DiffOpKind.substitute, i - 1, j - 1));
+      i -= 1;
+      j -= 1;
+    } else if (i > 0 && dp[i][j] == dp[i - 1][j] + 1) {
+      ops.add(DiffOp(DiffOpKind.delete, i - 1, -1));
+      i -= 1;
+    } else {
+      ops.add(DiffOp(DiffOpKind.insert, -1, j - 1));
+      j -= 1;
+    }
+  }
+  return List<DiffOp>.unmodifiable(ops.reversed);
+}
+
+/// Position-preserving normalization for diff alignment.
+///
+/// Applies the same case/accent folding as [normalizeText] but per code unit
+/// and never changing the string's length, so an index into the result maps
+/// back to the same index in [value] (used to split the original runs). A fold
+/// that would change a character's length (a rare expansion such as `ß`→`ss`)
+/// is skipped for that character, keeping the 1:1 mapping intact.
+String normalizeForDiff(String value, TextMatchOptions options) {
+  final StringBuffer buffer = StringBuffer();
+  for (var i = 0; i < value.length; i += 1) {
+    var ch = value[i];
+    if (!options.caseSensitive) {
+      final String lower = ch.toLowerCase();
+      if (lower.length == 1) {
+        ch = lower;
+      }
+    }
+    if (!options.accentSensitive) {
+      final String stripped = removeDiacritics(ch);
+      if (stripped.length == 1) {
+        ch = stripped;
+      }
+    }
+    buffer.write(ch);
+  }
+  return buffer.toString();
+}
+
 /// Applies a final attempt rating to direction statistics.
 DirectionStats recordAttempt(
   DirectionStats stats,

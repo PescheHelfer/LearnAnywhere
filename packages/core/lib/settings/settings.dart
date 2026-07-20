@@ -4,6 +4,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import '../engine/engine.dart';
 import '../models/models.dart';
 
 /// Settings file format marker.
@@ -77,6 +78,8 @@ final class LearnAnywhereSettings {
     this.completeInputRequired = true,
     this.caseSensitive = false,
     this.accentSensitive = false,
+    this.almostEnabled = false,
+    this.almostThreshold = kDefaultAlmostThreshold,
     this.showClock = false,
     this.timeLimitSeconds = 0,
     this.minimumAttemptsGuardEnabled = false,
@@ -106,6 +109,14 @@ final class LearnAnywhereSettings {
 
   /// Whether accent differences are significant.
   final bool accentSensitive;
+
+  /// Whether a near-miss answer is flagged as "Almost" (offering "Close
+  /// enough") instead of a plain wrong.
+  final bool almostEnabled;
+
+  /// Similarity threshold (`0.0..1.0`) at or above which a non-exact answer is
+  /// classified as "Almost".
+  final double almostThreshold;
 
   /// Whether to show a running clock during learning.
   final bool showClock;
@@ -164,6 +175,8 @@ final class LearnAnywhereSettings {
     bool? completeInputRequired,
     bool? caseSensitive,
     bool? accentSensitive,
+    bool? almostEnabled,
+    double? almostThreshold,
     bool? showClock,
     int? timeLimitSeconds,
     bool? minimumAttemptsGuardEnabled,
@@ -190,6 +203,8 @@ final class LearnAnywhereSettings {
           completeInputRequired ?? this.completeInputRequired,
       caseSensitive: caseSensitive ?? this.caseSensitive,
       accentSensitive: accentSensitive ?? this.accentSensitive,
+      almostEnabled: almostEnabled ?? this.almostEnabled,
+      almostThreshold: almostThreshold ?? this.almostThreshold,
       showClock: showClock ?? this.showClock,
       timeLimitSeconds: timeLimitSeconds ?? this.timeLimitSeconds,
       minimumAttemptsGuardEnabled:
@@ -218,6 +233,8 @@ final class LearnAnywhereSettings {
         other.completeInputRequired == completeInputRequired &&
         other.caseSensitive == caseSensitive &&
         other.accentSensitive == accentSensitive &&
+        other.almostEnabled == almostEnabled &&
+        other.almostThreshold == almostThreshold &&
         other.showClock == showClock &&
         other.timeLimitSeconds == timeLimitSeconds &&
         other.minimumAttemptsGuardEnabled == minimumAttemptsGuardEnabled &&
@@ -242,6 +259,8 @@ final class LearnAnywhereSettings {
     completeInputRequired,
     caseSensitive,
     accentSensitive,
+    almostEnabled,
+    almostThreshold,
     showClock,
     timeLimitSeconds,
     minimumAttemptsGuardEnabled,
@@ -285,6 +304,8 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
     'completeInputRequired': settings.completeInputRequired,
     'caseSensitive': settings.caseSensitive,
     'accentSensitive': settings.accentSensitive,
+    'almostEnabled': settings.almostEnabled,
+    'almostThreshold': settings.almostThreshold,
     'showClock': settings.showClock,
     'timeLimitSeconds': settings.timeLimitSeconds,
     'minimumAttemptsGuardEnabled': settings.minimumAttemptsGuardEnabled,
@@ -322,6 +343,11 @@ LearnAnywhereSettings decodeSettings(Object? value) {
     ),
     caseSensitive: _bool(json['caseSensitive'], defaults.caseSensitive),
     accentSensitive: _bool(json['accentSensitive'], defaults.accentSensitive),
+    almostEnabled: _bool(json['almostEnabled'], defaults.almostEnabled),
+    almostThreshold: _double(
+      json['almostThreshold'],
+      defaults.almostThreshold,
+    ),
     showClock: _bool(json['showClock'], defaults.showClock),
     timeLimitSeconds: _int(json['timeLimitSeconds'], defaults.timeLimitSeconds),
     minimumAttemptsGuardEnabled: _bool(
