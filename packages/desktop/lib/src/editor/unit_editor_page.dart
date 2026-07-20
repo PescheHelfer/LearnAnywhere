@@ -774,7 +774,6 @@ final class _EditorBodyState extends State<_EditorBody> {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final ColorScheme colors = Theme.of(context).colorScheme;
     final Brightness brightness = Theme.of(context).brightness;
 
     final LearningUnit unit = widget.deck.units[widget.currentIndex];
@@ -915,42 +914,26 @@ final class _EditorBodyState extends State<_EditorBody> {
             // Fixed monospace column widths (see FieldRow) can exceed the
             // viewport for long fields, so the grid scrolls horizontally
             // rather than shrinking the value boxes to fit.
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border.all(color: colors.outlineVariant),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(7),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      for (int i = 0; i < fields.length; i++) ...<Widget>[
-                        if (i > 0)
-                          Container(height: 1, color: colors.outlineVariant),
-                        _GridRow(
-                          key: ValueKey<String>(
-                            'editor-field-${widget.currentIndex}-$i-${fields[i].name}',
-                          ),
-                          field: fields[i],
-                          value: unit.valueForFieldId(fields[i].id),
-                          colorMemory: widget.colorMemory,
-                          labelWidth: labelWidth,
-                          autofocus: i == autoFocusIndex,
-                          moveToEnd: allFilled && i == autoFocusIndex,
-                          onNext: i == fields.length - 1 ? widget.onNext : null,
-                          onChanged: (FieldValue v) {
-                            widget.onFieldChanged(fields[i].id, v);
-                          },
-                          onFocusGained: _registerActive,
-                        ),
-                      ],
-                    ],
+            FieldRowGrid(
+              rows: <Widget>[
+                for (int i = 0; i < fields.length; i++)
+                  _GridRow(
+                    key: ValueKey<String>(
+                      'editor-field-${widget.currentIndex}-$i-${fields[i].name}',
+                    ),
+                    field: fields[i],
+                    value: unit.valueForFieldId(fields[i].id),
+                    colorMemory: widget.colorMemory,
+                    labelWidth: labelWidth,
+                    autofocus: i == autoFocusIndex,
+                    moveToEnd: allFilled && i == autoFocusIndex,
+                    onNext: i == fields.length - 1 ? widget.onNext : null,
+                    onChanged: (FieldValue v) {
+                      widget.onFieldChanged(fields[i].id, v);
+                    },
+                    onFocusGained: _registerActive,
                   ),
-                ),
-              ),
+              ],
             ),
             const SizedBox(height: LearnAnywhereTokens.gapLarge),
             // ── Action buttons (bottom) ────────────────────────────────────
@@ -1114,6 +1097,17 @@ final class _GridRowState extends State<_GridRow> {
   void _onFocusChanged() {
     if (_focusNode.hasFocus) {
       widget.onFocusGained(_controller, widget.colorMemory, _focusNode);
+      // Keep the edited field visible when a long (wide) field would otherwise
+      // sit past the horizontally-scrolled grid's right edge.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Scrollable.ensureVisible(
+          context,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+        );
+      });
     }
   }
 

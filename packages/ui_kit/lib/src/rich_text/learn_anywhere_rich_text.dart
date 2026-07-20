@@ -48,7 +48,7 @@ final class LearnAnywhereRichTextRenderer {
     Brightness brightness = Brightness.light,
     Color? fallbackDecorationColor,
   }) {
-    final Color? explicitColor = _colorFromHex(run.color);
+    final Color? explicitColor = _colorFromHex(run.color, brightness);
     // Underline and strikethrough can both be on; combine them so neither is
     // dropped.
     final List<TextDecoration> decorations = <TextDecoration>[
@@ -70,11 +70,13 @@ final class LearnAnywhereRichTextRenderer {
     );
   }
 
-  static Color? _colorFromHex(String? value) {
+  static Color? _colorFromHex(String? value, Brightness brightness) {
     if (value == null) {
       return null;
     }
-    return colorFromHex(value);
+    return colorFromHex(
+      LearnAnywherePalette.diffMarkColorForBrightness(value, brightness),
+    );
   }
 
   static Color? _highlightColor(String? value, Brightness brightness) {

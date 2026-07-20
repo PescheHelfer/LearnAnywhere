@@ -310,7 +310,9 @@ List<RichTextRun> reconcileRuns({
     formats.add(insertedFormat);
   }
   for (var i = oldLen - suffix; i < oldLen; i += 1) {
-    formats.add(i >= 0 && i < oldFormats.length ? oldFormats[i] : insertedFormat);
+    formats.add(
+      i >= 0 && i < oldFormats.length ? oldFormats[i] : insertedFormat,
+    );
   }
   return runsFromFormats(newText, formats);
 }
@@ -327,8 +329,8 @@ const String kDiffMarkColor = '#D32F2F';
 ///   [kDiffMarkColor];
 /// - a **missing** character (in the solution, absent from the entry) is marked
 ///   by a synthetic red `_` run inserted at that position;
-/// - **extra** characters the student typed are appended after the solution as a
-///   red, struck-through run.
+/// - **extra** characters the student typed are shown in place, at the position
+///   they were typed, as a red, struck-through run.
 ///
 /// Alignment runs on [normalizeForDiff] of both texts (the same case/accent
 /// folding used for scoring), so a difference the evaluator ignores — a case or
@@ -347,14 +349,11 @@ List<RichTextRun> buildDiffRuns({
   );
 
   final List<RichTextRun> result = <RichTextRun>[];
-  final StringBuffer extras = StringBuffer();
   for (final DiffOp op in ops) {
     switch (op.kind) {
       case DiffOpKind.match:
         result.add(
-          expectedFormats[op.expectedIndex].applyTo(
-            expected[op.expectedIndex],
-          ),
+          expectedFormats[op.expectedIndex].applyTo(expected[op.expectedIndex]),
         );
       case DiffOpKind.substitute:
         result.add(
@@ -363,19 +362,28 @@ List<RichTextRun> buildDiffRuns({
               .applyTo(expected[op.expectedIndex]),
         );
       case DiffOpKind.delete:
-        result.add(const RichTextRun(text: '_', color: kDiffMarkColor));
+        // The expected character is missing from the entry. Show the actual
+        // character (so the complete solution stays visible), marked in the
+        // diff colour and underlined to signal it was omitted rather than
+        // mistyped.
+        result.add(
+          expectedFormats[op.expectedIndex]
+              .withColor(kDiffMarkColor)
+              .copyWith(underline: true)
+              .applyTo(expected[op.expectedIndex]),
+        );
       case DiffOpKind.insert:
-        extras.write(enteredPlain[op.enteredIndex]);
+        // An extra character the student typed. Show it in place — struck
+        // through, at the position it was typed — so the correction stays where
+        // the mistake is. Adjacent extras merge in [normalizeRuns].
+        result.add(
+          RichTextRun(
+            text: enteredPlain[op.enteredIndex],
+            color: kDiffMarkColor,
+            strikethrough: true,
+          ),
+        );
     }
-  }
-  if (extras.isNotEmpty) {
-    result.add(
-      RichTextRun(
-        text: extras.toString(),
-        color: kDiffMarkColor,
-        strikethrough: true,
-      ),
-    );
   }
   return normalizeRuns(result);
 }

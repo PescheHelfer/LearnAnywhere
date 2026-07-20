@@ -55,9 +55,9 @@ void main() {
       expect(deck.mask.maskId, mask.maskId);
       // Field ids form one 0-based space across both categories.
       expect(
-        deck.mask.categories.expand((CategoryDefinition c) => c.fields).map(
-          (FieldDefinition f) => f.id,
-        ),
+        deck.mask.categories
+            .expand((CategoryDefinition c) => c.fields)
+            .map((FieldDefinition f) => f.id),
         <int>[0, 1, 2, 3, 4, 5],
       );
       // A unit in the second category references its own (mask-wide) field ids.
@@ -164,81 +164,87 @@ void main() {
       );
     }
 
-    test('rename mask, direction labels, category and fields are compatible', () {
-      final LearningMask renamed = compatMask().copyWith(
-        name: 'Renamed',
-        direction1Label: 'X',
-        direction2Label: 'Y',
-        categories: <CategoryDefinition>[
-          const CategoryDefinition(
-            id: 0,
-            name: 'Renamed Noun',
-            fields: <FieldDefinition>[
-              // Same ids, different names/roles/equalGroup: all non-breaking.
-              FieldDefinition(
-                id: 0,
-                name: 'German word',
-                length: 40,
-                equalGroup: 3,
-                role1: FieldRole.answer,
-                role2: FieldRole.question,
-              ),
-              FieldDefinition(
-                id: 1,
-                name: 'French word',
-                length: 40,
-                equalGroup: 3,
-                role1: FieldRole.question,
-                role2: FieldRole.answer,
-              ),
-            ],
-          ),
-          compatVerbCategory(),
-        ],
-      );
-      expect(check(renamed).isCompatible, isTrue);
-    });
+    test(
+      'rename mask, direction labels, category and fields are compatible',
+      () {
+        final LearningMask renamed = compatMask().copyWith(
+          name: 'Renamed',
+          direction1Label: 'X',
+          direction2Label: 'Y',
+          categories: <CategoryDefinition>[
+            const CategoryDefinition(
+              id: 0,
+              name: 'Renamed Noun',
+              fields: <FieldDefinition>[
+                // Same ids, different names/roles/equalGroup: all non-breaking.
+                FieldDefinition(
+                  id: 0,
+                  name: 'German word',
+                  length: 40,
+                  equalGroup: 3,
+                  role1: FieldRole.answer,
+                  role2: FieldRole.question,
+                ),
+                FieldDefinition(
+                  id: 1,
+                  name: 'French word',
+                  length: 40,
+                  equalGroup: 3,
+                  role1: FieldRole.question,
+                  role2: FieldRole.answer,
+                ),
+              ],
+            ),
+            compatVerbCategory(),
+          ],
+        );
+        expect(check(renamed).isCompatible, isTrue);
+      },
+    );
 
-    test('adding a category or field and increasing a length is compatible', () {
-      final CategoryDefinition noun = CategoryDefinition(
-        id: 0,
-        name: 'Noun',
-        fields: <FieldDefinition>[
-          // id 0 length increased 40 -> 80.
-          const FieldDefinition(
-            id: 0,
-            name: 'DE',
-            length: 80,
-            equalGroup: 0,
-            role1: FieldRole.question,
-            role2: FieldRole.answer,
-          ),
-          compatFrField(),
-          // New field id 9 added.
-          const FieldDefinition(
-            id: 9,
-            name: 'Extra',
-            length: 40,
-            equalGroup: 0,
-            role1: FieldRole.remark,
-            role2: FieldRole.remark,
-          ),
-        ],
-      );
-      final LearningMask expanded = compatMask().copyWith(
-        categories: <CategoryDefinition>[
-          noun,
-          compatVerbCategory(),
-          // New category id 5 added.
-          const CategoryDefinition(
-            id: 5,
-            name: 'Adjective',
-            fields: <FieldDefinition>[],
-          ),
-        ],
-      );
-      expect(check(expanded).isCompatible, isTrue);
-    });
+    test(
+      'adding a category or field and increasing a length is compatible',
+      () {
+        final CategoryDefinition noun = CategoryDefinition(
+          id: 0,
+          name: 'Noun',
+          fields: <FieldDefinition>[
+            // id 0 length increased 40 -> 80.
+            const FieldDefinition(
+              id: 0,
+              name: 'DE',
+              length: 80,
+              equalGroup: 0,
+              role1: FieldRole.question,
+              role2: FieldRole.answer,
+            ),
+            compatFrField(),
+            // New field id 9 added.
+            const FieldDefinition(
+              id: 9,
+              name: 'Extra',
+              length: 40,
+              equalGroup: 0,
+              role1: FieldRole.remark,
+              role2: FieldRole.remark,
+            ),
+          ],
+        );
+        final LearningMask expanded = compatMask().copyWith(
+          categories: <CategoryDefinition>[
+            noun,
+            compatVerbCategory(),
+            // New category id 5 added.
+            const CategoryDefinition(
+              id: 5,
+              name: 'Adjective',
+              fields: <FieldDefinition>[],
+            ),
+          ],
+        );
+        expect(check(expanded).isCompatible, isTrue);
+      },
+    );
 
     test('reordering categories and fields is compatible', () {
       final LearningMask reordered = compatMask().copyWith(
@@ -273,7 +279,11 @@ void main() {
         categories: <CategoryDefinition>[
           compatNounCategory(),
           compatVerbCategory(),
-          const CategoryDefinition(id: 7, name: 'Unused', fields: <FieldDefinition>[]),
+          const CategoryDefinition(
+            id: 7,
+            name: 'Unused',
+            fields: <FieldDefinition>[],
+          ),
         ],
       );
       // Deleting id 7 (no units) from that mask is compatible.
@@ -350,7 +360,10 @@ void main() {
       );
       final MaskCompatibilityResult tooShort = check(shrinkTo(5));
       expect(tooShort.isCompatible, isFalse);
-      expect(tooShort.reasons.single.kind, MaskBreakingKind.fieldLengthTooShort);
+      expect(
+        tooShort.reasons.single.kind,
+        MaskBreakingKind.fieldLengthTooShort,
+      );
       expect(tooShort.reasons.single.newLength, 5);
       expect(check(shrinkTo(6)).isCompatible, isTrue);
     });
@@ -711,14 +724,22 @@ void main() {
         'sample.vok',
       );
     });
-
   });
 
   group('statistics remapping', () {
     List<UnitStats> seed() => <UnitStats>[
-      const UnitStats(index: 1, direction1: DirectionStats(attempts: 1, correct: 1)),
-      const UnitStats(index: 2, direction1: DirectionStats(attempts: 2, correct: 2)),
-      const UnitStats(index: 3, direction1: DirectionStats(attempts: 3, correct: 3)),
+      const UnitStats(
+        index: 1,
+        direction1: DirectionStats(attempts: 1, correct: 1),
+      ),
+      const UnitStats(
+        index: 2,
+        direction1: DirectionStats(attempts: 2, correct: 2),
+      ),
+      const UnitStats(
+        index: 3,
+        direction1: DirectionStats(attempts: 3, correct: 3),
+      ),
     ];
 
     test('resizeUnitStats keeps indices, pads growth, trims shrink', () {
@@ -833,22 +854,30 @@ void main() {
         RichTextRun(text: 'abc', italic: true),
       ];
       expect(
-        applyFormatToRange(source, 3, 3, (RunFormat f) => f.copyWith(bold: true)),
+        applyFormatToRange(
+          source,
+          3,
+          3,
+          (RunFormat f) => f.copyWith(bold: true),
+        ),
         source,
       );
     });
 
-    test('formatAt inherits the preceding character, or the first when at 0', () {
-      final List<RichTextRun> runs = <RichTextRun>[
-        const RichTextRun(text: 'ab'),
-        const RichTextRun(text: 'cd', bold: true),
-      ];
-      expect(formatAt(runs, 0).bold, isFalse);
-      expect(formatAt(runs, 2).bold, isFalse);
-      expect(formatAt(runs, 3).bold, isTrue);
-      expect(formatAt(runs, 4).bold, isTrue);
-      expect(formatAt(const <RichTextRun>[], 0), RunFormat.none);
-    });
+    test(
+      'formatAt inherits the preceding character, or the first when at 0',
+      () {
+        final List<RichTextRun> runs = <RichTextRun>[
+          const RichTextRun(text: 'ab'),
+          const RichTextRun(text: 'cd', bold: true),
+        ];
+        expect(formatAt(runs, 0).bold, isFalse);
+        expect(formatAt(runs, 2).bold, isFalse);
+        expect(formatAt(runs, 3).bold, isTrue);
+        expect(formatAt(runs, 4).bold, isTrue);
+        expect(formatAt(const <RichTextRun>[], 0), RunFormat.none);
+      },
+    );
 
     test('reconcileRuns keeps surrounding formatting on insertion', () {
       final List<RichTextRun> runs = <RichTextRun>[
@@ -904,17 +933,19 @@ void main() {
     });
 
     test('rich text survives a serialization round-trip with mixed runs', () {
-      final FieldValue value = FieldValue.rich(applyFormatToRange(
+      final FieldValue value = FieldValue.rich(
         applyFormatToRange(
-          <RichTextRun>[const RichTextRun(text: 'mixed format')],
-          0,
-          5,
-          (RunFormat f) => f.copyWith(bold: true).withColor('#B00020'),
+          applyFormatToRange(
+            <RichTextRun>[const RichTextRun(text: 'mixed format')],
+            0,
+            5,
+            (RunFormat f) => f.copyWith(bold: true).withColor('#B00020'),
+          ),
+          6,
+          12,
+          (RunFormat f) => f.withHighlight('#FFE066'),
         ),
-        6,
-        12,
-        (RunFormat f) => f.withHighlight('#FFE066'),
-      ));
+      );
 
       final LearningDeck deck = LearningDeck(
         mask: sampleMask(),
@@ -1010,10 +1041,7 @@ void main() {
 
     test('classifyOutcome: below threshold is plain wrong', () {
       expect(
-        classifyOutcome(
-          evalOf('elephant', 'ant'),
-          similarityEnabled: true,
-        ),
+        classifyOutcome(evalOf('elephant', 'ant'), similarityEnabled: true),
         AnswerOutcome.wrong,
       );
     });
@@ -1031,23 +1059,21 @@ void main() {
     test('alignTexts yields substitution/deletion/insertion ops', () {
       expect(
         alignTexts('cat', 'cot').map((DiffOp o) => o.kind).toList(),
-        <DiffOpKind>[
-          DiffOpKind.match,
-          DiffOpKind.substitute,
-          DiffOpKind.match,
-        ],
+        <DiffOpKind>[DiffOpKind.match, DiffOpKind.substitute, DiffOpKind.match],
       );
       // "hello" vs "helo": the second 'l' is missing from the entry.
       expect(
-        alignTexts('hello', 'helo').where(
-          (DiffOp o) => o.kind == DiffOpKind.delete,
-        ),
+        alignTexts(
+          'hello',
+          'helo',
+        ).where((DiffOp o) => o.kind == DiffOpKind.delete),
         hasLength(1),
       );
       // "cat" vs "cats": trailing 's' is extra in the entry.
-      final List<DiffOp> extra = alignTexts('cat', 'cats')
-          .where((DiffOp o) => o.kind == DiffOpKind.insert)
-          .toList();
+      final List<DiffOp> extra = alignTexts(
+        'cat',
+        'cats',
+      ).where((DiffOp o) => o.kind == DiffOpKind.insert).toList();
       expect(extra, hasLength(1));
       expect(extra.single.enteredIndex, 3);
     });
@@ -1062,8 +1088,7 @@ void main() {
       );
       // Expected plain stays "cat"; the 'a'→'o' substitution reddens only 'a'.
       expect(runsText(runs), 'cat');
-      RunFormat formatAtChar(int index) =>
-          formatsFromRuns(runs)[index];
+      RunFormat formatAtChar(int index) => formatsFromRuns(runs)[index];
       expect(formatAtChar(0).color, isNull); // 'c' untouched
       expect(formatAtChar(0).bold, isTrue); // original bold kept
       expect(formatAtChar(1).color, kDiffMarkColor); // 'a' reddened
@@ -1072,21 +1097,28 @@ void main() {
       expect(formatAtChar(2).italic, isTrue);
     });
 
-    test('buildDiffRuns inserts a red underscore for a missing character', () {
+    test('buildDiffRuns shows a missing character in red and underlined', () {
       final List<RichTextRun> runs = buildDiffRuns(
         expectedRuns: <RichTextRun>[const RichTextRun(text: 'hello')],
         enteredPlain: 'helo',
       );
       final String text = runsText(runs);
-      // The omitted character is rendered AS a single red "_" (it replaces the
-      // missed letter); either identical 'l' is a valid deletion site.
-      expect(text, anyOf('he_lo', 'hel_o'));
-      expect('_'.allMatches(text), hasLength(1));
-      final int underscore = text.indexOf('_');
-      expect(formatsFromRuns(runs)[underscore].color, kDiffMarkColor);
+      // The omitted character stays visible as its real letter, so the complete
+      // solution is shown; it is marked in the diff colour and underlined to
+      // signal it was missed. Either identical 'l' is a valid deletion site.
+      expect(text, 'hello');
+      final List<RunFormat> formats = formatsFromRuns(runs);
+      final Iterable<int> marked = <int>[
+        for (int i = 0; i < formats.length; i++)
+          if (formats[i].color == kDiffMarkColor) i,
+      ];
+      expect(marked, hasLength(1));
+      final int missing = marked.single;
+      expect(formats[missing].underline, isTrue);
+      expect(text[missing], 'l');
     });
 
-    test('buildDiffRuns appends extras as red strikethrough', () {
+    test('buildDiffRuns marks a trailing extra as red strikethrough', () {
       final List<RichTextRun> runs = buildDiffRuns(
         expectedRuns: <RichTextRun>[const RichTextRun(text: 'cat')],
         enteredPlain: 'cats',
@@ -1098,19 +1130,44 @@ void main() {
       expect(extra.color, kDiffMarkColor);
     });
 
-    test('buildDiffRuns paints nothing for normalization-ignored differences', () {
-      // Case- and accent-only differences with both options off must not be
-      // painted: the diff must equal the untouched expected runs.
-      const List<RichTextRun> expected = <RichTextRun>[
-        RichTextRun(text: 'Café', bold: true),
-      ];
+    test('buildDiffRuns keeps an extra character in place, not at the end', () {
+      // "sausage" vs "saussage": the extra 's' must be struck through where it
+      // was typed (after "saus"), not appended to the end.
       final List<RichTextRun> runs = buildDiffRuns(
-        expectedRuns: expected,
-        enteredPlain: 'cafe',
+        expectedRuns: <RichTextRun>[const RichTextRun(text: 'sausage')],
+        enteredPlain: 'saussage',
       );
-      expect(runs, expected);
-      expect(runs.every((RichTextRun r) => r.color == null), isTrue);
+      final String text = runsText(runs);
+      expect(text, 'saussage');
+      final List<RunFormat> formats = formatsFromRuns(runs);
+      final Iterable<int> struck = <int>[
+        for (int i = 0; i < formats.length; i++)
+          if (formats[i].strikethrough) i,
+      ];
+      // Exactly one struck-through character, and it sits mid-word (not last).
+      expect(struck, hasLength(1));
+      final int extra = struck.single;
+      expect(text[extra], 's');
+      expect(extra, lessThan(text.length - 1));
+      expect(formats[extra].color, kDiffMarkColor);
     });
+
+    test(
+      'buildDiffRuns paints nothing for normalization-ignored differences',
+      () {
+        // Case- and accent-only differences with both options off must not be
+        // painted: the diff must equal the untouched expected runs.
+        const List<RichTextRun> expected = <RichTextRun>[
+          RichTextRun(text: 'Café', bold: true),
+        ];
+        final List<RichTextRun> runs = buildDiffRuns(
+          expectedRuns: expected,
+          enteredPlain: 'cafe',
+        );
+        expect(runs, expected);
+        expect(runs.every((RichTextRun r) => r.color == null), isTrue);
+      },
+    );
 
     test('a fully correct answer diffs to the unchanged solution', () {
       const List<RichTextRun> expected = <RichTextRun>[
@@ -1303,8 +1360,7 @@ void main() {
     // keeps its source character (shown structural chars and revealed letters).
     String render(String text, int level) => maskFieldValue(text, level)
         .map(
-          (MaskCell cell) =>
-              cell.kind == MaskCellKind.blank ? '_' : cell.char,
+          (MaskCell cell) => cell.kind == MaskCellKind.blank ? '_' : cell.char,
         )
         .join();
 
@@ -1341,8 +1397,10 @@ void main() {
       expect(render('an', 1), 'an');
       expect(render('a', 1), 'a');
       expect(
-        maskFieldValue('an', 1)
-            .every((MaskCell cell) => cell.kind == MaskCellKind.revealed),
+        maskFieldValue(
+          'an',
+          1,
+        ).every((MaskCell cell) => cell.kind == MaskCellKind.revealed),
         isTrue,
       );
     });
@@ -1409,8 +1467,9 @@ void main() {
         const DirectionStats(attempts: 2, correct: 2),
       );
       expect(
-        seeded.levels.values
-            .every((DirectionStats s) => s == const DirectionStats()),
+        seeded.levels.values.every(
+          (DirectionStats s) => s == const DirectionStats(),
+        ),
         isTrue,
       );
     });
@@ -1463,8 +1522,9 @@ void main() {
     });
 
     test('manual override moves the level and resets that level to 0/0', () {
-      final LevelDirectionStats start = LevelDirectionStats.fresh(3)
-          .withLevelStats(3, const DirectionStats(attempts: 5, correct: 5));
+      final LevelDirectionStats start = LevelDirectionStats.fresh(
+        3,
+      ).withLevelStats(3, const DirectionStats(attempts: 5, correct: 5));
       final LevelDirectionStats moved = setLevelLearningLevel(start, 1);
       expect(moved.currentLevel, 1);
       expect(moved.levels[1], const DirectionStats());
@@ -1476,8 +1536,9 @@ void main() {
     test('derives the active pool and needs both directions when both', () {
       final LearningDeck deck = sampleDeck();
       // Unit 1: dir1 mastered at level 0, dir2 still at level 2.
-      final LevelDirectionStats masteredDir = LevelDirectionStats.fresh(0)
-          .withLevelStats(0, const DirectionStats(attempts: 1, correct: 1));
+      final LevelDirectionStats masteredDir = LevelDirectionStats.fresh(
+        0,
+      ).withLevelStats(0, const DirectionStats(attempts: 1, correct: 1));
       final List<LevelUnitStats> levelStats = <LevelUnitStats>[
         LevelUnitStats(
           index: 1,
@@ -1492,14 +1553,11 @@ void main() {
         levelStatistics: levelStats,
         parameters: params,
       );
-      expect(
-        pool,
-        const <SessionItem>[
-          SessionItem(unitIndex: 1, direction: QueryDirection.direction2),
-          SessionItem(unitIndex: 2, direction: QueryDirection.direction1),
-          SessionItem(unitIndex: 2, direction: QueryDirection.direction2),
-        ],
-      );
+      expect(pool, const <SessionItem>[
+        SessionItem(unitIndex: 1, direction: QueryDirection.direction2),
+        SessionItem(unitIndex: 2, direction: QueryDirection.direction1),
+        SessionItem(unitIndex: 2, direction: QueryDirection.direction2),
+      ]);
     });
   });
 

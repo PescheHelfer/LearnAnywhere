@@ -1623,7 +1623,6 @@ final class _SessionView extends StatelessWidget {
     List<FieldDefinition> visibleFields,
     LearningUnit unit,
   ) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
     final double labelWidth = computeFieldLabelWidth(context, deck.mask);
     int? firstAnswerId;
     int? lastAnswerId;
@@ -1633,152 +1632,116 @@ final class _SessionView extends StatelessWidget {
         lastAnswerId = f.id;
       }
     }
-    // Fixed monospace column widths (see FieldRow) can exceed the viewport
-    // for long fields, so the grid scrolls horizontally rather than shrinking
-    // the value boxes to fit.
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: colors.outlineVariant),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(7),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              for (int i = 0; i < visibleFields.length; i++) ...<Widget>[
-                if (i > 0) Container(height: 1, color: colors.outlineVariant),
-                Builder(
-                  builder: (BuildContext ctx) {
-                    final FieldDefinition field = visibleFields[i];
-                    final FieldRole role = field.roleFor(item.direction);
-                    final double bgOpacity =
-                        Theme.of(ctx).brightness == Brightness.light
-                        ? 0.15
-                        : 0.10;
+    // Fixed monospace column widths (see FieldRow) can exceed the viewport for
+    // long fields, so FieldRowGrid scrolls the grid horizontally rather than
+    // shrinking the value boxes to fit.
+    return FieldRowGrid(
+      rows: <Widget>[
+        for (int i = 0; i < visibleFields.length; i++)
+          Builder(
+            builder: (BuildContext ctx) {
+              final FieldDefinition field = visibleFields[i];
+              final FieldRole role = field.roleFor(item.direction);
+              final double bgOpacity =
+                  Theme.of(ctx).brightness == Brightness.light ? 0.15 : 0.10;
 
-                    final bool showUserAnswer =
-                        role == FieldRole.answer &&
+              final bool showUserAnswer =
+                  role == FieldRole.answer &&
+                  evaluation != null &&
+                  parameters.withInput &&
+                  !showSolution;
+
+              final Color accentColor;
+              final Color bgColor;
+              final FieldValue displayValue;
+
+              if (showUserAnswer) {
+                final ColorScheme rowColors = Theme.of(ctx).colorScheme;
+                accentColor = rowColors.outline;
+                bgColor = rowColors.surfaceContainerHighest;
+                displayValue = FieldValue.plain(enteredAnswers[field.id] ?? '');
+              } else {
+                accentColor = switch (role) {
+                  FieldRole.question => const Color.fromRGBO(0, 150, 180, 1),
+                  FieldRole.answer => const Color.fromRGBO(0, 160, 80, 1),
+                  FieldRole.remark => const Color.fromRGBO(200, 140, 0, 1),
+                };
+                bgColor = accentColor.withValues(alpha: bgOpacity);
+                final FieldValue expectedValue = unit.valueForFieldId(field.id);
+                // On the solution view, overlay the student's mistakes on
+                // the answer field's runs (substitutions red, missing chars
+                // as red "_", extras as red strikethrough). A fully correct
+                // answer diffs to the unchanged solution.
+                displayValue =
+                    (role == FieldRole.answer &&
                         evaluation != null &&
-                        parameters.withInput &&
-                        !showSolution;
-
-                    final Color accentColor;
-                    final Color bgColor;
-                    final FieldValue displayValue;
-
-                    if (showUserAnswer) {
-                      final ColorScheme rowColors = Theme.of(ctx).colorScheme;
-                      accentColor = rowColors.outline;
-                      bgColor = rowColors.surfaceContainerHighest;
-                      displayValue = FieldValue.plain(
-                        enteredAnswers[field.id] ?? '',
-                      );
-                    } else {
-                      accentColor = switch (role) {
-                        FieldRole.question => const Color.fromRGBO(
-                          0,
-                          150,
-                          180,
-                          1,
+                        parameters.withInput)
+                    ? FieldValue.rich(
+                        buildDiffRuns(
+                          expectedRuns: _runsOf(expectedValue),
+                          enteredPlain: enteredAnswers[field.id] ?? '',
+                          options: options.evaluationOptions,
                         ),
-                        FieldRole.answer => const Color.fromRGBO(0, 160, 80, 1),
-                        FieldRole.remark => const Color.fromRGBO(
-                          200,
-                          140,
-                          0,
-                          1,
-                        ),
-                      };
-                      bgColor = accentColor.withValues(alpha: bgOpacity);
-                      final FieldValue expectedValue = unit.valueForFieldId(
-                        field.id,
-                      );
-                      // On the solution view, overlay the student's mistakes on
-                      // the answer field's runs (substitutions red, missing chars
-                      // as red "_", extras as red strikethrough). A fully correct
-                      // answer diffs to the unchanged solution.
-                      displayValue =
-                          (role == FieldRole.answer &&
-                              evaluation != null &&
-                              parameters.withInput)
-                          ? FieldValue.rich(
-                              buildDiffRuns(
-                                expectedRuns: _runsOf(expectedValue),
-                                enteredPlain: enteredAnswers[field.id] ?? '',
-                                options: options.evaluationOptions,
-                              ),
-                            )
-                          : expectedValue;
-                    }
+                      )
+                    : expectedValue;
+              }
 
-                    final Widget? override =
-                        (_isLevelLearning &&
-                            role == FieldRole.answer &&
-                            evaluation == null)
-                        ? _levelAnswerContent(
-                            ctx,
-                            field,
-                            unit,
-                            field.id == firstAnswerId,
-                            field.id == lastAnswerId,
-                          )
-                        : null;
+              final Widget? override =
+                  (_isLevelLearning &&
+                      role == FieldRole.answer &&
+                      evaluation == null)
+                  ? _levelAnswerContent(
+                      ctx,
+                      field,
+                      unit,
+                      field.id == firstAnswerId,
+                      field.id == lastAnswerId,
+                    )
+                  : null;
 
-                    final TextStyle valueStyle =
-                        Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                          fontFamilyFallback:
-                              LearnAnywhereTokens.monospaceFallback,
-                        ) ??
-                        const TextStyle();
-                    // Level-Learning scaffold cells (levels 1-3, unmemorized) are
-                    // wider than plain monospace text, so they need a wider value
-                    // column than a normal text field or read-only value.
-                    final double valueWidth = override != null
-                        ? computeFieldValueWidth(
-                            fieldLength: field.length,
-                            charWidth: _kCellWidth + 2,
-                          )
-                        : computeFieldValueWidth(
-                            fieldLength: field.length,
-                            charWidth: measureMonospaceCharWidth(valueStyle),
-                          );
+              final TextStyle valueStyle =
+                  Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                    fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
+                  ) ??
+                  const TextStyle();
+              // Every row — plain text, editable field, or Level-Learning
+              // scaffold — sizes its value column to the field length in
+              // monospace character widths, so the answer column matches
+              // the question column and stays constant while browsing.
+              final double valueWidth = computeFieldValueWidth(
+                fieldLength: field.length,
+                charWidth: measureMonospaceCharWidth(valueStyle),
+              );
 
-                    final bool isEditable =
-                        role == FieldRole.answer &&
-                        evaluation == null &&
-                        parameters.withInput;
-                    final Widget content =
-                        override ??
-                        (isEditable
-                            ? _AnswerTextField(
-                                controller: answerControllers[field.id],
-                                focusNode: answerFocusNodes[field.id],
-                                maxLength: field.length,
-                              )
-                            : LearnAnywhereRichText(
-                                value: displayValue,
-                                maxLines: 3,
-                                style: valueStyle,
-                              ));
+              final bool isEditable =
+                  role == FieldRole.answer &&
+                  evaluation == null &&
+                  parameters.withInput;
+              final Widget content =
+                  override ??
+                  (isEditable
+                      ? _AnswerTextField(
+                          controller: answerControllers[field.id],
+                          focusNode: answerFocusNodes[field.id],
+                          maxLength: field.length,
+                        )
+                      : LearnAnywhereRichText(
+                          value: displayValue,
+                          maxLines: 3,
+                          style: valueStyle,
+                        ));
 
-                    return FieldRow(
-                      label: field.name,
-                      labelWidth: labelWidth,
-                      valueWidth: valueWidth,
-                      accentColor: accentColor,
-                      backgroundColor: bgColor,
-                      value: content,
-                    );
-                  },
-                ),
-              ],
-            ],
+              return FieldRow(
+                label: field.name,
+                labelWidth: labelWidth,
+                valueWidth: valueWidth,
+                accentColor: accentColor,
+                backgroundColor: bgColor,
+                value: content,
+              );
+            },
           ),
-        ),
-      ),
+      ],
     );
   }
 
@@ -1972,14 +1935,11 @@ final class _SessionView extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    switch (outcome) {
-                      AnswerOutcome.correct => '😊',
-                      AnswerOutcome.almost => '🤏',
-                      AnswerOutcome.wrong => '😔',
-                    },
-                    style: const TextStyle(fontSize: 40),
-                  ),
+                  Text(switch (outcome) {
+                    AnswerOutcome.correct => '😊',
+                    AnswerOutcome.almost => '🤏',
+                    AnswerOutcome.wrong => '😔',
+                  }, style: const TextStyle(fontSize: 40)),
                 ],
               ),
               const SizedBox(height: LearnAnywhereTokens.gapSmall),
@@ -2092,26 +2052,44 @@ final class _AnswerTextField extends StatelessWidget {
 
 // ─── Level-Learning scaffold cells ────────────────────────────────────────────
 
-/// Blue used for the "type here" dashed cell outline (matches the mockups).
-const Color _kBlankCellColor = Color.fromRGBO(40, 110, 240, 1);
-const double _kCellWidth = 22;
-const double _kCellHeight = 30;
+// Each scaffold character occupies exactly one monospace character width (the
+// same width used to size the value column), so blanks, revealed letters and
+// shown context all line up and the answer column matches the question column.
+// The line reads like normal text: revealed (given) letters carry a subtle
+// background — like the question — while blanks are marked only by a thin
+// underline the student writes on. Every state shares one baseline via a matched
+// strut, so typed characters sit exactly where the revealed ones do.
 
-/// Colour for a locked/revealed letter. Kept muted (it's context, not input),
-/// but nudged brighter in dark themes where `onSurfaceVariant` reads too dim.
-Color _revealedTextColor(BuildContext context, ColorScheme colors) {
-  if (Theme.of(context).brightness == Brightness.dark) {
-    return Color.lerp(colors.onSurfaceVariant, colors.onSurface, 0.5)!;
-  }
-  return colors.onSurfaceVariant;
-}
+/// Shared height of every scaffold cell slot, so all states share one baseline.
+const double _kScaffoldSlotHeight = 24;
 
-/// Splits [cells] into per-word runs (whitespace `shown` cells become gaps) and
-/// lays the words out in a [Wrap] so word boundaries stay intact. Each cell is
-/// turned into a widget by [cellBuilder], which receives a blank cell's running
-/// 0-based blank index (−1 for non-blank cells).
+/// Matched strut so a plain [Text] glyph and a [TextField] glyph share the same
+/// line box (and therefore the same baseline). Without this, the editable
+/// blanks render lower than the revealed letters beside them.
+StrutStyle _scaffoldStrut(TextStyle style) => StrutStyle(
+  fontSize: style.fontSize,
+  fontFamily: style.fontFamily,
+  fontFamilyFallback: style.fontFamilyFallback,
+  forceStrutHeight: true,
+);
+
+/// Background behind a "given" (revealed) character, marking it as provided
+/// context like the question — a touch more pronounced than the row tint, and
+/// neutral so it stays legible on every theme.
+Color _givenCellColor(ColorScheme colors) =>
+    colors.onSurface.withValues(alpha: 0.12);
+
+/// Colour of the thin "type here" underline: the muted text colour, so it reads
+/// as an unobtrusive writing line rather than a bold accent.
+Color _blankUnderlineColor(ColorScheme colors) => colors.onSurfaceVariant;
+
+/// Splits [cells] into per-word runs (whitespace `shown` cells become a
+/// one-character gap) and lays the words out in a [Wrap] so word boundaries stay
+/// intact. Each cell is turned into a widget by [cellBuilder], which receives a
+/// blank cell's running 0-based blank index (−1 for non-blank cells).
 Widget _scaffoldLayout(
   List<MaskCell> cells,
+  double gapWidth,
   Widget Function(MaskCell cell, int blankIndex) cellBuilder,
 ) {
   final List<Widget> words = <Widget>[];
@@ -2129,7 +2107,7 @@ Widget _scaffoldLayout(
         cell.kind == MaskCellKind.shown && cell.char.trim().isEmpty;
     if (isWhitespace) {
       flush();
-      words.add(const SizedBox(width: 12));
+      words.add(SizedBox(width: gapWidth));
       continue;
     }
     current.add(
@@ -2146,9 +2124,8 @@ Widget _scaffoldLayout(
   );
 }
 
-/// A read-only Level-Learning scaffold: locked revealed letters and empty
-/// dashed "type here" cells. Used for level-3 (full solution) and as context
-/// for level 1; also for any level's revealed context.
+/// A read-only Level-Learning scaffold: revealed letters and empty "type here"
+/// slots. Used for the level-3 full-solution preview.
 final class _ScaffoldPreview extends StatelessWidget {
   const _ScaffoldPreview({required this.cells, required this.textStyle});
 
@@ -2158,74 +2135,116 @@ final class _ScaffoldPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    return _scaffoldLayout(cells, (MaskCell cell, int _) {
+    final double cellWidth = measureMonospaceCharWidth(textStyle);
+    return _scaffoldLayout(cells, cellWidth, (MaskCell cell, int _) {
       switch (cell.kind) {
         case MaskCellKind.shown:
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1),
-            child: Text(cell.char, style: textStyle),
+          return _ShownCell(
+            char: cell.char,
+            width: cellWidth,
+            textStyle: textStyle,
           );
         case MaskCellKind.revealed:
-          return _StaticCell(
+          return _RevealedCell(
             char: cell.char,
-            revealed: true,
+            width: cellWidth,
             textStyle: textStyle,
             colors: colors,
           );
         case MaskCellKind.blank:
-          return _StaticCell(
-            char: '',
-            revealed: false,
-            textStyle: textStyle,
-            colors: colors,
-          );
+          return _BlankSlot(width: cellWidth, colors: colors);
       }
     });
   }
 }
 
-/// A single fixed-size scaffold cell: greyed locked letter or dashed blank box.
-final class _StaticCell extends StatelessWidget {
-  const _StaticCell({
+/// A shown context character (punctuation the mask never hides): a plain glyph
+/// in the normal foreground, one character wide, with no highlight.
+final class _ShownCell extends StatelessWidget {
+  const _ShownCell({
     required this.char,
-    required this.revealed,
+    required this.width,
+    required this.textStyle,
+  });
+
+  final String char;
+  final double width;
+  final TextStyle textStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: _kScaffoldSlotHeight,
+      child: Center(
+        child: Text(
+          char,
+          maxLines: 1,
+          strutStyle: _scaffoldStrut(textStyle),
+          style: textStyle,
+        ),
+      ),
+    );
+  }
+}
+
+/// A revealed (given) letter: shown in the normal foreground on a subtle
+/// background, so it reads as provided context — like the question — rather than
+/// as something the student typed.
+final class _RevealedCell extends StatelessWidget {
+  const _RevealedCell({
+    required this.char,
+    required this.width,
     required this.textStyle,
     required this.colors,
   });
 
   final String char;
-  final bool revealed;
+  final double width;
   final TextStyle textStyle;
   final ColorScheme colors;
 
   @override
   Widget build(BuildContext context) {
-    final Widget inner = Container(
-      width: _kCellWidth,
-      height: _kCellHeight,
+    return Container(
+      width: width,
+      height: _kScaffoldSlotHeight,
       alignment: Alignment.center,
-      decoration: revealed
-          ? BoxDecoration(
-              color: colors.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: colors.outlineVariant),
-            )
-          : null,
+      color: _givenCellColor(colors),
       child: Text(
         char,
-        style: textStyle.copyWith(
-          color: revealed ? _revealedTextColor(context, colors) : null,
-        ),
+        maxLines: 1,
+        strutStyle: _scaffoldStrut(textStyle),
+        style: textStyle,
       ),
     );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 1),
-      child: revealed
-          ? inner
-          : CustomPaint(
-              painter: const _DashedRectPainter(color: _kBlankCellColor),
-              child: inner,
-            ),
+  }
+}
+
+/// A read-only blank slot one character wide: just the thin "type here"
+/// underline. Used for the level-3 preview, where blanks are shown but not yet
+/// editable.
+final class _BlankSlot extends StatelessWidget {
+  const _BlankSlot({required this.width, required this.colors});
+
+  final double width;
+  final ColorScheme colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: _kScaffoldSlotHeight,
+      child: Stack(
+        children: <Widget>[
+          Positioned(
+            left: 1,
+            right: 1,
+            bottom: 3,
+            child: Container(height: 1, color: _blankUnderlineColor(colors)),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2359,17 +2378,22 @@ final class _LevelScaffoldInputState extends State<_LevelScaffoldInput> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    return _scaffoldLayout(widget.cells, (MaskCell cell, int blankIndex) {
+    final double cellWidth = measureMonospaceCharWidth(widget.textStyle);
+    return _scaffoldLayout(widget.cells, cellWidth, (
+      MaskCell cell,
+      int blankIndex,
+    ) {
       switch (cell.kind) {
         case MaskCellKind.shown:
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1),
-            child: Text(cell.char, style: widget.textStyle),
+          return _ShownCell(
+            char: cell.char,
+            width: cellWidth,
+            textStyle: widget.textStyle,
           );
         case MaskCellKind.revealed:
-          return _StaticCell(
+          return _RevealedCell(
             char: cell.char,
-            revealed: true,
+            width: cellWidth,
             textStyle: widget.textStyle,
             colors: colors,
           );
@@ -2377,7 +2401,9 @@ final class _LevelScaffoldInputState extends State<_LevelScaffoldInput> {
           return _BlankInputCell(
             controller: _controllers[blankIndex],
             focusNode: _nodes[blankIndex],
+            width: cellWidth,
             textStyle: widget.textStyle,
+            colors: colors,
             onChanged: (String value) {
               if (value.isNotEmpty && blankIndex < _nodes.length - 1) {
                 _nodes[blankIndex + 1].requestFocus();
@@ -2390,88 +2416,137 @@ final class _LevelScaffoldInputState extends State<_LevelScaffoldInput> {
   }
 }
 
-/// A single editable blank cell (one character) with a dashed blue outline.
-final class _BlankInputCell extends StatelessWidget {
+/// A single editable blank cell (one character).
+///
+/// The visible glyph is a plain [Text], so it lands exactly where the revealed
+/// letters do; the real [TextField] sits transparently on top only to capture
+/// keystrokes (a one-character-wide field would otherwise scroll its content and
+/// clip/shift the glyph). Focus is shown by the underline turning to the accent
+/// colour, and gaining focus scrolls the cell into view so typing/arrowing
+/// toward the edge of a long answer keeps the active cell visible.
+final class _BlankInputCell extends StatefulWidget {
   const _BlankInputCell({
     required this.controller,
     required this.focusNode,
+    required this.width,
     required this.textStyle,
+    required this.colors,
     required this.onChanged,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
+  final double width;
   final TextStyle textStyle;
+  final ColorScheme colors;
   final ValueChanged<String> onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 1),
-      child: CustomPaint(
-        painter: const _DashedRectPainter(color: _kBlankCellColor),
-        child: SizedBox(
-          width: _kCellWidth,
-          height: _kCellHeight,
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            textAlign: TextAlign.center,
-            // Centre the glyph vertically so typed letters sit at the same
-            // height as the locked (revealed) cells beside them.
-            textAlignVertical: TextAlignVertical.center,
-            maxLength: 1,
-            style: textStyle,
-            cursorWidth: 1,
-            decoration: const InputDecoration(
-              counterText: '',
-              isCollapsed: true,
-              contentPadding: EdgeInsets.zero,
-              border: InputBorder.none,
-            ),
-            onChanged: onChanged,
-          ),
-        ),
-      ),
-    );
-  }
+  State<_BlankInputCell> createState() => _BlankInputCellState();
 }
 
-/// Paints a dashed rounded rectangle just inside the given size.
-final class _DashedRectPainter extends CustomPainter {
-  const _DashedRectPainter({required this.color});
-
-  final Color color;
+final class _BlankInputCellState extends State<_BlankInputCell> {
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_onFocusChanged);
+    widget.controller.addListener(_onTextChanged);
+  }
 
   @override
-  void paint(Canvas canvas, Size size) {
-    const double dash = 3;
-    const double gap = 3;
-    final Paint paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    final RRect rrect = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      const Radius.circular(4),
-    );
-    final Path path = Path()..addRRect(rrect);
-    for (final metric in path.computeMetrics()) {
-      double distance = 0;
-      while (distance < metric.length) {
-        final double next = distance + dash;
-        canvas.drawPath(
-          metric.extractPath(distance, next.clamp(0, metric.length)),
-          paint,
-        );
-        distance = next + gap;
-      }
+  void didUpdateWidget(_BlankInputCell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      oldWidget.focusNode.removeListener(_onFocusChanged);
+      widget.focusNode.addListener(_onFocusChanged);
+    }
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onTextChanged);
+      widget.controller.addListener(_onTextChanged);
     }
   }
 
   @override
-  bool shouldRepaint(_DashedRectPainter oldDelegate) =>
-      oldDelegate.color != color;
+  void dispose() {
+    widget.focusNode.removeListener(_onFocusChanged);
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onFocusChanged() {
+    if (mounted) setState(() {});
+    if (!widget.focusNode.hasFocus) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.5,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool focused = widget.focusNode.hasFocus;
+    return SizedBox(
+      width: widget.width,
+      height: _kScaffoldSlotHeight,
+      child: Stack(
+        children: <Widget>[
+          Positioned(
+            left: 1,
+            right: 1,
+            bottom: 3,
+            child: Container(
+              height: focused ? 1.5 : 1,
+              color: focused
+                  ? widget.colors.primary
+                  : _blankUnderlineColor(widget.colors),
+            ),
+          ),
+          // The visible glyph — a plain Text, aligned like the revealed cells.
+          Center(
+            child: Text(
+              widget.controller.text,
+              maxLines: 1,
+              strutStyle: _scaffoldStrut(widget.textStyle),
+              style: widget.textStyle,
+            ),
+          ),
+          // Transparent capture field on top: its text is hidden so the narrow
+          // field's scroll offset can't shift the visible glyph, but the caret
+          // (drawn in cursorColor, independent of the text colour) stays visible
+          // to mark the typing position.
+          Positioned.fill(
+            child: TextField(
+              controller: widget.controller,
+              focusNode: widget.focusNode,
+              textAlign: TextAlign.center,
+              maxLength: 1,
+              showCursor: true,
+              cursorColor: widget.colors.primary,
+              cursorWidth: 1.5,
+              enableInteractiveSelection: false,
+              style: widget.textStyle.copyWith(color: Colors.transparent),
+              decoration: const InputDecoration(
+                counterText: '',
+                isCollapsed: true,
+                contentPadding: EdgeInsets.zero,
+                border: InputBorder.none,
+              ),
+              onChanged: widget.onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 final class _CompletionView extends StatelessWidget {

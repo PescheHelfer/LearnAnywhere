@@ -31,36 +31,96 @@ final class LearnAnywherePalette {
   /// Foreground text color options, including a default/inherit option first.
   static const List<LearnAnywhereColorSwatch> textColors =
       <LearnAnywhereColorSwatch>[
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorDefault, hex: null),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorRed, hex: '#B00020'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorOrange, hex: '#E65100'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorGreen, hex: '#2E7D32'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorBlue, hex: '#1565C0'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorPurple, hex: '#6A1B9A'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorBlack, hex: '#000000'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorWhite, hex: '#FFFFFF'),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorDefault,
+          hex: null,
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorRed,
+          hex: '#B00020',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorOrange,
+          hex: '#E65100',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorGreen,
+          hex: '#2E7D32',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorBlue,
+          hex: '#1565C0',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorPurple,
+          hex: '#6A1B9A',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorBlack,
+          hex: '#000000',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorWhite,
+          hex: '#FFFFFF',
+        ),
       ];
 
   /// Highlight options tuned for light mode (dark text on a light fill).
   static const List<LearnAnywhereColorSwatch> lightHighlights =
       <LearnAnywhereColorSwatch>[
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorNone, hex: null),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorYellow, hex: '#FFE066'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorCyan, hex: '#80DEEA'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorLime, hex: '#C5E1A5'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorOrange, hex: '#FFCC80'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorPink, hex: '#F8BBD0'),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorNone,
+          hex: null,
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorYellow,
+          hex: '#FFE066',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorCyan,
+          hex: '#80DEEA',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorLime,
+          hex: '#C5E1A5',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorOrange,
+          hex: '#FFCC80',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorPink,
+          hex: '#F8BBD0',
+        ),
       ];
 
   /// Highlight options tuned for dark mode (light text on a dark fill).
   static const List<LearnAnywhereColorSwatch> darkHighlights =
       <LearnAnywhereColorSwatch>[
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorNone, hex: null),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorAmber, hex: '#8D6E00'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorTeal, hex: '#00695C'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorPurple, hex: '#4A148C'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorRed, hex: '#7F1D1D'),
-        LearnAnywhereColorSwatch(label: LearnAnywhereMessage.colorBlue, hex: '#0D47A1'),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorNone,
+          hex: null,
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorAmber,
+          hex: '#8D6E00',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorTeal,
+          hex: '#00695C',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorPurple,
+          hex: '#4A148C',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorRed,
+          hex: '#7F1D1D',
+        ),
+        LearnAnywhereColorSwatch(
+          label: LearnAnywhereMessage.colorBlue,
+          hex: '#0D47A1',
+        ),
       ];
 
   /// The highlight palette appropriate for [brightness].
@@ -92,5 +152,21 @@ final class LearnAnywherePalette {
       return hex;
     }
     return _lightToDarkHighlight[hex.toUpperCase()] ?? hex;
+  }
+
+  /// Dark-mode replacement for [kDiffMarkColor]: a warm amber/yellow reads more
+  /// clearly than red against a dark surface.
+  static const String _darkDiffMarkColor = '#FFC107';
+
+  /// Returns the diff/correction mark color readable under [brightness].
+  ///
+  /// In light mode the stored red ([kDiffMarkColor]) is used unchanged; in dark
+  /// mode (including the Dark and Dark Blue themes) it is swapped for a warmer
+  /// amber so corrections stay legible without clashing with dark surfaces.
+  static String diffMarkColorForBrightness(String hex, Brightness brightness) {
+    if (brightness != Brightness.dark || hex.toUpperCase() != kDiffMarkColor) {
+      return hex;
+    }
+    return _darkDiffMarkColor;
   }
 }
