@@ -541,76 +541,81 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     widget.prefs.setAutoSaveStats(value);
   }
 
-  /// Auto-saves statistics before an action that would drop the current units
-  /// from memory (open/new/merge/clear/exit). Returns `false` when the user
-  /// cancels the overwrite prompt, in which case the caller must abort.
-  Future<bool> _confirmAndAutoSaveStats() async {
-    final DesktopDocument doc = _document;
-    if (!doc.autoSaveStatistics || doc.deck.units.isEmpty) {
-      return true;
-    }
-    String? target = doc.statisticsPath;
-    if (target == null) {
-      // No manual save this session: derive the path from the deck file.
-      if (doc.deckPath == null) {
-        return true; // Nothing to derive a path from; skip silently.
+  // --- Session statistics auto-save target (§3.7) ---------------------------
+  //
+  // Session `.sta` writes are serialized through this chain so overlapping
+  // per-answer saves never race, and so a slow write never stalls the UI (each
+  // save is queued, not awaited by the caller).
+  Future<void> _statsSaveChain = Future<void>.value();
+
+  /// Queues a write of [snapshot]'s statistics to [target] behind any pending
+  /// session save. Failures are swallowed: an unwritable auto-save must not
+  /// interrupt a live session (manual Save and the pre-switch save still
+  /// surface errors normally).
+  void _queueStatsSave(DesktopDocument snapshot, String target) {
+    _statsSaveChain = _statsSaveChain.then((_) async {
+      try {
+        await _fileService.writeStatistics(snapshot, target);
+      } on Object {
+        // Silent during a session; see doc comment.
       }
-      target = _fileService.statisticsSidecarPath(doc.deckPath!);
-      if (await File(target).exists()) {
-        final _OverwriteChoice choice = await _confirmOverwriteStats(target);
-        switch (choice) {
-          case _OverwriteChoice.cancel:
-            return false;
-          case _OverwriteChoice.no:
-            return true; // Proceed without saving.
-          case _OverwriteChoice.yes:
-            break;
-        }
-      }
-    }
-    final String resolved = target;
-    await _guardedFileOperation(() async {
-      _document = await _fileService.saveStatistics(doc, resolved);
     });
-    return true;
   }
 
-  /// Yes/No/Cancel prompt shown before overwriting an existing `.sta` sidecar.
-  Future<_OverwriteChoice> _confirmOverwriteStats(String path) async {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
+  /// Ensures a session started with no `.sta` loaded gets a fresh timestamped
+  /// auto-save target created in the deck's folder (§3.7). A no-op when
+  /// auto-saving is off, a target already exists (loaded/adopted/created), or
+  /// the deck is unsaved (no folder to derive from).
+  void _ensureAutoSaveTargetForSession() {
+    final DesktopDocument doc = _document;
+    if (!doc.autoSaveStatistics ||
+        doc.autoSaveTargetPath != null ||
+        doc.deckPath == null) {
+      return;
+    }
+    final String target = _fileService.timestampedStatisticsPath(
+      doc.deckPath!,
+      DateTime.now(),
     );
-    final String name = _filePicker.fileNameOf(path);
-    final _OverwriteChoice? result = await showDialog<_OverwriteChoice>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
-          content: Text(
-            messages
-                .message(LearnAnywhereMessage.confirmAutoSaveOverwrite)
-                .replaceAll('{name}', name),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(_OverwriteChoice.cancel),
-              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(_OverwriteChoice.no),
-              child: Text(messages.message(LearnAnywhereMessage.actionNo)),
-            ),
-            FilledButton(
-              autofocus: true,
-              onPressed: () => Navigator.of(context).pop(_OverwriteChoice.yes),
-              child: Text(messages.message(LearnAnywhereMessage.actionYes)),
-            ),
-          ],
-        );
-      },
-    );
-    return result ?? _OverwriteChoice.cancel;
+    setState(() {
+      _document = _document.copyWith(
+        autoSaveTargetPath: target,
+        statisticsPath: target,
+      );
+    });
+    // Write the initial file immediately so it appears at session start.
+    _queueStatsSave(_document, target);
+  }
+
+  /// Persists statistics to the auto-save target after each check→continue
+  /// cycle (§3.7). A no-op when auto-saving is suspended or off.
+  void _persistSessionStatistics() {
+    final DesktopDocument doc = _document;
+    final String? target = doc.autoSaveTargetPath;
+    if (!doc.autoSaveStatistics || target == null) {
+      return;
+    }
+    _queueStatsSave(doc, target);
+  }
+
+  /// Auto-saves statistics to the active auto-save target before an action that
+  /// would drop the current units from memory (open/new/merge/clear/exit).
+  ///
+  /// The target is always a file the user opted into (created this session,
+  /// chosen via "Save stats as", or adopted on load), so no overwrite prompt is
+  /// needed — the whole point of the target is that we keep writing to it. The
+  /// `Future<bool>` return is kept so callers can still abort on failure; it
+  /// only reports `false` if a caller-visible cancellation is ever reintroduced.
+  Future<bool> _confirmAndAutoSaveStats() async {
+    final DesktopDocument doc = _document;
+    final String? target = doc.autoSaveTargetPath;
+    if (!doc.autoSaveStatistics || target == null || doc.deck.units.isEmpty) {
+      return true;
+    }
+    await _guardedFileOperation(() async {
+      _document = await _fileService.saveStatistics(doc, target);
+    });
+    return true;
   }
 
   @override
@@ -1672,6 +1677,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onStatisticsChanged: (List<UnitStats> value) {
           setState(() => _document = _document.copyWith(statistics: value));
         },
+        onSessionStarted: _ensureAutoSaveTargetForSession,
+        onPersistStatistics: _persistSessionStatistics,
         onSessionProgressChanged: (int attempts, int correct) {
           setState(() {
             _learnSessionAttempts = attempts;
@@ -1937,6 +1944,108 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // _settings.lastDeckPath (single source of truth).
       unawaited(_saveSettings());
     });
+    await _maybeAutoLoadStatistics(path);
+  }
+
+  /// After opening a deck, offers to auto-load its most recent timestamped
+  /// session `.sta` (§3.7). On acceptance the loaded file becomes and stays the
+  /// auto-save target; declining leaves auto-saving to start a fresh session
+  /// file on the next session. A no-op when auto-loading is off or no matching
+  /// file exists.
+  Future<void> _maybeAutoLoadStatistics(String deckPath) async {
+    if (!_document.autoLoadStatistics || _document.deckPath != deckPath) {
+      return;
+    }
+    final List<TimestampedStatistics> found;
+    try {
+      found = await _fileService.findTimestampedStatistics(deckPath);
+    } on Object {
+      return;
+    }
+    if (found.isEmpty || !mounted) {
+      return;
+    }
+    final TimestampedStatistics latest = found.first;
+    final StatisticsFile file;
+    try {
+      file = decodeStatisticsJson(await File(latest.path).readAsString());
+    } on Object {
+      return;
+    }
+    final StatisticsCoverage coverage = _fileService.statisticsCoverage(
+      file,
+      _document.deck.units.length,
+    );
+    if (!mounted) {
+      return;
+    }
+    final bool load = await _confirmLoadAvailableStats(
+      latest.timestamp,
+      coverage,
+    );
+    if (!load || !mounted) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      _document = (await _fileService.loadStatistics(_document, latest.path))
+          .copyWith(autoSaveTargetPath: latest.path);
+      _setLastDir('sta', latest.path);
+      _showStatus(LearnAnywhereMessage.statisticsLoaded);
+    });
+  }
+
+  /// Yes/No prompt offering to load a discovered session `.sta` (§3.7).
+  Future<bool> _confirmLoadAvailableStats(
+    DateTime when,
+    StatisticsCoverage coverage,
+  ) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return _confirmYesNo(
+      messages: messages,
+      body: messages
+          .message(LearnAnywhereMessage.confirmLoadAvailableStats)
+          .replaceAll('{datetime}', _formatTimestamp(when))
+          .replaceAll('{queried}', coverage.queriedUnits.toString())
+          .replaceAll('{total}', coverage.totalUnits.toString()),
+    );
+  }
+
+  /// Shows a Yes/No confirmation with [body] and returns the choice (No when
+  /// dismissed). Yes is the default action.
+  Future<bool> _confirmYesNo({
+    required LearnAnywhereLocalizations messages,
+    required String body,
+  }) async {
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
+          content: Text(body),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(messages.message(LearnAnywhereMessage.actionNo)),
+            ),
+            FilledButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(messages.message(LearnAnywhereMessage.actionYes)),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  /// Formats [when] as a human-readable `YYYY-MM-DD HH:MM:SS` for prompts.
+  String _formatTimestamp(DateTime when) {
+    String pad(int value) => value.toString().padLeft(2, '0');
+    return '${when.year}-${pad(when.month)}-${pad(when.day)} '
+        '${pad(when.hour)}:${pad(when.minute)}:${pad(when.second)}';
   }
 
   Future<void> _mergeDeck() async {
@@ -2055,10 +2164,31 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     if (path == null) {
       return;
     }
+    bool loaded = false;
     await _guardedFileOperation(() async {
       _document = await _fileService.loadStatistics(_document, path);
       _setLastDir('sta', path);
       _showStatus(LearnAnywhereMessage.statisticsLoaded);
+      loaded = true;
+    });
+    // A manual load asks whether to adopt the file for auto-saving; declining
+    // suspends auto-saving until another `.sta` is loaded or created (§3.7).
+    if (!loaded || !mounted) {
+      return;
+    }
+    final bool adopt = await _confirmYesNo(
+      messages: LearnAnywhereLocalizations.of(context),
+      body: LearnAnywhereLocalizations.of(
+        context,
+      ).message(LearnAnywhereMessage.confirmAdoptAutoSaveTarget),
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _document = adopt
+          ? _document.copyWith(autoSaveTargetPath: path)
+          : _document.copyWith(clearAutoSaveTarget: true);
     });
   }
 
@@ -2078,6 +2208,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     await _guardedFileOperation(() async {
       final String staPath = _ensureExtension(path!, 'sta');
       _document = await _fileService.saveStatistics(_document, staPath);
+      // "Save stats as" retargets auto-saving to the chosen file (§3.7).
+      if (saveAs) {
+        _document = _document.copyWith(autoSaveTargetPath: staPath);
+      }
       _setLastDir('sta', staPath);
       _showStatus(LearnAnywhereMessage.statisticsSaved);
     });
@@ -2158,6 +2292,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         statistics: clearStatistics(deck),
         clearDeckPath: true,
         clearStatisticsPath: true,
+        clearAutoSaveTarget: true,
       );
       _resetRangeForDeck();
     });
@@ -2338,13 +2473,17 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     return path == null ? fallback : _filePicker.fileNameOf(path);
   }
 
-  /// Resolves the conventional path used as the statistics save/load default:
-  /// the loaded `.sta` file, else the deck's sidecar, else null.
+  /// Resolves the path suggested in the "Save stats as" dialog: the currently
+  /// associated `.sta`, else a fresh timestamped session name in the deck's
+  /// folder, else null.
   String? _statisticsDefaultPath() {
     return _document.statisticsPath ??
         (_document.deckPath == null
             ? null
-            : _fileService.statisticsSidecarPath(_document.deckPath!));
+            : _fileService.timestampedStatisticsPath(
+                _document.deckPath!,
+                DateTime.now(),
+              ));
   }
 
   void _setFileStatus(LearnAnywhereMessage message, {int count = 0}) {
@@ -2698,9 +2837,6 @@ final class _StatusLine extends StatelessWidget {
 final class _GoHomeIntent extends Intent {
   const _GoHomeIntent();
 }
-
-/// User choice from the auto-save overwrite prompt (C11).
-enum _OverwriteChoice { yes, no, cancel }
 
 /// User choice from the File→New mask dialog (B1).
 enum _NewMaskChoice { loadExisting, createNew, cancel }

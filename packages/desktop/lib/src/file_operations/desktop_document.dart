@@ -9,6 +9,7 @@ final class DesktopDocument {
     this.levelStatistics = const <LevelUnitStats>[],
     this.deckPath,
     this.statisticsPath,
+    this.autoSaveTargetPath,
     this.autoLoadStatistics = false,
     this.autoSaveStatistics = false,
   });
@@ -32,7 +33,17 @@ final class DesktopDocument {
   /// Current `.sta` path, if manually loaded or auto-loaded.
   final String? statisticsPath;
 
-  /// Whether opening a deck auto-loads a sidecar `.sta`.
+  /// Active auto-save target `.sta` path, or `null` when auto-saving is
+  /// suspended.
+  ///
+  /// This is the file every check→continue cycle writes to during a session
+  /// (§3.7). It is set when a timestamped session file is created, when a
+  /// `.sta` is auto-loaded, when the user picks "Save stats as", or when a
+  /// manually-loaded `.sta` is adopted; it is cleared (suspended) when a
+  /// manual load is declined for auto-saving.
+  final String? autoSaveTargetPath;
+
+  /// Whether opening a deck auto-loads a `.sta`.
   final bool autoLoadStatistics;
 
   /// Whether leaving a deck auto-saves statistics.
@@ -57,8 +68,10 @@ final class DesktopDocument {
     List<LevelUnitStats>? levelStatistics,
     String? deckPath,
     String? statisticsPath,
+    String? autoSaveTargetPath,
     bool clearDeckPath = false,
     bool clearStatisticsPath = false,
+    bool clearAutoSaveTarget = false,
     bool? autoLoadStatistics,
     bool? autoSaveStatistics,
   }) {
@@ -70,6 +83,9 @@ final class DesktopDocument {
       statisticsPath: clearStatisticsPath
           ? null
           : statisticsPath ?? this.statisticsPath,
+      autoSaveTargetPath: clearAutoSaveTarget
+          ? null
+          : autoSaveTargetPath ?? this.autoSaveTargetPath,
       autoLoadStatistics: autoLoadStatistics ?? this.autoLoadStatistics,
       autoSaveStatistics: autoSaveStatistics ?? this.autoSaveStatistics,
     );

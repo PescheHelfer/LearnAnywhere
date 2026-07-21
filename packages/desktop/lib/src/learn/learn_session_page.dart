@@ -25,6 +25,8 @@ final class LearnSessionPage extends StatefulWidget {
     required this.onStatisticsChanged,
     required this.onSessionProgressChanged,
     required this.onOpenEditor,
+    this.onSessionStarted,
+    this.onPersistStatistics,
     this.levelStatistics = const <LevelUnitStats>[],
     this.levelNames = kDefaultLevelNamesEn,
     this.entryLevelCap = kMaxSupportLevel,
@@ -82,6 +84,14 @@ final class LearnSessionPage extends StatefulWidget {
 
   /// Called when live session counters change.
   final LearnSessionProgressChanged onSessionProgressChanged;
+
+  /// Called when a session starts, so the shell can create a timestamped
+  /// auto-save target when none is loaded yet (§3.7).
+  final VoidCallback? onSessionStarted;
+
+  /// Called after each check→continue cycle, so the shell can auto-save the
+  /// updated statistics to the active target (§3.7).
+  final VoidCallback? onPersistStatistics;
 
   /// Called when the user wants to interrupt and edit the deck.
   final VoidCallback onOpenEditor;
@@ -478,6 +488,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   }
 
   void _startSession() {
+    // Give the shell a chance to create a fresh timestamped auto-save target
+    // when a session starts with no statistics loaded (§3.7).
+    widget.onSessionStarted?.call();
     final int maxUnit = widget.deck.units.length;
     final int start = _startIndex.clamp(1, maxUnit).toInt();
     final int end = _endIndex.clamp(start, maxUnit).toInt();
@@ -970,6 +983,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       widget.sessionAttempts + 1,
       widget.sessionCorrect + (correct ? 1 : 0),
     );
+    // Persist the just-recorded attempt to the auto-save target. Runs after the
+    // stats callbacks above so the shell's document already holds this attempt;
+    // the shell queues the write asynchronously so it never stalls the cycle.
+    widget.onPersistStatistics?.call();
     _selectNextItem();
   }
 

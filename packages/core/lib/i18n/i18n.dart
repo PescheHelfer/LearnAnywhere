@@ -922,8 +922,12 @@ enum LearnAnywhereMessage {
   /// Negative action (No).
   actionNo,
 
-  /// Confirm auto-save overwrite of an existing `.sta`. Placeholder: {name}.
-  confirmAutoSaveOverwrite,
+  /// Ask whether a manually-loaded `.sta` should become the auto-save target.
+  confirmAdoptAutoSaveTarget,
+
+  /// Auto-load prompt for a discovered session `.sta`. Placeholders:
+  /// {datetime}, {queried}, {total}.
+  confirmLoadAvailableStats,
 
   /// Snackbar shown when a stored deck path no longer exists. Placeholder: {path}.
   fileNotFound,
@@ -1394,7 +1398,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionClose: 'Close',
       LearnAnywhereMessage.actionYes: 'Yes',
       LearnAnywhereMessage.actionNo: 'No',
-      LearnAnywhereMessage.confirmAutoSaveOverwrite: 'Overwrite {name}?',
+      LearnAnywhereMessage.confirmAdoptAutoSaveTarget:
+          'Use this file for auto-saving from now on?',
+      LearnAnywhereMessage.confirmLoadAvailableStats:
+          'Statistics are available from {datetime}, with {queried} out of '
+          '{total} units already queried. Load these?',
       LearnAnywhereMessage.fileNotFound: 'File not found: {path}',
       LearnAnywhereMessage.confirmClearStatistics:
           'Clear all statistics for the current deck?',
@@ -1817,7 +1825,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionClose: 'Schließen',
       LearnAnywhereMessage.actionYes: 'Ja',
       LearnAnywhereMessage.actionNo: 'Nein',
-      LearnAnywhereMessage.confirmAutoSaveOverwrite: '{name} überschreiben?',
+      LearnAnywhereMessage.confirmAdoptAutoSaveTarget:
+          'Diese Datei von jetzt an zum automatischen Speichern verwenden?',
+      LearnAnywhereMessage.confirmLoadAvailableStats:
+          'Statistik von {datetime} verfügbar, mit {queried} von {total} '
+          'bereits abgefragten Einheiten. Diese laden?',
       LearnAnywhereMessage.fileNotFound: 'Datei nicht gefunden: {path}',
       LearnAnywhereMessage.confirmClearStatistics:
           'Alle Statistiken für das aktuelle Vokabular löschen?',

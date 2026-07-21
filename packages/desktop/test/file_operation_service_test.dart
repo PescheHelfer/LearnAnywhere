@@ -7,12 +7,17 @@ import 'package:learn_anywhere_desktop/src/file_operations/desktop_file_service.
 
 void main() {
   group('DesktopFileService', () {
-    test('saves and opens decks with statistics sidecars', () async {
+    test('saveDeck auto-saves stats to the active target; openDeck clears '
+        'stats without auto-loading', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
         'learn_anywhere_file_ops',
       );
       final DesktopFileService service = const DesktopFileService();
       final String deckPath = '${temp.path}${Platform.pathSeparator}sample.vok';
+      final String targetPath = service.timestampedStatisticsPath(
+        deckPath,
+        DateTime(2026, 7, 21, 14, 30, 0),
+      );
 
       final LearningDeck deck = LearningDeck(
         mask: sampleMask(),
@@ -31,7 +36,8 @@ void main() {
             direction1: DirectionStats(attempts: 1, correct: 1),
           ),
         ],
-        // This test exercises the auto-load/auto-save sidecar path explicitly.
+        // A live auto-save target is what drives the pre-switch/deck-save write.
+        autoSaveTargetPath: targetPath,
         autoLoadStatistics: true,
         autoSaveStatistics: true,
       );
@@ -41,16 +47,75 @@ void main() {
         path: deckPath,
       );
       expect(await File(deckPath).exists(), isTrue);
-      expect(
-        await File(service.statisticsSidecarPath(deckPath)).exists(),
-        isTrue,
-      );
+      // Stats went to the timestamped target, not a derived sidecar.
+      expect(await File(targetPath).exists(), isTrue);
 
+      // Opening clears stats and adopts no target: the app layer drives the
+      // "load these?" auto-load prompt separately.
       final DesktopDocument opened = await service.openDeck(saved, deckPath);
       expect(opened.deck.units, hasLength(1));
-      expect(opened.statistics.single.direction1.correct, 1);
+      expect(opened.statistics.single.direction1.attempts, 0);
+      expect(opened.statisticsPath, isNull);
+      expect(opened.autoSaveTargetPath, isNull);
 
       await temp.delete(recursive: true);
+    });
+
+    test('builds timestamped statistics names in the deck folder', () {
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String path = service.timestampedStatisticsPath(
+        '${Directory.current.path}${sep}french.vok',
+        DateTime(2026, 1, 9, 8, 5, 3),
+      );
+      expect(
+        path,
+        '${Directory.current.path}${sep}french_20260109_080503.sta',
+      );
+    });
+
+    test('finds timestamped statistics newest-first, ignoring other files',
+        () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_stats_glob',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String deckPath = '${temp.path}${sep}french.vok';
+
+      final String older = '${temp.path}${sep}french_20260101_090000.sta';
+      final String newer = '${temp.path}${sep}french_20260721_143000.sta';
+      // A plain sidecar and a different deck's session file must be ignored.
+      final String sidecar = '${temp.path}${sep}french.sta';
+      final String otherDeck = '${temp.path}${sep}german_20260721_143000.sta';
+      for (final String p in <String>[older, newer, sidecar, otherDeck]) {
+        await File(p).writeAsString('{}');
+      }
+
+      final List<TimestampedStatistics> found =
+          await service.findTimestampedStatistics(deckPath);
+
+      expect(
+        found.map((TimestampedStatistics e) => e.path),
+        <String>[newer, older],
+      );
+      expect(found.first.timestamp, DateTime(2026, 7, 21, 14, 30, 0));
+      await temp.delete(recursive: true);
+    });
+
+    test('summarizes x-of-y queried coverage for a loaded stats file', () {
+      final DesktopFileService service = const DesktopFileService();
+      const StatisticsFile file = StatisticsFile(
+        deckRef: 'deck.vok',
+        perUnit: <UnitStats>[
+          UnitStats(index: 1, direction1: DirectionStats(attempts: 2, correct: 1)),
+          UnitStats(index: 3, direction1: DirectionStats(attempts: 1, correct: 1)),
+        ],
+      );
+
+      final StatisticsCoverage coverage = service.statisticsCoverage(file, 4);
+      expect(coverage.totalUnits, 4);
+      expect(coverage.queriedUnits, 2);
     });
 
     test('loads masks by clearing units and keeping the new schema', () async {

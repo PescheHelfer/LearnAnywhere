@@ -23,33 +23,18 @@ final class DesktopFileService {
     );
   }
 
-  /// Opens a `.vok` deck and auto-loads its sidecar `.sta` when configured.
+  /// Opens a `.vok` deck with cleared statistics and no auto-save target.
   ///
-  /// Outgoing statistics are auto-saved by the app layer before this runs.
+  /// Auto-loading a timestamped `.sta` (with its "load these?" prompt) is
+  /// driven by the app layer after this runs, since it needs the UI; see
+  /// `_maybeAutoLoadStatistics` in main.dart. Outgoing statistics are
+  /// auto-saved by the app layer before this runs.
   Future<DesktopDocument> openDeck(DesktopDocument current, String path) async {
     final LearningDeck deck = decodeDeckJson(await File(path).readAsString());
-    var statistics = clearStatistics(deck);
-    var levelStatistics = const <LevelUnitStats>[];
-    String? statisticsPath;
-    if (current.autoLoadStatistics) {
-      final String sidecarPath = statisticsSidecarPath(path);
-      final File sidecar = File(sidecarPath);
-      if (await sidecar.exists()) {
-        final StatisticsFile loaded = decodeStatisticsJson(
-          await sidecar.readAsString(),
-        );
-        statistics = loaded.perUnit;
-        levelStatistics =
-            loaded.levelLearning?.perUnit ?? const <LevelUnitStats>[];
-        statisticsPath = sidecarPath;
-      }
-    }
     return DesktopDocument(
       deck: deck,
-      statistics: statistics,
-      levelStatistics: levelStatistics,
+      statistics: clearStatistics(deck),
       deckPath: path,
-      statisticsPath: statisticsPath,
       autoLoadStatistics: current.autoLoadStatistics,
       autoSaveStatistics: current.autoSaveStatistics,
     );
@@ -439,23 +424,31 @@ final class DesktopFileService {
     );
   }
 
-  /// Saves current statistics to [path].
+  /// Saves current statistics to [path] and records it as the statistics path.
   Future<DesktopDocument> saveStatistics(
     DesktopDocument current,
     String path,
   ) async {
+    await writeStatistics(current, path);
+    return current.copyWith(statisticsPath: path);
+  }
+
+  /// Writes [document]'s statistics to [path] without changing the document.
+  ///
+  /// The low-level write shared by [saveStatistics], [autoSaveStatistics], and
+  /// the per-answer session auto-save.
+  Future<void> writeStatistics(DesktopDocument document, String path) async {
     await File(path).writeAsString(
       encodeStatisticsJson(
         StatisticsFile(
-          deckRef: current.deckPath == null
+          deckRef: document.deckPath == null
               ? 'unsaved.vok'
-              : _fileName(current.deckPath!),
-          perUnit: current.statistics,
-          levelLearning: _levelSection(current.levelStatistics),
+              : _fileName(document.deckPath!),
+          perUnit: document.statistics,
+          levelLearning: _levelSection(document.levelStatistics),
         ),
       ),
     );
-    return current.copyWith(statisticsPath: path);
   }
 
   /// Clears all current statistics.
@@ -466,22 +459,15 @@ final class DesktopFileService {
     );
   }
 
-  /// Auto-saves statistics for [document] when configured and a deck path exists.
+  /// Auto-saves statistics to the active auto-save target, when auto-saving is
+  /// enabled and a target is set. A no-op when auto-saving is suspended
+  /// (no target) or turned off.
   Future<void> autoSaveStatistics(DesktopDocument document) async {
-    if (!document.autoSaveStatistics || document.deckPath == null) {
+    final String? target = document.autoSaveTargetPath;
+    if (!document.autoSaveStatistics || target == null) {
       return;
     }
-    final String targetPath =
-        document.statisticsPath ?? statisticsSidecarPath(document.deckPath!);
-    await File(targetPath).writeAsString(
-      encodeStatisticsJson(
-        StatisticsFile(
-          deckRef: _fileName(document.deckPath!),
-          perUnit: document.statistics,
-          levelLearning: _levelSection(document.levelStatistics),
-        ),
-      ),
-    );
+    await writeStatistics(document, target);
   }
 
   /// Wraps [levelStatistics] in a [LevelLearningStats] section, or null when
@@ -519,20 +505,138 @@ final class DesktopFileService {
     return '$base${sep}LearnAnywhere$sep$settingsFileName';
   }
 
-  /// Returns the conventional `.sta` sidecar path for [deckPath].
-  String statisticsSidecarPath(String deckPath) {
-    final int separator = deckPath.lastIndexOf(Platform.pathSeparator);
-    final int dot = deckPath.lastIndexOf('.');
-    if (dot > separator) {
-      return '${deckPath.substring(0, dot)}.sta';
+  /// Builds the timestamped session `.sta` path for [deckPath] at [when],
+  /// named `<deckname>_YYYYMMDD_HHMMSS.sta` in the deck's own folder (§3.7).
+  String timestampedStatisticsPath(String deckPath, DateTime when) {
+    final String directory = _directoryOf(deckPath);
+    final String fileName = '${_deckBaseName(deckPath)}_${_formatStamp(when)}.sta';
+    return directory.isEmpty
+        ? fileName
+        : '$directory${Platform.pathSeparator}$fileName';
+  }
+
+  /// Finds every `<deckname>_YYYYMMDD_HHMMSS.sta` beside [deckPath], parses
+  /// each embedded timestamp, and returns them newest-first.
+  ///
+  /// Files whose name does not match the timestamped convention (including a
+  /// plain `<deckname>.sta`) are ignored, so only session files this app wrote
+  /// are considered for auto-loading.
+  Future<List<TimestampedStatistics>> findTimestampedStatistics(
+    String deckPath,
+  ) async {
+    final String directoryPath = _directoryOf(deckPath);
+    final Directory directory = Directory(
+      directoryPath.isEmpty ? Directory.current.path : directoryPath,
+    );
+    if (!await directory.exists()) {
+      return const <TimestampedStatistics>[];
     }
-    return '$deckPath.sta';
+    final RegExp pattern = RegExp(
+      '^${RegExp.escape(_deckBaseName(deckPath))}'
+      r'_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.sta$',
+      caseSensitive: false,
+    );
+    final List<TimestampedStatistics> found = <TimestampedStatistics>[];
+    await for (final FileSystemEntity entity in directory.list()) {
+      if (entity is! File) {
+        continue;
+      }
+      final RegExpMatch? match = pattern.firstMatch(_fileName(entity.path));
+      if (match == null) {
+        continue;
+      }
+      found.add(
+        TimestampedStatistics(
+          path: entity.path,
+          timestamp: DateTime(
+            int.parse(match.group(1)!),
+            int.parse(match.group(2)!),
+            int.parse(match.group(3)!),
+            int.parse(match.group(4)!),
+            int.parse(match.group(5)!),
+            int.parse(match.group(6)!),
+          ),
+        ),
+      );
+    }
+    found.sort(
+      (TimestampedStatistics a, TimestampedStatistics b) =>
+          b.timestamp.compareTo(a.timestamp),
+    );
+    return found;
+  }
+
+  /// Summarizes how many of [unitCount] in-scope units a loaded [file] has
+  /// already been queried on ("x out of y"), for the auto-load prompt.
+  StatisticsCoverage statisticsCoverage(
+    StatisticsFile file,
+    int unitCount, {
+    int? startIndex,
+    int? endIndex,
+  }) {
+    final StatisticsSummary summary = aggregateStatistics(
+      unitCount: unitCount,
+      statistics: file.perUnit,
+      startIndex: startIndex,
+      endIndex: endIndex,
+    );
+    return StatisticsCoverage(
+      queriedUnits: summary.queriedUnits,
+      totalUnits: summary.totalUnits,
+    );
+  }
+
+  /// Returns the file name of [deckPath] without its extension.
+  String _deckBaseName(String deckPath) {
+    final String name = _fileName(deckPath);
+    final int dot = name.lastIndexOf('.');
+    return dot <= 0 ? name : name.substring(0, dot);
+  }
+
+  /// Returns the directory portion of [path] (empty when [path] has none).
+  String _directoryOf(String path) {
+    final int separator = path.lastIndexOf(Platform.pathSeparator);
+    return separator < 0 ? '' : path.substring(0, separator);
+  }
+
+  /// Formats [when] as `YYYYMMDD_HHMMSS`.
+  String _formatStamp(DateTime when) {
+    String pad(int value, int width) => value.toString().padLeft(width, '0');
+    return '${pad(when.year, 4)}${pad(when.month, 2)}${pad(when.day, 2)}'
+        '_${pad(when.hour, 2)}${pad(when.minute, 2)}${pad(when.second, 2)}';
   }
 
   String _fileName(String path) {
     final int separator = path.lastIndexOf(Platform.pathSeparator);
     return separator < 0 ? path : path.substring(separator + 1);
   }
+}
+
+/// A timestamped session `.sta` discovered beside a deck, with its parsed time.
+final class TimestampedStatistics {
+  /// Creates a discovered timestamped statistics record.
+  const TimestampedStatistics({required this.path, required this.timestamp});
+
+  /// Absolute path of the `<deckname>_YYYYMMDD_HHMMSS.sta` file.
+  final String path;
+
+  /// The timestamp parsed from the file name.
+  final DateTime timestamp;
+}
+
+/// How many in-scope units a loaded statistics file has been queried on.
+final class StatisticsCoverage {
+  /// Creates a coverage summary.
+  const StatisticsCoverage({
+    required this.queriedUnits,
+    required this.totalUnits,
+  });
+
+  /// Units with at least one recorded attempt.
+  final int queriedUnits;
+
+  /// In-scope units considered.
+  final int totalUnits;
 }
 
 /// The status of one `.inf`/`.vok` copy found during a tier-2 sync scan.
