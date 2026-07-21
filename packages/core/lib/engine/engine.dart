@@ -676,6 +676,26 @@ StatisticsSummary aggregateStatistics({
   );
 }
 
+/// Whether anything has actually been recorded yet.
+///
+/// True when any unit carries a drill attempt, or when the Level-Learning
+/// ladder has any entry at all (an entry exists only once a session has
+/// materialized it, so its mere presence is real progress). Used to decide
+/// whether switching session mode is worth prompting about — with nothing
+/// recorded there is nothing to keep or discard.
+bool hasRecordedStatistics({
+  required List<UnitStats> statistics,
+  required List<LevelUnitStats> levelStatistics,
+}) {
+  if (levelStatistics.isNotEmpty) {
+    return true;
+  }
+  return statistics.any(
+    (UnitStats stats) =>
+        stats.direction1.attempts > 0 || stats.direction2.attempts > 0,
+  );
+}
+
 /// Returns the statistics bucket for [stats].
 HitRateBucket bucketFor(DirectionStats stats) {
   final double? hitRate = stats.hitRate;

@@ -358,6 +358,37 @@ enum LearnAnywhereMessage {
   /// Learn end range label.
   learnRangeEnd,
 
+  /// Caption under the unit range fields showing the deck size. Placeholder:
+  /// {count}.
+  learnRangeTotalHint,
+
+  /// Option that fixes the unit range to the whole deck.
+  learnUseAllUnits,
+
+  /// Title of the prompt shown when a session starts in a different mode than
+  /// the one the current statistics were recorded in.
+  sessionModeSwitchTitle,
+
+  /// Body shown when switching from Level Learning to a drill-style mode.
+  sessionModeSwitchToDrillBody,
+
+  /// Body shown when switching from a drill-style mode to Level Learning.
+  sessionModeSwitchToLevelBody,
+
+  /// Warning appended to both mode-switch bodies: starting fresh deletes the
+  /// existing statistics.
+  sessionModeSwitchFreshWarning,
+
+  /// Mode-switch action: keep the existing statistics and continue.
+  sessionModeSwitchKeep,
+
+  /// Mode-switch action: seed Level-Learning levels from the existing
+  /// statistics and continue.
+  sessionModeSwitchSeed,
+
+  /// Mode-switch action: clear all statistics and start over.
+  sessionModeSwitchFresh,
+
   /// Learn mode label.
   learnMode,
 
@@ -616,6 +647,10 @@ enum LearnAnywhereMessage {
   /// Helper text explaining the modifier-click "isolate this bucket" gesture
   /// on the bucket filter chips (Keep practicing).
   statisticsFilterIsolateHint,
+
+  /// Caption noting that these statistics include Level-Learning results
+  /// recorded at the last level (Detailed and Keep practicing).
+  statisticsIncludesLevelZero,
 
   /// Minimum hit-rate filter field label (Keep practicing).
   statisticsFilterMin,
@@ -1178,6 +1213,26 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnBothDirections: 'Both',
       LearnAnywhereMessage.learnRangeStart: 'Start unit',
       LearnAnywhereMessage.learnRangeEnd: 'End unit',
+      LearnAnywhereMessage.learnRangeTotalHint:
+          'This deck has {count} unit(s). Clearing a field expands the range '
+          'to that end.',
+      LearnAnywhereMessage.learnUseAllUnits: 'Use all units',
+      LearnAnywhereMessage.sessionModeSwitchTitle:
+          'Statistics from a different mode',
+      LearnAnywhereMessage.sessionModeSwitchToDrillBody:
+          'The current statistics were recorded in Level learning. Units that '
+          'reached the last level already count towards the overall '
+          'statistics, so a drill session will treat them as practised.',
+      LearnAnywhereMessage.sessionModeSwitchToLevelBody:
+          'The current statistics were recorded in another mode. They can be '
+          'used to distribute the units across the levels, so units you '
+          'already know start with less support.',
+      LearnAnywhereMessage.sessionModeSwitchFreshWarning:
+          'Starting fresh deletes all existing statistics — both the overall '
+          'counters and the Level-learning levels. This cannot be undone.',
+      LearnAnywhereMessage.sessionModeSwitchKeep: 'Keep statistics',
+      LearnAnywhereMessage.sessionModeSwitchSeed: 'Use for levels',
+      LearnAnywhereMessage.sessionModeSwitchFresh: 'Start fresh',
       LearnAnywhereMessage.learnMode: 'Mode',
       LearnAnywhereMessage.learnModePractice: 'Endless mode',
       LearnAnywhereMessage.learnModeSuperQuery: 'Drill mode',
@@ -1279,6 +1334,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsFilterBuckets: 'Show buckets',
       LearnAnywhereMessage.statisticsFilterIsolateHint:
           'Ctrl+click a bucket to show only that one.',
+      LearnAnywhereMessage.statisticsIncludesLevelZero:
+          'Including the last level from Level learning',
       LearnAnywhereMessage.statisticsFilterMin: 'Min %',
       LearnAnywhereMessage.statisticsFilterMax: 'Max %',
       LearnAnywhereMessage.statisticsSelectAll: 'Select visible',
@@ -1592,6 +1649,28 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnBothDirections: 'Beide',
       LearnAnywhereMessage.learnRangeStart: 'Erste Einheit',
       LearnAnywhereMessage.learnRangeEnd: 'Letzte Einheit',
+      LearnAnywhereMessage.learnRangeTotalHint:
+          'Dieser Stapel hat {count} Einheit(en). Ein leeres Feld erweitert '
+          'den Bereich bis an dieses Ende.',
+      LearnAnywhereMessage.learnUseAllUnits: 'Alle Einheiten verwenden',
+      LearnAnywhereMessage.sessionModeSwitchTitle:
+          'Statistik aus einem anderen Modus',
+      LearnAnywhereMessage.sessionModeSwitchToDrillBody:
+          'Die aktuelle Statistik stammt aus dem Stufenlernen. Einheiten, die '
+          'die letzte Stufe erreicht haben, zählen bereits zur '
+          'Gesamtstatistik und gelten im Drill-Modus als geübt.',
+      LearnAnywhereMessage.sessionModeSwitchToLevelBody:
+          'Die aktuelle Statistik stammt aus einem anderen Modus. Sie kann '
+          'verwendet werden, um die Einheiten auf die Stufen zu verteilen, '
+          'damit bereits bekannte Einheiten mit weniger Unterstützung '
+          'starten.',
+      LearnAnywhereMessage.sessionModeSwitchFreshWarning:
+          'Neu beginnen löscht die gesamte bisherige Statistik — sowohl die '
+          'Gesamtzähler als auch die Stufen des Stufenlernens. Das kann nicht '
+          'rückgängig gemacht werden.',
+      LearnAnywhereMessage.sessionModeSwitchKeep: 'Statistik behalten',
+      LearnAnywhereMessage.sessionModeSwitchSeed: 'Für Stufen verwenden',
+      LearnAnywhereMessage.sessionModeSwitchFresh: 'Neu beginnen',
       LearnAnywhereMessage.learnMode: 'Modus',
       LearnAnywhereMessage.learnModePractice: 'Endlos-Modus',
       LearnAnywhereMessage.learnModeSuperQuery: 'Drill-Modus',
@@ -1695,6 +1774,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsFilterBuckets: 'Kategorien anzeigen',
       LearnAnywhereMessage.statisticsFilterIsolateHint:
           'Strg+Klick auf einen Bereich zeigt nur diesen an.',
+      LearnAnywhereMessage.statisticsIncludesLevelZero:
+          'Einschließlich der letzten Stufe aus dem Stufenlernen',
       LearnAnywhereMessage.statisticsFilterMin: 'Min %',
       LearnAnywhereMessage.statisticsFilterMax: 'Max %',
       LearnAnywhereMessage.statisticsSelectAll: 'Sichtbare auswählen',

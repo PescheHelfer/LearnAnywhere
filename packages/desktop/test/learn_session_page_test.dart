@@ -86,6 +86,64 @@ void main() {
   }
 
   testWidgets(
+    'setup screen shows the deck size, expands a cleared range field to its '
+    'own end, and pins the range with "Use all units"',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(buildPage(onExit: () {}));
+      await tester.pumpAndSettle();
+
+      // The deck size is stated next to the range fields.
+      expect(find.textContaining('This deck has 2 unit(s).'), findsOneWidget);
+
+      final Finder startField = find.ancestor(
+        of: find.text('Start unit'),
+        matching: find.byType(TextField),
+      );
+      final Finder endField = find.ancestor(
+        of: find.text('End unit'),
+        matching: find.byType(TextField),
+      );
+
+      // Clearing "End unit" means "through the last unit", not 1 — while
+      // clearing "Start unit" still means the first unit.
+      await tester.enterText(endField, '');
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(endField).controller!.text, '2');
+
+      await tester.enterText(startField, '2');
+      await tester.pumpAndSettle();
+      await tester.enterText(startField, '');
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(startField).controller!.text, '1');
+
+      // Narrow the range, then pin it: both fields go read-only and snap back
+      // to the full deck.
+      await tester.enterText(endField, '1');
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(endField).controller!.text, '1');
+      expect(tester.widget<TextField>(startField).enabled, isTrue);
+
+      await tester.tap(find.text('Use all units'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(startField).enabled, isFalse);
+      expect(tester.widget<TextField>(endField).enabled, isFalse);
+      expect(tester.widget<TextField>(startField).controller!.text, '1');
+      expect(tester.widget<TextField>(endField).controller!.text, '2');
+
+      // Unpinning re-enables them and leaves the full range in place.
+      await tester.tap(find.text('Use all units'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(startField).enabled, isTrue);
+      expect(tester.widget<TextField>(endField).controller!.text, '2');
+    },
+  );
+
+  testWidgets(
     'F-key shortcuts keep working after a mouse-driven session start, '
     'through completion and onto the completion view',
     (WidgetTester tester) async {
@@ -181,7 +239,7 @@ void main() {
 
   testWidgets(
     'level learning: F10 respects Hide & type, the ladder promotes 3->0 to '
-    'mastery, and drill statistics are never touched',
+    'mastery, and only the level-0 attempt reaches the drill statistics',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1.0;
@@ -246,6 +304,11 @@ void main() {
       expect(find.text('Champion: 1 (100%)'), findsOneWidget);
       expect(find.text('Mastered: 0 (0%)'), findsOneWidget);
 
+      // Levels 3, 2 and 1 are scaffolded recall, so nothing has reached the
+      // drill statistics yet — including the attempt that promoted 1 -> 0,
+      // which was answered at level 1.
+      expect(harnessState().drillStatsPushes, isEmpty);
+
       // Level 0: free recall; a correct answer masters the unit and, with an
       // empty pool, completes the session.
       await tester.enterText(find.byType(TextField), 'one');
@@ -255,8 +318,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Extend session'), findsOneWidget);
 
-      // Level Learning must never write into the drill-mode statistics.
-      expect(harnessState().drillStatsChanged, isFalse);
+      // The level-0 attempt counts overall: exactly one push, carrying a
+      // single correct attempt for the answered direction.
+      expect(harnessState().drillStatsPushes, hasLength(1));
+      final UnitStats drilled = harnessState().drillStatsPushes.single
+          .singleWhere((UnitStats s) => s.index == 1);
+      expect(drilled.direction1.attempts, 1);
+      expect(drilled.direction1.correct, 1);
+      expect(drilled.direction2.attempts, 0);
       // The ladder was materialized and the unit ends mastered at level 0.
       final LevelUnitStats entry = harnessState()
           ._levelStats
@@ -393,8 +462,11 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
   int _correct = 0;
   int _resetSignal = 0;
 
-  /// Whether the page ever pushed drill-mode statistics (it must not in LL).
-  bool drillStatsChanged = false;
+  /// Every drill-mode statistics push the page made, in order.
+  ///
+  /// In Level Learning only attempts answered *at* level 0 push here — level 0
+  /// is free recall, the same thing the drill modes test.
+  final List<List<UnitStats>> drillStatsPushes = <List<UnitStats>>[];
 
   /// Mimics choosing the Learn menu again (bumps the reset signal).
   void chooseLearn() => setState(() => _resetSignal++);
@@ -422,8 +494,8 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
           sessionAttempts: _attempts,
           sessionCorrect: _correct,
           onParametersChanged: (SessionParameters _) {},
-          onStatisticsChanged: (List<UnitStats> _) {
-            drillStatsChanged = true;
+          onStatisticsChanged: (List<UnitStats> value) {
+            drillStatsPushes.add(value);
           },
           onLevelStatisticsChanged: (List<LevelUnitStats> value) {
             setState(() => _levelStats = value);

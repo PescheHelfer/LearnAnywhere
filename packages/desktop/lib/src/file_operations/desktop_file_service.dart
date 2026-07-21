@@ -421,6 +421,8 @@ final class DesktopFileService {
       levelStatistics:
           statistics.levelLearning?.perUnit ?? const <LevelUnitStats>[],
       statisticsPath: path,
+      lastSessionMode: statistics.lastSessionMode,
+      clearLastSessionMode: statistics.lastSessionMode == null,
     );
   }
 
@@ -446,6 +448,7 @@ final class DesktopFileService {
               : _fileName(document.deckPath!),
           perUnit: document.statistics,
           levelLearning: _levelSection(document.levelStatistics),
+          lastSessionMode: document.lastSessionMode,
         ),
       ),
     );
@@ -456,6 +459,8 @@ final class DesktopFileService {
     return current.copyWith(
       statistics: clearStatistics(current.deck),
       levelStatistics: const <LevelUnitStats>[],
+      // Nothing recorded means no mode to have recorded it in.
+      clearLastSessionMode: true,
     );
   }
 

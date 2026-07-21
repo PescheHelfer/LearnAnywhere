@@ -192,6 +192,19 @@ enum _PropagationChoice {
   force,
 }
 
+/// Answer to the prompt shown when a session starts in a mode other than the
+/// one the current statistics were recorded in.
+enum _ModeSwitchChoice {
+  /// Do not start the session; keep the setup screen up.
+  cancel,
+
+  /// Carry the existing statistics into the new mode.
+  keep,
+
+  /// Clear every statistic, then start the session from scratch.
+  startFresh,
+}
+
 final class _DesktopHome extends StatefulWidget {
   const _DesktopHome({
     required this.prefs,
@@ -560,6 +573,134 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         // Silent during a session; see doc comment.
       }
     });
+  }
+
+  /// Gate run when a session is about to start in [mode].
+  ///
+  /// Warns when the statistics on hand were recorded in a different kind of
+  /// mode, then ensures an auto-save target exists. Returns `false` to abort.
+  Future<bool> _prepareSessionStart(SessionMode mode) async {
+    if (!await _confirmModeSwitch(mode) || !mounted) {
+      return false;
+    }
+    setState(() {
+      _document = _document.copyWith(lastSessionMode: mode);
+    });
+    _ensureAutoSaveTargetForSession();
+    return true;
+  }
+
+  /// Prompts when [mode] and the mode the current statistics came from sit on
+  /// opposite sides of the Level-Learning divide.
+  ///
+  /// Only that divide matters: the drill-style modes have always shared the
+  /// same counters, so switching among them is not worth a prompt. Silent when
+  /// nothing has been recorded yet, or when the recording mode is unknown (a
+  /// `.sta` written before the mode was tracked).
+  Future<bool> _confirmModeSwitch(SessionMode mode) async {
+    final DesktopDocument doc = _document;
+    final SessionMode? last = doc.lastSessionMode;
+    if (last == null) {
+      return true;
+    }
+    final bool wasLevel = last == SessionMode.levelLearning;
+    final bool isLevel = mode == SessionMode.levelLearning;
+    if (wasLevel == isLevel) {
+      return true;
+    }
+    if (!hasRecordedStatistics(
+      statistics: doc.statistics,
+      levelStatistics: doc.levelStatistics,
+    )) {
+      return true;
+    }
+    final _ModeSwitchChoice? choice = await _showModeSwitchDialog(
+      toLevelLearning: isLevel,
+    );
+    switch (choice) {
+      case null:
+      case _ModeSwitchChoice.cancel:
+        return false;
+      case _ModeSwitchChoice.keep:
+        return true;
+      case _ModeSwitchChoice.startFresh:
+        if (!mounted) {
+          return false;
+        }
+        setState(() {
+          _document = _fileService.clearStatisticsInMemory(_document);
+        });
+        return true;
+    }
+  }
+
+  /// Shows the mode-switch prompt. [toLevelLearning] picks the wording and the
+  /// "keep" button's label (seeding levels vs. plain carry-over).
+  Future<_ModeSwitchChoice?> _showModeSwitchDialog({
+    required bool toLevelLearning,
+  }) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return showDialog<_ModeSwitchChoice>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            messages.message(LearnAnywhereMessage.sessionModeSwitchTitle),
+          ),
+          content: SizedBox(
+            width: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    messages.message(
+                      toLevelLearning
+                          ? LearnAnywhereMessage.sessionModeSwitchToLevelBody
+                          : LearnAnywhereMessage.sessionModeSwitchToDrillBody,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    messages.message(
+                      LearnAnywhereMessage.sessionModeSwitchFreshWarning,
+                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(_ModeSwitchChoice.cancel),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(_ModeSwitchChoice.startFresh),
+              child: Text(
+                messages.message(LearnAnywhereMessage.sessionModeSwitchFresh),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(_ModeSwitchChoice.keep),
+              child: Text(
+                messages.message(
+                  toLevelLearning
+                      ? LearnAnywhereMessage.sessionModeSwitchSeed
+                      : LearnAnywhereMessage.sessionModeSwitchKeep,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Ensures a session started with no `.sta` loaded gets a fresh timestamped
@@ -1677,7 +1818,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onStatisticsChanged: (List<UnitStats> value) {
           setState(() => _document = _document.copyWith(statistics: value));
         },
-        onSessionStarted: _ensureAutoSaveTargetForSession,
+        onSessionStarted: _prepareSessionStart,
         onPersistStatistics: _persistSessionStatistics,
         onSessionProgressChanged: (int attempts, int correct) {
           setState(() {

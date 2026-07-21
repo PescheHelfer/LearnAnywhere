@@ -12,6 +12,7 @@ final class DesktopDocument {
     this.autoSaveTargetPath,
     this.autoLoadStatistics = false,
     this.autoSaveStatistics = false,
+    this.lastSessionMode,
   });
 
   /// Current self-contained deck.
@@ -49,6 +50,13 @@ final class DesktopDocument {
   /// Whether leaving a deck auto-saves statistics.
   final bool autoSaveStatistics;
 
+  /// Mode of the session these statistics were last recorded in, when known.
+  ///
+  /// `null` means "unknown" — nothing recorded yet this run, or a `.sta`
+  /// written before the field existed. Starting a session in a mode that
+  /// differs from this one prompts the student before proceeding.
+  final SessionMode? lastSessionMode;
+
   /// Current embedded mask.
   LearningMask get mask => deck.mask;
 
@@ -72,8 +80,10 @@ final class DesktopDocument {
     bool clearDeckPath = false,
     bool clearStatisticsPath = false,
     bool clearAutoSaveTarget = false,
+    bool clearLastSessionMode = false,
     bool? autoLoadStatistics,
     bool? autoSaveStatistics,
+    SessionMode? lastSessionMode,
   }) {
     return DesktopDocument(
       deck: deck ?? this.deck,
@@ -88,6 +98,9 @@ final class DesktopDocument {
           : autoSaveTargetPath ?? this.autoSaveTargetPath,
       autoLoadStatistics: autoLoadStatistics ?? this.autoLoadStatistics,
       autoSaveStatistics: autoSaveStatistics ?? this.autoSaveStatistics,
+      lastSessionMode: clearLastSessionMode
+          ? null
+          : lastSessionMode ?? this.lastSessionMode,
     );
   }
 }

@@ -215,6 +215,80 @@ void main() {
       await temp.delete(recursive: true);
     });
 
+    test('round-trips lastSessionMode and drops it when stats are cleared', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_stats_mode',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String statsPath = '${temp.path}${Platform.pathSeparator}deck.sta';
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{0: FieldValue.plain('Q')}, // Question
+          ),
+        ],
+      );
+      final DesktopDocument document = DesktopDocument(
+        deck: deck,
+        statistics: const <UnitStats>[
+          UnitStats(
+            index: 1,
+            direction1: DirectionStats(attempts: 1, correct: 1),
+          ),
+        ],
+        levelStatistics: const <LevelUnitStats>[
+          LevelUnitStats(
+            index: 1,
+            dir1: LevelDirectionStats(
+              currentLevel: 0,
+              levels: <int, DirectionStats>{
+                0: DirectionStats(attempts: 1, correct: 1),
+              },
+            ),
+            dir2: LevelDirectionStats(
+              currentLevel: 3,
+              levels: <int, DirectionStats>{3: DirectionStats()},
+            ),
+          ),
+        ],
+        lastSessionMode: SessionMode.levelLearning,
+      );
+
+      await service.saveStatistics(document, statsPath);
+      final DesktopDocument reloaded = await service.loadStatistics(
+        DesktopDocument(deck: deck, statistics: clearStatistics(deck)),
+        statsPath,
+      );
+      expect(reloaded.lastSessionMode, SessionMode.levelLearning);
+      expect(reloaded.levelStatistics, hasLength(1));
+
+      // "Start fresh" wipes both stores, so there is no recording mode left.
+      final DesktopDocument cleared = service.clearStatisticsInMemory(reloaded);
+      expect(cleared.lastSessionMode, isNull);
+      expect(cleared.levelStatistics, isEmpty);
+      expect(cleared.statistics.single.direction1.attempts, 0);
+
+      // A file written before the field existed loads as "unknown".
+      final DesktopDocument legacy = await service.loadStatistics(
+        DesktopDocument(deck: deck, statistics: clearStatistics(deck)),
+        statsPath,
+      );
+      await File(statsPath).writeAsString(
+        encodeStatisticsJson(
+          StatisticsFile(deckRef: 'deck.vok', perUnit: legacy.statistics),
+        ),
+      );
+      final DesktopDocument unknown = await service.loadStatistics(
+        legacy,
+        statsPath,
+      );
+      expect(unknown.lastSessionMode, isNull);
+
+      await temp.delete(recursive: true);
+    });
+
     test('loads decks matching a file mask pattern', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
         'learn_anywhere_pattern_ops',

@@ -284,11 +284,81 @@ final class _PracticeListState extends State<_PracticeList> {
   final TextEditingController _minController = TextEditingController();
   final TextEditingController _maxController = TextEditingController();
 
+  /// Column the table is sorted by, and its direction.
+  _PracticeSortKey _sortKey = _PracticeSortKey.unit;
+  bool _sortAscending = true;
+
   @override
   void dispose() {
     _minController.dispose();
     _maxController.dispose();
     super.dispose();
+  }
+
+  /// The sortable columns in display order.
+  ///
+  /// Keyed by enum rather than by column index so hiding the Bucket column
+  /// (the Level-Learning drill-down) cannot silently shift the mapping. The
+  /// leading checkbox column is not sortable, so a column's table index is its
+  /// position here plus one.
+  List<_PracticeSortKey> get _sortableKeys => <_PracticeSortKey>[
+    _PracticeSortKey.unit,
+    _PracticeSortKey.question,
+    _PracticeSortKey.answer,
+    if (widget.showBucketColumn) _PracticeSortKey.bucket,
+    _PracticeSortKey.attempts,
+    _PracticeSortKey.accuracy,
+  ];
+
+  /// Table column index currently sorted, or `null` when the active key is not
+  /// among the visible columns.
+  int? get _sortColumnIndex {
+    final int position = _sortableKeys.indexOf(_sortKey);
+    return position < 0 ? null : position + 1;
+  }
+
+  void _sortBy(int columnIndex, bool ascending) {
+    final List<_PracticeSortKey> keys = _sortableKeys;
+    final int position = columnIndex - 1;
+    if (position < 0 || position >= keys.length) {
+      return;
+    }
+    setState(() {
+      _sortKey = keys[position];
+      _sortAscending = ascending;
+    });
+  }
+
+  /// Returns [rows] sorted by the active column.
+  ///
+  /// Ties fall back to unit order (always ascending) so the listing stays
+  /// stable. Units with no attempts have no hit rate; they sort as the lowest
+  /// accuracy, i.e. first ascending and last descending.
+  List<_UnitStatisticsRow> _applySort(List<_UnitStatisticsRow> rows) {
+    final List<_UnitStatisticsRow> sorted = <_UnitStatisticsRow>[...rows];
+    sorted.sort((_UnitStatisticsRow a, _UnitStatisticsRow b) {
+      final int result = switch (_sortKey) {
+        _PracticeSortKey.unit => a.index.compareTo(b.index),
+        _PracticeSortKey.question => a.question.toLowerCase().compareTo(
+          b.question.toLowerCase(),
+        ),
+        _PracticeSortKey.answer => a.answer.toLowerCase().compareTo(
+          b.answer.toLowerCase(),
+        ),
+        _PracticeSortKey.bucket => a.bucket.index.compareTo(b.bucket.index),
+        _PracticeSortKey.attempts => a.stats.attempts.compareTo(
+          b.stats.attempts,
+        ),
+        _PracticeSortKey.accuracy => (a.stats.hitRate ?? -1).compareTo(
+          b.stats.hitRate ?? -1,
+        ),
+      };
+      if (result != 0) {
+        return _sortAscending ? result : -result;
+      }
+      return a.index.compareTo(b.index);
+    });
+    return sorted;
   }
 
   /// Returns rows passing the active bucket and numeric hit-rate filters.
@@ -332,7 +402,7 @@ final class _PracticeListState extends State<_PracticeList> {
       unitIndices: widget.unitIndices,
       statsOverride: widget.levelStatsOverride,
     );
-    final List<_UnitStatisticsRow> visibleRows = _applyFilters(rows);
+    final List<_UnitStatisticsRow> visibleRows = _applySort(_applyFilters(rows));
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,40 +417,48 @@ final class _PracticeListState extends State<_PracticeList> {
               dataRowMinHeight: 32,
               dataRowMaxHeight: 36,
               headingRowHeight: 36,
+              sortColumnIndex: _sortColumnIndex,
+              sortAscending: _sortAscending,
               columns: <DataColumn>[
                 const DataColumn(label: SizedBox.shrink()),
                 DataColumn(
                   label: Text(
                     messages.message(LearnAnywhereMessage.statisticsUnit),
                   ),
+                  onSort: _sortBy,
                 ),
                 DataColumn(
                   label: Text(
                     messages.message(LearnAnywhereMessage.statisticsQuestion),
                   ),
+                  onSort: _sortBy,
                 ),
                 DataColumn(
                   label: Text(
                     messages.message(LearnAnywhereMessage.statisticsAnswer),
                   ),
+                  onSort: _sortBy,
                 ),
                 if (widget.showBucketColumn)
                   DataColumn(
                     label: Text(
                       messages.message(LearnAnywhereMessage.statisticsBucket),
                     ),
+                    onSort: _sortBy,
                   ),
                 DataColumn(
                   numeric: true,
                   label: Text(
                     messages.message(LearnAnywhereMessage.statisticsAttempts),
                   ),
+                  onSort: _sortBy,
                 ),
                 DataColumn(
                   numeric: true,
                   label: Text(
                     messages.message(LearnAnywhereMessage.statisticsAccuracy),
                   ),
+                  onSort: _sortBy,
                 ),
               ],
               rows: visibleRows
@@ -477,6 +555,10 @@ final class _PracticeListState extends State<_PracticeList> {
           ),
           Text(
             messages.message(LearnAnywhereMessage.statisticsFilterIsolateHint),
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+          Text(
+            messages.message(LearnAnywhereMessage.statisticsIncludesLevelZero),
             style: Theme.of(context).textTheme.labelSmall,
           ),
           const SizedBox(height: LearnAnywhereTokens.gapSmall),
@@ -841,6 +923,11 @@ final class _DetailedStats extends StatelessWidget {
     );
     return ListView(
       children: <Widget>[
+        Text(
+          messages.message(LearnAnywhereMessage.statisticsIncludesLevelZero),
+          style: Theme.of(context).textTheme.labelSmall,
+        ),
+        const SizedBox(height: LearnAnywhereTokens.gapSmall),
         Wrap(
           spacing: LearnAnywhereTokens.gapSmall,
           runSpacing: LearnAnywhereTokens.gapSmall,
@@ -923,7 +1010,17 @@ final class _DetailedStats extends StatelessWidget {
                       DataCell(Text(_bucketRange(bucket.bucket))),
                       DataCell(Text(bucket.count.toString())),
                       DataCell(Text(_percent(bucket.percentageOfAll))),
-                      DataCell(Text(_percent(bucket.percentageOfQueried))),
+                      // "% of practiced" is meaningless for the units that
+                      // have not been practiced at all — the engine reports a
+                      // hard 0 there, so show nothing instead (same
+                      // convention as _bucketRange for this bucket).
+                      DataCell(
+                        Text(
+                          bucket.bucket == HitRateBucket.notYetQueried
+                              ? ''
+                              : _percent(bucket.percentageOfQueried),
+                        ),
+                      ),
                       DataCell(
                         _BucketBar(
                           fraction: bucket.count / maxCount,
@@ -1047,6 +1144,9 @@ final class _StatPill extends StatelessWidget {
     );
   }
 }
+
+/// Sortable columns of the Keep-practicing table, in display order.
+enum _PracticeSortKey { unit, question, answer, bucket, attempts, accuracy }
 
 final class _UnitStatisticsRow {
   const _UnitStatisticsRow({

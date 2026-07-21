@@ -85,9 +85,12 @@ final class LearnSessionPage extends StatefulWidget {
   /// Called when live session counters change.
   final LearnSessionProgressChanged onSessionProgressChanged;
 
-  /// Called when a session starts, so the shell can create a timestamped
-  /// auto-save target when none is loaded yet (§3.7).
-  final VoidCallback? onSessionStarted;
+  /// Called when a session is about to start, so the shell can create a
+  /// timestamped auto-save target when none is loaded yet (§3.7) and warn when
+  /// the statistics on hand were recorded in a different mode.
+  ///
+  /// Returning `false` aborts the start and leaves the setup screen up.
+  final Future<bool> Function(SessionMode mode)? onSessionStarted;
 
   /// Called after each check→continue cycle, so the shell can auto-save the
   /// updated statistics to the active target (§3.7).
@@ -187,6 +190,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   late int _startIndex;
   late int _endIndex;
   late int _thresholdPercent;
+
+  // Pins the unit range to the whole deck and disables both range fields.
+  // Opt-in only: a range that happens to span the deck does not switch this on
+  // by itself, so opening the setup screen never starts with dead fields.
+  bool _useAllUnits = false;
 
   List<SessionItem> _order = const <SessionItem>[];
   int _orderPosition = 0;
@@ -402,6 +410,23 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         thresholdPercent: _thresholdPercent,
         levelNames: widget.levelNames,
         entryLevelCap: widget.entryLevelCap,
+        useAllUnits: _useAllUnits,
+        onUseAllUnitsChanged: (bool value) {
+          setState(() {
+            _useAllUnits = value;
+            if (!value) {
+              return;
+            }
+            // Pinning the range spans the whole deck; unpinning leaves the
+            // last values in place so the previous range is still there.
+            _startIndex = 1;
+            _endIndex = widget.deck.units.length;
+          });
+          if (value) {
+            widget.onStartUnitChanged?.call(_startIndex);
+            widget.onEndUnitChanged?.call(_endIndex);
+          }
+        },
         onDirectionChanged: (DirectionSelection value) {
           _applyDraft(_parametersWith(direction: value));
         },
@@ -487,10 +512,15 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     );
   }
 
-  void _startSession() {
+  Future<void> _startSession() async {
     // Give the shell a chance to create a fresh timestamped auto-save target
-    // when a session starts with no statistics loaded (§3.7).
-    widget.onSessionStarted?.call();
+    // when a session starts with no statistics loaded (§3.7), and to warn about
+    // statistics recorded in a different mode. Either can abort the start.
+    final bool proceed =
+        await widget.onSessionStarted?.call(_draftParameters.mode) ?? true;
+    if (!proceed || !mounted) {
+      return;
+    }
     final int maxUnit = widget.deck.units.length;
     final int start = _startIndex.clamp(1, maxUnit).toInt();
     final int end = _endIndex.clamp(start, maxUnit).toInt();
@@ -963,15 +993,23 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       return;
     }
     if (_isLevelLearning) {
-      // Level Learning records exclusively into the level ladder. The drill
-      // statistics stay untouched — they only influence the one-time initial
-      // level assignment at session start.
+      // Level Learning records into the level ladder. Level 0 is free recall —
+      // the same thing the drill modes test — so an attempt answered *at*
+      // level 0 additionally counts towards the mode-agnostic statistics.
+      // Read the level before recording: recordLevelLearningAttempt records at
+      // the current level and only then promotes, so the attempt that promotes
+      // a unit from level 1 to level 0 was answered at level 1 and must not
+      // count here.
+      final int levelBefore = _levelStatsFor(item).currentLevel;
       final LevelDirectionStats after = recordLevelLearningAttempt(
         _levelStatsFor(item),
         _selectedRating,
         parameters: _draftParameters,
       );
       _pushLevelStats(item, after);
+      if (levelBefore == kFreeRecallLevel) {
+        widget.onStatisticsChanged(_recordRating(item, _selectedRating));
+      }
     } else {
       final List<UnitStats> updated = _recordRating(item, _selectedRating);
       widget.onStatisticsChanged(updated);
@@ -1276,11 +1314,13 @@ final class _SetupView extends StatelessWidget {
     required this.thresholdPercent,
     required this.levelNames,
     required this.entryLevelCap,
+    required this.useAllUnits,
     required this.onDirectionChanged,
     required this.onModeChanged,
     required this.onEntryLevelCapChanged,
     required this.onShuffleChanged,
     required this.onWithInputChanged,
+    required this.onUseAllUnitsChanged,
     required this.onStartChanged,
     required this.onEndChanged,
     required this.onThresholdChanged,
@@ -1295,11 +1335,16 @@ final class _SetupView extends StatelessWidget {
   final int thresholdPercent;
   final List<String> levelNames;
   final int entryLevelCap;
+
+  /// Whether the range is pinned to the whole deck, disabling both fields.
+  final bool useAllUnits;
+
   final ValueChanged<DirectionSelection> onDirectionChanged;
   final ValueChanged<SessionMode> onModeChanged;
   final ValueChanged<int> onEntryLevelCapChanged;
   final ValueChanged<bool> onShuffleChanged;
   final ValueChanged<bool> onWithInputChanged;
+  final ValueChanged<bool> onUseAllUnitsChanged;
   final ValueChanged<int> onStartChanged;
   final ValueChanged<int> onEndChanged;
   final ValueChanged<int> onThresholdChanged;
@@ -1408,6 +1453,12 @@ final class _SetupView extends StatelessWidget {
             ),
           ),
         ],
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(messages.message(LearnAnywhereMessage.learnUseAllUnits)),
+          value: useAllUnits,
+          onChanged: onUseAllUnitsChanged,
+        ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -1415,6 +1466,8 @@ final class _SetupView extends StatelessWidget {
               label: messages.message(LearnAnywhereMessage.learnRangeStart),
               value: startIndex,
               minimum: 1,
+              maximum: deck.units.length,
+              enabled: !useAllUnits,
               onChanged: onStartChanged,
             ),
             const SizedBox(width: LearnAnywhereTokens.gapMedium),
@@ -1422,9 +1475,22 @@ final class _SetupView extends StatelessWidget {
               label: messages.message(LearnAnywhereMessage.learnRangeEnd),
               value: endIndex,
               minimum: 1,
+              maximum: deck.units.length,
+              // Clearing "End unit" means "up to the last unit", not 1.
+              emptyFallback: deck.units.length,
+              enabled: !useAllUnits,
               onChanged: onEndChanged,
             ),
           ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapMedium),
+          child: Text(
+            messages
+                .message(LearnAnywhereMessage.learnRangeTotalHint)
+                .replaceAll('{count}', deck.units.length.toString()),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ),
         // Level Learning is always "with input", so the toggle is hidden there.
         if (!isLevelLearning)
@@ -2728,6 +2794,8 @@ final class _NumberRow extends StatefulWidget {
     required this.minimum,
     required this.onChanged,
     this.maximum,
+    this.emptyFallback,
+    this.enabled = true,
   });
 
   final String label;
@@ -2735,6 +2803,16 @@ final class _NumberRow extends StatefulWidget {
   final int minimum;
   final int? maximum;
   final ValueChanged<int> onChanged;
+
+  /// Value reported when the field is cleared; defaults to [minimum].
+  ///
+  /// Lets the unit-range fields expand to their own end of the range instead
+  /// of both collapsing to 1: clearing "Start unit" means the first unit,
+  /// clearing "End unit" means the last one.
+  final int? emptyFallback;
+
+  /// Whether the field accepts input. A disabled field still shows [value].
+  final bool enabled;
 
   @override
   State<_NumberRow> createState() => _NumberRowState();
@@ -2772,13 +2850,17 @@ final class _NumberRowState extends State<_NumberRow> {
         width: 240,
         child: TextField(
           controller: _controller,
+          enabled: widget.enabled,
           keyboardType: TextInputType.number,
           inputFormatters: <TextInputFormatter>[
             FilteringTextInputFormatter.digitsOnly,
           ],
           decoration: InputDecoration(labelText: widget.label),
           onChanged: (String value) {
-            var parsed = int.tryParse(value) ?? widget.minimum;
+            // An empty field means "as far as this end goes", which is not
+            // necessarily the minimum — see [_NumberRow.emptyFallback].
+            var parsed =
+                int.tryParse(value) ?? widget.emptyFallback ?? widget.minimum;
             if (parsed < widget.minimum) {
               parsed = widget.minimum;
             }

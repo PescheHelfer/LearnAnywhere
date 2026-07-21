@@ -747,6 +747,7 @@ final class StatisticsFile {
     required this.deckRef,
     required this.perUnit,
     this.levelLearning,
+    this.lastSessionMode,
   });
 
   /// Deck path or file name referenced by this statistics file.
@@ -757,6 +758,13 @@ final class StatisticsFile {
 
   /// Optional Level-Learning section (present in format v2 files only).
   final LevelLearningStats? levelLearning;
+
+  /// Mode of the session that last wrote these statistics, when known.
+  ///
+  /// Lets the shell notice that a session is starting in a different mode than
+  /// the one the stored numbers came from. `null` in files written before this
+  /// field existed, which simply means "unknown" — no prompt.
+  final SessionMode? lastSessionMode;
 }
 
 /// Query options shared by evaluation and search normalization.

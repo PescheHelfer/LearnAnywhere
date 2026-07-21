@@ -1564,6 +1564,56 @@ void main() {
     });
   });
 
+  group('hasRecordedStatistics', () {
+    test('is false for empty stores and for attempt-free unit stats', () {
+      expect(
+        hasRecordedStatistics(
+          statistics: const <UnitStats>[],
+          levelStatistics: const <LevelUnitStats>[],
+        ),
+        isFalse,
+      );
+      expect(
+        hasRecordedStatistics(
+          statistics: const <UnitStats>[UnitStats(index: 1)],
+          levelStatistics: const <LevelUnitStats>[],
+        ),
+        isFalse,
+      );
+    });
+
+    test('is true once a drill attempt exists in either direction', () {
+      expect(
+        hasRecordedStatistics(
+          statistics: const <UnitStats>[
+            UnitStats(
+              index: 1,
+              direction2: DirectionStats(attempts: 1, correct: 0),
+            ),
+          ],
+          levelStatistics: const <LevelUnitStats>[],
+        ),
+        isTrue,
+      );
+    });
+
+    test('is true when the level ladder has any entry at all', () {
+      expect(
+        hasRecordedStatistics(
+          statistics: const <UnitStats>[],
+          levelStatistics: <LevelUnitStats>[
+            LevelUnitStats(
+              index: 1,
+              dir1: LevelDirectionStats.fresh(kMaxSupportLevel),
+              dir2: LevelDirectionStats.fresh(kMaxSupportLevel),
+            ),
+          ],
+        ),
+        isTrue,
+      );
+    });
+  });
+
   group('level-learning statistics matrix', () {
     // Unit 1: dir1 sits at level 2 (4/2 → fair), dir2 at level 0 (2/2 →
     // perfect). Unit 2: dir1 at level 3 fresh (0/0 → not yet practiced), dir2
@@ -1715,6 +1765,42 @@ void main() {
         encodeStatisticsJson(file),
       );
       expect(restored.levelLearning, isNull);
+    });
+
+    test('round-trips lastSessionMode, and omits it when unknown', () {
+      const StatisticsFile file = StatisticsFile(
+        deckRef: 'french1.vok',
+        perUnit: <UnitStats>[UnitStats(index: 1)],
+        lastSessionMode: SessionMode.levelLearning,
+      );
+      final String encoded = encodeStatisticsJson(file);
+      expect(
+        decodeStatisticsJson(encoded).lastSessionMode,
+        SessionMode.levelLearning,
+      );
+
+      const StatisticsFile unknown = StatisticsFile(
+        deckRef: 'french1.vok',
+        perUnit: <UnitStats>[UnitStats(index: 1)],
+      );
+      final Map<String, Object?> raw =
+          jsonDecode(encodeStatisticsJson(unknown)) as Map<String, Object?>;
+      expect(raw.containsKey('lastSessionMode'), isFalse);
+      expect(
+        decodeStatisticsJson(encodeStatisticsJson(unknown)).lastSessionMode,
+        isNull,
+      );
+    });
+
+    test('decodes an unrecognised lastSessionMode as unknown', () {
+      final StatisticsFile restored = decodeStatistics(<String, Object?>{
+        'format': statisticsFormat,
+        'version': currentStatisticsVersion,
+        'deckRef': 'french1.vok',
+        'perUnit': <Object?>[],
+        'lastSessionMode': 'someModeFromTheFuture',
+      });
+      expect(restored.lastSessionMode, isNull);
     });
 
     test('accepts a legacy v1 file as an empty level-learning section', () {

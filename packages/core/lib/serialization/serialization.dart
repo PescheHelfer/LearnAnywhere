@@ -143,10 +143,19 @@ StatisticsFile decodeStatistics(Object? value) {
   final LevelLearningStats? levelLearning = rawLevelLearning == null
       ? null
       : _decodeLevelLearning(rawLevelLearning, r'$.levelLearning');
+  // Written since the Level-0 write-through landed; absent (or unrecognised,
+  // e.g. a mode this build no longer knows) simply decodes to "unknown".
+  final Object? rawMode = json['lastSessionMode'];
+  final SessionMode? lastSessionMode = rawMode is String
+      ? SessionMode.values
+            .where((SessionMode mode) => mode.name == rawMode)
+            .firstOrNull
+      : null;
   return StatisticsFile(
     deckRef: deckRef,
     perUnit: List<UnitStats>.unmodifiable(perUnit),
     levelLearning: levelLearning,
+    lastSessionMode: lastSessionMode,
   );
 }
 
@@ -159,6 +168,8 @@ Map<String, Object?> encodeStatistics(StatisticsFile statistics) {
     'perUnit': statistics.perUnit.map(_encodeUnitStats).toList(growable: false),
     if (statistics.levelLearning != null)
       'levelLearning': _encodeLevelLearning(statistics.levelLearning!),
+    if (statistics.lastSessionMode != null)
+      'lastSessionMode': statistics.lastSessionMode!.name,
   };
 }
 
