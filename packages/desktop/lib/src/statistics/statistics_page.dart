@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
@@ -76,7 +77,7 @@ final class _StatisticsPageState extends State<StatisticsPage> {
     return Material(
       color: Theme.of(context).colorScheme.surface,
       child: DefaultTabController(
-        length: 4,
+        length: 3,
         child: Padding(
           padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
           child: Column(
@@ -119,15 +120,12 @@ final class _StatisticsPageState extends State<StatisticsPage> {
               ),
               const SizedBox(height: LearnAnywhereTokens.gapMedium),
               TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 tabs: <Widget>[
                   Tab(
                     text: messages.message(
                       LearnAnywhereMessage.statisticsDetailed,
-                    ),
-                  ),
-                  Tab(
-                    text: messages.message(
-                      LearnAnywhereMessage.statisticsChart,
                     ),
                   ),
                   Tab(
@@ -147,7 +145,6 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                 child: TabBarView(
                   children: <Widget>[
                     _DetailedStats(summary: summary),
-                    _BucketChart(summary: summary),
                     _PracticeList(
                       deck: widget.deck,
                       statistics: widget.statistics,
@@ -478,6 +475,10 @@ final class _PracticeListState extends State<_PracticeList> {
             messages.message(LearnAnywhereMessage.statisticsFilterBuckets),
             style: Theme.of(context).textTheme.labelLarge,
           ),
+          Text(
+            messages.message(LearnAnywhereMessage.statisticsFilterIsolateHint),
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
           const SizedBox(height: LearnAnywhereTokens.gapSmall),
         ],
         Wrap(
@@ -492,7 +493,11 @@ final class _PracticeListState extends State<_PracticeList> {
                   selected: _visibleBuckets.contains(bucket),
                   onSelected: (bool selected) {
                     setState(() {
-                      if (selected) {
+                      if (HardwareKeyboard.instance.isControlPressed) {
+                        _visibleBuckets
+                          ..clear()
+                          ..add(bucket);
+                      } else if (selected) {
                         _visibleBuckets.add(bucket);
                       } else {
                         _visibleBuckets.remove(bucket);
@@ -825,10 +830,20 @@ final class _DetailedStats extends StatelessWidget {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
+    final double practicedFraction = summary.totalUnits == 0
+        ? 0
+        : summary.queriedUnits / summary.totalUnits;
+    final int maxCount = math.max(
+      1,
+      summary.buckets
+          .map((BucketSummary bucket) => bucket.count)
+          .fold(0, math.max),
+    );
     return ListView(
       children: <Widget>[
         Wrap(
           spacing: LearnAnywhereTokens.gapSmall,
+          runSpacing: LearnAnywhereTokens.gapSmall,
           children: <Widget>[
             _StatPill(
               label: messages.message(
@@ -840,7 +855,21 @@ final class _DetailedStats extends StatelessWidget {
               label: messages.message(
                 LearnAnywhereMessage.statisticsQueriedUnits,
               ),
-              value: summary.queriedUnits.toString(),
+              value: '${summary.queriedUnits} (${_percent(practicedFraction)})',
+            ),
+            _StatPill(
+              label: messages.message(
+                LearnAnywhereMessage.statisticsTotalAttempts,
+              ),
+              value: summary.totalAttempts.toString(),
+            ),
+            _StatPill(
+              label: messages.message(
+                LearnAnywhereMessage.statisticsCorrectAttempts,
+              ),
+              value:
+                  '${summary.totalCorrect} '
+                  '(${_percent(summary.attemptsHitRate ?? 0)})',
             ),
           ],
         ),
@@ -848,6 +877,11 @@ final class _DetailedStats extends StatelessWidget {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
+            columnSpacing: LearnAnywhereTokens.gapSmall,
+            horizontalMargin: LearnAnywhereTokens.gapSmall,
+            dataRowMinHeight: 28,
+            dataRowMaxHeight: 32,
+            headingRowHeight: 32,
             columns: <DataColumn>[
               DataColumn(
                 label: Text(
@@ -879,6 +913,7 @@ final class _DetailedStats extends StatelessWidget {
                   ),
                 ),
               ),
+              const DataColumn(label: SizedBox.shrink()),
             ],
             rows: summary.buckets
                 .map((BucketSummary bucket) {
@@ -889,55 +924,55 @@ final class _DetailedStats extends StatelessWidget {
                       DataCell(Text(bucket.count.toString())),
                       DataCell(Text(_percent(bucket.percentageOfAll))),
                       DataCell(Text(_percent(bucket.percentageOfQueried))),
+                      DataCell(
+                        _BucketBar(
+                          fraction: bucket.count / maxCount,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
                     ],
                   );
                 })
                 .toList(growable: false),
           ),
         ),
-        const SizedBox(height: LearnAnywhereTokens.gapMedium),
-        Text(
-          _practicedSummary(
-            messages,
-            practiced: summary.queriedUnits,
-            total: summary.totalUnits,
-          ),
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
       ],
     );
   }
 }
 
-final class _BucketChart extends StatelessWidget {
-  const _BucketChart({required this.summary});
+/// A compact inline horizontal bar sized to [fraction] (0..1), used beside a
+/// bucket row to show its relative count without a separate chart tab.
+final class _BucketBar extends StatelessWidget {
+  const _BucketBar({required this.fraction, required this.color});
 
-  final StatisticsSummary summary;
+  final double fraction;
+  final Color color;
+
+  static const double _maxWidth = 96;
+  static const double _height = 14;
 
   @override
   Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Expanded(
-          child: CustomPaint(
-            painter: _BucketChartPainter(
-              buckets: summary.buckets,
-              labels: <HitRateBucket, String>{
-                for (final HitRateBucket bucket in HitRateBucket.values)
-                  bucket: _bucketLabel(messages, bucket),
-              },
-              color: Theme.of(context).colorScheme.primary,
-              textStyle:
-                  Theme.of(context).textTheme.bodySmall ??
-                  const TextStyle(fontSize: 12),
+    return SizedBox(
+      width: _maxWidth,
+      height: _height,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: LearnAnywhereTokens.smallRadius,
+        ),
+        child: FractionallySizedBox(
+          alignment: Alignment.centerLeft,
+          widthFactor: fraction.clamp(0, 1),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: LearnAnywhereTokens.smallRadius,
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -986,77 +1021,6 @@ final class _StatsFileButtons extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-final class _BucketChartPainter extends CustomPainter {
-  const _BucketChartPainter({
-    required this.buckets,
-    required this.labels,
-    required this.color,
-    required this.textStyle,
-  });
-
-  final List<BucketSummary> buckets;
-  final Map<HitRateBucket, String> labels;
-  final Color color;
-  final TextStyle textStyle;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (buckets.isEmpty || size.width <= 0 || size.height <= 0) {
-      return;
-    }
-    final int maxCount = math.max(
-      1,
-      buckets.map((BucketSummary bucket) => bucket.count).reduce(math.max),
-    );
-    final Paint paint = Paint()..color = color;
-    final double chartHeight = math.max(0, size.height - 64);
-    final double slotWidth = size.width / buckets.length;
-    for (var index = 0; index < buckets.length; index += 1) {
-      final BucketSummary bucket = buckets[index];
-      final double barHeight = chartHeight * (bucket.count / maxCount);
-      final double left = index * slotWidth + 8;
-      final double right = (index + 1) * slotWidth - 8;
-      final double top = chartHeight - barHeight;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTRB(left, top, right, chartHeight),
-          const Radius.circular(4),
-        ),
-        paint,
-      );
-      _paintText(
-        canvas,
-        bucket.count.toString(),
-        Offset(left, math.max(0, top - 22)),
-        right - left,
-      );
-      _paintText(
-        canvas,
-        labels[bucket.bucket] ?? bucket.bucket.name,
-        Offset(left, chartHeight + 8),
-        right - left,
-      );
-    }
-  }
-
-  void _paintText(Canvas canvas, String text, Offset offset, double width) {
-    final TextPainter painter = TextPainter(
-      text: TextSpan(text: text, style: textStyle),
-      textDirection: TextDirection.ltr,
-      maxLines: 2,
-      ellipsis: '...',
-    )..layout(maxWidth: math.max(20, width));
-    painter.paint(canvas, offset);
-  }
-
-  @override
-  bool shouldRepaint(_BucketChartPainter oldDelegate) {
-    return oldDelegate.buckets != buckets ||
-        oldDelegate.color != color ||
-        oldDelegate.textStyle != textStyle;
   }
 }
 
@@ -1246,18 +1210,4 @@ String _bucketRange(HitRateBucket bucket) {
     HitRateBucket.neverKnown => '0%',
     HitRateBucket.notYetQueried => '',
   };
-}
-
-/// Builds the "Practiced: X of Y units (Z%)" summary line.
-String _practicedSummary(
-  LearnAnywhereLocalizations messages, {
-  required int practiced,
-  required int total,
-}) {
-  final double percent = total == 0 ? 0 : practiced / total * 100;
-  return messages
-      .message(LearnAnywhereMessage.statisticsPracticedSummary)
-      .replaceAll('{practiced}', practiced.toString())
-      .replaceAll('{total}', total.toString())
-      .replaceAll('{percent}', percent.toStringAsFixed(1));
 }

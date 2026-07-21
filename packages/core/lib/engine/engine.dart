@@ -132,6 +132,8 @@ final class StatisticsSummary {
     required this.totalUnits,
     required this.queriedUnits,
     required this.buckets,
+    required this.totalAttempts,
+    required this.totalCorrect,
   });
 
   /// Number of units in scope.
@@ -142,6 +144,17 @@ final class StatisticsSummary {
 
   /// Bucket summaries in legacy display order.
   final List<BucketSummary> buckets;
+
+  /// Sum of attempts across in-scope units for the active direction view.
+  final int totalAttempts;
+
+  /// Sum of correct attempts across in-scope units for the active direction
+  /// view.
+  final int totalCorrect;
+
+  /// Correct-attempt hit rate, or `null` when there are no attempts.
+  double? get attemptsHitRate =>
+      totalAttempts == 0 ? null : totalCorrect / totalAttempts;
 }
 
 /// A memory or file-oriented search result.
@@ -622,6 +635,8 @@ StatisticsSummary aggregateStatistics({
   };
   var total = 0;
   var queried = 0;
+  var totalAttempts = 0;
+  var totalCorrect = 0;
 
   for (var index = start; index <= end && index <= unitCount; index += 1) {
     if (index < 1) {
@@ -635,6 +650,8 @@ StatisticsSummary aggregateStatistics({
     if (stats.attempts > 0) {
       queried += 1;
     }
+    totalAttempts += stats.attempts;
+    totalCorrect += stats.correct;
   }
 
   final List<BucketSummary> buckets = HitRateBucket.values
@@ -654,6 +671,8 @@ StatisticsSummary aggregateStatistics({
     totalUnits: total,
     queriedUnits: queried,
     buckets: buckets,
+    totalAttempts: totalAttempts,
+    totalCorrect: totalCorrect,
   );
 }
 

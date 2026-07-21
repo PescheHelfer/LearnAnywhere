@@ -556,9 +556,6 @@ enum LearnAnywhereMessage {
   /// Statistics detailed tab.
   statisticsDetailed,
 
-  /// Statistics chart tab.
-  statisticsChart,
-
   /// Statistics direction view label.
   statisticsDirectionView,
 
@@ -576,6 +573,12 @@ enum LearnAnywhereMessage {
 
   /// Statistics practiced units label.
   statisticsQueriedUnits,
+
+  /// Total attempts label (Detailed view), summed over in-scope units.
+  statisticsTotalAttempts,
+
+  /// Correct attempts label (Detailed view).
+  statisticsCorrectAttempts,
 
   /// Statistics bucket column label.
   statisticsBucket,
@@ -607,12 +610,12 @@ enum LearnAnywhereMessage {
   /// Statistics answer preview column label (Keep practicing).
   statisticsAnswer,
 
-  /// Practiced-of-total summary line (Detailed view). Placeholders:
-  /// {practiced}, {total}, {percent}.
-  statisticsPracticedSummary,
-
   /// Bucket filter section label (Keep practicing).
   statisticsFilterBuckets,
+
+  /// Helper text explaining the modifier-click "isolate this bucket" gesture
+  /// on the bucket filter chips (Keep practicing).
+  statisticsFilterIsolateHint,
 
   /// Minimum hit-rate filter field label (Keep practicing).
   statisticsFilterMin,
@@ -1251,13 +1254,14 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsTitle: 'Statistics',
       LearnAnywhereMessage.statisticsKeepPracticing: 'Keep practicing',
       LearnAnywhereMessage.statisticsDetailed: 'Detailed',
-      LearnAnywhereMessage.statisticsChart: 'Chart',
       LearnAnywhereMessage.statisticsDirectionView: 'View',
       LearnAnywhereMessage.statisticsCombined: 'Combined',
       LearnAnywhereMessage.statisticsDirection1: 'Direction 1',
       LearnAnywhereMessage.statisticsDirection2: 'Direction 2',
       LearnAnywhereMessage.statisticsTotalUnits: 'Total units',
       LearnAnywhereMessage.statisticsQueriedUnits: 'Practiced units',
+      LearnAnywhereMessage.statisticsTotalAttempts: 'Total Attempts',
+      LearnAnywhereMessage.statisticsCorrectAttempts: 'Correct Attempts',
       LearnAnywhereMessage.statisticsBucket: 'Bucket',
       LearnAnywhereMessage.statisticsCount: 'Count',
       LearnAnywhereMessage.statisticsPercentAll: '% of all',
@@ -1268,9 +1272,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsRange: 'Range',
       LearnAnywhereMessage.statisticsQuestion: 'Question',
       LearnAnywhereMessage.statisticsAnswer: 'Answer',
-      LearnAnywhereMessage.statisticsPracticedSummary:
-          'Practiced: {practiced} of {total} units ({percent}%)',
       LearnAnywhereMessage.statisticsFilterBuckets: 'Show buckets',
+      LearnAnywhereMessage.statisticsFilterIsolateHint:
+          'Ctrl+click a bucket to show only that one.',
       LearnAnywhereMessage.statisticsFilterMin: 'Min %',
       LearnAnywhereMessage.statisticsFilterMax: 'Max %',
       LearnAnywhereMessage.statisticsSelectAll: 'Select visible',
@@ -1662,13 +1666,14 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsTitle: 'Statistik',
       LearnAnywhereMessage.statisticsKeepPracticing: 'Weiter üben',
       LearnAnywhereMessage.statisticsDetailed: 'Detailliert',
-      LearnAnywhereMessage.statisticsChart: 'Diagramm',
       LearnAnywhereMessage.statisticsDirectionView: 'Ansicht',
       LearnAnywhereMessage.statisticsCombined: 'Kombiniert',
       LearnAnywhereMessage.statisticsDirection1: 'Abfragerichtung 1',
       LearnAnywhereMessage.statisticsDirection2: 'Abfragerichtung 2',
       LearnAnywhereMessage.statisticsTotalUnits: 'Lerneinheiten gesamt',
       LearnAnywhereMessage.statisticsQueriedUnits: 'Abgefragte Einheiten',
+      LearnAnywhereMessage.statisticsTotalAttempts: 'Abfrage-Versuche',
+      LearnAnywhereMessage.statisticsCorrectAttempts: 'Korrekte Versuche',
       LearnAnywhereMessage.statisticsBucket: 'Bereich',
       LearnAnywhereMessage.statisticsCount: 'Anzahl',
       LearnAnywhereMessage.statisticsPercentAll: '% von allen',
@@ -1679,9 +1684,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsRange: 'Bereich',
       LearnAnywhereMessage.statisticsQuestion: 'Frage',
       LearnAnywhereMessage.statisticsAnswer: 'Antwort',
-      LearnAnywhereMessage.statisticsPracticedSummary:
-          'Geübt: {practiced} von {total} Einheiten ({percent}%)',
       LearnAnywhereMessage.statisticsFilterBuckets: 'Kategorien anzeigen',
+      LearnAnywhereMessage.statisticsFilterIsolateHint:
+          'Strg+Klick auf einen Bereich zeigt nur diesen an.',
       LearnAnywhereMessage.statisticsFilterMin: 'Min %',
       LearnAnywhereMessage.statisticsFilterMax: 'Max %',
       LearnAnywhereMessage.statisticsSelectAll: 'Sichtbare auswählen',

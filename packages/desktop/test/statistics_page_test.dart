@@ -59,9 +59,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(savedSelection, <int>[1, 2]);
 
-    await tester.tap(find.text('Chart'));
+    await tester.tap(find.text('Detailed'));
     await tester.pumpAndSettle();
-    expect(find.byType(CustomPaint), findsWidgets);
+    expect(find.textContaining('Total Attempts'), findsOneWidget);
+    expect(find.textContaining('Correct Attempts'), findsOneWidget);
+    expect(find.textContaining('Practiced units'), findsOneWidget);
   });
 
   testWidgets('level learning tab shows the matrix and drills into a cell', (

@@ -701,6 +701,9 @@ void main() {
         1,
         1,
       ]);
+      expect(summary.totalAttempts, 1 + 4 + 2 + 4 + 10 + 2);
+      expect(summary.totalCorrect, 1 + 3 + 1 + 1 + 1);
+      expect(summary.attemptsHitRate, closeTo(7 / 23, 1e-9));
     });
 
     test('searches named fields with case and accent options', () {
