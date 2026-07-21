@@ -60,7 +60,7 @@ final class StatisticsPage extends StatefulWidget {
 }
 
 final class _StatisticsPageState extends State<StatisticsPage> {
-  StatisticsDirectionView _view = StatisticsDirectionView.combined;
+  StatisticsDirectionView _view = StatisticsDirectionView.direction1;
   final Set<int> _selectedUnitIndices = <int>{};
 
   @override

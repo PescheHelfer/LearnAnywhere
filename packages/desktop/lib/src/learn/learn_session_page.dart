@@ -99,6 +99,48 @@ final class LearnSessionPage extends StatefulWidget {
   State<LearnSessionPage> createState() => _LearnSessionPageState();
 }
 
+/// Which post-check panel the F9/toggle button currently shows.
+enum _AnswerViewMode {
+  /// Diff-highlighted corrections overlaid on the expected solution.
+  correction,
+
+  /// The plain solution, without any correction marks.
+  solution,
+
+  /// The user's raw typed answer.
+  yourAnswer,
+}
+
+/// The mode the toggle button switches to next (and therefore the label it
+/// shows). Cycles correction -> solution -> yourAnswer -> correction, except
+/// that a fully correct answer has nothing to correct, so [skipCorrection]
+/// makes yourAnswer wrap back to solution instead.
+_AnswerViewMode _nextAnswerViewMode(
+  _AnswerViewMode current, {
+  required bool skipCorrection,
+}) {
+  switch (current) {
+    case _AnswerViewMode.correction:
+      return _AnswerViewMode.solution;
+    case _AnswerViewMode.solution:
+      return _AnswerViewMode.yourAnswer;
+    case _AnswerViewMode.yourAnswer:
+      return skipCorrection
+          ? _AnswerViewMode.solution
+          : _AnswerViewMode.correction;
+  }
+}
+
+/// The message naming [mode], used for the toggle button label (which names
+/// the mode currently displayed).
+LearnAnywhereMessage _answerViewModeMessage(_AnswerViewMode mode) {
+  return switch (mode) {
+    _AnswerViewMode.correction => LearnAnywhereMessage.learnCorrection,
+    _AnswerViewMode.solution => LearnAnywhereMessage.learnSolution,
+    _AnswerViewMode.yourAnswer => LearnAnywhereMessage.learnYourAnswer,
+  };
+}
+
 final class _LearnSessionPageState extends State<LearnSessionPage> {
   static const Map<ShortcutActivator, Intent> _kShortcuts =
       <ShortcutActivator, Intent>{
@@ -125,10 +167,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   // Enter triggers Check or Continue, cleared on the next key-up event.
   bool _enterAwaitingRelease = false;
 
-  // Whether the post-check toggle panel shows the solution (true) or the
-  // user's typed answer (false). Persists across units within a session;
-  // reset to true when a new session starts.
-  bool _showSolution = true;
+  // Which post-check toggle panel is shown. Always reset when a unit is
+  // evaluated (see _reveal): starts at correction unless the answer was
+  // fully correct, in which case there is nothing to correct and it starts
+  // at solution instead.
+  _AnswerViewMode _viewMode = _AnswerViewMode.correction;
 
   late SessionParameters _draftParameters;
   late int _startIndex;
@@ -308,7 +351,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
             _LearnToggleViewIntent: CallbackAction<_LearnToggleViewIntent>(
               onInvoke: (_) {
                 if (_evaluation != null && _draftParameters.withInput) {
-                  setState(() => _showSolution = !_showSolution);
+                  setState(
+                    () => _viewMode = _nextAnswerViewMode(
+                      _viewMode,
+                      skipCorrection: _evaluation?.correct ?? false,
+                    ),
+                  );
                   _rootFocusNode.requestFocus();
                 }
                 return null;
@@ -402,7 +450,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       elapsedSeconds: _elapsedSeconds,
       sessionAttempts: widget.sessionAttempts,
       sessionCorrect: widget.sessionCorrect,
-      showSolution: _showSolution,
+      viewMode: _viewMode,
       onReveal: _primaryPreCheck,
       onCellAnswerChanged: (int fieldId, String value) {
         _answerControllers[fieldId]?.value = TextEditingValue(
@@ -415,7 +463,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         setState(() => _selectedRating = value);
       },
       onToggleView: () {
-        setState(() => _showSolution = !_showSolution);
+        setState(
+          () => _viewMode = _nextAnswerViewMode(
+            _viewMode,
+            skipCorrection: _evaluation?.correct ?? false,
+          ),
+        );
         _rootFocusNode.requestFocus();
       },
       onRestoreFocus: _rootFocusNode.requestFocus,
@@ -447,7 +500,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       random: _random,
     );
     _orderPosition = 0;
-    _showSolution = true;
+    _viewMode = _AnswerViewMode.correction;
     _selectNextItem();
   }
 
@@ -867,6 +920,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
           const AnswerEvaluation(correct: true, fields: <FieldEvaluation>[]);
       _outcome = outcome;
       _selectedRating = defaultRating;
+      // Always restart the toggle cycle for the newly revealed unit; skip the
+      // correction state when there's nothing to correct.
+      _viewMode = _evaluation!.correct
+          ? _AnswerViewMode.solution
+          : _AnswerViewMode.correction;
     });
     // Revealing removes the answer text fields (they become read-only rich
     // text), so focus would be left on a defunct node and the F-keys/Esc would
@@ -1430,7 +1488,7 @@ final class _SessionView extends StatelessWidget {
     required this.elapsedSeconds,
     required this.sessionAttempts,
     required this.sessionCorrect,
-    required this.showSolution,
+    required this.viewMode,
     required this.onReveal,
     required this.onCellAnswerChanged,
     required this.onSetLevel,
@@ -1471,7 +1529,7 @@ final class _SessionView extends StatelessWidget {
   final int elapsedSeconds;
   final int sessionAttempts;
   final int sessionCorrect;
-  final bool showSolution;
+  final _AnswerViewMode viewMode;
   final VoidCallback onReveal;
 
   /// Called by the editable level-2 scaffold with the reconstructed answer.
@@ -1649,7 +1707,7 @@ final class _SessionView extends StatelessWidget {
                   role == FieldRole.answer &&
                   evaluation != null &&
                   parameters.withInput &&
-                  !showSolution;
+                  viewMode == _AnswerViewMode.yourAnswer;
 
               final Color accentColor;
               final Color bgColor;
@@ -1668,12 +1726,14 @@ final class _SessionView extends StatelessWidget {
                 };
                 bgColor = accentColor.withValues(alpha: bgOpacity);
                 final FieldValue expectedValue = unit.valueForFieldId(field.id);
-                // On the solution view, overlay the student's mistakes on
+                // On the correction view, overlay the student's mistakes on
                 // the answer field's runs (substitutions red, missing chars
                 // as red "_", extras as red strikethrough). A fully correct
-                // answer diffs to the unchanged solution.
+                // answer diffs to the unchanged solution. The plain solution
+                // view always shows the expected value with no diff marks.
                 displayValue =
-                    (role == FieldRole.answer &&
+                    (viewMode == _AnswerViewMode.correction &&
+                        role == FieldRole.answer &&
                         evaluation != null &&
                         parameters.withInput)
                     ? FieldValue.rich(
@@ -1975,13 +2035,11 @@ final class _SessionView extends StatelessWidget {
                   if (parameters.withInput) ...<Widget>[
                     const SizedBox(width: LearnAnywhereTokens.gapSmall),
                     _ToggleViewButton(
-                      label: showSolution
-                          ? messages.message(
-                              LearnAnywhereMessage.learnYourAnswer,
-                            )
-                          : messages.message(
-                              LearnAnywhereMessage.learnSolution,
-                            ),
+                      label: messages.message(
+                        _answerViewModeMessage(viewMode),
+                      ),
+                      hint:
+                          '${messages.message(LearnAnywhereMessage.learnSwitchHint)}: F9',
                       onPressed: onToggleView,
                       onRestoreFocus: onRestoreFocus,
                     ),
@@ -2824,11 +2882,13 @@ final class _EvalButtonState extends State<_EvalButton> {
 final class _ToggleViewButton extends StatefulWidget {
   const _ToggleViewButton({
     required this.label,
+    required this.hint,
     required this.onPressed,
     required this.onRestoreFocus,
   });
 
   final String label;
+  final String hint;
   final VoidCallback onPressed;
   final VoidCallback onRestoreFocus;
 
@@ -2860,7 +2920,7 @@ final class _ToggleViewButtonState extends State<_ToggleViewButton> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(widget.label),
-          const Text('F9', style: TextStyle(fontSize: 10)),
+          Text(widget.hint, style: const TextStyle(fontSize: 10)),
         ],
       ),
     );

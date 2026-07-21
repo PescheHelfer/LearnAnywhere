@@ -400,6 +400,12 @@ enum LearnAnywhereMessage {
   /// Solution section label.
   learnSolution,
 
+  /// Corrected-answer (diff highlighted) section label.
+  learnCorrection,
+
+  /// "Switch" hint prefix on the answer-view toggle button (before "F9").
+  learnSwitchHint,
+
   /// Remarks section label.
   learnRemarks,
 
@@ -1182,6 +1188,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnPrompt: 'Prompt',
       LearnAnywhereMessage.learnYourAnswer: 'Your answer',
       LearnAnywhereMessage.learnSolution: 'Solution',
+      LearnAnywhereMessage.learnCorrection: 'Correction',
+      LearnAnywhereMessage.learnSwitchHint: 'Switch',
       LearnAnywhereMessage.learnRemarks: 'Remarks',
       LearnAnywhereMessage.learnReveal: 'Reveal',
       LearnAnywhereMessage.learnCheckAnswer: 'Check',
@@ -1322,8 +1330,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorFieldName: 'Field name',
       LearnAnywhereMessage.maskEditorFieldLength: 'Length',
       LearnAnywhereMessage.maskEditorEqualGroup: 'Equal group',
-      LearnAnywhereMessage.maskEditorRole1: 'Role dir 1',
-      LearnAnywhereMessage.maskEditorRole2: 'Role dir 2',
+      LearnAnywhereMessage.maskEditorRole1: 'Role dir. 1',
+      LearnAnywhereMessage.maskEditorRole2: 'Role dir. 2',
       LearnAnywhereMessage.maskEditorCategoryCount: 'Categories: {count}/20',
       LearnAnywhereMessage.maskEditorFieldCount: 'Fields: {count}/20',
       LearnAnywhereMessage.maskEditorLimitReached: 'Limit reached',
@@ -1568,7 +1576,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnEmptyBody:
           'Erstellen oder laden Sie eine Lern-Datei mit Lerneinheiten, bevor Sie eine Sitzung starten.',
       LearnAnywhereMessage.learnSetupTitle: 'Übung einrichten',
-      LearnAnywhereMessage.learnDirection: 'Richtung',
+      LearnAnywhereMessage.learnDirection: 'Abfragerichtung',
       LearnAnywhereMessage.learnBothDirections: 'Beide',
       LearnAnywhereMessage.learnRangeStart: 'Erste Einheit',
       LearnAnywhereMessage.learnRangeEnd: 'Letzte Einheit',
@@ -1589,6 +1597,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnPrompt: 'Frage',
       LearnAnywhereMessage.learnYourAnswer: 'Ihre Antwort',
       LearnAnywhereMessage.learnSolution: 'Lösung',
+      LearnAnywhereMessage.learnCorrection: 'Korrektur',
+      LearnAnywhereMessage.learnSwitchHint: 'Wechseln',
       LearnAnywhereMessage.learnRemarks: 'Bemerkungen',
       LearnAnywhereMessage.learnReveal: 'Anzeigen',
       LearnAnywhereMessage.learnCheckAnswer: 'Prüfen',
@@ -1655,8 +1665,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsChart: 'Diagramm',
       LearnAnywhereMessage.statisticsDirectionView: 'Ansicht',
       LearnAnywhereMessage.statisticsCombined: 'Kombiniert',
-      LearnAnywhereMessage.statisticsDirection1: 'Richtung 1',
-      LearnAnywhereMessage.statisticsDirection2: 'Richtung 2',
+      LearnAnywhereMessage.statisticsDirection1: 'Abfragerichtung 1',
+      LearnAnywhereMessage.statisticsDirection2: 'Abfragerichtung 2',
       LearnAnywhereMessage.statisticsTotalUnits: 'Lerneinheiten gesamt',
       LearnAnywhereMessage.statisticsQueriedUnits: 'Abgefragte Einheiten',
       LearnAnywhereMessage.statisticsBucket: 'Bereich',
@@ -1721,8 +1731,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.lexiconLoadedResults:
           'Gefundene Einheiten in den Speicher geladen.',
       LearnAnywhereMessage.maskEditorMaskName: 'Maskenname',
-      LearnAnywhereMessage.maskEditorDirection1: 'Abfrage 1',
-      LearnAnywhereMessage.maskEditorDirection2: 'Abfrage 2',
+      LearnAnywhereMessage.maskEditorDirection1: 'Name Abfragerichtung 1',
+      LearnAnywhereMessage.maskEditorDirection2: 'Name Abfragerichtung 2',
       LearnAnywhereMessage.maskEditorCategories: 'Kategorien',
       LearnAnywhereMessage.maskEditorAddCategory: 'Kategorie hinzufügen',
       LearnAnywhereMessage.maskEditorDeleteCategory: 'Kategorie löschen',
@@ -1735,8 +1745,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorFieldName: 'Feldname',
       LearnAnywhereMessage.maskEditorFieldLength: 'Länge',
       LearnAnywhereMessage.maskEditorEqualGroup: 'Gleich-Gruppe',
-      LearnAnywhereMessage.maskEditorRole1: 'Rolle 1',
-      LearnAnywhereMessage.maskEditorRole2: 'Rolle 2',
+      LearnAnywhereMessage.maskEditorRole1: 'Rolle Abfr. 1',
+      LearnAnywhereMessage.maskEditorRole2: 'Rolle Abfr. 2',
       LearnAnywhereMessage.maskEditorCategoryCount: 'Kategorien: {count}/20',
       LearnAnywhereMessage.maskEditorFieldCount: 'Felder: {count}/20',
       LearnAnywhereMessage.maskEditorLimitReached: 'Grenze erreicht',
@@ -1850,8 +1860,8 @@ final class LearnAnywhereCatalog {
           'Das Kürzen des Feldes "{field}" in Kategorie "{category}" auf '
           '{length} würde Daten in {count} Lerneinheit(en) abschneiden.',
       LearnAnywhereMessage.defaultMaskName: 'Unbenannte Maske',
-      LearnAnywhereMessage.defaultDirection1Label: 'Richtung 1',
-      LearnAnywhereMessage.defaultDirection2Label: 'Richtung 2',
+      LearnAnywhereMessage.defaultDirection1Label: 'Abfragerichtung 1',
+      LearnAnywhereMessage.defaultDirection2Label: 'Abfragerichtung 2',
       LearnAnywhereMessage.defaultCategoryName: 'Kategorie {n}',
       LearnAnywhereMessage.defaultFieldQuestion: 'Frage',
       LearnAnywhereMessage.defaultFieldAnswer: 'Antwort',

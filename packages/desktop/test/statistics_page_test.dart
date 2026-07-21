@@ -115,6 +115,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // The view defaults to Direction 1; switch to Combined so both
+    // directions are counted together, as this test expects.
+    await tester.tap(
+      find.byType(DropdownButtonFormField<StatisticsDirectionView>),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Combined').last);
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Level Learning'));
     await tester.pumpAndSettle();
 
