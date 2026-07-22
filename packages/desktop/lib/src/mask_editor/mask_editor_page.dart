@@ -10,6 +10,7 @@ final class MaskEditorPage extends StatefulWidget {
     required this.mask,
     required this.onChanged,
     this.onClose,
+    this.onCancel,
     this.linkedPath,
     this.onFork,
     super.key,
@@ -21,8 +22,12 @@ final class MaskEditorPage extends StatefulWidget {
   /// Called whenever the edited mask changes.
   final ValueChanged<LearningMask> onChanged;
 
-  /// Called when the user closes this page.
+  /// Called when the user applies and closes this page (OK).
   final VoidCallback? onClose;
+
+  /// Called when the user discards in-progress edits and closes this page
+  /// (Cancel). Hidden when null.
+  final VoidCallback? onCancel;
 
   /// The `.inf` file this session edits, or `null` when the mask has not yet
   /// been saved anywhere. Shown under the title so it is always clear which
@@ -113,7 +118,7 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  SizedBox(width: 320, child: categories),
+                  SizedBox(width: 420, child: categories),
                   const SizedBox(width: LearnAnywhereTokens.gapLarge),
                   Expanded(child: fields),
                 ],
@@ -128,12 +133,18 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
                 spacing: LearnAnywhereTokens.gapSmall,
                 children: <Widget>[
                   FilledButton(
-                    key: const ValueKey<String>('mask-editor-close-button'),
+                    key: const ValueKey<String>('mask-editor-ok-button'),
                     onPressed: close,
-                    child: Text(
-                      messages.message(LearnAnywhereMessage.actionClose),
-                    ),
+                    child: Text(messages.message(LearnAnywhereMessage.actionOk)),
                   ),
+                  if (widget.onCancel != null)
+                    OutlinedButton(
+                      key: const ValueKey<String>('mask-editor-cancel-button'),
+                      onPressed: widget.onCancel,
+                      child: Text(
+                        messages.message(LearnAnywhereMessage.actionCancel),
+                      ),
+                    ),
                   if (widget.onFork != null)
                     OutlinedButton(
                       key: const ValueKey<String>('mask-editor-fork-button'),
@@ -152,9 +163,9 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
     if (close == null) {
       return page;
     }
-    // The Close button is styled as the screen's default action, so Enter
-    // should activate it the same way Esc (handled globally in main.dart)
-    // already does.
+    // The OK button is styled as the screen's default action, so Enter should
+    // activate it the same way Esc (handled globally in main.dart) already
+    // discards.
     return Shortcuts(
       shortcuts: const <ShortcutActivator, Intent>{
         SingleActivator(LogicalKeyboardKey.enter): _CloseIntent(),
@@ -573,7 +584,10 @@ final class _CategoryTile extends StatelessWidget {
           onTap: () => onSelected(index),
           borderRadius: LearnAnywhereTokens.smallRadius,
           child: Padding(
-            padding: const EdgeInsets.all(LearnAnywhereTokens.gapSmall),
+            padding: const EdgeInsets.symmetric(
+              horizontal: LearnAnywhereTokens.gapSmall,
+              vertical: 4,
+            ),
             child: Row(
               children: <Widget>[
                 Expanded(
@@ -587,6 +601,7 @@ final class _CategoryTile extends StatelessWidget {
                     maxLength: maxCategoryNameLength,
                     decoration: InputDecoration(
                       counterText: '',
+                      isDense: true,
                       labelText: messages.message(
                         LearnAnywhereMessage.maskEditorCategoryName,
                       ),
@@ -600,6 +615,7 @@ final class _CategoryTile extends StatelessWidget {
                   tooltip: messages.message(
                     LearnAnywhereMessage.maskEditorMoveUp,
                   ),
+                  visualDensity: VisualDensity.compact,
                   onPressed: index == 0 ? null : () => onMove(index, -1),
                   icon: const Icon(Icons.keyboard_arrow_up),
                 ),
@@ -608,6 +624,7 @@ final class _CategoryTile extends StatelessWidget {
                   tooltip: messages.message(
                     LearnAnywhereMessage.maskEditorMoveDown,
                   ),
+                  visualDensity: VisualDensity.compact,
                   onPressed: index >= count - 1 ? null : () => onMove(index, 1),
                   icon: const Icon(Icons.keyboard_arrow_down),
                 ),
@@ -616,6 +633,7 @@ final class _CategoryTile extends StatelessWidget {
                   tooltip: messages.message(
                     LearnAnywhereMessage.maskEditorDeleteCategory,
                   ),
+                  visualDensity: VisualDensity.compact,
                   onPressed: () => onDelete(index),
                   icon: const Icon(Icons.delete_outline),
                 ),
@@ -628,7 +646,7 @@ final class _CategoryTile extends StatelessWidget {
   }
 }
 
-final class _FieldGrid extends StatelessWidget {
+final class _FieldGrid extends StatefulWidget {
   const _FieldGrid({
     required this.category,
     required this.onAddField,
@@ -644,11 +662,24 @@ final class _FieldGrid extends StatelessWidget {
   final void Function(int index, int delta) onMoveField;
 
   @override
+  State<_FieldGrid> createState() => _FieldGridState();
+}
+
+final class _FieldGridState extends State<_FieldGrid> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final CategoryDefinition? category = this.category;
+    final CategoryDefinition? category = widget.category;
     final List<FieldDefinition> fields = category == null
         ? const <FieldDefinition>[]
         : category.fields;
@@ -680,54 +711,64 @@ final class _FieldGrid extends StatelessWidget {
               ],
             ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns: <DataColumn>[
-                  DataColumn(
-                    label: Text(
-                      messages.message(
-                        LearnAnywhereMessage.maskEditorFieldName,
+            Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columnSpacing: 16,
+                  horizontalMargin: 8,
+                  dataRowMinHeight: 40,
+                  dataRowMaxHeight: 44,
+                  headingRowHeight: 36,
+                  columns: <DataColumn>[
+                    DataColumn(
+                      label: Text(
+                        messages.message(
+                          LearnAnywhereMessage.maskEditorFieldName,
+                        ),
                       ),
                     ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      messages.message(
-                        LearnAnywhereMessage.maskEditorFieldLength,
+                    DataColumn(
+                      label: Text(
+                        messages.message(
+                          LearnAnywhereMessage.maskEditorFieldLength,
+                        ),
                       ),
                     ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      messages.message(
-                        LearnAnywhereMessage.maskEditorEqualGroup,
+                    DataColumn(
+                      label: Text(
+                        messages.message(
+                          LearnAnywhereMessage.maskEditorEqualGroup,
+                        ),
                       ),
                     ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      messages.message(LearnAnywhereMessage.maskEditorRole1),
+                    DataColumn(
+                      label: Text(
+                        messages.message(LearnAnywhereMessage.maskEditorRole1),
+                      ),
                     ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      messages.message(LearnAnywhereMessage.maskEditorRole2),
+                    DataColumn(
+                      label: Text(
+                        messages.message(LearnAnywhereMessage.maskEditorRole2),
+                      ),
                     ),
-                  ),
-                  const DataColumn(label: SizedBox.shrink()),
-                ],
-                rows: <DataRow>[
-                  for (var index = 0; index < fields.length; index += 1)
-                    _fieldRow(
-                      context,
-                      messages,
-                      category!.id,
-                      index,
-                      fields.length,
-                      fields[index],
-                    ),
-                ],
+                    const DataColumn(label: SizedBox.shrink()),
+                  ],
+                  rows: <DataRow>[
+                    for (var index = 0; index < fields.length; index += 1)
+                      _fieldRow(
+                        context,
+                        messages,
+                        category!.id,
+                        index,
+                        fields.length,
+                        fields[index],
+                      ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
@@ -735,7 +776,9 @@ final class _FieldGrid extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
                 key: const ValueKey<String>('add-field-button'),
-                onPressed: category == null || atLimit ? null : onAddField,
+                onPressed: category == null || atLimit
+                    ? null
+                    : widget.onAddField,
                 icon: const Icon(Icons.add),
                 label: Text(
                   atLimit
@@ -770,20 +813,20 @@ final class _FieldGrid extends StatelessWidget {
       cells: <DataCell>[
         DataCell(
           SizedBox(
-            width: 220,
+            width: 200,
             child: TextFormField(
               key: ValueKey<String>('field-name-$categoryId-$index'),
               initialValue: field.name,
-              decoration: const InputDecoration(counterText: ''),
+              decoration: const InputDecoration(counterText: '', isDense: true),
               onChanged: (String value) {
-                onFieldChanged(index, _copyField(field, name: value));
+                widget.onFieldChanged(index, _copyField(field, name: value));
               },
             ),
           ),
         ),
         DataCell(
           SizedBox(
-            width: 96,
+            width: 72,
             child: TextFormField(
               key: ValueKey<String>('field-length-$categoryId-$index'),
               initialValue: field.length.toString(),
@@ -791,13 +834,13 @@ final class _FieldGrid extends StatelessWidget {
               inputFormatters: <TextInputFormatter>[
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              decoration: const InputDecoration(counterText: ''),
+              decoration: const InputDecoration(counterText: '', isDense: true),
               onChanged: (String value) {
                 final int? parsed = int.tryParse(value);
                 if (parsed == null) {
                   return;
                 }
-                onFieldChanged(
+                widget.onFieldChanged(
                   index,
                   _copyField(
                     field,
@@ -810,7 +853,7 @@ final class _FieldGrid extends StatelessWidget {
         ),
         DataCell(
           SizedBox(
-            width: 120,
+            width: 56,
             child: TextFormField(
               key: ValueKey<String>('field-equal-group-$categoryId-$index'),
               initialValue: field.equalGroup.toString(),
@@ -818,9 +861,9 @@ final class _FieldGrid extends StatelessWidget {
               inputFormatters: <TextInputFormatter>[
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              decoration: const InputDecoration(counterText: ''),
+              decoration: const InputDecoration(counterText: '', isDense: true),
               onChanged: (String value) {
-                onFieldChanged(
+                widget.onFieldChanged(
                   index,
                   _copyField(field, equalGroup: int.tryParse(value) ?? 0),
                 );
@@ -833,7 +876,7 @@ final class _FieldGrid extends StatelessWidget {
             key: ValueKey<String>('field-role1-$categoryId-$index'),
             value: field.role1,
             onChanged: (FieldRole value) {
-              onFieldChanged(index, _copyField(field, role1: value));
+              widget.onFieldChanged(index, _copyField(field, role1: value));
             },
           ),
         ),
@@ -842,7 +885,7 @@ final class _FieldGrid extends StatelessWidget {
             key: ValueKey<String>('field-role2-$categoryId-$index'),
             value: field.role2,
             onChanged: (FieldRole value) {
-              onFieldChanged(index, _copyField(field, role2: value));
+              widget.onFieldChanged(index, _copyField(field, role2: value));
             },
           ),
         ),
@@ -853,7 +896,9 @@ final class _FieldGrid extends StatelessWidget {
               IconButton(
                 key: ValueKey<String>('field-move-up-$categoryId-${field.id}'),
                 tooltip: messages.message(LearnAnywhereMessage.maskEditorMoveUp),
-                onPressed: index == 0 ? null : () => onMoveField(index, -1),
+                onPressed: index == 0
+                    ? null
+                    : () => widget.onMoveField(index, -1),
                 icon: const Icon(Icons.keyboard_arrow_up),
               ),
               IconButton(
@@ -865,14 +910,14 @@ final class _FieldGrid extends StatelessWidget {
                 ),
                 onPressed: index >= fieldCount - 1
                     ? null
-                    : () => onMoveField(index, 1),
+                    : () => widget.onMoveField(index, 1),
                 icon: const Icon(Icons.keyboard_arrow_down),
               ),
               IconButton(
                 tooltip: messages.message(
                   LearnAnywhereMessage.maskEditorDeleteField,
                 ),
-                onPressed: () => onDeleteField(index),
+                onPressed: () => widget.onDeleteField(index),
                 icon: const Icon(Icons.delete_outline),
               ),
             ],

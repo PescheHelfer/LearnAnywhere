@@ -817,7 +817,8 @@ enum LearnAnywhereMessage {
   /// Field length column label.
   maskEditorFieldLength,
 
-  /// Equal-group column label.
+  /// Equal-group column label (shown as "Group" — kept short for the
+  /// compact Fields table).
   maskEditorEqualGroup,
 
   /// Role direction 1 column label.
@@ -947,6 +948,9 @@ enum LearnAnywhereMessage {
 
   /// Close action.
   actionClose,
+
+  /// Affirmative action that applies and closes a form (OK).
+  actionOk,
 
   /// Affirmative action (Yes).
   actionYes,
@@ -1384,7 +1388,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorDeleteField: 'Delete field',
       LearnAnywhereMessage.maskEditorFieldName: 'Field name',
       LearnAnywhereMessage.maskEditorFieldLength: 'Length',
-      LearnAnywhereMessage.maskEditorEqualGroup: 'Equal group',
+      LearnAnywhereMessage.maskEditorEqualGroup: 'Group',
       LearnAnywhereMessage.maskEditorRole1: 'Role dir. 1',
       LearnAnywhereMessage.maskEditorRole2: 'Role dir. 2',
       LearnAnywhereMessage.maskEditorCategoryCount: 'Categories: {count}/20',
@@ -1443,6 +1447,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionContinue: 'Continue',
       LearnAnywhereMessage.actionClear: 'Clear',
       LearnAnywhereMessage.actionClose: 'Close',
+      LearnAnywhereMessage.actionOk: 'OK',
       LearnAnywhereMessage.actionYes: 'Yes',
       LearnAnywhereMessage.actionNo: 'No',
       LearnAnywhereMessage.confirmAdoptAutoSaveTarget:
@@ -1823,7 +1828,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorDeleteField: 'Feld löschen',
       LearnAnywhereMessage.maskEditorFieldName: 'Feldname',
       LearnAnywhereMessage.maskEditorFieldLength: 'Länge',
-      LearnAnywhereMessage.maskEditorEqualGroup: 'Gleich-Gruppe',
+      LearnAnywhereMessage.maskEditorEqualGroup: 'Gruppe',
       LearnAnywhereMessage.maskEditorRole1: 'Rolle Abfr. 1',
       LearnAnywhereMessage.maskEditorRole2: 'Rolle Abfr. 2',
       LearnAnywhereMessage.maskEditorCategoryCount: 'Kategorien: {count}/20',
@@ -1889,6 +1894,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionContinue: 'Weiter',
       LearnAnywhereMessage.actionClear: 'Löschen',
       LearnAnywhereMessage.actionClose: 'Schließen',
+      LearnAnywhereMessage.actionOk: 'OK',
       LearnAnywhereMessage.actionYes: 'Ja',
       LearnAnywhereMessage.actionNo: 'Nein',
       LearnAnywhereMessage.confirmAdoptAutoSaveTarget:

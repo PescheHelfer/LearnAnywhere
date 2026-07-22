@@ -317,7 +317,7 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
           child: ColoredBox(
             color: Theme.of(context).colorScheme.surface,
             child: widget.deck.units.isEmpty
-                ? _EmptyEditor(onInsert: _appendUnit)
+                ? _EmptyEditor(onInsert: _appendUnit, onCancel: widget.onCancel)
                 : _EditorBody(
                     deck: widget.deck,
                     currentIndex: _currentIndex,
@@ -504,22 +504,46 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
                   LearnAnywhereMessage.editorChooseCategoryTitle,
                 ),
               ),
-              content: SizedBox(
-                width: 320,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: categories.length,
-                  itemBuilder: (BuildContext _, int index) {
-                    final CategoryDefinition cat = categories[index];
-                    return ListTile(
-                      title: Text(cat.name),
-                      selected: cat == selected,
-                      trailing: cat == selected
-                          ? const Icon(Icons.check)
-                          : null,
-                      onTap: () => setInnerState(() => selected = cat),
-                    );
+              // Arrow keys already move focus between tiles (Flutter's default
+              // directional-focus shortcuts); Space activates the focused
+              // tile's onTap (toggles the checkmark). Enter is overridden here
+              // so it ALWAYS confirms the current selection — without this,
+              // Enter on a focused (but not yet toggled) tile would just
+              // toggle it instead of continuing, per the focused tile's own
+              // default Enter/Space activation.
+              content: Shortcuts(
+                shortcuts: const <ShortcutActivator, Intent>{
+                  SingleActivator(LogicalKeyboardKey.enter):
+                      _ChooseCategoryConfirmIntent(),
+                },
+                child: Actions(
+                  actions: <Type, Action<Intent>>{
+                    _ChooseCategoryConfirmIntent:
+                        CallbackAction<_ChooseCategoryConfirmIntent>(
+                          onInvoke: (_) {
+                            Navigator.of(context).pop(selected);
+                            return null;
+                          },
+                        ),
                   },
+                  child: SizedBox(
+                    width: 320,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: categories.length,
+                      itemBuilder: (BuildContext _, int index) {
+                        final CategoryDefinition cat = categories[index];
+                        return ListTile(
+                          title: Text(cat.name),
+                          selected: cat == selected,
+                          trailing: cat == selected
+                              ? const Icon(Icons.check)
+                              : null,
+                          onTap: () => setInnerState(() => selected = cat),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
               actions: <Widget>[
@@ -612,9 +636,10 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
 }
 
 final class _EmptyEditor extends StatelessWidget {
-  const _EmptyEditor({required this.onInsert});
+  const _EmptyEditor({required this.onInsert, required this.onCancel});
 
   final VoidCallback onInsert;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -633,12 +658,21 @@ final class _EmptyEditor extends StatelessWidget {
           const SizedBox(height: LearnAnywhereTokens.gapSmall),
           Text(messages.message(LearnAnywhereMessage.editorEmptyBody)),
           const SizedBox(height: LearnAnywhereTokens.gapMedium),
-          FilledButton.icon(
-            onPressed: onInsert,
-            icon: const Icon(Icons.add),
-            label: Text(
-              messages.message(LearnAnywhereMessage.editorInsertUnit),
-            ),
+          Wrap(
+            spacing: LearnAnywhereTokens.gapSmall,
+            children: <Widget>[
+              FilledButton.icon(
+                onPressed: onInsert,
+                icon: const Icon(Icons.add),
+                label: Text(
+                  messages.message(LearnAnywhereMessage.editorInsertUnit),
+                ),
+              ),
+              OutlinedButton(
+                onPressed: onCancel,
+                child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+              ),
+            ],
           ),
         ],
       ),
@@ -1452,4 +1486,8 @@ final class _DoneIntent extends Intent {
 
 final class _CancelIntent extends Intent {
   const _CancelIntent();
+}
+
+final class _ChooseCategoryConfirmIntent extends Intent {
+  const _ChooseCategoryConfirmIntent();
 }

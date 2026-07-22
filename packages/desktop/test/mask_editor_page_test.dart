@@ -107,7 +107,7 @@ void main() {
     },
   );
 
-  testWidgets('close button and Enter both invoke onClose', (
+  testWidgets('OK button and Enter both invoke onClose', (
     WidgetTester tester,
   ) async {
     const LearningMask mask = LearningMask(
@@ -137,11 +137,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(
-      find.byKey(const ValueKey<String>('mask-editor-close-button')),
+      find.byKey(const ValueKey<String>('mask-editor-ok-button')),
     );
     await tester.pumpAndSettle();
     await tester.tap(
-      find.byKey(const ValueKey<String>('mask-editor-close-button')),
+      find.byKey(const ValueKey<String>('mask-editor-ok-button')),
     );
     await tester.pumpAndSettle();
     expect(closeCount, 1);
@@ -149,6 +149,45 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
     expect(closeCount, 2);
+  });
+
+  testWidgets('cancel button appears with onCancel and invokes the callback', (
+    WidgetTester tester,
+  ) async {
+    const LearningMask mask = LearningMask(
+      maskId: 'm_new_mask-editor-cancel-fixture',
+      name: 'Französisch',
+      direction1Label: 'De -> Fr',
+      direction2Label: 'Fr -> De',
+      categories: <CategoryDefinition>[],
+    );
+    var cancelCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates:
+            LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: Scaffold(
+          body: MaskEditorPage(
+            mask: mask,
+            onChanged: (LearningMask _) {},
+            onClose: () {},
+            onCancel: () => cancelCount += 1,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('mask-editor-cancel-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('mask-editor-cancel-button')),
+    );
+    await tester.pumpAndSettle();
+    expect(cancelCount, 1);
   });
 
   testWidgets('adding a field defaults its length to 60', (

@@ -253,6 +253,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   LearningMask? _maskEditorMask;
   String? _maskEditorPath;
   bool _maskEditorDirty = false;
+  // Mask snapshot captured whenever the editor's baseline changes (open,
+  // fork, new-mask), so Cancel can detect unsaved edits and revert without
+  // writing anything (see [_cancelMaskEditor]).
+  LearningMask? _maskEditorSnapshot;
   // Per-type last-used dialog directories (C1).
   String? _lastVokDir;
   String? _lastStaDir;
@@ -1265,6 +1269,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       }
       setState(() {
         _maskEditorMask = _document.mask;
+        _maskEditorSnapshot = _document.mask;
         _maskEditorPath = resolvedPath;
         _maskEditorDirty = false;
         _editorInitialIndex = null;
@@ -1307,6 +1312,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       }
       setState(() {
         _maskEditorMask = editMask;
+        _maskEditorSnapshot = editMask;
         _maskEditorPath = infPath;
         _maskEditorDirty = false;
         _editorInitialIndex = null;
@@ -1668,6 +1674,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       }
       setState(() {
         _maskEditorMask = forked;
+        _maskEditorSnapshot = forked;
         _maskEditorPath = infPath;
         _maskEditorDirty = false;
       });
@@ -1695,8 +1702,34 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
 
   void _clearMaskEditorState() {
     _maskEditorMask = null;
+    _maskEditorSnapshot = null;
     _maskEditorPath = null;
     _maskEditorDirty = false;
+  }
+
+  /// Cancels the Mask Editor: if the mask changed since it was opened (or
+  /// last forked/created), confirms discarding those in-memory edits, then
+  /// returns home WITHOUT writing anything — mirrors [_cancelEditor] for the
+  /// Unit Editor.
+  Future<void> _cancelMaskEditor() async {
+    final LearningMask? mask = _maskEditorMask;
+    final LearningMask? snapshot = _maskEditorSnapshot;
+    final bool changed =
+        mask != null &&
+        snapshot != null &&
+        encodeMaskJson(mask) != encodeMaskJson(snapshot);
+    if (changed) {
+      final bool discard = await _confirm(
+        LearnAnywhereMessage.confirmDiscardEdits,
+      );
+      if (!discard) {
+        return;
+      }
+    }
+    _clearMaskEditorState();
+    if (mounted) {
+      _selectRoute(_DesktopRoute.home);
+    }
   }
 
   Future<void> _openEditorSearch() async {
@@ -1767,6 +1800,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           });
         },
         onClose: _closeMaskEditor,
+        onCancel: _cancelMaskEditor,
         linkedPath: _maskEditorPath,
         onFork: _forkMask,
       ),
@@ -2004,6 +2038,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _resetRangeForDeck();
       setState(() {
         _maskEditorMask = freshMask;
+        _maskEditorSnapshot = freshMask;
         // Explicitly null (never _lastMaskPath, which is an unrelated file
         // from a previous session — see B8): a brand-new mask must prompt
         // for a save target on close.
