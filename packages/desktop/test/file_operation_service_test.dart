@@ -103,6 +103,92 @@ void main() {
       await temp.delete(recursive: true);
     });
 
+    test('prunes timestamped statistics beyond the keep count, oldest first',
+        () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_stats_prune',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String deckPath = '${temp.path}${sep}french.vok';
+
+      final List<String> paths = <String>[
+        '${temp.path}${sep}french_20260101_090000.sta',
+        '${temp.path}${sep}french_20260102_090000.sta',
+        '${temp.path}${sep}french_20260103_090000.sta',
+        '${temp.path}${sep}french_20260104_090000.sta',
+      ];
+      for (final String p in paths) {
+        await File(p).writeAsString('{}');
+      }
+
+      await service.pruneTimestampedStatistics(deckPath, keep: 2);
+
+      final List<TimestampedStatistics> remaining =
+          await service.findTimestampedStatistics(deckPath);
+      expect(
+        remaining.map((TimestampedStatistics e) => e.path).toSet(),
+        <String>{paths[3], paths[2]},
+      );
+      await temp.delete(recursive: true);
+    });
+
+    test('keep == 0 disables pruning', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_stats_prune_off',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String deckPath = '${temp.path}${sep}french.vok';
+
+      final List<String> paths = <String>[
+        '${temp.path}${sep}french_20260101_090000.sta',
+        '${temp.path}${sep}french_20260102_090000.sta',
+      ];
+      for (final String p in paths) {
+        await File(p).writeAsString('{}');
+      }
+
+      await service.pruneTimestampedStatistics(deckPath, keep: 0);
+
+      final List<TimestampedStatistics> remaining =
+          await service.findTimestampedStatistics(deckPath);
+      expect(remaining, hasLength(2));
+      await temp.delete(recursive: true);
+    });
+
+    test('never prunes the protected (active auto-save target) path',
+        () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_stats_prune_protect',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String deckPath = '${temp.path}${sep}french.vok';
+
+      // The active target is the OLDEST file — without protection it would
+      // be the first one pruned by a keep:1 run.
+      final String activeButOld = '${temp.path}${sep}french_20260101_090000.sta';
+      final String newer = '${temp.path}${sep}french_20260102_090000.sta';
+      for (final String p in <String>[activeButOld, newer]) {
+        await File(p).writeAsString('{}');
+      }
+
+      await service.pruneTimestampedStatistics(
+        deckPath,
+        keep: 1,
+        protectPath: activeButOld,
+      );
+
+      final List<TimestampedStatistics> remaining =
+          await service.findTimestampedStatistics(deckPath);
+      expect(
+        remaining.map((TimestampedStatistics e) => e.path).toSet(),
+        <String>{activeButOld, newer},
+      );
+      await temp.delete(recursive: true);
+    });
+
     test('summarizes x-of-y queried coverage for a loaded stats file', () {
       final DesktopFileService service = const DesktopFileService();
       const StatisticsFile file = StatisticsFile(
@@ -634,6 +720,55 @@ void main() {
       expect((await service.readMask(sameRevPath)).revision, 3);
       await temp.delete(recursive: true);
     });
+
+    test(
+      'classifies a copy ahead of the reference as newer, never updatable',
+      () async {
+        final Directory temp = await Directory.systemTemp.createTemp(
+          'learn_anywhere_sync_newer',
+        );
+        final DesktopFileService service = const DesktopFileService();
+        final String sep = Platform.pathSeparator;
+
+        // A stale reference (revision 1) must not be able to downgrade a
+        // copy that has already moved on to revision 2 — this is the bug
+        // that let an un-reconciled open deck's embedded mask (see
+        // [_reconcileLinkedMask] in main.dart) overwrite a newer `.inf`.
+        final LearningMask staleReference = sampleMask().copyWith(revision: 1);
+        final LearningMask newerCopy = _withFirstFieldLength(
+          sampleMask(),
+          80,
+        ).copyWith(revision: 2);
+
+        final String newerMaskPath = '${temp.path}${sep}newer.inf';
+        final String newerDeckPath = '${temp.path}${sep}newer.vok';
+        await service.saveMask(newerCopy, newerMaskPath);
+        await service.saveDeckSnapshot(
+          LearningDeck(mask: newerCopy, units: const <LearningUnit>[]),
+          newerDeckPath,
+        );
+
+        final List<MaskSyncEntry> entries = await service.scanMaskCopies(
+          root: temp.path,
+          reference: staleReference,
+        );
+        final Map<String, MaskSyncEntry> byPath = <String, MaskSyncEntry>{
+          for (final MaskSyncEntry e in entries) e.path: e,
+        };
+
+        expect(byPath[newerMaskPath]!.status, MaskSyncStatus.newer);
+        expect(byPath[newerMaskPath]!.isUpdatable, isFalse);
+        expect(byPath[newerDeckPath]!.status, MaskSyncStatus.newer);
+        expect(byPath[newerDeckPath]!.isUpdatable, isFalse);
+
+        // Confirm the guard actually prevents a downgrade: even if somehow
+        // selected, applyMaskSync itself would overwrite — the real
+        // protection is that isUpdatable is false, so the app never offers
+        // the checkbox. Verify the files are unchanged by a scan-only run.
+        expect((await service.readMask(newerMaskPath)).revision, 2);
+        await temp.delete(recursive: true);
+      },
+    );
   });
 }
 

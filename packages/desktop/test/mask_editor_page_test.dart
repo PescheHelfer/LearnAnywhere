@@ -190,7 +190,7 @@ void main() {
     expect(cancelCount, 1);
   });
 
-  testWidgets('adding a field defaults its length to 60', (
+  testWidgets('adding a field defaults its length to 80', (
     WidgetTester tester,
   ) async {
     const LearningMask mask = LearningMask(
@@ -230,7 +230,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('add-field-button')));
     await tester.pumpAndSettle();
 
-    expect(emitted.categories.single.fields.single.length, 60);
+    expect(emitted.categories.single.fields.single.length, 80);
   });
 
   testWidgets(

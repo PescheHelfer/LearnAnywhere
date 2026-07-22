@@ -569,15 +569,46 @@ List<SessionItem> activeSuperQueryPool({
   return List<SessionItem>.unmodifiable(items);
 }
 
+/// Draws a random item from [pool], never repeating [lastItem] back-to-back.
+///
+/// When the drawn item is the one just shown it is re-drawn from the rest of
+/// the pool — except when it is the only item left, which must still repeat.
+/// A single extra draw (plus one linear scan for [lastItem]) keeps this cheap
+/// enough to run on every unit change. Returns `null` for an empty pool.
+SessionItem? pickAvoidingRepeat(
+  List<SessionItem> pool,
+  Random random, {
+  SessionItem? lastItem,
+}) {
+  if (pool.isEmpty) {
+    return null;
+  }
+  if (pool.length == 1 || lastItem == null) {
+    return pool[random.nextInt(pool.length)];
+  }
+  final int lastIndex = pool.indexOf(lastItem);
+  if (lastIndex < 0) {
+    return pool[random.nextInt(pool.length)];
+  }
+  // Draw over the pool minus that one slot, then step past it.
+  var index = random.nextInt(pool.length - 1);
+  if (index >= lastIndex) {
+    index += 1;
+  }
+  return pool[index];
+}
+
 /// Selects a random practice item, or `null` when the each-once set is exhausted.
 ///
 /// In [SessionMode.onceThrough] each item is served at most once, so the result
-/// is `null` once every in-scope item has been seen.
+/// is `null` once every in-scope item has been seen. Passing [lastItem] avoids
+/// serving the same item twice in a row (see [pickAvoidingRepeat]).
 SessionItem? pickPracticeItem({
   required LearningDeck deck,
   required SessionParameters parameters,
   required Random random,
   Set<SessionItem> seenItems = const <SessionItem>{},
+  SessionItem? lastItem,
 }) {
   final List<SessionItem> candidates = itemsInScope(deck, parameters);
   final List<SessionItem> available =
@@ -586,10 +617,7 @@ SessionItem? pickPracticeItem({
             .where((SessionItem item) => !seenItems.contains(item))
             .toList(growable: false)
       : candidates;
-  if (available.isEmpty) {
-    return null;
-  }
-  return available[random.nextInt(available.length)];
+  return pickAvoidingRepeat(available, random, lastItem: lastItem);
 }
 
 /// Returns every in-scope item for [parameters] in deck (file) order.

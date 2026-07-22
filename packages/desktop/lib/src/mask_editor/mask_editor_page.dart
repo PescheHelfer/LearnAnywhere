@@ -295,7 +295,7 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
         FieldDefinition(
           id: _nextFieldId(widget.mask),
           name: '',
-          length: 60,
+          length: defaultFieldLength,
           equalGroup: 0,
           role1: FieldRole.question,
           role2: FieldRole.answer,

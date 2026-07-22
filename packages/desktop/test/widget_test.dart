@@ -94,21 +94,17 @@ void main() {
     expect(find.text('Question'), findsOneWidget);
     expect(find.text('Answer'), findsOneWidget);
 
+    // The default field length is 80 (Batch 12); type well past it and
+    // confirm the entered text is truncated to exactly that length.
+    const String repeatUnit =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final String overLong = repeatUnit + repeatUnit;
     await tester.tap(find.byTooltip('Bold').first);
-    await tester.enterText(
-      editorInput('Question'),
-      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-    );
+    await tester.enterText(editorInput('Question'), overLong);
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN'),
-      findsOneWidget,
-    );
-    expect(
-      find.text('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'),
-      findsNothing,
-    );
+    expect(find.text(overLong.substring(0, 80)), findsOneWidget);
+    expect(find.text(overLong), findsNothing);
   });
 
   testWidgets('editor search shows selectable all-match results', (
@@ -159,6 +155,45 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Unit 1 of 2 - Category 1'), findsOneWidget);
+  });
+
+  testWidgets('re-entering the unit editor opens on the last unit', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit editor').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Insert unit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Category 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Category 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unit 2 of 2 - Category 1'), findsOneWidget);
+
+    // Leave the editor (F10/Done), then land back in the home screen — a
+    // fresh Edit ▸ Unit editor must not restart at unit 1.
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit editor').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unit 2 of 2 - Category 1'), findsOneWidget);
   });
 
   testWidgets('query options route exposes learning toggles', (
@@ -217,7 +252,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(MenuItemButton, 'Learn'));
+    await tester.tap(find.text('Learn'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Practice setup').last);
     await tester.pumpAndSettle();
     expect(find.text('Practice setup'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -500));

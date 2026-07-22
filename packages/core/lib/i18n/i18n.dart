@@ -118,6 +118,15 @@ enum LearnAnywhereMessage {
   /// Learn menu label.
   menuLearn,
 
+  /// Learn submenu: open the full practice setup screen.
+  menuLearnPracticeSetup,
+
+  /// Learn submenu: start straight away with the last-used settings.
+  menuLearnWithLastSettings,
+
+  /// Learn submenu: return to the session already running.
+  menuLearnContinue,
+
   /// Statistics menu label.
   menuStatistics,
 
@@ -136,11 +145,27 @@ enum LearnAnywhereMessage {
   /// Options menu: advanced learning options item.
   menuOptionsAdvancedLearning,
 
-  /// Options menu: auto-load statistics toggle.
+  /// Options menu: Statistics submenu label.
+  menuOptionsStatistics,
+
+  /// Options ▸ Statistics: auto-load statistics toggle.
   menuOptionsAutoLoadStats,
 
-  /// Options menu: auto-save statistics toggle.
+  /// Options ▸ Statistics: auto-save statistics toggle.
   menuOptionsAutoSaveStats,
+
+  /// Options ▸ Statistics: opens the retention-count prompt. Placeholder:
+  /// {count}.
+  menuOptionsKeepStatistics,
+
+  /// Title of the retention-count prompt dialog.
+  keepStatisticsTitle,
+
+  /// Label of the number field in the retention-count prompt dialog.
+  keepStatisticsLabel,
+
+  /// Explanation shown under the retention-count field: 0 keeps every file.
+  keepStatisticsHint,
 
   /// Theme control label.
   themeLabel,
@@ -355,14 +380,16 @@ enum LearnAnywhereMessage {
   /// Learn start range label.
   learnRangeStart,
 
+  /// Start-range explanation shown as a tooltip.
+  learnRangeStartTooltip,
+
   /// Learn end range label.
   learnRangeEnd,
 
-  /// Caption under the unit range fields showing the deck size. Placeholder:
-  /// {count}.
-  learnRangeTotalHint,
+  /// End-range explanation shown as a tooltip.
+  learnRangeEndTooltip,
 
-  /// Option that fixes the unit range to the whole deck.
+  /// Option that fixes the unit range to the whole deck. Placeholder: {count}.
   learnUseAllUnits,
 
   /// Title of the prompt shown when a session starts in a different mode than
@@ -418,6 +445,9 @@ enum LearnAnywhereMessage {
 
   /// Mastery threshold label.
   learnMasteryThreshold,
+
+  /// Mastery threshold explanation shown as a tooltip.
+  learnMasteryThresholdTooltip,
 
   /// Start or resume session action.
   learnStartSession,
@@ -887,6 +917,14 @@ enum LearnAnywhereMessage {
   /// Status shown when compatible sibling decks were updated on mask save.
   fileStatusDecksUpdated,
 
+  /// Status shown when an opened deck adopted schema changes from its
+  /// linked `.inf` mask.
+  fileStatusLinkedMaskAdopted,
+
+  /// Status shown when an opened deck's linked `.inf` differs but cannot be
+  /// applied automatically without losing data.
+  fileStatusLinkedMaskConflict,
+
   /// Title of the breaking-propagation dialog.
   propagationBreakingTitle,
 
@@ -912,9 +950,13 @@ enum LearnAnywhereMessage {
   /// Title of the cross-directory mask-sync review dialog.
   maskSyncTitle,
 
-  /// Subtitle showing the reference mask's own name in the tier-2 sync
-  /// dialog. Placeholder: {name}.
+  /// Subtitle showing the reference mask's own name and revision in the
+  /// tier-2 sync dialog. Placeholders: {name}, {revision}.
   maskSyncReferenceLabel,
+
+  /// Line showing the reference mask's own source file, when it has one.
+  /// Placeholder: {path}.
+  maskSyncReferenceSource,
 
   /// Sync status: already identical to the current mask.
   maskSyncStatusUpToDate,
@@ -928,10 +970,13 @@ enum LearnAnywhereMessage {
   /// Sync status: differs from the current mask at the same revision.
   maskSyncStatusDiffers,
 
+  /// Sync status: ahead of the reference mask (excluded, never downgraded).
+  maskSyncStatusNewer,
+
   /// Button that applies the selected updates.
   maskSyncApply,
 
-  /// Status shown when no copies of the mask were found under the folder.
+  /// Status shown when a sync scan finds no copies. Placeholder: {folder}.
   maskSyncNoneFound,
 
   /// Status shown after a sync run, with a `{count}` placeholder.
@@ -1112,16 +1157,28 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuEditJumpToNumber: '&Jump to number...', // J
       LearnAnywhereMessage.menuMaskEditor: '&Mask Editor', // top-bar M
       LearnAnywhereMessage.menuLearn: '&Learn', // top-bar L
+      LearnAnywhereMessage.menuLearnPracticeSetup: '&Practice setup', // P
+      LearnAnywhereMessage.menuLearnWithLastSettings:
+          '&Learn with last settings', // L
+      LearnAnywhereMessage.menuLearnContinue: '&Continue', // C
       LearnAnywhereMessage.menuStatistics: '&Statistics', // top-bar S
       LearnAnywhereMessage.menuLexicon: 'Le&xicon', // top-bar X
       LearnAnywhereMessage.menuHelp: '&Help', // top-bar H
       LearnAnywhereMessage.helpAbout: '&About', // A
       LearnAnywhereMessage.menuOptions: '&Options', // top-bar O
       LearnAnywhereMessage.menuOptionsAdvancedLearning: '&Advanced Learning Options', // A
+      LearnAnywhereMessage.menuOptionsStatistics: 'Stat&istics', // I
       LearnAnywhereMessage.menuOptionsAutoLoadStats:
           'Auto-l&oad statistics', // O
       LearnAnywhereMessage.menuOptionsAutoSaveStats:
           'Auto-sa&ve statistics', // V
+      LearnAnywhereMessage.menuOptionsKeepStatistics:
+          '&Keep last N session files... ({count})', // K
+      LearnAnywhereMessage.keepStatisticsTitle: 'Keep last N session files',
+      LearnAnywhereMessage.keepStatisticsLabel: 'Files to keep per deck',
+      LearnAnywhereMessage.keepStatisticsHint:
+          'The oldest timestamped session files beyond this count are '
+          'deleted after each new one is written. 0 keeps every file.',
       LearnAnywhereMessage.themeLabel: '&Theme', // T
       LearnAnywhereMessage.themeSystem: '&System', // S
       LearnAnywhereMessage.themeLight: 'Lig&ht', // H
@@ -1207,11 +1264,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnDirection: 'Direction',
       LearnAnywhereMessage.learnBothDirections: 'Both',
       LearnAnywhereMessage.learnRangeStart: 'Start unit',
+      LearnAnywhereMessage.learnRangeStartTooltip:
+          'Clearing this field expands the range to the first unit.',
       LearnAnywhereMessage.learnRangeEnd: 'End unit',
-      LearnAnywhereMessage.learnRangeTotalHint:
-          'This deck has {count} unit(s). Clearing a field expands the range '
-          'to that end.',
-      LearnAnywhereMessage.learnUseAllUnits: 'Use all units',
+      LearnAnywhereMessage.learnRangeEndTooltip:
+          'Clearing this field expands the range to the last unit.',
+      LearnAnywhereMessage.learnUseAllUnits: 'Use all units ({count})',
       LearnAnywhereMessage.sessionModeSwitchTitle:
           'Statistics from a different mode',
       LearnAnywhereMessage.sessionModeSwitchToDrillBody:
@@ -1241,6 +1299,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnEntryLevelNoCapSuffix: ' (no cap)',
       LearnAnywhereMessage.learnShuffleUnits: 'Shuffle units',
       LearnAnywhereMessage.learnMasteryThreshold: 'Mastery threshold (%)',
+      LearnAnywhereMessage.learnMasteryThresholdTooltip:
+          'A unit is considered mastered once its correct-answer rate reaches '
+          'this percentage. Mastered units are removed from the active '
+          'practice pool.',
       LearnAnywhereMessage.learnStartSession: 'Start session',
       LearnAnywhereMessage.learnPrompt: 'Prompt',
       LearnAnywhereMessage.learnYourAnswer: 'Your answer',
@@ -1418,6 +1480,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionCreateNewMask: 'Create new mask',
       LearnAnywhereMessage.fileStatusMaskSaved: 'Mask saved',
       LearnAnywhereMessage.fileStatusDecksUpdated: 'Updated {count} deck(s)',
+      LearnAnywhereMessage.fileStatusLinkedMaskAdopted:
+          'Deck updated to match its linked mask file.',
+      LearnAnywhereMessage.fileStatusLinkedMaskConflict:
+          'This deck\'s linked mask file has changed in a way that would '
+          'lose data, so the deck keeps its own copy of the mask. Use '
+          'Edit ▸ Mask Editor to resolve the conflict.',
       LearnAnywhereMessage.propagationBreakingTitle: 'Some decks would lose data',
       LearnAnywhereMessage.propagationBreakingBody:
           'Applying this mask change would break the following deck(s). Save the '
@@ -1434,14 +1502,17 @@ final class LearnAnywhereCatalog {
           'U&pdate other copies of this mask...', // p
 
       LearnAnywhereMessage.maskSyncTitle: 'Update other copies of this mask',
-      LearnAnywhereMessage.maskSyncReferenceLabel: 'Reference mask: {name}',
+      LearnAnywhereMessage.maskSyncReferenceLabel:
+          'Reference mask: {name} (rev {revision})',
+      LearnAnywhereMessage.maskSyncReferenceSource: 'From: {path}',
       LearnAnywhereMessage.maskSyncStatusUpToDate: 'Up to date',
       LearnAnywhereMessage.maskSyncStatusWillUpdate: 'Will update',
       LearnAnywhereMessage.maskSyncStatusWouldBreak: 'Would break',
       LearnAnywhereMessage.maskSyncStatusDiffers: 'Differs (same revision)',
+      LearnAnywhereMessage.maskSyncStatusNewer: 'Newer (not overwritten)',
       LearnAnywhereMessage.maskSyncApply: 'Update selected',
       LearnAnywhereMessage.maskSyncNoneFound:
-          'No other copies of this mask were found',
+          'No other copies of this mask were found under {folder}',
       LearnAnywhereMessage.maskSyncDone: 'Synced {count} copy(ies)',
       LearnAnywhereMessage.actionCancel: 'Cancel',
       LearnAnywhereMessage.actionContinue: 'Continue',
@@ -1542,16 +1613,30 @@ final class LearnAnywhereCatalog {
           'Springe zu bestimmter &Nummer...', // N (avoids S conflict with Suchen)
       LearnAnywhereMessage.menuMaskEditor: '&Mask Editor', // top-bar M
       LearnAnywhereMessage.menuLearn: '&Lern', // top-bar L
+      // Matches the setup screen's own title (learnSetupTitle).
+      LearnAnywhereMessage.menuLearnPracticeSetup: 'Übung &einrichten', // E
+      LearnAnywhereMessage.menuLearnWithLastSettings:
+          'Mit &letzten Einstellungen lernen', // L
+      LearnAnywhereMessage.menuLearnContinue: '&Fortsetzen', // F
       LearnAnywhereMessage.menuStatistics: '&Statistik', // top-bar S
       LearnAnywhereMessage.menuLexicon: 'Le&xikon', // top-bar X
       LearnAnywhereMessage.menuHelp: '&Hilfe', // top-bar H
       LearnAnywhereMessage.helpAbout: '&Programminfo', // P
       LearnAnywhereMessage.menuOptions: '&Optionen', // top-bar O
       LearnAnywhereMessage.menuOptionsAdvancedLearning: '&Erweiterte Lernoptionen', // E
+      LearnAnywhereMessage.menuOptionsStatistics: 'Statisti&ken', // K
       LearnAnywhereMessage.menuOptionsAutoLoadStats:
           'Statistiken automatisch &laden', // L
       LearnAnywhereMessage.menuOptionsAutoSaveStats:
           'Statistiken au&tomatisch speichern', // T
+      LearnAnywhereMessage.menuOptionsKeepStatistics:
+          'Nur die letzten &N Sitzungsdateien behalten... ({count})', // N
+      LearnAnywhereMessage.keepStatisticsTitle:
+          'Nur die letzten N Sitzungsdateien behalten',
+      LearnAnywhereMessage.keepStatisticsLabel: 'Dateien pro Deck behalten',
+      LearnAnywhereMessage.keepStatisticsHint:
+          'Die ältesten Sitzungsdateien über diese Anzahl hinaus werden nach '
+          'jeder neu geschriebenen Datei gelöscht. 0 behält alle Dateien.',
       LearnAnywhereMessage.themeLabel: '&Darstellung', // D
       LearnAnywhereMessage.themeSystem: 'S&ystem', // Y (avoids S = Sprache label)
       LearnAnywhereMessage.themeLight: '&Hell', // H
@@ -1639,11 +1724,13 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnDirection: 'Abfragerichtung',
       LearnAnywhereMessage.learnBothDirections: 'Beide',
       LearnAnywhereMessage.learnRangeStart: 'Erste Einheit',
+      LearnAnywhereMessage.learnRangeStartTooltip:
+          'Ein leeres Feld erweitert den Bereich bis zur ersten Einheit.',
       LearnAnywhereMessage.learnRangeEnd: 'Letzte Einheit',
-      LearnAnywhereMessage.learnRangeTotalHint:
-          'Dieser Stapel hat {count} Einheit(en). Ein leeres Feld erweitert '
-          'den Bereich bis an dieses Ende.',
-      LearnAnywhereMessage.learnUseAllUnits: 'Alle Einheiten verwenden',
+      LearnAnywhereMessage.learnRangeEndTooltip:
+          'Ein leeres Feld erweitert den Bereich bis zur letzten Einheit.',
+      LearnAnywhereMessage.learnUseAllUnits:
+          'Alle Einheiten verwenden ({count})',
       LearnAnywhereMessage.sessionModeSwitchTitle:
           'Statistik aus einem anderen Modus',
       LearnAnywhereMessage.sessionModeSwitchToDrillBody:
@@ -1675,6 +1762,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnEntryLevelNoCapSuffix: ' (keine Begrenzung)',
       LearnAnywhereMessage.learnShuffleUnits: 'Einheiten mischen',
       LearnAnywhereMessage.learnMasteryThreshold: 'Beherrschungsschwelle (%)',
+      LearnAnywhereMessage.learnMasteryThresholdTooltip:
+          'Eine Lerneinheit gilt als gemeistert, sobald ihre Trefferquote '
+          'diesen Prozentsatz erreicht. Gemeisterte Einheiten werden aus dem '
+          'aktiven Übungspool entfernt.',
       LearnAnywhereMessage.learnStartSession: 'Sitzung starten',
       LearnAnywhereMessage.learnPrompt: 'Frage',
       LearnAnywhereMessage.learnYourAnswer: 'Ihre Antwort',
@@ -1861,6 +1952,13 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileStatusMaskSaved: 'Maske gespeichert',
       LearnAnywhereMessage.fileStatusDecksUpdated:
           '{count} Deck(s) aktualisiert',
+      LearnAnywhereMessage.fileStatusLinkedMaskAdopted:
+          'Lern-Datei an ihre verknüpfte Maskendatei angepasst.',
+      LearnAnywhereMessage.fileStatusLinkedMaskConflict:
+          'Die mit dieser Lern-Datei verknüpfte Maskendatei hat sich so '
+          'geändert, dass Daten verloren gingen; die Lern-Datei behält '
+          'daher ihre eigene Kopie der Maske. Öffnen Sie Bearbeiten ▸ '
+          'Mask-Editor, um den Konflikt zu lösen.',
       LearnAnywhereMessage.propagationBreakingTitle:
           'Einige Decks würden Daten verlieren',
       LearnAnywhereMessage.propagationBreakingBody:
@@ -1881,14 +1979,18 @@ final class LearnAnywhereCatalog {
 
       LearnAnywhereMessage.maskSyncTitle:
           'Andere Kopien dieser Maske aktualisieren',
-      LearnAnywhereMessage.maskSyncReferenceLabel: 'Referenzmaske: {name}',
+      LearnAnywhereMessage.maskSyncReferenceLabel:
+          'Referenzmaske: {name} (Rev. {revision})',
+      LearnAnywhereMessage.maskSyncReferenceSource: 'Aus: {path}',
       LearnAnywhereMessage.maskSyncStatusUpToDate: 'Aktuell',
       LearnAnywhereMessage.maskSyncStatusWillUpdate: 'Wird aktualisiert',
       LearnAnywhereMessage.maskSyncStatusWouldBreak: 'Würde beschädigen',
       LearnAnywhereMessage.maskSyncStatusDiffers: 'Abweichend (gleiche Revision)',
+      LearnAnywhereMessage.maskSyncStatusNewer:
+          'Neuer (wird nicht überschrieben)',
       LearnAnywhereMessage.maskSyncApply: 'Auswahl aktualisieren',
       LearnAnywhereMessage.maskSyncNoneFound:
-          'Keine weiteren Kopien dieser Maske gefunden',
+          'Keine weiteren Kopien dieser Maske gefunden unter {folder}',
       LearnAnywhereMessage.maskSyncDone: '{count} Kopie(n) synchronisiert',
       LearnAnywhereMessage.actionCancel: 'Abbruch',
       LearnAnywhereMessage.actionContinue: 'Weiter',

@@ -31,6 +31,8 @@ final class LearnSessionPage extends StatefulWidget {
     this.levelNames = kDefaultLevelNamesEn,
     this.entryLevelCap = kMaxSupportLevel,
     this.resetToSetupSignal = 0,
+    this.startSessionOnOpen = false,
+    this.onSessionActiveChanged,
     this.onLevelStatisticsChanged,
     this.onEntryLevelCapChanged,
     this.onStartUnitChanged,
@@ -54,9 +56,18 @@ final class LearnSessionPage extends StatefulWidget {
   /// Highest support level a newly seeded Level-Learning unit may start at.
   final int entryLevelCap;
 
-  /// Increments when the Learn menu is chosen; when it changes while this page
-  /// is at rest (setup or completion), the page returns to its practice setup.
+  /// Increments when Learn ▸ Practice setup is chosen; a change always returns
+  /// the page to its practice setup, whatever it was showing.
   final int resetToSetupSignal;
+
+  /// Set for the frame in which Learn ▸ "Learn with last settings" is chosen;
+  /// the page then starts a session immediately with the settings on hand,
+  /// whether it was already open or is being created by that command.
+  final bool startSessionOnOpen;
+
+  /// Called when a session starts or ends, so the shell can offer "Continue"
+  /// instead of "Learn with last settings" while one is running.
+  final ValueChanged<bool>? onSessionActiveChanged;
 
   /// Called when Level-Learning statistics change (attempt or manual override).
   final ValueChanged<List<LevelUnitStats>>? onLevelStatisticsChanged;
@@ -229,6 +240,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   // unit at the same level still starts from empty cells.
   int _serveNonce = 0;
 
+  // Last session-active state pushed to the shell; see [_notifySessionActive].
+  bool _sessionActiveNotified = false;
+
   @override
   void initState() {
     super.initState();
@@ -239,6 +253,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     _thresholdPercent = (_draftParameters.masteryThreshold * 100).round();
     if (widget.options.showClock) {
       _startClock();
+    }
+    // Created by Learn ▸ "Learn with last settings": skip the setup screen.
+    if (widget.startSessionOnOpen) {
+      _startSessionOnOpen();
     }
   }
 
@@ -264,17 +282,53 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _currentItem = null;
       _completed = false;
     }
-    // Choosing Learn again from a resting screen (setup or, notably, the
-    // completion view) returns to the practice setup so a new session can be
-    // configured. A live session is left alone (Esc handles leaving that).
-    if (widget.resetToSetupSignal != oldWidget.resetToSetupSignal &&
-        _currentItem == null &&
-        _completed) {
+    // Learn ▸ Practice setup always lands on the setup screen, from the
+    // completion view as well as from a running session.
+    if (widget.resetToSetupSignal != oldWidget.resetToSetupSignal) {
       _completed = false;
+      _currentItem = null;
+      _notifySessionActive(false);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _rootFocusNode.requestFocus();
       });
     }
+    // Learn ▸ "Learn with last settings" starts right away; a session already
+    // running is simply resumed (the shell labels that entry "Continue").
+    if (widget.startSessionOnOpen && !oldWidget.startSessionOnOpen) {
+      _startSessionOnOpen();
+    }
+  }
+
+  /// Starts a session from the settings on hand, unless one is already running.
+  ///
+  /// Deferred a frame: the request arrives from the shell mid-build (page
+  /// creation or rebuild), and [_startSession] both awaits the shell's
+  /// start-of-session hook and calls `setState`.
+  void _startSessionOnOpen() {
+    if (_currentItem != null) {
+      return;
+    }
+    _completed = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _currentItem == null) {
+        unawaited(_startSession());
+      }
+    });
+  }
+
+  /// Reports session start/end to the shell, once per transition.
+  ///
+  /// Always deferred to the next frame: the transitions happen inside this
+  /// page's `setState`/`didUpdateWidget`, where calling back into the shell
+  /// would rebuild an ancestor mid-build.
+  void _notifySessionActive(bool active) {
+    if (_sessionActiveNotified == active) {
+      return;
+    }
+    _sessionActiveNotified = active;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onSessionActiveChanged?.call(active);
+    });
   }
 
   @override
@@ -552,6 +606,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _currentItem = null;
       _completed = false;
     });
+    _notifySessionActive(false);
     // The "Extend session" button that triggered this is disposed by the
     // view switch, so reclaim root focus for the setup view's shortcuts.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -577,6 +632,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         _completed = true;
         _evaluation = null;
       });
+      _notifySessionActive(false);
       // The completion view has no focusable answer fields; the button that
       // triggered this transition may be disposed, so reclaim root focus.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -594,6 +650,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _level3Memorized = false;
       _serveNonce += 1;
     });
+    _notifySessionActive(true);
     // Reclaim root focus unless an answer field (or the level-2 scaffold, which
     // autofocuses itself) will claim it. This covers think-only mode (no fields)
     // and the level-3 pre-memorize step, keeping the F-keys/Esc/primary action
@@ -615,7 +672,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   /// Returns the next item from the precomputed presentation order.
   ///
   /// In once-through mode each item is served once, then `null` ends the
-  /// session; in endless mode the order repeats indefinitely.
+  /// session; in endless mode the order restarts — reshuffled when shuffle is
+  /// on, so successive passes differ — and the first item of a new pass is
+  /// never the one just shown (unless it is the only item).
   SessionItem? _nextOrderedItem() {
     if (_order.isEmpty) {
       return null;
@@ -626,35 +685,59 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       }
       return _order[_orderPosition++];
     }
-    final SessionItem item = _order[_orderPosition % _order.length];
-    _orderPosition += 1;
-    return item;
+    if (_orderPosition >= _order.length) {
+      _orderPosition = 0;
+      if (_draftParameters.shuffle) {
+        _order = sessionItemOrder(
+          deck: widget.deck,
+          parameters: _draftParameters,
+          random: _random,
+        );
+      }
+      _avoidRepeatAtOrderStart();
+    }
+    return _order[_orderPosition++];
+  }
+
+  /// Swaps the upcoming first item away when it repeats the one just shown.
+  ///
+  /// Only relevant at a pass boundary; a single-item order must still repeat.
+  void _avoidRepeatAtOrderStart() {
+    final SessionItem? last = _currentItem;
+    if (last == null || _order.length < 2 || _order.first != last) {
+      return;
+    }
+    final List<SessionItem> reordered = _order.toList();
+    final int swapWith = 1 + _random.nextInt(reordered.length - 1);
+    reordered[0] = reordered[swapWith];
+    reordered[swapWith] = last;
+    _order = List<SessionItem>.unmodifiable(reordered);
   }
 
   SessionItem? _firstSuperQueryItem() {
-    final List<SessionItem> pool = activeSuperQueryPool(
-      deck: widget.deck,
-      statistics: widget.statistics,
-      parameters: _draftParameters,
+    return pickAvoidingRepeat(
+      activeSuperQueryPool(
+        deck: widget.deck,
+        statistics: widget.statistics,
+        parameters: _draftParameters,
+      ),
+      _random,
+      lastItem: _currentItem,
     );
-    if (pool.isEmpty) {
-      return null;
-    }
-    return pool[_random.nextInt(pool.length)];
   }
 
   SessionItem? _firstLevelLearningItem() {
-    final List<SessionItem> pool = activeLevelLearningPool(
-      deck: widget.deck,
-      statistics: widget.statistics,
-      levelStatistics: _levelStats,
-      parameters: _draftParameters,
-      entryLevelCap: widget.entryLevelCap,
+    return pickAvoidingRepeat(
+      activeLevelLearningPool(
+        deck: widget.deck,
+        statistics: widget.statistics,
+        levelStatistics: _levelStats,
+        parameters: _draftParameters,
+        entryLevelCap: widget.entryLevelCap,
+      ),
+      _random,
+      lastItem: _currentItem,
     );
-    if (pool.isEmpty) {
-      return null;
-    }
-    return pool[_random.nextInt(pool.length)];
   }
 
   /// Returns the Level-Learning stats for [item] from the session ladder.
@@ -1419,9 +1502,10 @@ final class _SetupView extends StatelessWidget {
         ),
         // Level Learning caps the highest starting support; the whole ladder
         // always ends in typing, so the think-only toggle does not apply.
-        if (isLevelLearning) ...<Widget>[
+        if (isLevelLearning)
           _DropdownRow<int>(
             label: messages.message(LearnAnywhereMessage.learnEntryLevel),
+            tooltip: messages.message(LearnAnywhereMessage.learnEntryLevelHint),
             value: entryLevelCap.clamp(kFreeRecallLevel, kMaxSupportLevel),
             items: <DropdownMenuItem<int>>[
               for (
@@ -1443,75 +1527,71 @@ final class _SetupView extends StatelessWidget {
             ],
             onChanged: onEntryLevelCapChanged,
           ),
-          Padding(
-            padding: const EdgeInsets.only(
-              bottom: LearnAnywhereTokens.gapMedium,
-            ),
-            child: Text(
-              messages.message(LearnAnywhereMessage.learnEntryLevelHint),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-        ],
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(messages.message(LearnAnywhereMessage.learnUseAllUnits)),
-          value: useAllUnits,
-          onChanged: onUseAllUnitsChanged,
-        ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            _NumberRow(
-              label: messages.message(LearnAnywhereMessage.learnRangeStart),
-              value: startIndex,
-              minimum: 1,
-              maximum: deck.units.length,
-              enabled: !useAllUnits,
-              onChanged: onStartChanged,
-            ),
-            const SizedBox(width: LearnAnywhereTokens.gapMedium),
-            _NumberRow(
-              label: messages.message(LearnAnywhereMessage.learnRangeEnd),
-              value: endIndex,
-              minimum: 1,
-              maximum: deck.units.length,
-              // Clearing "End unit" means "up to the last unit", not 1.
-              emptyFallback: deck.units.length,
-              enabled: !useAllUnits,
-              onChanged: onEndChanged,
-            ),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapMedium),
-          child: Text(
-            messages
-                .message(LearnAnywhereMessage.learnRangeTotalHint)
-                .replaceAll('{count}', deck.units.length.toString()),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ),
-        // Level Learning is always "with input", so the toggle is hidden there.
-        if (!isLevelLearning)
-          SwitchListTile(
-            title: Text(
-              messages.message(LearnAnywhereMessage.queryOptionWithAnswerInput),
-            ),
-            value: parameters.withInput,
-            onChanged: onWithInputChanged,
-          ),
-        SwitchListTile(
-          title: Text(messages.message(LearnAnywhereMessage.learnShuffleUnits)),
-          value: parameters.shuffle,
-          onChanged: onShuffleChanged,
-        ),
         _NumberRow(
           label: messages.message(LearnAnywhereMessage.learnMasteryThreshold),
+          tooltip: messages.message(
+            LearnAnywhereMessage.learnMasteryThresholdTooltip,
+          ),
           value: thresholdPercent,
           minimum: 1,
           maximum: 100,
           onChanged: onThresholdChanged,
+        ),
+        // Level Learning is always "with input", so the toggle is hidden there.
+        if (!isLevelLearning)
+          _ToggleRow(
+            label: messages.message(
+              LearnAnywhereMessage.queryOptionWithAnswerInput,
+            ),
+            value: parameters.withInput,
+            onChanged: onWithInputChanged,
+          ),
+        _ToggleRow(
+          label: messages.message(LearnAnywhereMessage.learnShuffleUnits),
+          value: parameters.shuffle,
+          onChanged: onShuffleChanged,
+        ),
+        _ToggleRow(
+          label: messages
+              .message(LearnAnywhereMessage.learnUseAllUnits)
+              .replaceAll('{count}', deck.units.length.toString()),
+          value: useAllUnits,
+          onChanged: onUseAllUnitsChanged,
+        ),
+        const SizedBox(height: LearnAnywhereTokens.gapSmall),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: _NumberRow(
+                label: messages.message(LearnAnywhereMessage.learnRangeStart),
+                tooltip: messages.message(
+                  LearnAnywhereMessage.learnRangeStartTooltip,
+                ),
+                value: startIndex,
+                minimum: 1,
+                maximum: deck.units.length,
+                enabled: !useAllUnits,
+                onChanged: onStartChanged,
+              ),
+            ),
+            const SizedBox(width: LearnAnywhereTokens.gapMedium),
+            Expanded(
+              child: _NumberRow(
+                label: messages.message(LearnAnywhereMessage.learnRangeEnd),
+                tooltip: messages.message(
+                  LearnAnywhereMessage.learnRangeEndTooltip,
+                ),
+                value: endIndex,
+                minimum: 1,
+                maximum: deck.units.length,
+                // Clearing "End unit" means "up to the last unit", not 1.
+                emptyFallback: deck.units.length,
+                enabled: !useAllUnits,
+                onChanged: onEndChanged,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
         Wrap(
@@ -2753,12 +2833,49 @@ final class _StatPill extends StatelessWidget {
   }
 }
 
+/// A toggle row with a fixed-width label column so consecutive toggles (e.g.
+/// "Shuffle units" and "Use all units") line their switches up regardless of
+/// label length.
+final class _ToggleRow extends StatelessWidget {
+  const _ToggleRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapSmall),
+      child: InkWell(
+        // Matches SwitchListTile's tap-anywhere-in-the-row behavior, which
+        // this replaces for alignment.
+        onTap: () => onChanged(!value),
+        child: Row(
+          children: <Widget>[
+            SizedBox(
+              width: 280,
+              child: Text(label, style: Theme.of(context).textTheme.bodyLarge),
+            ),
+            Switch(value: value, onChanged: onChanged),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 final class _DropdownRow<T> extends StatelessWidget {
   const _DropdownRow({
     required this.label,
     required this.value,
     required this.items,
     required this.onChanged,
+    this.tooltip,
   });
 
   final String label;
@@ -2766,22 +2883,33 @@ final class _DropdownRow<T> extends StatelessWidget {
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T> onChanged;
 
+  /// Explanation shown on hover, plus a help icon marking it as available.
+  final String? tooltip;
+
   @override
   Widget build(BuildContext context) {
+    final String? tooltip = this.tooltip;
     return Padding(
       padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapMedium),
-      child: SizedBox(
-        width: 360,
-        child: DropdownButtonFormField<T>(
-          decoration: InputDecoration(labelText: label),
-          initialValue: value,
-          items: items,
-          onChanged: (T? value) {
-            if (value != null) {
-              onChanged(value);
-            }
-          },
+      child: DropdownButtonFormField<T>(
+        decoration: InputDecoration(
+          labelText: label,
+          // The icon is the visible affordance; its own Tooltip is what
+          // actually shows the explanation on hover.
+          suffixIcon: tooltip == null
+              ? null
+              : Tooltip(
+                  message: tooltip,
+                  child: const Icon(Icons.help_outline, size: 18),
+                ),
         ),
+        initialValue: value,
+        items: items,
+        onChanged: (T? value) {
+          if (value != null) {
+            onChanged(value);
+          }
+        },
       ),
     );
   }
@@ -2796,6 +2924,7 @@ final class _NumberRow extends StatefulWidget {
     this.maximum,
     this.emptyFallback,
     this.enabled = true,
+    this.tooltip,
   });
 
   final String label;
@@ -2803,6 +2932,9 @@ final class _NumberRow extends StatefulWidget {
   final int minimum;
   final int? maximum;
   final ValueChanged<int> onChanged;
+
+  /// Explanation shown on hover, plus a help icon marking it as available.
+  final String? tooltip;
 
   /// Value reported when the field is cleared; defaults to [minimum].
   ///
@@ -2844,33 +2976,41 @@ final class _NumberRowState extends State<_NumberRow> {
 
   @override
   Widget build(BuildContext context) {
+    final String? tooltip = widget.tooltip;
     return Padding(
       padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapMedium),
-      child: SizedBox(
-        width: 240,
-        child: TextField(
-          controller: _controller,
-          enabled: widget.enabled,
-          keyboardType: TextInputType.number,
-          inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.digitsOnly,
-          ],
-          decoration: InputDecoration(labelText: widget.label),
-          onChanged: (String value) {
-            // An empty field means "as far as this end goes", which is not
-            // necessarily the minimum — see [_NumberRow.emptyFallback].
-            var parsed =
-                int.tryParse(value) ?? widget.emptyFallback ?? widget.minimum;
-            if (parsed < widget.minimum) {
-              parsed = widget.minimum;
-            }
-            final int? maximum = widget.maximum;
-            if (maximum != null && parsed > maximum) {
-              parsed = maximum;
-            }
-            widget.onChanged(parsed);
-          },
+      child: TextField(
+        controller: _controller,
+        enabled: widget.enabled,
+        keyboardType: TextInputType.number,
+        inputFormatters: <TextInputFormatter>[
+          FilteringTextInputFormatter.digitsOnly,
+        ],
+        decoration: InputDecoration(
+          labelText: widget.label,
+          // The icon is the visible affordance; its own Tooltip is what
+          // actually shows the explanation on hover.
+          suffixIcon: tooltip == null
+              ? null
+              : Tooltip(
+                  message: tooltip,
+                  child: const Icon(Icons.help_outline, size: 18),
+                ),
         ),
+        onChanged: (String value) {
+          // An empty field means "as far as this end goes", which is not
+          // necessarily the minimum — see [_NumberRow.emptyFallback].
+          var parsed =
+              int.tryParse(value) ?? widget.emptyFallback ?? widget.minimum;
+          if (parsed < widget.minimum) {
+            parsed = widget.minimum;
+          }
+          final int? maximum = widget.maximum;
+          if (maximum != null && parsed > maximum) {
+            parsed = maximum;
+          }
+          widget.onChanged(parsed);
+        },
       ),
     );
   }

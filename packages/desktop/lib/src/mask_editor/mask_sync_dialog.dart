@@ -16,6 +16,8 @@ final class MaskSyncDialog extends StatefulWidget {
   const MaskSyncDialog({
     required this.entries,
     required this.referenceName,
+    required this.referenceRevision,
+    this.referenceSourcePath,
     super.key,
   });
 
@@ -26,17 +28,30 @@ final class MaskSyncDialog extends StatefulWidget {
   /// be applied to the checked copies.
   final String referenceName;
 
+  /// The reference mask's own revision, shown next to its name so two
+  /// same-named references (e.g. an edited-but-unsaved mask) are
+  /// distinguishable.
+  final int referenceRevision;
+
+  /// The reference's own source file, when it has one (the open deck may be
+  /// unsaved).
+  final String? referenceSourcePath;
+
   /// Shows the dialog; returns the selected paths, or `null` when cancelled.
   static Future<List<String>?> show(
     BuildContext context,
     List<MaskSyncEntry> entries, {
     required String referenceName,
+    required int referenceRevision,
+    String? referenceSourcePath,
   }) {
     return showDialog<List<String>>(
       context: context,
       builder: (BuildContext context) => MaskSyncDialog(
         entries: entries,
         referenceName: referenceName,
+        referenceRevision: referenceRevision,
+        referenceSourcePath: referenceSourcePath,
       ),
     );
   }
@@ -56,10 +71,11 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
       context,
     );
     final ThemeData theme = Theme.of(context);
+    final String? sourcePath = widget.referenceSourcePath;
     return AlertDialog(
       title: Text(messages.message(LearnAnywhereMessage.maskSyncTitle)),
       content: SizedBox(
-        width: 560,
+        width: 720,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -68,11 +84,24 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
               Text(
                 messages
                     .message(LearnAnywhereMessage.maskSyncReferenceLabel)
-                    .replaceAll('{name}', widget.referenceName),
+                    .replaceAll('{name}', widget.referenceName)
+                    .replaceAll(
+                      '{revision}',
+                      widget.referenceRevision.toString(),
+                    ),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              if (sourcePath != null)
+                Text(
+                  messages
+                      .message(LearnAnywhereMessage.maskSyncReferenceSource)
+                      .replaceAll('{path}', sourcePath),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               const SizedBox(height: 8),
               for (final MaskSyncEntry entry in widget.entries)
                 _row(context, messages, theme, entry),
@@ -124,21 +153,28 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
                     : null,
               ),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      '${entry.maskName}  (rev ${entry.revision})',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    Text(
-                      entry.path,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                child: Tooltip(
+                  message: entry.path,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      // The file name is the identifying part, so it goes on
+                      // its own un-ellipsized line; only the (usually much
+                      // longer) folder path below is left to truncate.
+                      Text(
+                        '${_fileNameOf(entry.path)}  '
+                        '(rev ${entry.revision})',
+                        style: theme.textTheme.bodyMedium,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                      Text(
+                        _folderOf(entry.path),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Text(
@@ -171,6 +207,7 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
       MaskSyncStatus.willUpdate => LearnAnywhereMessage.maskSyncStatusWillUpdate,
       MaskSyncStatus.wouldBreak => LearnAnywhereMessage.maskSyncStatusWouldBreak,
       MaskSyncStatus.differs => LearnAnywhereMessage.maskSyncStatusDiffers,
+      MaskSyncStatus.newer => LearnAnywhereMessage.maskSyncStatusNewer,
     });
   }
 
@@ -180,9 +217,23 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
       MaskSyncStatus.willUpdate => theme.colorScheme.primary,
       MaskSyncStatus.wouldBreak => theme.colorScheme.error,
       MaskSyncStatus.differs => theme.colorScheme.tertiary,
+      MaskSyncStatus.newer => theme.colorScheme.tertiary,
     };
   }
 
+  /// The last path segment (handles both `/` and `\` separators, since scan
+  /// results can come from either a Windows path or a POSIX one).
+  String _fileNameOf(String path) {
+    final int cut = path.lastIndexOf(RegExp(r'[\\/]'));
+    return cut < 0 ? path : path.substring(cut + 1);
+  }
+
+  /// Everything before the last path segment, or the whole path when it has
+  /// no separator.
+  String _folderOf(String path) {
+    final int cut = path.lastIndexOf(RegExp(r'[\\/]'));
+    return cut < 0 ? path : path.substring(0, cut);
+  }
 }
 
 /// Localizes a [MaskBreakingReason] from the app catalog using its structured

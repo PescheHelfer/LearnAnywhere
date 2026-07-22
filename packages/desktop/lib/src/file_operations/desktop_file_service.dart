@@ -331,7 +331,12 @@ final class DesktopFileService {
             units: deck.units,
           );
           final MaskSyncStatus status;
-          if (!compat.isCompatible) {
+          // A copy ahead of the reference must never be downgraded, even if
+          // applying the reference would otherwise be compatible — checked
+          // before compatibility so a stale reference can't overwrite it.
+          if (deck.mask.revision > reference.revision) {
+            status = MaskSyncStatus.newer;
+          } else if (!compat.isCompatible) {
             status = MaskSyncStatus.wouldBreak;
           } else if (encodeMaskJson(deck.mask) == referenceJson) {
             status = MaskSyncStatus.upToDate;
@@ -344,7 +349,9 @@ final class DesktopFileService {
               isMask: false,
               revision: deck.mask.revision,
               status: status,
-              reasons: compat.reasons,
+              reasons: status == MaskSyncStatus.wouldBreak
+                  ? compat.reasons
+                  : const <MaskBreakingReason>[],
               maskName: deck.mask.name,
             ),
           );
@@ -390,6 +397,12 @@ final class DesktopFileService {
   ) {
     if (encodeMaskJson(copy) == referenceJson) {
       return MaskSyncStatus.upToDate;
+    }
+    // A copy ahead of the reference must never be downgraded — this is what
+    // let a stale in-memory reference classify a newer .inf as "will update"
+    // and overwrite it with older data.
+    if (copy.revision > reference.revision) {
+      return MaskSyncStatus.newer;
     }
     // Same revision but different content is an unexpected divergence: warn,
     // never silently overwrite.
@@ -577,6 +590,40 @@ final class DesktopFileService {
     return found;
   }
 
+  /// Deletes the oldest timestamped session `.sta` files beside [deckPath]
+  /// beyond the newest [keep], so a long-running deck's folder doesn't fill
+  /// up with one file per session.
+  ///
+  /// [protectPath] (typically the active auto-save target) is never deleted,
+  /// even if it would otherwise fall outside the newest [keep]. `keep == 0`
+  /// disables pruning entirely. Deletion failures for an individual file are
+  /// swallowed — a locked or already-removed file must not abort the rest.
+  Future<void> pruneTimestampedStatistics(
+    String deckPath, {
+    required int keep,
+    String? protectPath,
+  }) async {
+    if (keep <= 0) {
+      return;
+    }
+    final List<TimestampedStatistics> found = await findTimestampedStatistics(
+      deckPath,
+    );
+    if (found.length <= keep) {
+      return;
+    }
+    for (final TimestampedStatistics stats in found.skip(keep)) {
+      if (stats.path == protectPath) {
+        continue;
+      }
+      try {
+        await File(stats.path).delete();
+      } on Object {
+        continue;
+      }
+    }
+  }
+
   /// Summarizes how many of [unitCount] in-scope units a loaded [file] has
   /// already been queried on ("x out of y"), for the auto-load prompt.
   StatisticsCoverage statisticsCoverage(
@@ -664,6 +711,11 @@ enum MaskSyncStatus {
   /// A copy that differs from the reference at the SAME revision; warned about
   /// and never auto-merged.
   differs,
+
+  /// A copy whose revision is AHEAD of the reference; excluded from sync so a
+  /// stale reference (e.g. an open deck's un-reconciled embedded mask) can
+  /// never overwrite it with older data.
+  newer,
 }
 
 /// One `.inf` or `.vok` copy of a mask found during a cross-directory sync.

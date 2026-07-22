@@ -1233,6 +1233,66 @@ void main() {
       }
       expect(seen, itemsInScope(deck, parameters).toSet());
     });
+
+    test('never serves the same item twice in a row from a 2-item pool', () {
+      const List<SessionItem> pool = <SessionItem>[
+        SessionItem(unitIndex: 1, direction: QueryDirection.direction1),
+        SessionItem(unitIndex: 2, direction: QueryDirection.direction1),
+      ];
+      final Random random = Random(7);
+      SessionItem last = pool.first;
+      for (var i = 0; i < 100; i += 1) {
+        final SessionItem? next = pickAvoidingRepeat(
+          pool,
+          random,
+          lastItem: last,
+        );
+        expect(next, isNotNull);
+        expect(next, isNot(last));
+        last = next!;
+      }
+    });
+
+    test('repeats the only item in a 1-item pool', () {
+      const SessionItem only = SessionItem(
+        unitIndex: 1,
+        direction: QueryDirection.direction1,
+      );
+      expect(
+        pickAvoidingRepeat(
+          const <SessionItem>[only],
+          Random(7),
+          lastItem: only,
+        ),
+        only,
+      );
+    });
+
+    test('returns null for an empty pool', () {
+      expect(
+        pickAvoidingRepeat(const <SessionItem>[], Random(7)),
+        isNull,
+      );
+    });
+
+    test('pickPracticeItem honours the no-immediate-repeat guard', () {
+      final LearningDeck deck = sampleDeck();
+      const SessionParameters parameters = SessionParameters(
+        directionSelection: DirectionSelection.direction1,
+      );
+      final Random random = Random(11);
+      SessionItem last = itemsInScope(deck, parameters).first;
+      for (var i = 0; i < 100; i += 1) {
+        final SessionItem? next = pickPracticeItem(
+          deck: deck,
+          parameters: parameters,
+          random: random,
+          lastItem: last,
+        );
+        expect(next, isNot(last));
+        last = next!;
+      }
+    });
   });
 
   group('settings and unit range', () {
@@ -1253,6 +1313,7 @@ void main() {
         shuffle: true,
         requireTypedAnswers: false,
         masteryThreshold: 0.6,
+        keepStatisticsVersions: 5,
         lastDeckPath: '/decks/french1.vok',
         lastMaskPath: '/masks/french.inf',
       );
@@ -1261,6 +1322,18 @@ void main() {
         encodeSettingsJson(settings),
       );
       expect(restored, settings);
+    });
+
+    test('keepStatisticsVersions defaults to 3 and round-trips 0 (keep all)',
+        () {
+      expect(const LearnAnywhereSettings().keepStatisticsVersions, 3);
+      const LearnAnywhereSettings keepAll = LearnAnywhereSettings(
+        keepStatisticsVersions: 0,
+      );
+      expect(
+        decodeSettingsJson(encodeSettingsJson(keepAll)).keepStatisticsVersions,
+        0,
+      );
     });
 
     test('decodes partial settings with defaults and ignores corruption', () {

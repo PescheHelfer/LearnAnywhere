@@ -59,6 +59,9 @@ const int minFieldLength = 1;
 /// The maximum stored field length.
 const int maxFieldLength = 80;
 
+/// The default stored field length for a newly created field.
+const int defaultFieldLength = 80;
+
 /// The maximum Level-Learning support level (most scaffolding shown).
 ///
 /// Levels run `0..3` where a higher number means MORE support: level 3 shows the

@@ -265,12 +265,19 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   String? _lastFileSearchDir;
   int _learnSessionAttempts = 0;
   int _learnSessionCorrect = 0;
-  // Bumped each time the Learn menu is chosen; lets an already-open learn page
-  // (e.g. showing the completion screen) drop back to its practice setup.
+  // Bumped by Learn ▸ Practice setup; makes an already-open learn page drop
+  // back to its practice setup.
   int _learnResetSignal = 0;
+  // Set for one frame by Learn ▸ "Learn with last settings"; makes the learn
+  // page start a session immediately with the settings already persisted,
+  // whether it is already open or is being created by that command.
+  bool _learnStartRequested = false;
+  // Whether a learn session is currently running, which relabels that entry to
+  // "Continue". Pushed up by the learn page; cleared when its route is left
+  // (the page — and with it the session — is disposed on any route change).
+  bool _learnSessionActive = false;
   String? _lastFileStatus;
   int? _editorInitialIndex;
-  int? _editorLastIndex;
   // Document snapshot captured when the editor opens, so Cancel/Esc can revert
   // to it after a confirmation (see [_cancelEditor]). Null when not editing.
   DesktopDocument? _editorSnapshot;
@@ -289,18 +296,15 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   // submenu's items own Alt+<letter> exclusively.
   final MenuController _fileMenuController = MenuController();
   final MenuController _editMenuController = MenuController();
+  final MenuController _learnMenuController = MenuController();
   final MenuController _optionsMenuController = MenuController();
   final MenuController _helpMenuController = MenuController();
 
-  // The three direct-action top-level entries (Learn/Statistics/Lexicon) are bare
+  // The two direct-action top-level entries (Statistics/Lexicon) are bare
   // MenuItemButtons. Without [skipTraversal] the MenuBar's Left/Right arrow
   // navigation lands on them and stalls (they have no submenu to open); skipping
   // them lets arrow nav jump straight to the next submenu-bearing menu. They are
   // still activated via their Alt accelerator and the mouse.
-  final FocusNode _learnMenuFocusNode = FocusNode(
-    skipTraversal: true,
-    debugLabel: 'menuLearn',
-  );
   final FocusNode _statisticsMenuFocusNode = FocusNode(
     skipTraversal: true,
     debugLabel: 'menuStatistics',
@@ -326,6 +330,18 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   void _onMenuClosed() {
     setState(() {
       if (_openMenuCount > 0) _openMenuCount--;
+    });
+    // Closing a menu — with Esc, by clicking away, or by activating an item
+    // that does not change route — otherwise leaves keyboard focus parked on
+    // the MenuBar, and the active page's widget-scoped F-key/Esc shortcuts
+    // never see another key event until the user clicks back into the body.
+    // Deferred one frame and re-checked, so arrow-key navigation between
+    // top-level menus (close one, open the next) leaves focus with the menu
+    // that just opened.
+    WidgetsBinding.instance.addPostFrameCallback((Duration _) {
+      if (mounted && !_menuActive) {
+        _restoreContentFocus();
+      }
     });
   }
 
@@ -415,7 +431,6 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     HardwareKeyboard.instance.removeHandler(_handleMenuAccelerator);
     _menuScrollController.dispose();
     _contentFocusScope.dispose();
-    _learnMenuFocusNode.dispose();
     _statisticsMenuFocusNode.dispose();
     _lexiconMenuFocusNode.dispose();
     super.dispose();
@@ -440,9 +455,16 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// surface the shortcuts are registered above.
   void _restoreContentFocus() {
     WidgetsBinding.instance.addPostFrameCallback((Duration _) {
-      if (mounted) {
-        _contentFocusScope.requestFocus();
+      if (!mounted) {
+        return;
       }
+      // Never pull focus out from under a modal that is still up (a
+      // confirmation dialog, or one a menu item just opened): while a dialog
+      // route is current, its own scope owns the keyboard.
+      if (ModalRoute.of(context)?.isCurrent == false) {
+        return;
+      }
+      _contentFocusScope.requestFocus();
     });
   }
 
@@ -561,6 +583,75 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     widget.prefs.setAutoSaveStats(value);
   }
 
+  /// Options ▸ Statistics ▸ "Keep last N session files...": prompts for the
+  /// retention count ([LearnAnywhereSettings.keepStatisticsVersions]) and
+  /// persists the choice. `0` disables pruning.
+  Future<void> _promptKeepStatisticsVersions() async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final TextEditingController controller = TextEditingController(
+      text: _settings.keepStatisticsVersions.toString(),
+    );
+    final int? value = await showDialog<int>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: Text(
+            messages.message(LearnAnywhereMessage.keepStatisticsTitle),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              TextField(
+                autofocus: true,
+                controller: controller,
+                keyboardType: TextInputType.number,
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                decoration: InputDecoration(
+                  labelText: messages.message(
+                    LearnAnywhereMessage.keepStatisticsLabel,
+                  ),
+                ),
+                onSubmitted: (String value) =>
+                    Navigator.of(ctx).pop(int.tryParse(value)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                messages.message(LearnAnywhereMessage.keepStatisticsHint),
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(ctx).pop(int.tryParse(controller.text)),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionContinue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (value == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _settings = _settings.copyWith(keepStatisticsVersions: value.clamp(0, 999));
+      _cachedMenuChildren = null;
+    });
+    unawaited(_saveSettings());
+  }
+
   // --- Session statistics auto-save target (§3.7) ---------------------------
   //
   // Session `.sta` writes are serialized through this chain so overlapping
@@ -576,6 +667,30 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     _statsSaveChain = _statsSaveChain.then((_) async {
       try {
         await _fileService.writeStatistics(snapshot, target);
+      } on Object {
+        // Silent during a session; see doc comment.
+      }
+    });
+  }
+
+  /// Queues a prune of old timestamped session `.sta` files behind any
+  /// pending save, so it runs after [target]'s own write lands and never
+  /// races it. A no-op when retention is off (`keepStatisticsVersions == 0`)
+  /// or the deck has no folder to scan. Failures are swallowed — the same
+  /// "must not interrupt a live session" rule as [_queueStatsSave].
+  void _queuePruneOldStatistics(String target) {
+    final int keep = _settings.keepStatisticsVersions;
+    final String? deckPath = _document.deckPath;
+    if (keep <= 0 || deckPath == null) {
+      return;
+    }
+    _statsSaveChain = _statsSaveChain.then((_) async {
+      try {
+        await _fileService.pruneTimestampedStatistics(
+          deckPath,
+          keep: keep,
+          protectPath: target,
+        );
       } on Object {
         // Silent during a session; see doc comment.
       }
@@ -733,6 +848,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     });
     // Write the initial file immediately so it appears at session start.
     _queueStatsSave(_document, target);
+    _queuePruneOldStatistics(target);
   }
 
   /// Persists statistics to the auto-save target after each check→continue
@@ -849,7 +965,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         <(LearnAnywhereMessage, VoidCallback)>[
           (LearnAnywhereMessage.menuFile, () => _fileMenuController.open()),
           (LearnAnywhereMessage.menuEdit, () => _editMenuController.open()),
-          (LearnAnywhereMessage.menuLearn, _openLearn),
+          (LearnAnywhereMessage.menuLearn, () => _learnMenuController.open()),
           (
             LearnAnywhereMessage.menuStatistics,
             () => _selectRoute(_DesktopRoute.statistics),
@@ -973,13 +1089,34 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           messages.message(LearnAnywhereMessage.menuEdit),
         ),
       ),
-      // 3. Learn (direct — opens practice setup)
-      _routeMenu(
-        messages,
-        LearnAnywhereMessage.menuLearn,
-        _DesktopRoute.learn,
-        _learnMenuFocusNode,
-        onPressed: _openLearn,
+      // 3. Learn (setup vs. start/resume — see [_openLearnSetup]/[_continueLearn])
+      SubmenuButton(
+        controller: _learnMenuController,
+        onOpen: _onMenuOpened,
+        onClose: _onMenuClosed,
+        menuChildren: <Widget>[
+          MenuItemButton(
+            onPressed: _openLearnSetup,
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuLearnPracticeSetup),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+          MenuItemButton(
+            onPressed: _continueLearn,
+            child: MenuAcceleratorLabel(
+              messages.message(
+                _learnSessionActive
+                    ? LearnAnywhereMessage.menuLearnContinue
+                    : LearnAnywhereMessage.menuLearnWithLastSettings,
+              ),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+        ],
+        child: MenuAcceleratorDisplayLabel(
+          messages.message(LearnAnywhereMessage.menuLearn),
+        ),
       ),
       // 4. Statistics (direct)
       _routeMenu(
@@ -1103,19 +1240,43 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             ),
           ),
           const _MenuSeparator(),
-          CheckboxMenuButton(
-            value: _document.autoLoadStatistics,
-            onChanged: (bool? value) => _setAutoLoadStats(value ?? false),
+          SubmenuButton(
+            menuChildren: <Widget>[
+              CheckboxMenuButton(
+                value: _document.autoLoadStatistics,
+                onChanged: (bool? value) => _setAutoLoadStats(value ?? false),
+                child: MenuAcceleratorLabel(
+                  messages.message(
+                    LearnAnywhereMessage.menuOptionsAutoLoadStats,
+                  ),
+                  builder: menuAcceleratorBuilder,
+                ),
+              ),
+              CheckboxMenuButton(
+                value: _document.autoSaveStatistics,
+                onChanged: (bool? value) => _setAutoSaveStats(value ?? false),
+                child: MenuAcceleratorLabel(
+                  messages.message(
+                    LearnAnywhereMessage.menuOptionsAutoSaveStats,
+                  ),
+                  builder: menuAcceleratorBuilder,
+                ),
+              ),
+              MenuItemButton(
+                onPressed: _promptKeepStatisticsVersions,
+                child: MenuAcceleratorLabel(
+                  messages
+                      .message(LearnAnywhereMessage.menuOptionsKeepStatistics)
+                      .replaceAll(
+                        '{count}',
+                        _settings.keepStatisticsVersions.toString(),
+                      ),
+                  builder: menuAcceleratorBuilder,
+                ),
+              ),
+            ],
             child: MenuAcceleratorLabel(
-              messages.message(LearnAnywhereMessage.menuOptionsAutoLoadStats),
-              builder: menuAcceleratorBuilder,
-            ),
-          ),
-          CheckboxMenuButton(
-            value: _document.autoSaveStatistics,
-            onChanged: (bool? value) => _setAutoSaveStats(value ?? false),
-            child: MenuAcceleratorLabel(
-              messages.message(LearnAnywhereMessage.menuOptionsAutoSaveStats),
+              messages.message(LearnAnywhereMessage.menuOptionsStatistics),
               builder: menuAcceleratorBuilder,
             ),
           ),
@@ -1172,23 +1333,65 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     );
   }
 
-  /// Opens the Learn page. Re-selecting it while already there (e.g. from the
-  /// completion screen) returns the page to its practice setup via the reset
-  /// signal, so a new session with a different mode can be configured.
-  void _openLearn() {
+  /// Learn ▸ Practice setup: opens the Learn page on its setup screen.
+  ///
+  /// The reset signal makes an already-open page leave whatever it is showing
+  /// (a running session or the completion view) and return to setup.
+  void _openLearnSetup() {
     setState(() => _learnResetSignal++);
     _selectRoute(_DesktopRoute.learn);
   }
 
+  /// Learn ▸ "Learn with last settings" / "Continue".
+  ///
+  /// With no session running this starts one straight away from the persisted
+  /// settings (or the defaults, when nothing has been saved yet); with one
+  /// running it just returns to it.
+  void _continueLearn() {
+    if (!_learnSessionActive) {
+      // One-frame request: the page consumes it on creation or on rebuild, so
+      // it is cleared again right after this frame.
+      setState(() => _learnStartRequested = true);
+      WidgetsBinding.instance.addPostFrameCallback((Duration _) {
+        if (mounted && _learnStartRequested) {
+          setState(() => _learnStartRequested = false);
+        }
+      });
+    }
+    _selectRoute(_DesktopRoute.learn);
+  }
+
+  /// Tracks whether the learn page currently has a session running, so the
+  /// Learn menu can offer "Continue" instead of a fresh start.
+  void _setLearnSessionActive(bool active) {
+    if (_learnSessionActive == active) {
+      return;
+    }
+    setState(() {
+      _learnSessionActive = active;
+      // The menu cache is keyed by locale/theme only; this label depends on
+      // session state, so drop the cache by hand.
+      _cachedMenuChildren = null;
+    });
+  }
+
   void _selectRoute(_DesktopRoute route) {
+    // Leaving the learn route disposes the page and with it the session, so
+    // the entry must go back to offering a fresh start.
+    if (_route == _DesktopRoute.learn && route != _DesktopRoute.learn) {
+      _setLearnSessionActive(false);
+    }
     setState(() {
       // Snapshot the document when first entering the editor so Cancel can
       // revert to it. Re-entering menu actions while already editing keep the
       // original snapshot.
       if (route == _DesktopRoute.editor && _route != _DesktopRoute.editor) {
         _editorSnapshot = _document;
+        // Land on the last unit — the common case is appending new ones —
+        // rather than the first, which used to require a manual jump.
+        final int unitCount = _document.deck.units.length;
+        _editorInitialIndex = unitCount == 0 ? null : unitCount - 1;
       }
-      _editorInitialIndex = null;
       _route = route;
     });
     // Learn/Statistics/Lexicon/Edit are opened from MenuBar entries outside
@@ -1382,8 +1585,15 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           newMask: saved,
           deckPaths: plan.allPaths,
         );
-        _applyMaskToLoadedDeck(saved, force: true);
-        _finishMaskSave(infPath, saved, updatedDeckCount: plan.allPaths.length);
+        final bool openDeckWritten = await _applyMaskToLoadedDeck(
+          saved,
+          force: true,
+        );
+        _finishMaskSave(
+          infPath,
+          saved,
+          updatedDeckCount: plan.allPaths.length + (openDeckWritten ? 1 : 0),
+        );
         return;
       }
 
@@ -1405,11 +1615,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         newMask: saved,
         deckPaths: toUpdate,
       );
-      _applyMaskToLoadedDeck(saved, force: false);
+      final bool openDeckWritten = await _applyMaskToLoadedDeck(
+        saved,
+        force: false,
+      );
       _finishMaskSave(
         infPath,
         saved,
-        updatedDeckCount: toUpdate.length,
+        updatedDeckCount: toUpdate.length + (openDeckWritten ? 1 : 0),
       );
     });
   }
@@ -1510,10 +1723,20 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   }
 
   /// Applies [saved] to the in-memory loaded deck when it is the same mask and
-  /// the change is safe (or [force] is set), keeping the UI in sync with disk.
-  void _applyMaskToLoadedDeck(LearningMask saved, {required bool force}) {
+  /// the change is safe (or [force] is set), then writes the deck to its own
+  /// file so it doesn't silently keep a stale embedded mask on disk until the
+  /// next explicit File ▸ Save (Batch 12 write-through fix — previously only
+  /// sibling decks were written here; see [_reconcileLinkedMask] for the
+  /// complementary read-side fix).
+  ///
+  /// Returns whether the deck's file was written, so the caller can fold it
+  /// into the "decks updated" count.
+  Future<bool> _applyMaskToLoadedDeck(
+    LearningMask saved, {
+    required bool force,
+  }) async {
     if (_document.mask.maskId != saved.maskId) {
-      return;
+      return false;
     }
     if (!force) {
       final MaskCompatibilityResult result = checkMaskCompatibility(
@@ -1522,14 +1745,19 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         units: _document.deck.units,
       );
       if (!result.isCompatible) {
-        return;
+        return false;
       }
     }
+    final LearningDeck updatedDeck = applyMaskToDeck(_document.deck, saved);
     setState(() {
-      _document = _document.copyWith(
-        deck: applyMaskToDeck(_document.deck, saved),
-      );
+      _document = _document.copyWith(deck: updatedDeck);
     });
+    final String? deckPath = _document.deckPath;
+    if (deckPath == null) {
+      return false;
+    }
+    await _fileService.saveDeckSnapshot(updatedDeck, deckPath);
+    return true;
   }
 
   Future<_PropagationChoice?> _showBreakingPropagationDialog(
@@ -1619,13 +1847,18 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         return;
       }
       if (entries.isEmpty) {
-        _setFileStatus(LearnAnywhereMessage.maskSyncNoneFound);
+        _setFileStatus(
+          LearnAnywhereMessage.maskSyncNoneFound,
+          placeholders: <String, String>{'folder': root},
+        );
         return;
       }
       final List<String>? selected = await MaskSyncDialog.show(
         context,
         entries,
         referenceName: reference.name,
+        referenceRevision: reference.revision,
+        referenceSourcePath: _document.deckPath,
       );
       if (selected == null || selected.isEmpty) {
         return;
@@ -1782,13 +2015,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       ),
       _DesktopRoute.editor => UnitEditorPage(
         deck: _document.deck,
-        initialIndex: _editorInitialIndex ?? _editorLastIndex,
+        initialIndex: _editorInitialIndex,
         onChanged: _updateDeckFromEditor,
         onDone: _finishEditor,
         onCancel: _cancelEditor,
-        onCurrentIndexChanged: (int index) {
-          _editorLastIndex = index;
-        },
       ),
       _DesktopRoute.maskEditor => MaskEditorPage(
         // Edits the linked `.inf` mask, never the deck's embedded cache.
@@ -1813,6 +2043,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             : _settings.levelNamesEn,
         entryLevelCap: _settings.entryLevelCap,
         resetToSetupSignal: _learnResetSignal,
+        startSessionOnOpen: _learnStartRequested,
+        onSessionActiveChanged: _setLearnSessionActive,
         options: _queryOptions,
         parameters: _learnParameters,
         sessionAttempts: _learnSessionAttempts,
@@ -2115,15 +2347,71 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     }
     await _guardedFileOperation(() async {
       _document = await _fileService.openDeck(_document, path);
+      final LearnAnywhereMessage? maskStatus = await _reconcileLinkedMask();
       _resetRangeForDeck();
       _selectRoute(_DesktopRoute.fileOperations);
-      _setFileStatus(LearnAnywhereMessage.fileOpenDeckDone);
+      _setFileStatus(maskStatus ?? LearnAnywhereMessage.fileOpenDeckDone);
       _setLastDir('vok', path);
       // The last-opened deck path is persisted by _saveSettings via
       // _settings.lastDeckPath (single source of truth).
       unawaited(_saveSettings());
     });
     await _maybeAutoLoadStatistics(path);
+  }
+
+  /// Reconciles the just-opened deck's embedded mask cache against its
+  /// linked `.inf` file, so an edit made in the Mask Editor since the deck
+  /// was last written on disk is picked up on open (rather than the deck
+  /// silently keeping a stale schema — see the Batch 12 write-through fix in
+  /// [_closeMaskEditor], which this complements for decks that were open
+  /// elsewhere, or closed without saving, when the mask changed).
+  ///
+  /// A different but non-breaking `.inf` is applied to the in-memory deck
+  /// silently. A breaking difference is left alone — the deck keeps its own
+  /// embedded mask rather than risk dropping data — and reported via the
+  /// returned status message. Returns `null` when there is nothing to
+  /// reconcile: no linked `.inf`, an unreadable one, or one identical to the
+  /// deck's own embedded mask.
+  Future<LearnAnywhereMessage?> _reconcileLinkedMask() async {
+    final String? deckPath = _document.deckPath;
+    if (deckPath == null) {
+      return null;
+    }
+    String? linkedPath;
+    try {
+      linkedPath = await _fileService.findLinkedMaskPath(
+        deckPath,
+        _document.mask.maskId,
+      );
+    } on Object {
+      return null;
+    }
+    if (linkedPath == null) {
+      return null;
+    }
+    final LearningMask linkedMask;
+    try {
+      linkedMask = await _fileService.readMask(linkedPath);
+    } on Object {
+      return null;
+    }
+    if (encodeMaskJson(linkedMask) == encodeMaskJson(_document.mask)) {
+      return null;
+    }
+    final MaskCompatibilityResult compat = checkMaskCompatibility(
+      oldMask: _document.mask,
+      newMask: linkedMask,
+      units: _document.deck.units,
+    );
+    if (!compat.isCompatible) {
+      return LearnAnywhereMessage.fileStatusLinkedMaskConflict;
+    }
+    setState(() {
+      _document = _document.copyWith(
+        deck: applyMaskToDeck(_document.deck, linkedMask),
+      );
+    });
+    return LearnAnywhereMessage.fileStatusLinkedMaskAdopted;
   }
 
   /// After opening a deck, offers to auto-load its most recent timestamped
@@ -2685,7 +2973,11 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
               ));
   }
 
-  void _setFileStatus(LearnAnywhereMessage message, {int count = 0}) {
+  void _setFileStatus(
+    LearnAnywhereMessage message, {
+    int count = 0,
+    Map<String, String> placeholders = const <String, String>{},
+  }) {
     if (!mounted) {
       return;
     }
@@ -2693,9 +2985,11 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       context,
     );
     setState(() {
-      _lastFileStatus = messages
-          .message(message)
-          .replaceAll('{count}', count.toString());
+      var text = messages.message(message).replaceAll('{count}', count.toString());
+      for (final MapEntry<String, String> entry in placeholders.entries) {
+        text = text.replaceAll('{${entry.key}}', entry.value);
+      }
+      _lastFileStatus = text;
       _route = _DesktopRoute.fileOperations;
     });
     ScaffoldMessenger.of(
@@ -2745,7 +3039,7 @@ LearningMask _defaultMask(String localeCode) {
           FieldDefinition(
             id: 0,
             name: seed(LearnAnywhereMessage.defaultFieldQuestion),
-            length: 40,
+            length: defaultFieldLength,
             equalGroup: 0,
             role1: FieldRole.question,
             role2: FieldRole.answer,
@@ -2753,7 +3047,7 @@ LearningMask _defaultMask(String localeCode) {
           FieldDefinition(
             id: 1,
             name: seed(LearnAnywhereMessage.defaultFieldAnswer),
-            length: 40,
+            length: defaultFieldLength,
             equalGroup: 0,
             role1: FieldRole.answer,
             role2: FieldRole.question,
@@ -2761,7 +3055,7 @@ LearningMask _defaultMask(String localeCode) {
           FieldDefinition(
             id: 2,
             name: seed(LearnAnywhereMessage.defaultFieldRemark),
-            length: 40,
+            length: defaultFieldLength,
             equalGroup: 0,
             role1: FieldRole.remark,
             role2: FieldRole.remark,
@@ -2891,13 +3185,16 @@ final class _MenuSeparator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // `outlineVariant` all but disappears against the dark blue theme's menu
+    // surface (that theme sets outline == outlineVariant), so it opts into a
+    // brighter color via LearnAnywhereMenuTheme; every other theme falls back
+    // to the shared outlineVariant role unchanged.
+    final Color color =
+        Theme.of(context).extension<LearnAnywhereMenuTheme>()?.separatorColor ??
+        Theme.of(context).colorScheme.outlineVariant;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: Theme.of(context).colorScheme.outlineVariant,
-      ),
+      child: Divider(height: 1, thickness: 1, color: color),
     );
   }
 }

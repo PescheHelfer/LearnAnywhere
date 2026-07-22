@@ -58,12 +58,18 @@ void main() {
     ],
   );
 
-  Widget buildPage({required VoidCallback onExit}) {
+  Widget buildPage({
+    required VoidCallback onExit,
+    bool startSessionOnOpen = false,
+    ValueChanged<bool>? onSessionActiveChanged,
+  }) {
     return MaterialApp(
       localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
       supportedLocales: LearnAnywhereLocalizations.supportedLocales,
       home: Scaffold(
         body: LearnSessionPage(
+          startSessionOnOpen: startSessionOnOpen,
+          onSessionActiveChanged: onSessionActiveChanged,
           deck: deck,
           statistics: const <UnitStats>[],
           options: const DesktopQueryOptions(),
@@ -86,6 +92,31 @@ void main() {
   }
 
   testWidgets(
+    '"Learn with last settings" skips setup and reports the session as active',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final List<bool> activeReports = <bool>[];
+      await tester.pumpWidget(
+        buildPage(
+          onExit: () {},
+          startSessionOnOpen: true,
+          onSessionActiveChanged: activeReports.add,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Straight into the first unit — the setup screen is never shown.
+      expect(find.textContaining('Use all units'), findsNothing);
+      expect(find.textContaining('Unit 1/2'), findsOneWidget);
+      expect(activeReports, <bool>[true]);
+    },
+  );
+
+  testWidgets(
     'setup screen shows the deck size, expands a cleared range field to its '
     'own end, and pins the range with "Use all units"',
     (WidgetTester tester) async {
@@ -97,8 +128,8 @@ void main() {
       await tester.pumpWidget(buildPage(onExit: () {}));
       await tester.pumpAndSettle();
 
-      // The deck size is stated next to the range fields.
-      expect(find.textContaining('This deck has 2 unit(s).'), findsOneWidget);
+      // The deck size is stated in the "Use all units" toggle label.
+      expect(find.text('Use all units (2)'), findsOneWidget);
 
       final Finder startField = find.ancestor(
         of: find.text('Start unit'),
@@ -128,7 +159,7 @@ void main() {
       expect(tester.widget<TextField>(endField).controller!.text, '1');
       expect(tester.widget<TextField>(startField).enabled, isTrue);
 
-      await tester.tap(find.text('Use all units'));
+      await tester.tap(find.text('Use all units (2)'));
       await tester.pumpAndSettle();
       expect(tester.widget<TextField>(startField).enabled, isFalse);
       expect(tester.widget<TextField>(endField).enabled, isFalse);
@@ -136,7 +167,7 @@ void main() {
       expect(tester.widget<TextField>(endField).controller!.text, '2');
 
       // Unpinning re-enables them and leaves the full range in place.
-      await tester.tap(find.text('Use all units'));
+      await tester.tap(find.text('Use all units (2)'));
       await tester.pumpAndSettle();
       expect(tester.widget<TextField>(startField).enabled, isTrue);
       expect(tester.widget<TextField>(endField).controller!.text, '2');

@@ -2,6 +2,44 @@ import 'package:flutter/material.dart';
 
 import 'learn_anywhere_tokens.dart';
 
+/// Theme-specific chrome that doesn't fit [ColorScheme] roles.
+///
+/// [ColorScheme.outlineVariant] is the default separator color, but the dark
+/// blue theme sets `outline` and `outlineVariant` to the same low-contrast
+/// value, so that theme opts into a stronger, theme-appropriate color here
+/// instead of changing the shared role for every theme.
+@immutable
+final class LearnAnywhereMenuTheme
+    extends ThemeExtension<LearnAnywhereMenuTheme> {
+  /// Creates a menu theme extension.
+  const LearnAnywhereMenuTheme({required this.separatorColor});
+
+  /// Color used by menu separators (`_MenuSeparator` in the desktop shell).
+  final Color separatorColor;
+
+  @override
+  LearnAnywhereMenuTheme copyWith({Color? separatorColor}) {
+    return LearnAnywhereMenuTheme(
+      separatorColor: separatorColor ?? this.separatorColor,
+    );
+  }
+
+  @override
+  LearnAnywhereMenuTheme lerp(
+    ThemeExtension<LearnAnywhereMenuTheme>? other,
+    double t,
+  ) {
+    if (other is! LearnAnywhereMenuTheme) {
+      return this;
+    }
+    return LearnAnywhereMenuTheme(
+      separatorColor:
+          Color.lerp(separatorColor, other.separatorColor, t) ??
+          separatorColor,
+    );
+  }
+}
+
 /// Shared light and dark theme definitions for Learn Anywhere shells.
 final class LearnAnywhereTheme {
   const LearnAnywhereTheme._();
@@ -46,7 +84,11 @@ final class LearnAnywhereTheme {
       outline: const Color(0xFF1D3B6E),
       outlineVariant: const Color(0xFF1D3B6E),
     );
-    return _base(colors);
+    return _base(colors).copyWith(
+      extensions: const <ThemeExtension<dynamic>>[
+        LearnAnywhereMenuTheme(separatorColor: Color(0xFFFFC600)),
+      ],
+    );
   }
 
   /// Light Blue theme — clean, high-contrast, vivid blue.

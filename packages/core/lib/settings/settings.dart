@@ -94,6 +94,7 @@ final class LearnAnywhereSettings {
     this.entryLevelCap = kMaxSupportLevel,
     this.levelNamesEn = kDefaultLevelNamesEn,
     this.levelNamesDe = kDefaultLevelNamesDe,
+    this.keepStatisticsVersions = 3,
     this.lastDeckPath,
     this.lastMaskPath,
   });
@@ -163,6 +164,10 @@ final class LearnAnywhereSettings {
   /// German Level-Learning level names, ordered engine level 3 → 0.
   final List<String> levelNamesDe;
 
+  /// Number of timestamped session `.sta` files to keep per deck, oldest
+  /// pruned first after each new one is written; `0` keeps every file.
+  final int keepStatisticsVersions;
+
   /// Last loaded `.vok` deck path, if any.
   final String? lastDeckPath;
 
@@ -191,6 +196,7 @@ final class LearnAnywhereSettings {
     int? entryLevelCap,
     List<String>? levelNamesEn,
     List<String>? levelNamesDe,
+    int? keepStatisticsVersions,
     String? lastDeckPath,
     String? lastMaskPath,
     bool clearLastDeckPath = false,
@@ -221,6 +227,8 @@ final class LearnAnywhereSettings {
       entryLevelCap: entryLevelCap ?? this.entryLevelCap,
       levelNamesEn: levelNamesEn ?? this.levelNamesEn,
       levelNamesDe: levelNamesDe ?? this.levelNamesDe,
+      keepStatisticsVersions:
+          keepStatisticsVersions ?? this.keepStatisticsVersions,
       lastDeckPath: clearLastDeckPath ? null : lastDeckPath ?? this.lastDeckPath,
       lastMaskPath: clearLastMaskPath ? null : lastMaskPath ?? this.lastMaskPath,
     );
@@ -249,6 +257,7 @@ final class LearnAnywhereSettings {
         other.entryLevelCap == entryLevelCap &&
         _stringListEquals(other.levelNamesEn, levelNamesEn) &&
         _stringListEquals(other.levelNamesDe, levelNamesDe) &&
+        other.keepStatisticsVersions == keepStatisticsVersions &&
         other.lastDeckPath == lastDeckPath &&
         other.lastMaskPath == lastMaskPath;
   }
@@ -275,6 +284,7 @@ final class LearnAnywhereSettings {
     entryLevelCap,
     Object.hashAll(levelNamesEn),
     Object.hashAll(levelNamesDe),
+    keepStatisticsVersions,
     lastDeckPath,
     lastMaskPath,
   ]);
@@ -320,6 +330,7 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
     'entryLevelCap': settings.entryLevelCap,
     'levelNamesEn': settings.levelNamesEn,
     'levelNamesDe': settings.levelNamesDe,
+    'keepStatisticsVersions': settings.keepStatisticsVersions,
     if (settings.lastDeckPath != null) 'lastDeckPath': settings.lastDeckPath,
     if (settings.lastMaskPath != null) 'lastMaskPath': settings.lastMaskPath,
   };
@@ -384,6 +395,10 @@ LearnAnywhereSettings decodeSettings(Object? value) {
     ),
     levelNamesEn: _levelNames(json['levelNamesEn'], defaults.levelNamesEn),
     levelNamesDe: _levelNames(json['levelNamesDe'], defaults.levelNamesDe),
+    keepStatisticsVersions: _int(
+      json['keepStatisticsVersions'],
+      defaults.keepStatisticsVersions,
+    ),
     lastDeckPath: _nullableString(json['lastDeckPath']),
     lastMaskPath: _nullableString(json['lastMaskPath']),
   );
