@@ -289,11 +289,12 @@ void main() {
       await temp.delete(recursive: true);
     });
 
-    test('loads decks matching a file mask pattern', () async {
+    test('recursively loads .vok decks under a folder', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
-        'learn_anywhere_pattern_ops',
+        'learn_anywhere_folder_search',
       );
       final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
       final LearningDeck deck = LearningDeck(
         mask: sampleMask(),
         units: const <LearningUnit>[
@@ -303,18 +304,35 @@ void main() {
           ),
         ],
       );
-      final String deckPath = '${temp.path}${Platform.pathSeparator}one.vok';
-      final String ignoredPath = '${temp.path}${Platform.pathSeparator}one.txt';
-      await File(deckPath).writeAsString(encodeDeckJson(deck));
+      final String topPath = '${temp.path}${sep}one.vok';
+      final Directory sub = Directory('${temp.path}${sep}nested');
+      await sub.create();
+      final String nestedPath = '${sub.path}${sep}two.vok';
+      final String ignoredPath = '${temp.path}${sep}one.txt';
+      await File(topPath).writeAsString(encodeDeckJson(deck));
+      await File(nestedPath).writeAsString(encodeDeckJson(deck));
       await File(ignoredPath).writeAsString('ignored');
 
-      final Map<String, LearningDeck> loaded = await service.loadDecksByPattern(
-        '${temp.path}${Platform.pathSeparator}*.vok',
+      final Map<String, LearningDeck> loaded = await service.loadDecksInFolder(
+        temp.path,
       );
 
-      expect(loaded.keys, contains(deckPath));
-      expect(loaded[deckPath]!.units, hasLength(1));
+      // Both the top-level and the nested .vok are found; the .txt is skipped.
+      expect(loaded.keys, contains(topPath));
+      expect(loaded.keys, contains(nestedPath));
+      expect(loaded.keys, isNot(contains(ignoredPath)));
+      expect(loaded, hasLength(2));
       await temp.delete(recursive: true);
+    });
+
+    test('reports a missing folder for a file search', () async {
+      final DesktopFileService service = const DesktopFileService();
+      final String missing =
+          '${Directory.systemTemp.path}${Platform.pathSeparator}la_no_such_dir_xyz';
+      await expectLater(
+        service.loadDecksInFolder(missing),
+        throwsA(isA<FileOperationException>()),
+      );
     });
 
     test('resolves the linked .inf for a deck by matching maskId', () async {

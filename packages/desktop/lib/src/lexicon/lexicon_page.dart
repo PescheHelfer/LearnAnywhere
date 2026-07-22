@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
-/// Loads decks for a file-oriented Lexicon search.
-typedef LoadDecksByPattern =
-    Future<Map<String, LearningDeck>> Function(String pattern);
+/// Opens a folder picker and loads every `.vok` deck beneath the chosen folder
+/// (recursively), keyed by source path. Returns null when the user cancels.
+typedef PickFolderDecks =
+    Future<Map<String, LearningDeck>?> Function();
 
 /// Desktop Lexicon search page.
 final class LexiconPage extends StatefulWidget {
@@ -12,7 +13,7 @@ final class LexiconPage extends StatefulWidget {
   const LexiconPage({
     required this.deck,
     required this.textOptions,
-    required this.loadDecksByPattern,
+    required this.onPickFolderDecks,
     required this.onLoadFoundDeck,
     required this.onClose,
     super.key,
@@ -24,8 +25,8 @@ final class LexiconPage extends StatefulWidget {
   /// Search normalization options.
   final TextMatchOptions textOptions;
 
-  /// Loads deck files matching a simple mask.
-  final LoadDecksByPattern loadDecksByPattern;
+  /// Prompts for a folder and loads its `.vok` decks for a file search.
+  final PickFolderDecks onPickFolderDecks;
 
   /// Replaces the in-memory deck with found units.
   final ValueChanged<LearningDeck> onLoadFoundDeck;
@@ -39,19 +40,17 @@ final class LexiconPage extends StatefulWidget {
 
 final class _LexiconPageState extends State<LexiconPage> {
   final TextEditingController _queryController = TextEditingController();
-  final TextEditingController _patternController = TextEditingController(
-    text: '*.vok',
-  );
   int? _categoryId;
   bool _loadFoundUnits = false;
   List<SearchResult> _results = const <SearchResult>[];
+
+  /// Decks loaded during the last file search, keyed by source path. Empty for
+  /// a memory search (results then resolve against the in-memory deck).
   Map<String, LearningDeck> _fileDecks = const <String, LearningDeck>{};
-  bool _lastSearchWasFileSearch = false;
 
   @override
   void dispose() {
     _queryController.dispose();
-    _patternController.dispose();
     super.dispose();
   }
 
@@ -118,18 +117,6 @@ final class _LexiconPageState extends State<LexiconPage> {
                     },
                   ),
                 ),
-                SizedBox(
-                  width: 280,
-                  child: TextField(
-                    controller: _patternController,
-                    decoration: InputDecoration(
-                      labelText: messages.message(
-                        LearnAnywhereMessage.lexiconFilePattern,
-                      ),
-                    ),
-                    onSubmitted: (_) => _searchFiles(),
-                  ),
-                ),
                 SegmentedButton<bool>(
                   segments: <ButtonSegment<bool>>[
                     ButtonSegment<bool>(
@@ -171,7 +158,7 @@ final class _LexiconPageState extends State<LexiconPage> {
                       messages.message(LearnAnywhereMessage.lexiconNoResults),
                     ),
                   )
-                : _ResultList(
+                : _ResultTable(
                     deck: widget.deck,
                     results: _results,
                     fileDecks: _fileDecks,
@@ -195,9 +182,7 @@ final class _LexiconPageState extends State<LexiconPage> {
                     messages.message(LearnAnywhereMessage.lexiconFileSearch),
                   ),
                 ),
-                if (_lastSearchWasFileSearch &&
-                    _loadFoundUnits &&
-                    _results.isNotEmpty)
+                if (_loadFoundUnits && _results.isNotEmpty)
                   FilledButton.icon(
                     onPressed: _confirmLoadFoundUnits,
                     icon: const Icon(Icons.download),
@@ -233,15 +218,15 @@ final class _LexiconPageState extends State<LexiconPage> {
         categoryId: _categoryId,
       );
       _fileDecks = const <String, LearningDeck>{};
-      _lastSearchWasFileSearch = false;
     });
   }
 
   Future<void> _searchFiles() async {
     try {
-      final Map<String, LearningDeck> decks = await widget.loadDecksByPattern(
-        _patternController.text,
-      );
+      final Map<String, LearningDeck>? decks = await widget.onPickFolderDecks();
+      if (decks == null || !mounted) {
+        return;
+      }
       setState(() {
         _fileDecks = decks;
         _results = searchDeckFiles(
@@ -250,7 +235,6 @@ final class _LexiconPageState extends State<LexiconPage> {
           options: widget.textOptions,
           categoryId: _categoryId,
         );
-        _lastSearchWasFileSearch = true;
       });
     } on Object catch (error) {
       if (!mounted) {
@@ -294,7 +278,7 @@ final class _LexiconPageState extends State<LexiconPage> {
       return;
     }
     try {
-      widget.onLoadFoundDeck(_deckFromFileResults());
+      widget.onLoadFoundDeck(_deckFromResults());
       if (!mounted) {
         return;
       }
@@ -322,37 +306,26 @@ final class _LexiconPageState extends State<LexiconPage> {
     }
   }
 
-  /// Builds an in-memory deck from the file-search hits.
+  /// Builds an in-memory deck from the current search hits.
   ///
-  /// All hits must describe the SAME mask (equal [LearningMask.maskId]); the
-  /// first hit's mask is the reference. Each hit's unit is re-keyed onto the
-  /// reference mask via [applyMaskToDeck], but only when that is lossless (per
+  /// Memory-search hits resolve against the in-memory deck; file-search hits
+  /// resolve against their own source deck ([_fileDecks]). All hits must
+  /// describe the SAME mask (equal [LearningMask.maskId]); the first hit's mask
+  /// is the reference. Each hit's unit is re-keyed onto the reference mask via
+  /// [applyMaskToDeck], but only when that is lossless (per
   /// [checkMaskCompatibility]). A different maskId, or a lossy conversion, is
   /// refused with a localized [_LexiconLoadException].
-  LearningDeck _deckFromFileResults() {
+  LearningDeck _deckFromResults() {
     if (_results.isEmpty) {
       return LearningDeck(
         mask: widget.deck.mask,
         units: const <LearningUnit>[],
       );
     }
-    final String? firstSource = _results.first.sourceFile;
-    final LearningDeck? firstDeck = firstSource == null
-        ? null
-        : _fileDecks[firstSource];
-    if (firstDeck == null) {
-      throw StateError('Missing source deck for search result.');
-    }
-    final LearningMask reference = firstDeck.mask;
+    final LearningMask reference = _sourceDeckFor(_results.first).mask;
     final List<LearningUnit> units = <LearningUnit>[];
     for (final SearchResult result in _results) {
-      final String? source = result.sourceFile;
-      final LearningDeck? sourceDeck = source == null
-          ? null
-          : _fileDecks[source];
-      if (sourceDeck == null) {
-        throw StateError('Missing source deck for search result.');
-      }
+      final LearningDeck sourceDeck = _sourceDeckFor(result);
       if (sourceDeck.mask.maskId != reference.maskId) {
         throw const _LexiconLoadException(
           LearnAnywhereMessage.lexiconLoadMaskMismatch,
@@ -382,6 +355,20 @@ final class _LexiconPageState extends State<LexiconPage> {
       units: List<LearningUnit>.unmodifiable(units),
     );
   }
+
+  /// Resolves the deck a [result] came from: its file-search source deck, or
+  /// the in-memory deck for a memory-search hit.
+  LearningDeck _sourceDeckFor(SearchResult result) {
+    final String? source = result.sourceFile;
+    if (source == null) {
+      return widget.deck;
+    }
+    final LearningDeck? deck = _fileDecks[source];
+    if (deck == null) {
+      throw StateError('Missing source deck for search result.');
+    }
+    return deck;
+  }
 }
 
 /// A localizable failure while loading found Lexicon units into memory.
@@ -392,8 +379,11 @@ final class _LexiconLoadException implements Exception {
   final LearnAnywhereMessage messageId;
 }
 
-final class _ResultList extends StatelessWidget {
-  const _ResultList({
+/// Renders search hits in the Keep-Practicing table style: Unit / Question /
+/// Answer / Matched fields (plus Source file for a file search), each row
+/// carrying a full-unit hover tooltip.
+final class _ResultTable extends StatelessWidget {
+  const _ResultTable({
     required this.deck,
     required this.results,
     required this.fileDecks,
@@ -403,8 +393,9 @@ final class _ResultList extends StatelessWidget {
   final List<SearchResult> results;
 
   /// Decks loaded for a file-oriented search, keyed by source path. Used to
-  /// resolve each hit's category name against its OWN deck's mask (category ids
-  /// are only unique within one mask), falling back to the in-memory deck.
+  /// resolve each hit's unit and category against its OWN deck (indices and
+  /// category ids are only meaningful within one deck), falling back to the
+  /// in-memory deck for a memory search.
   final Map<String, LearningDeck> fileDecks;
 
   @override
@@ -412,34 +403,113 @@ final class _ResultList extends StatelessWidget {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: results.length,
-      separatorBuilder: (BuildContext context, int index) =>
-          const Divider(height: 1),
-      itemBuilder: (BuildContext context, int index) {
-        final SearchResult result = results[index];
-        final String? source = result.sourceFile;
-        final LearningMask mask =
-            (source == null ? null : fileDecks[source]?.mask) ?? deck.mask;
-        final CategoryDefinition? category = mask.categoryById(
-          result.categoryId,
-        );
-        return ListTile(
-          title: Text(
-            '${messages.message(LearnAnywhereMessage.statisticsUnit)} ${result.unitIndex} - ${category?.name ?? result.categoryId}',
+    final bool showSource = results.any(
+      (SearchResult result) => result.sourceFile != null,
+    );
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columnSpacing: LearnAnywhereTokens.gapSmall,
+        horizontalMargin: LearnAnywhereTokens.gapSmall,
+        dataRowMinHeight: 32,
+        dataRowMaxHeight: 36,
+        headingRowHeight: 36,
+        columns: <DataColumn>[
+          DataColumn(
+            label: Text(
+              messages.message(LearnAnywhereMessage.statisticsUnit),
+            ),
           ),
-          subtitle: Text(
-            <String>[
-              if (result.sourceFile != null)
-                '${messages.message(LearnAnywhereMessage.lexiconSourceFile)}: ${result.sourceFile}',
-              '${messages.message(LearnAnywhereMessage.lexiconMatchedFields)}: ${result.matchedFieldNames.join(', ')}',
-            ].join('\n'),
+          DataColumn(
+            label: Text(
+              messages.message(LearnAnywhereMessage.statisticsQuestion),
+            ),
           ),
-          isThreeLine: result.sourceFile != null,
-        );
-      },
+          DataColumn(
+            label: Text(
+              messages.message(LearnAnywhereMessage.statisticsAnswer),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              messages.message(LearnAnywhereMessage.lexiconMatchedFields),
+            ),
+          ),
+          if (showSource)
+            DataColumn(
+              label: Text(
+                messages.message(LearnAnywhereMessage.lexiconSourceFile),
+              ),
+            ),
+        ],
+        rows: results.map((SearchResult result) {
+          final LearningDeck source = _sourceDeck(result);
+          final LearningUnit unit = source.units[result.unitIndex - 1];
+          final CategoryDefinition category = source.categoryForUnit(unit);
+          final String tooltip = _fieldsTooltip(unit, category);
+          return DataRow(
+            cells: <DataCell>[
+              _tipCell(tooltip, Text(result.unitIndex.toString())),
+              _tipCell(
+                tooltip,
+                Text(_fieldPreview(unit, category, FieldRole.question)),
+              ),
+              _tipCell(
+                tooltip,
+                Text(_fieldPreview(unit, category, FieldRole.answer)),
+              ),
+              _tipCell(tooltip, Text(result.matchedFieldNames.join(', '))),
+              if (showSource)
+                _tipCell(tooltip, Text(result.sourceFile ?? '')),
+            ],
+          );
+        }).toList(growable: false),
+      ),
     );
   }
+
+  LearningDeck _sourceDeck(SearchResult result) {
+    final String? source = result.sourceFile;
+    return (source == null ? null : fileDecks[source]) ?? deck;
+  }
+}
+
+/// Wraps a table cell in a [Tooltip] showing the full unit listing.
+DataCell _tipCell(String tooltip, Widget child) {
+  return DataCell(Tooltip(message: tooltip, child: child));
+}
+
+/// Returns the truncated plain text of the first [role] field in direction 1.
+String _fieldPreview(
+  LearningUnit unit,
+  CategoryDefinition category,
+  FieldRole role,
+) {
+  final List<FieldDefinition> fields = category.fieldsForRole(
+    QueryDirection.direction1,
+    role,
+  );
+  if (fields.isEmpty) {
+    return '';
+  }
+  return _truncate(unit.valueForFieldId(fields.first.id).plainText);
+}
+
+/// Builds a "field name: value" listing of all named (non-hidden) fields.
+String _fieldsTooltip(LearningUnit unit, CategoryDefinition category) {
+  final List<String> lines = <String>[
+    for (final FieldDefinition field in category.fields)
+      if (!field.isHidden)
+        '${field.name}: ${unit.valueForFieldId(field.id).plainText}',
+  ];
+  return lines.join('\n');
+}
+
+/// Truncates [text] to roughly [max] characters, appending an ellipsis.
+String _truncate(String text, [int max = 30]) {
+  final String collapsed = text.replaceAll('\n', ' ').trim();
+  if (collapsed.length <= max) {
+    return collapsed;
+  }
+  return '${collapsed.substring(0, max)}…';
 }

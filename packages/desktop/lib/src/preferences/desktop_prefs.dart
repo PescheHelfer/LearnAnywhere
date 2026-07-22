@@ -19,6 +19,7 @@ final class DesktopPrefs {
   static const String _keyLastDirVok = 'last_dir_vok';
   static const String _keyLastDirSta = 'last_dir_sta';
   static const String _keyLastDirInf = 'last_dir_inf';
+  static const String _keyLastDirFileSearch = 'last_dir_file_search';
   static const String _keyAutoLoadStats = 'auto_load_stats';
   static const String _keyAutoSaveStats = 'auto_save_stats';
 
@@ -60,6 +61,13 @@ final class DesktopPrefs {
   /// Persists [value] as the last-used `.inf` dialog directory.
   void setLastDirInf(String value) =>
       unawaited(_prefs.setString(_keyLastDirInf, value));
+
+  /// Folder last chosen for a Lexicon file search, or null on first run.
+  String? get lastDirFileSearch => _prefs.getString(_keyLastDirFileSearch);
+
+  /// Persists [value] as the last-used Lexicon file-search folder.
+  void setLastDirFileSearch(String value) =>
+      unawaited(_prefs.setString(_keyLastDirFileSearch, value));
 
   // --- Auto-load / auto-save statistics toggles (C11) ------------------------
 

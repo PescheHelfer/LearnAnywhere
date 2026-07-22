@@ -748,9 +748,6 @@ enum LearnAnywhereMessage {
   /// File search action.
   lexiconFileSearch,
 
-  /// File search pattern label.
-  lexiconFilePattern,
-
   /// Display only file search mode.
   lexiconDisplayOnly,
 
@@ -1030,12 +1027,6 @@ enum LearnAnywhereMessage {
 
   /// Error: the Lexicon search directory does not exist. Placeholder: {detail}.
   errorSearchDirectoryMissing,
-
-  /// Error: no Lexicon search pattern was provided.
-  errorNoSearchPattern,
-
-  /// Error: the Lexicon search pattern lacks a file mask.
-  errorPatternNeedsFileMask,
 
   /// Error: found units belong to different masks and cannot be loaded together.
   lexiconLoadMaskMismatch,
@@ -1368,7 +1359,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.lexiconAnyCategory: 'Any category',
       LearnAnywhereMessage.lexiconMemorySearch: 'Search memory',
       LearnAnywhereMessage.lexiconFileSearch: 'Search files',
-      LearnAnywhereMessage.lexiconFilePattern: 'File mask',
       LearnAnywhereMessage.lexiconDisplayOnly: 'Display only',
       LearnAnywhereMessage.lexiconLoadFoundUnits: 'Load found units',
       LearnAnywhereMessage.lexiconLoadWarning:
@@ -1484,10 +1474,6 @@ final class LearnAnywhereCatalog {
           'lose data.',
       LearnAnywhereMessage.errorSearchDirectoryMissing:
           'Search directory does not exist: {detail}',
-      LearnAnywhereMessage.errorNoSearchPattern:
-          'No search pattern was provided.',
-      LearnAnywhereMessage.errorPatternNeedsFileMask:
-          'The search pattern must include a file mask (e.g. *.vok).',
       LearnAnywhereMessage.lexiconLoadMaskMismatch:
           'The found units belong to different masks and cannot be loaded '
           'together.',
@@ -1812,7 +1798,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.lexiconAnyCategory: 'Alle Kategorien',
       LearnAnywhereMessage.lexiconMemorySearch: 'Speicher durchsuchen',
       LearnAnywhereMessage.lexiconFileSearch: 'Dateien durchsuchen',
-      LearnAnywhereMessage.lexiconFilePattern: 'Dateimaske',
       LearnAnywhereMessage.lexiconDisplayOnly: 'Nur anzeigen',
       LearnAnywhereMessage.lexiconLoadFoundUnits: 'Gefundene Einheiten laden',
       LearnAnywhereMessage.lexiconLoadWarning:
@@ -1937,10 +1922,6 @@ final class LearnAnywhereCatalog {
           'würden Daten verloren gehen.',
       LearnAnywhereMessage.errorSearchDirectoryMissing:
           'Suchordner existiert nicht: {detail}',
-      LearnAnywhereMessage.errorNoSearchPattern:
-          'Es wurde kein Suchmuster angegeben.',
-      LearnAnywhereMessage.errorPatternNeedsFileMask:
-          'Das Suchmuster muss eine Dateimaske enthalten (z. B. *.vok).',
       LearnAnywhereMessage.lexiconLoadMaskMismatch:
           'Die gefundenen Lerneinheiten gehören zu unterschiedlichen Masken '
           'und können nicht gemeinsam geladen werden.',

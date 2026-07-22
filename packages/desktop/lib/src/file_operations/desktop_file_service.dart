@@ -109,27 +109,33 @@ final class DesktopFileService {
     await File(path).writeAsString(encodeDeckJson(deck));
   }
 
-  /// Loads all `.vok` decks matching a simple file glob pattern.
-  Future<Map<String, LearningDeck>> loadDecksByPattern(String pattern) async {
-    final _DeckPattern parsed = _DeckPattern.parse(pattern);
-    final Directory directory = Directory(parsed.directoryPath);
+  /// Recursively loads every `.vok` deck under [folder] (including subfolders),
+  /// keyed by absolute path.
+  ///
+  /// This backs the Lexicon file search: the user picks a folder and every
+  /// deck beneath it is searched. Files that fail to decode are skipped rather
+  /// than aborting the scan, so one malformed `.vok` cannot break a search.
+  Future<Map<String, LearningDeck>> loadDecksInFolder(String folder) async {
+    final Directory directory = Directory(folder);
     if (!await directory.exists()) {
       throw FileOperationException(
         LearnAnywhereMessage.errorSearchDirectoryMissing,
-        detail: parsed.directoryPath,
+        detail: folder,
       );
     }
-    final RegExp fileNamePattern = parsed.fileNameRegex;
     final Map<String, LearningDeck> decks = <String, LearningDeck>{};
-    await for (final FileSystemEntity entity in directory.list()) {
-      if (entity is! File) {
+    await for (final FileSystemEntity entity in directory.list(
+      recursive: true,
+      followLinks: false,
+    )) {
+      if (entity is! File || !_hasExtension(entity.path, 'vok')) {
         continue;
       }
-      final String fileName = _fileName(entity.path);
-      if (!fileNamePattern.hasMatch(fileName)) {
+      try {
+        decks[entity.path] = decodeDeckJson(await entity.readAsString());
+      } on Object {
         continue;
       }
-      decks[entity.path] = decodeDeckJson(await entity.readAsString());
     }
     return decks;
   }
@@ -746,59 +752,4 @@ final class FileOperationException implements Exception {
 
   @override
   String toString() => detail == null ? messageId.name : '${messageId.name}: $detail';
-}
-
-final class _DeckPattern {
-  const _DeckPattern({
-    required this.directoryPath,
-    required this.fileNamePattern,
-  });
-
-  final String directoryPath;
-  final String fileNamePattern;
-
-  RegExp get fileNameRegex {
-    final StringBuffer buffer = StringBuffer('^');
-    for (var index = 0; index < fileNamePattern.length; index += 1) {
-      final String character = fileNamePattern[index];
-      if (character == '*') {
-        buffer.write('.*');
-      } else if (character == '?') {
-        buffer.write('.');
-      } else {
-        buffer.write(RegExp.escape(character));
-      }
-    }
-    buffer.write(r'$');
-    return RegExp(buffer.toString(), caseSensitive: false);
-  }
-
-  static _DeckPattern parse(String pattern) {
-    final String trimmed = pattern.trim();
-    if (trimmed.isEmpty) {
-      throw const FileOperationException(
-        LearnAnywhereMessage.errorNoSearchPattern,
-      );
-    }
-    final int slash = trimmed.lastIndexOf('/');
-    final int backslash = trimmed.lastIndexOf(r'\');
-    final int separator = slash > backslash ? slash : backslash;
-    final String directoryPath = separator < 0
-        ? Directory.current.path
-        : trimmed.substring(0, separator);
-    final String fileNamePattern = separator < 0
-        ? trimmed
-        : trimmed.substring(separator + 1);
-    if (fileNamePattern.isEmpty) {
-      throw const FileOperationException(
-        LearnAnywhereMessage.errorPatternNeedsFileMask,
-      );
-    }
-    return _DeckPattern(
-      directoryPath: directoryPath.isEmpty
-          ? Directory.current.path
-          : directoryPath,
-      fileNamePattern: fileNamePattern,
-    );
-  }
 }

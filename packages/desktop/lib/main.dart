@@ -257,6 +257,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   String? _lastVokDir;
   String? _lastStaDir;
   String? _lastInfDir;
+  // Last folder chosen for a Lexicon file search (Batch 8, §4.2).
+  String? _lastFileSearchDir;
   int _learnSessionAttempts = 0;
   int _learnSessionCorrect = 0;
   // Bumped each time the Learn menu is chosen; lets an already-open learn page
@@ -373,6 +375,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     _lastVokDir = widget.prefs.lastDirVok;
     _lastStaDir = widget.prefs.lastDirSta;
     _lastInfDir = widget.prefs.lastDirInf;
+    _lastFileSearchDir = widget.prefs.lastDirFileSearch;
     // Re-seed the default deck's mask in the active UI language, and apply the
     // persisted auto-load/auto-save statistics toggles (C11; both default OFF).
     _document =
@@ -1869,7 +1872,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           caseSensitive: _queryOptions.caseSensitive,
           accentSensitive: _queryOptions.accentSensitive,
         ),
-        loadDecksByPattern: _fileService.loadDecksByPattern,
+        onPickFolderDecks: _pickLexiconFolderDecks,
         onLoadFoundDeck: _loadFoundLexiconDeck,
         onClose: () => _selectRoute(_DesktopRoute.home),
       ),
@@ -2424,6 +2427,26 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _setLastDir('vok', vokPath);
       _showStatus(LearnAnywhereMessage.statisticsSelectedSaved);
     });
+  }
+
+  /// Prompts for a folder and recursively loads its `.vok` decks for a Lexicon
+  /// file search (Batch 8, §4.2).
+  ///
+  /// The picker opens in the last folder used for a file search, falling back
+  /// to the last folder a deck was opened from. The chosen folder is persisted
+  /// so the next search starts there. Returns null when the user cancels.
+  Future<Map<String, LearningDeck>?> _pickLexiconFolderDecks() async {
+    final String? initialDir =
+        _lastFileSearchDir ?? _lastVokDir ?? _filePicker.initialDirectory(null);
+    final String? folder = await _filePicker.pickDirectory(
+      initialDirectory: initialDir,
+    );
+    if (folder == null) {
+      return null;
+    }
+    _lastFileSearchDir = folder;
+    widget.prefs.setLastDirFileSearch(folder);
+    return _fileService.loadDecksInFolder(folder);
   }
 
   void _loadFoundLexiconDeck(LearningDeck deck) {

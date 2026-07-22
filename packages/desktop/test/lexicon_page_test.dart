@@ -19,7 +19,7 @@ void main() {
           body: LexiconPage(
             deck: deck,
             textOptions: const TextMatchOptions(),
-            loadDecksByPattern: (String pattern) async {
+            onPickFolderDecks: () async {
               return <String, LearningDeck>{'sample.vok': deck};
             },
             onLoadFoundDeck: (LearningDeck deck) {
@@ -37,13 +37,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Results: 1'), findsOneWidget);
-    expect(find.textContaining('Matched fields: Answer'), findsOneWidget);
+    // The result table shows the matched unit's Question/Answer previews; the
+    // Question preview ('hello') is unique (the query field holds 'bonjour').
+    expect(find.text('hello'), findsOneWidget);
 
     await tester.tap(find.text('Load found units'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Search files'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Source file: sample.vok'), findsOneWidget);
+    // A file search adds a Source file column carrying each hit's path.
+    expect(find.text('sample.vok'), findsOneWidget);
 
     await tester.tap(find.text('Load results'));
     await tester.pumpAndSettle();
