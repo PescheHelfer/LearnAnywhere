@@ -125,12 +125,12 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                 tabs: <Widget>[
                   Tab(
                     text: messages.message(
-                      LearnAnywhereMessage.statisticsDetailed,
+                      LearnAnywhereMessage.statisticsOverview,
                     ),
                   ),
                   Tab(
                     text: messages.message(
-                      LearnAnywhereMessage.statisticsKeepPracticing,
+                      LearnAnywhereMessage.statisticsUnitList,
                     ),
                   ),
                   Tab(

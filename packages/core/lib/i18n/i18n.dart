@@ -230,6 +230,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.4.0.
   aboutVersion040,
 
+  /// About page version history entry for 0.4.1.
+  aboutVersion041,
+
   /// Desktop bottom shortcut hint bar text.
   desktopHintBar,
 
@@ -524,6 +527,10 @@ enum LearnAnywhereMessage {
   /// Live accuracy label.
   learnLiveAccuracy,
 
+  /// Label for the current unit's own accuracy, appended to the session
+  /// header (non-Level modes).
+  learnUnitAccuracy,
+
   /// Live elapsed-time label.
   learnLiveTime,
 
@@ -532,9 +539,6 @@ enum LearnAnywhereMessage {
 
   /// Completion extend action.
   learnExtendSession,
-
-  /// Confirm cancel learn session.
-  learnCancelConfirm,
 
   /// "Evaluate as:" label before the rating buttons.
   learnEvaluateAs,
@@ -611,11 +615,11 @@ enum LearnAnywhereMessage {
   /// Statistics page title.
   statisticsTitle,
 
-  /// Statistics keep-practicing tab.
-  statisticsKeepPracticing,
+  /// Statistics unit-list tab (per-unit attempts/accuracy table).
+  statisticsUnitList,
 
-  /// Statistics detailed tab.
-  statisticsDetailed,
+  /// Statistics overview tab (bucket summary).
+  statisticsOverview,
 
   /// Statistics direction view label.
   statisticsDirectionView,
@@ -1208,6 +1212,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutVersion031:
           '0.3.1 – Code audit fixes and clean-ups.',
       LearnAnywhereMessage.aboutVersion040: '0.4.0 – Add Level learning mode.',
+      LearnAnywhereMessage.aboutVersion041:
+          '0.4.1 – Many small improvements and fixes across the app.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1330,10 +1336,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveMastered: 'Mastered',
       LearnAnywhereMessage.learnLiveRemaining: 'Remaining',
       LearnAnywhereMessage.learnLiveAccuracy: 'Accuracy',
+      LearnAnywhereMessage.learnUnitAccuracy: 'This unit',
       LearnAnywhereMessage.learnLiveTime: 'Time',
       LearnAnywhereMessage.learnUnitHeader: 'Unit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
-      LearnAnywhereMessage.learnCancelConfirm: 'Cancel the current session?',
       LearnAnywhereMessage.learnEvaluateAs: 'Evaluate as:',
       LearnAnywhereMessage.learnMoreHelp: 'More help',
       LearnAnywhereMessage.learnLessHelp: 'Less help',
@@ -1368,8 +1374,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue:
           'Wrong-answer ceiling value',
       LearnAnywhereMessage.statisticsTitle: 'Statistics',
-      LearnAnywhereMessage.statisticsKeepPracticing: 'Keep practicing',
-      LearnAnywhereMessage.statisticsDetailed: 'Detailed',
+      LearnAnywhereMessage.statisticsUnitList: 'Unit list',
+      LearnAnywhereMessage.statisticsOverview: 'Overview',
       LearnAnywhereMessage.statisticsDirectionView: 'View',
       LearnAnywhereMessage.statisticsCombined: 'Combined',
       LearnAnywhereMessage.statisticsDirection1: 'Direction 1',
@@ -1667,6 +1673,9 @@ final class LearnAnywhereCatalog {
           '0.3.1 – Korrekturen und Bereinigungen im Rahmen des Code-Audits.',
       LearnAnywhereMessage.aboutVersion040:
           '0.4.0 – Stufenlernen-Modus hinzugefügt.',
+      LearnAnywhereMessage.aboutVersion041:
+          '0.4.1 – Viele kleine Verbesserungen und Korrekturen in der '
+          'gesamten App.',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurück   F3 Weiter   F5 Suche   F6 Springen   F7 Löschen   F8 Einfügen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
@@ -1793,10 +1802,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveMastered: 'Beherrscht',
       LearnAnywhereMessage.learnLiveRemaining: 'Übrig',
       LearnAnywhereMessage.learnLiveAccuracy: 'Korrekt',
+      LearnAnywhereMessage.learnUnitAccuracy: 'Diese Einheit',
       LearnAnywhereMessage.learnLiveTime: 'Zeit',
       LearnAnywhereMessage.learnUnitHeader: 'Einheit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
-      LearnAnywhereMessage.learnCancelConfirm: 'Aktuelle Sitzung abbrechen?',
       LearnAnywhereMessage.learnEvaluateAs: 'Bewerten als:',
       LearnAnywhereMessage.learnMoreHelp: 'Mehr Hilfe',
       LearnAnywhereMessage.learnLessHelp: 'Weniger Hilfe',
@@ -1833,8 +1842,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue:
           'Grenze für falsche Antworten',
       LearnAnywhereMessage.statisticsTitle: 'Statistik',
-      LearnAnywhereMessage.statisticsKeepPracticing: 'Weiter üben',
-      LearnAnywhereMessage.statisticsDetailed: 'Detailliert',
+      LearnAnywhereMessage.statisticsUnitList: 'Einheitenliste',
+      LearnAnywhereMessage.statisticsOverview: 'Übersicht',
       LearnAnywhereMessage.statisticsDirectionView: 'Ansicht',
       LearnAnywhereMessage.statisticsCombined: 'Kombiniert',
       LearnAnywhereMessage.statisticsDirection1: 'Abfragerichtung 1',

@@ -46,11 +46,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Statistics'), findsOneWidget);
-    expect(find.text('Keep practicing'), findsOneWidget);
+    expect(find.text('Unit list'), findsOneWidget);
     expect(find.text('Perfect'), findsWidgets);
     expect(find.text('Not yet practiced'), findsWidgets);
 
-    await tester.tap(find.text('Keep practicing'));
+    await tester.tap(find.text('Unit list'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Select visible'));
@@ -59,7 +59,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(savedSelection, <int>[1, 2]);
 
-    await tester.tap(find.text('Detailed'));
+    await tester.tap(find.text('Overview'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Total Attempts'), findsOneWidget);
     expect(find.textContaining('Correct Attempts'), findsOneWidget);
@@ -96,7 +96,7 @@ void main() {
       );
       expect(_cellText(perfect.cells[4]), '100%');
 
-      await tester.tap(find.text('Keep practicing'));
+      await tester.tap(find.text('Unit list'));
       await tester.pumpAndSettle();
       expect(find.text(caption), findsOneWidget);
     },
@@ -112,7 +112,7 @@ void main() {
 
     await tester.pumpWidget(buildPage());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Keep practicing'));
+    await tester.tap(find.text('Unit list'));
     await tester.pumpAndSettle();
 
     // Defaults to unit order.

@@ -228,6 +228,37 @@ void main() {
   );
 
   testWidgets(
+    'Esc during a live session exits immediately with no confirmation, and '
+    "the header shows the current unit's own accuracy",
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      var exited = false;
+      await tester.pumpWidget(buildPage(onExit: () => exited = true));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // Not yet attempted in this scope: numeric zero, not a blank/omitted
+      // segment. (This harness's `statistics` prop is static, so the value
+      // never changes regardless of interaction — the point here is the
+      // presence and formatting of the segment, not live updates.)
+      expect(find.textContaining('This unit: 0/0 (0%)'), findsOneWidget);
+
+      // Leaving mid-session (Esc) must exit immediately — no "Please
+      // confirm" dialog, unlike the old confirmation prompt.
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.text('Please confirm'), findsNothing);
+      expect(exited, isTrue);
+    },
+  );
+
+  testWidgets(
     'Extend session from the completion view keeps Esc/F-keys live on '
     'the setup screen',
     (WidgetTester tester) async {

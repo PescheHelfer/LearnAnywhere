@@ -1315,43 +1315,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     return index < r.length ? r[index] : null;
   }
 
-  Future<void> _cancelSession() async {
-    // On the setup or completion screens there are no live stats to lose, so
-    // exit straight to the home screen without a confirmation prompt.
-    if (_currentItem == null) {
-      widget.onExit?.call();
-      return;
-    }
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
-          content: Text(
-            messages.message(LearnAnywhereMessage.learnCancelConfirm),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
-            ),
-            FilledButton(
-              autofocus: true,
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(
-                messages.message(LearnAnywhereMessage.actionContinue),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-    if (confirmed == true && mounted) {
-      widget.onExit?.call();
-    }
+  /// Leaves the session (Esc, or the Cancel button on setup/completion/a live
+  /// session) straight away — no confirmation. Per-unit statistics already
+  /// live in the shell's document (and are auto-saved per unit when that
+  /// option is on), so there is nothing a prompt could protect here.
+  void _cancelSession() {
+    widget.onExit?.call();
   }
 }
 
@@ -1707,6 +1676,22 @@ final class _SessionView extends StatelessWidget {
   final VoidCallback onCancel;
 
   bool get _isLevelLearning => parameters.mode == SessionMode.levelLearning;
+
+  /// The current unit's own accuracy for the active direction, as a header
+  /// segment (e.g. "This unit: 3/4 (75%)"). Always numeric, including
+  /// `0/0 (0%)` before the unit has been attempted in this scope.
+  String _unitAccuracyLabel(LearnAnywhereLocalizations messages) {
+    final UnitStats unitStats = statistics.firstWhere(
+      (UnitStats s) => s.index == item.unitIndex,
+      orElse: () => UnitStats(index: item.unitIndex),
+    );
+    final DirectionStats stats = unitStats.statsFor(item.direction);
+    final int pct = stats.attempts == 0
+        ? 0
+        : ((stats.correct / stats.attempts) * 100).round();
+    return '${messages.message(LearnAnywhereMessage.learnUnitAccuracy)}: '
+        '${stats.correct}/${stats.attempts} ($pct%)';
+  }
 
   /// The rich-text runs of [value] (a plain value becomes a single run), used as
   /// the base for the reveal-screen diff overlay.
@@ -2114,12 +2099,14 @@ final class _SessionView extends StatelessWidget {
         elapsedSeconds >= options.timeLimitSeconds;
 
     // Header: "Unit x/y", the level name (for Level Learning, right after the
-    // unit), then category and direction.
+    // unit), then category, direction, and — outside Level Learning, where a
+    // per-unit drill accuracy isn't meaningful — this unit's own accuracy.
     final List<String> headerParts = <String>[
       _learnUnitHeader(messages, item.unitIndex, deck.units.length),
       if (_isLevelLearning) levelNameFor(levelNames, activeLevel),
       category.name,
       _directionLabel(deck, item.direction),
+      if (!_isLevelLearning) _unitAccuracyLabel(messages),
     ];
     final String headerText = headerParts.join(' - ');
 

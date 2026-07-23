@@ -69,6 +69,7 @@ void main() {
     );
     expect(find.textContaining('SbitFire Software'), findsOneWidget);
     expect(find.text('Version history'), findsOneWidget);
+    expect(find.textContaining('0.4.1'), findsOneWidget);
   });
 
   testWidgets('editor inserts units and edits length-limited fields', (
