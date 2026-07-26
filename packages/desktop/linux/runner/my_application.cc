@@ -11,6 +11,32 @@
 // windows/runner/main.cpp and ProductName in windows/runner/Runner.rc.
 constexpr char kWindowTitle[] = "Learn Anywhere";
 
+// Bare icon name looked up in the freedesktop icon theme. Must match `Icon=` in
+// packaging/linux/com.sbitfire.LearnAnywhere.desktop and the file names written
+// by packaging/linux/install-icons.sh.
+constexpr char kIconName[] = "learn_anywhere";
+
+// Point the window at its themed icon so the shell (dock, alt-tab, window list)
+// shows the app icon instead of a generic placeholder.
+//
+// Only a name the theme actually has is set: an installed-but-missing icon name
+// makes GTK draw a broken-image placeholder, which is worse than its default.
+// Running straight from the build directory or from an AppImage that has not
+// registered its icons is therefore left untouched.
+static void set_window_icon(GtkWindow* window) {
+  GtkIconTheme* theme = gtk_icon_theme_get_default();
+  if (theme == nullptr) {
+    return;
+  }
+  const char* const candidates[] = {kIconName, APPLICATION_ID};
+  for (const char* name : candidates) {
+    if (gtk_icon_theme_has_icon(theme, name)) {
+      gtk_window_set_icon_name(window, name);
+      return;
+    }
+  }
+}
+
 struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
@@ -55,6 +81,8 @@ static void my_application_activate(GApplication* application) {
   } else {
     gtk_window_set_title(window, kWindowTitle);
   }
+
+  set_window_icon(window);
 
   gtk_window_set_default_size(window, 1280, 720);
 

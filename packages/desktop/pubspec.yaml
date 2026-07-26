@@ -27,3 +27,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Only the sizes actually drawn by the UI are bundled. The 256 px
+  # assets/icons/learn_anywhere.png next to this one is a packaging input for
+  # the Linux AppImage, not a runtime asset, so the directory is deliberately
+  # not listed as a whole.
+  assets:
+    - assets/icons/learn_anywhere_128.png

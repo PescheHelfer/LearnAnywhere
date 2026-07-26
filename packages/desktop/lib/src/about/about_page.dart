@@ -10,6 +10,13 @@ final class AboutPage extends StatelessWidget {
   /// Called when the user closes this page.
   final VoidCallback? onClose;
 
+  /// Edge length of the app mark in the header.
+  ///
+  /// Roughly twice the cap height of the `headlineSmall` title next to it, so
+  /// the icon reads as the product mark rather than as another UI glyph. The
+  /// 128 px source keeps it crisp well past 200% display scaling.
+  static const double _markSize = 48;
+
   @override
   Widget build(BuildContext context) {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
@@ -46,10 +53,19 @@ final class AboutPage extends StatelessWidget {
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        Icon(
-                          Icons.info_outline,
-                          color: colorScheme.primary,
-                          size: 32,
+                        // The app mark replaces the generic info glyph: this is
+                        // the one screen where the product's own identity
+                        // belongs, and two marks would compete. The artwork
+                        // already carries its own rounded tile and padding, so
+                        // it needs no frame, border or shadow of its own.
+                        Image.asset(
+                          'assets/icons/learn_anywhere_128.png',
+                          width: _markSize,
+                          height: _markSize,
+                          filterQuality: FilterQuality.medium,
+                          semanticLabel: messages.message(
+                            LearnAnywhereMessage.appTitle,
+                          ),
                         ),
                         const SizedBox(width: LearnAnywhereTokens.gapMedium),
                         Expanded(
