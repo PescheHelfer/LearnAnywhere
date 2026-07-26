@@ -18,15 +18,18 @@ run `flutter create` over an existing platform folder.
 If a value must agree across runners, change the one you can build and **report the
 mismatch** instead of silently editing the other. Values that must agree:
 
-| | Windows | Linux | Android |
+| | current value | Windows | Linux |
 |---|---|---|---|
-| binary / app name | `windows/CMakeLists.txt` `BINARY_NAME` | `linux/CMakeLists.txt` `BINARY_NAME` | `applicationId` |
-| window title | `runner/main.cpp` | `runner/my_application.cc` | — |
-| default size | `runner/main.cpp` | `runner/my_application.cc` | — |
+| binary name | `LearnAnywhere` | `windows/CMakeLists.txt` `BINARY_NAME` | `linux/CMakeLists.txt` `BINARY_NAME` |
+| product / window title | `Learn Anywhere` | `runner/main.cpp` `kWindowTitle` + `Runner.rc` `ProductName` | `runner/my_application.cc` `kWindowTitle` |
+| application ID | `com.sbitfire.LearnAnywhere` | `runner/main.cpp` `kAppUserModelId` | `linux/CMakeLists.txt` `APPLICATION_ID` |
+| default size | `1280×720` | `runner/main.cpp` | `runner/my_application.cc` |
+| company | `SbitFire Software` | `Runner.rc` `CompanyName` | — |
 
-App IDs intentionally differ and are **not** a drift bug: Linux is
-`com.sbitfire.LearnAnywhere` (reverse-DNS, drives the `.desktop`/AppStream identity),
-while `windows/runner/Runner.rc` still records the `com.example` placeholder.
+The native binary name is **not** the Dart package name: `packages/desktop/pubspec.yaml`
+is still `learn_anywhere_desktop` and every `package:learn_anywhere_desktop/...` import
+depends on it. Never "fix" one to match the other. When Android arrives, its
+`applicationId` should be `com.sbitfire.LearnAnywhere` too.
 
 ## Paths — assume nothing about separators
 
