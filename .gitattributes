@@ -1,0 +1,24 @@
+# Store every text file with LF in the repository AND check it out as LF on
+# every platform, so the Windows and the Linux working trees agree byte-for-byte
+# and line endings stop churning between the two machines.
+#
+# NOTE: this repo has `core.autocrlf=true` set locally, which has been checking
+# files out as CRLF. `eol=lf` overrides that, so the FIRST checkout/reset after
+# this lands rewrites the working tree from CRLF to LF. That is the one-time
+# renormalisation — it is why this file is a commit of its own.
+* text=auto eol=lf
+
+# Learn Anywhere data files are JSON that packages/core's "canonical format
+# examples ... re-encode losslessly" test compares BYTE FOR BYTE against the
+# serializer output (which always emits \n). Checking one out as CRLF fails that
+# test, so pin them explicitly rather than relying on the wildcard above.
+*.vok text eol=lf
+*.inf text eol=lf
+*.sta text eol=lf
+
+# Binary assets must never be line-ending converted (a stray CRLF->LF pass would
+# corrupt the bundled fonts and the Windows icon).
+*.ttf binary
+*.otf binary
+*.png binary
+*.ico binary
