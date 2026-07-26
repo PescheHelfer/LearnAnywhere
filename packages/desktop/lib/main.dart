@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -3304,12 +3305,9 @@ final class _LastDeckLink extends StatelessWidget {
     );
   }
 
-  String _fileNameOf(String value) {
-    final int slash = value.lastIndexOf('/');
-    final int backslash = value.lastIndexOf(r'\');
-    final int separator = slash > backslash ? slash : backslash;
-    return separator < 0 ? value : value.substring(separator + 1);
-  }
+  /// The displayed file name of a live path, parsed with the host's path rules
+  /// (so a Linux file name containing a backslash is not split on it).
+  String _fileNameOf(String value) => p.basename(value);
 }
 
 final class _StatusLine extends StatelessWidget {

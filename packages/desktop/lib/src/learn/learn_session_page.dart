@@ -1907,11 +1907,9 @@ final class _SessionView extends StatelessWidget {
                     )
                   : null;
 
-              final TextStyle valueStyle =
-                  Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                    fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
-                  ) ??
-                  const TextStyle();
+              final TextStyle valueStyle = LearnAnywhereTokens.monospace(
+                Theme.of(ctx).textTheme.bodyMedium,
+              );
               // Every row — plain text, editable field, or Level-Learning
               // scaffold — sizes its value column to the field length in
               // monospace character widths, so the answer column matches
@@ -1964,11 +1962,9 @@ final class _SessionView extends StatelessWidget {
   ) {
     final String plain = unit.valueForFieldId(field.id).plainText;
     final int level = activeLevel;
-    final TextStyle style =
-        Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-          fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
-        ) ??
-        const TextStyle();
+    final TextStyle style = LearnAnywhereTokens.monospace(
+      Theme.of(ctx).textTheme.bodyMedium,
+    );
 
     if (level == kMaxSupportLevel) {
       // Show the full solution to read; typing starts only after Hide & type.
@@ -2246,8 +2242,8 @@ final class _AnswerTextField extends StatelessWidget {
       inputFormatters: <TextInputFormatter>[
         LengthLimitingTextInputFormatter(maxLength),
       ],
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
+      style: LearnAnywhereTokens.monospace(
+        Theme.of(context).textTheme.bodyMedium,
       ),
       decoration: const InputDecoration(
         isDense: true,

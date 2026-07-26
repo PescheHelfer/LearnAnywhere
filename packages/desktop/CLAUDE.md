@@ -1,5 +1,9 @@
 # packages/desktop — Claude notes
 
+Cross-platform rules (never edit the other OS's runner, path/case/font/line-ending
+constraints) live in the repo-root [`CLAUDE.md`](../../CLAUDE.md) — read it before
+touching `windows/`, `linux/`, or anything path- or font-related.
+
 ## Menu bar ALT mnemonics (read before editing the menu in `lib/main.dart`)
 
 The top-level menu accelerators are scoped by custom code, **not** by Flutter's

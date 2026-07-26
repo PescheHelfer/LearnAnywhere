@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Learn Anywhere
+Comment=Vocabulary trainer for decks, levels and statistics
+Exec=LearnAnywhere %f
+Icon=learn_anywhere
+Terminal=false
+Categories=Education;
+# Lets the shell match the running window (WM_CLASS is the GTK application ID,
+# set via g_set_prgname in linux/runner/my_application.cc) to this entry, so the
+# dock shows the app icon rather than a generic one.
+StartupWMClass=com.sbitfire.LearnAnywhere

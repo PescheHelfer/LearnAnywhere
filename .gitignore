@@ -16,10 +16,37 @@
 .flutter-plugins
 .flutter-plugins-dependencies
 build/
+.pub-cache/
+.pub/
+pubspec_overrides.yaml
+
+# Generated platform ephemeral / build output (all targets)
+packages/*/windows/flutter/ephemeral/
+packages/*/linux/flutter/ephemeral/
+packages/*/macos/Flutter/ephemeral/
+packages/*/android/.gradle/
+packages/*/android/local.properties
+packages/*/android/app/debug/
+packages/*/android/app/profile/
+packages/*/android/app/release/
+packages/*/ios/Flutter/ephemeral/
+packages/*/ios/Flutter/Generated.xcconfig
+packages/*/ios/Flutter/flutter_export_environment.sh
+
+# Symbolication / obfuscation output
+app.*.symbols
+app.*.map.json
 
 # IDE metadata
 .idea/
 *.iml
 
 # Other
-docs/
+# `docs/*` rather than `docs/` so the negation below can take effect: git will
+# not descend into an excluded DIRECTORY, so a re-include under `docs/` would be
+# silently ignored.
+docs/*
+# The canonical format examples are a TEST FIXTURE, not documentation:
+# packages/core's `core_test.dart` reads docs/format-examples/*, so they must be
+# in the repo or that test fails on any fresh clone (e.g. the Linux machine).
+!docs/format-examples/

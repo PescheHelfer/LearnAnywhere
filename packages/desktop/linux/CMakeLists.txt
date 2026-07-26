@@ -4,10 +4,25 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "learn_anywhere_desktop")
+#
+# Must stay identical to BINARY_NAME in windows/CMakeLists.txt so both targets
+# produce the same binary name. This is the NATIVE binary name only — the Dart
+# package is still `learn_anywhere_desktop` (see pubspec.yaml), which every
+# `package:` import depends on.
+set(BINARY_NAME "LearnAnywhere")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.example.learn_anywhere_desktop")
+#
+# Reverse-DNS form of "SbitFire Software". This is a local uniqueness key only
+# (GTK/dock launcher matching, the .desktop file name, and the D-Bus name) — it
+# makes no network use of the domain.
+#
+# Keep identical to kAppUserModelId in windows/runner/main.cpp, which is the
+# Windows equivalent (taskbar grouping and pinning identity).
+#
+# When packaging the AppImage, name the desktop entry to match:
+#   com.sbitfire.LearnAnywhere.desktop
+set(APPLICATION_ID "com.sbitfire.LearnAnywhere")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

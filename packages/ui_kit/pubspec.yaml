@@ -23,3 +23,24 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
+  # JetBrains Mono is bundled rather than relying on a system monospace font:
+  # the PRD's fixed-width unit and field containers are sized by measuring one
+  # character, so their geometry must not depend on which fonts the host
+  # happens to have installed (Consolas/Cascadia Mono are Windows-only, and a
+  # Linux box may have no matching family at all).
+  #
+  # Declared here in ui_kit — not in the desktop shell — because the containers
+  # and the LearnAnywhereTokens family name live here and BOTH shells (desktop
+  # and mobile) render them. Reference it via
+  # LearnAnywhereTokens.monospaceFamily.
+  fonts:
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+        - asset: assets/fonts/JetBrainsMono-Italic.ttf
+          style: italic
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/JetBrainsMono-BoldItalic.ttf
+          weight: 700
+          style: italic

@@ -1,0 +1,104 @@
+{
+  "format": "learn-anywhere/lessons",
+  "version": 1,
+  "mask": {
+    "maskId": "m_new_example-french-0001",
+    "revision": 3,
+    "name": "French vocabulary",
+    "direction1Label": "DE → FR",
+    "direction2Label": "FR → DE",
+    "categories": [
+      {
+        "id": 0,
+        "name": "Noun",
+        "fields": [
+          {
+            "id": 0,
+            "name": "German",
+            "length": 40,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A"
+          },
+          {
+            "id": 1,
+            "name": "French",
+            "length": 40,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q"
+          },
+          {
+            "id": 2,
+            "name": "",
+            "length": 20,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "name": "Verb",
+        "fields": [
+          {
+            "id": 3,
+            "name": "German",
+            "length": 40,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A"
+          },
+          {
+            "id": 4,
+            "name": "French A",
+            "length": 40,
+            "equalGroup": 1,
+            "role1": "A",
+            "role2": "Q"
+          },
+          {
+            "id": 5,
+            "name": "French B",
+            "length": 40,
+            "equalGroup": 1,
+            "role1": "A",
+            "role2": "Q"
+          }
+        ]
+      }
+    ]
+  },
+  "units": [
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "das Haus",
+        "1": "la maison",
+        "2": ""
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "der Mond",
+        "1": [
+          {
+            "text": "la lune",
+            "bold": true,
+            "color": "#3366CC"
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 1,
+      "fields": {
+        "3": "gehen",
+        "4": "aller",
+        "5": "marcher"
+      }
+    }
+  ]
+}

@@ -1,10 +1,15 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(learn_anywhere_desktop LANGUAGES CXX)
+project(LearnAnywhere LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "learn_anywhere_desktop")
+#
+# Must stay identical to BINARY_NAME in linux/CMakeLists.txt so both targets
+# produce the same binary name. This is the NATIVE binary name only — the Dart
+# package is still `learn_anywhere_desktop` (see pubspec.yaml), which every
+# `package:` import depends on.
+set(BINARY_NAME "LearnAnywhere")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

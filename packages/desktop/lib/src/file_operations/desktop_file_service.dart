@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:learn_anywhere_core/core.dart';
+import 'package:path/path.dart' as p;
 
 import 'desktop_document.dart';
 
@@ -128,7 +129,7 @@ final class DesktopFileService {
       recursive: true,
       followLinks: false,
     )) {
-      if (entity is! File || !_hasExtension(entity.path, 'vok')) {
+      if (entity is! File || !DeckPaths.hasExtension(entity.path, 'vok')) {
         continue;
       }
       try {
@@ -174,7 +175,7 @@ final class DesktopFileService {
       return null;
     }
     await for (final FileSystemEntity entity in directory.list()) {
-      if (entity is! File || !_hasExtension(entity.path, 'inf')) {
+      if (entity is! File || !DeckPaths.hasExtension(entity.path, 'inf')) {
         continue;
       }
       try {
@@ -198,10 +199,10 @@ final class DesktopFileService {
   /// happens to share the deck's base file name — a numbered-suffix path
   /// (`_2`, `_3`, ...) is used instead of overwriting it.
   Future<String> createLinkedMask(String deckPath, LearningMask mask) async {
-    String infPath = _withExtension(deckPath, 'inf');
+    String infPath = DeckPaths.linkedMask(deckPath);
     var suffix = 2;
     while (await File(infPath).exists()) {
-      infPath = _withExtension(deckPath, 'inf', suffix: suffix);
+      infPath = DeckPaths.linkedMask(deckPath, suffix: suffix);
       suffix += 1;
     }
     await File(infPath).writeAsString(encodeMaskJson(mask));
@@ -230,7 +231,7 @@ final class DesktopFileService {
     final Set<String> excluded = excludePaths.toSet();
     await for (final FileSystemEntity entity in directory.list()) {
       if (entity is! File ||
-          !_hasExtension(entity.path, 'vok') ||
+          !DeckPaths.hasExtension(entity.path, 'vok') ||
           excluded.contains(entity.path)) {
         continue;
       }
@@ -298,8 +299,8 @@ final class DesktopFileService {
       if (entity is! File) {
         continue;
       }
-      final bool isMask = _hasExtension(entity.path, 'inf');
-      final bool isDeck = _hasExtension(entity.path, 'vok');
+      final bool isMask = DeckPaths.hasExtension(entity.path, 'inf');
+      final bool isDeck = DeckPaths.hasExtension(entity.path, 'vok');
       if (!isMask && !isDeck) {
         continue;
       }
@@ -374,9 +375,9 @@ final class DesktopFileService {
   }) async {
     for (final String path in paths) {
       try {
-        if (_hasExtension(path, 'inf')) {
+        if (DeckPaths.hasExtension(path, 'inf')) {
           await File(path).writeAsString(encodeMaskJson(reference));
-        } else if (_hasExtension(path, 'vok')) {
+        } else if (DeckPaths.hasExtension(path, 'vok')) {
           final LearningDeck deck = decodeDeckJson(
             await File(path).readAsString(),
           );
@@ -410,18 +411,6 @@ final class DesktopFileService {
       return MaskSyncStatus.differs;
     }
     return MaskSyncStatus.willUpdate;
-  }
-
-  bool _hasExtension(String path, String extension) {
-    return path.toLowerCase().endsWith('.${extension.toLowerCase()}');
-  }
-
-  String _withExtension(String path, String extension, {int? suffix}) {
-    final int separator = path.lastIndexOf(Platform.pathSeparator);
-    final int dot = path.lastIndexOf('.');
-    final String base = dot > separator ? path.substring(0, dot) : path;
-    final String suffixed = suffix == null ? base : '${base}_$suffix';
-    return '$suffixed.$extension';
   }
 
   /// Loads a `.sta` statistics file into the current document.
@@ -464,7 +453,7 @@ final class DesktopFileService {
         StatisticsFile(
           deckRef: document.deckPath == null
               ? 'unsaved.vok'
-              : _fileName(document.deckPath!),
+              : DeckPaths.fileName(document.deckPath!),
           perUnit: document.statistics,
           levelLearning: _levelSection(document.levelStatistics),
           lastSessionMode: document.lastSessionMode,
@@ -511,7 +500,6 @@ final class DesktopFileService {
   /// pure-Dart settings serializer in core.
   String settingsFilePath() {
     final Map<String, String> env = Platform.environment;
-    final String sep = Platform.pathSeparator;
     final String base;
     if (Platform.isWindows) {
       base = env['APPDATA'] ?? Directory.current.path;
@@ -522,21 +510,17 @@ final class DesktopFileService {
       } else {
         final String? home = env['HOME'];
         base = home != null && home.isNotEmpty
-            ? '$home$sep.config'
+            ? p.join(home, '.config')
             : Directory.current.path;
       }
     }
-    return '$base${sep}LearnAnywhere$sep$settingsFileName';
+    return p.join(base, 'LearnAnywhere', settingsFileName);
   }
 
   /// Builds the timestamped session `.sta` path for [deckPath] at [when],
   /// named `<deckname>_YYYYMMDD_HHMMSS.sta` in the deck's own folder (§3.7).
   String timestampedStatisticsPath(String deckPath, DateTime when) {
-    final String directory = _directoryOf(deckPath);
-    final String fileName = '${_deckBaseName(deckPath)}_${_formatStamp(when)}.sta';
-    return directory.isEmpty
-        ? fileName
-        : '$directory${Platform.pathSeparator}$fileName';
+    return DeckPaths.timestampedStatistics(deckPath, when);
   }
 
   /// Finds every `<deckname>_YYYYMMDD_HHMMSS.sta` beside [deckPath], parses
@@ -548,24 +532,21 @@ final class DesktopFileService {
   Future<List<TimestampedStatistics>> findTimestampedStatistics(
     String deckPath,
   ) async {
-    final String directoryPath = _directoryOf(deckPath);
-    final Directory directory = Directory(
-      directoryPath.isEmpty ? Directory.current.path : directoryPath,
-    );
+    // `DeckPaths.directory` yields '.' for a bare file name, which `Directory`
+    // already resolves to the working directory.
+    final Directory directory = Directory(DeckPaths.directory(deckPath));
     if (!await directory.exists()) {
       return const <TimestampedStatistics>[];
     }
-    final RegExp pattern = RegExp(
-      '^${RegExp.escape(_deckBaseName(deckPath))}'
-      r'_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.sta$',
-      caseSensitive: false,
-    );
+    final RegExp pattern = DeckPaths.timestampedStatisticsPattern(deckPath);
     final List<TimestampedStatistics> found = <TimestampedStatistics>[];
     await for (final FileSystemEntity entity in directory.list()) {
       if (entity is! File) {
         continue;
       }
-      final RegExpMatch? match = pattern.firstMatch(_fileName(entity.path));
+      final RegExpMatch? match = pattern.firstMatch(
+        DeckPaths.fileName(entity.path),
+      );
       if (match == null) {
         continue;
       }
@@ -642,31 +623,6 @@ final class DesktopFileService {
       queriedUnits: summary.queriedUnits,
       totalUnits: summary.totalUnits,
     );
-  }
-
-  /// Returns the file name of [deckPath] without its extension.
-  String _deckBaseName(String deckPath) {
-    final String name = _fileName(deckPath);
-    final int dot = name.lastIndexOf('.');
-    return dot <= 0 ? name : name.substring(0, dot);
-  }
-
-  /// Returns the directory portion of [path] (empty when [path] has none).
-  String _directoryOf(String path) {
-    final int separator = path.lastIndexOf(Platform.pathSeparator);
-    return separator < 0 ? '' : path.substring(0, separator);
-  }
-
-  /// Formats [when] as `YYYYMMDD_HHMMSS`.
-  String _formatStamp(DateTime when) {
-    String pad(int value, int width) => value.toString().padLeft(width, '0');
-    return '${pad(when.year, 4)}${pad(when.month, 2)}${pad(when.day, 2)}'
-        '_${pad(when.hour, 2)}${pad(when.minute, 2)}${pad(when.second, 2)}';
-  }
-
-  String _fileName(String path) {
-    final int separator = path.lastIndexOf(Platform.pathSeparator);
-    return separator < 0 ? path : path.substring(separator + 1);
   }
 }
 
