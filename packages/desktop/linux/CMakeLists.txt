@@ -7,7 +7,17 @@ project(runner LANGUAGES CXX)
 set(BINARY_NAME "learn_anywhere_desktop")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.example.learn_anywhere_desktop")
+#
+# Reverse-DNS form of "SbitFire Software". This is a local uniqueness key only
+# (GTK/dock launcher matching, the .desktop file name, and the D-Bus name) — it
+# makes no network use of the domain. It deliberately diverges from the
+# "com.example" placeholder still recorded as CompanyName in the Windows
+# runner/Runner.rc, which is left untouched by design; Windows has no
+# application-ID concept for this to drift against.
+#
+# When packaging the AppImage, name the desktop entry to match:
+#   com.sbitfire.LearnAnywhere.desktop
+set(APPLICATION_ID "com.sbitfire.LearnAnywhere")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

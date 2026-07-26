@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
+import 'package:path/path.dart' as p;
 
 import '../file_operations/desktop_file_service.dart';
 
@@ -221,18 +222,19 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
     };
   }
 
-  /// The last path segment (handles both `/` and `\` separators, since scan
-  /// results can come from either a Windows path or a POSIX one).
-  String _fileNameOf(String path) {
-    final int cut = path.lastIndexOf(RegExp(r'[\\/]'));
-    return cut < 0 ? path : path.substring(cut + 1);
-  }
+  /// The last path segment, parsed with the host's path rules.
+  ///
+  /// Scan results always come from a live directory listing on the running
+  /// platform, so host rules are the correct ones: on Windows both `/` and `\`
+  /// separate, on Linux only `/` does — a Linux file named `a\b.vok` keeps its
+  /// backslash instead of being split on it.
+  String _fileNameOf(String path) => p.basename(path);
 
   /// Everything before the last path segment, or the whole path when it has
   /// no separator.
   String _folderOf(String path) {
-    final int cut = path.lastIndexOf(RegExp(r'[\\/]'));
-    return cut < 0 ? path : path.substring(0, cut);
+    final String directory = p.dirname(path);
+    return directory == '.' && !path.startsWith('.') ? path : directory;
   }
 }
 

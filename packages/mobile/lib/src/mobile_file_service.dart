@@ -77,11 +77,7 @@ class MobileFileService {
 
   /// Returns the `.sta` sidecar path for [deckPath].
   String statisticsSidecarPath(String deckPath) {
-    final int dot = deckPath.lastIndexOf('.');
-    if (dot <= deckPath.lastIndexOf(Platform.pathSeparator)) {
-      return '$deckPath.sta';
-    }
-    return '${deckPath.substring(0, dot)}.sta';
+    return DeckPaths.statisticsSidecar(deckPath);
   }
 
   Future<List<UnitStats>> _loadStatistics(
@@ -101,10 +97,5 @@ class MobileFileService {
     return resizeUnitStats(statistics.perUnit, deck.units.length);
   }
 
-  String _fileName(String path) {
-    final int slash = path.lastIndexOf('/');
-    final int backslash = path.lastIndexOf(r'\');
-    final int separator = slash > backslash ? slash : backslash;
-    return separator < 0 ? path : path.substring(separator + 1);
-  }
+  String _fileName(String path) => DeckPaths.fileName(path);
 }

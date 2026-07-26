@@ -16,13 +16,42 @@ final class LearnAnywhereTokens {
   /// Default page or panel padding.
   static const double gapLarge = 24;
 
-  /// Monospace stack used for fixed-dimension learning containers.
+  /// The bundled fixed-width family every fixed-dimension learning container
+  /// renders with.
+  ///
+  /// This is an EXPLICITLY NAMED family, not a generic "monospace" request:
+  /// `FieldRow` column widths are computed by measuring one character, so the
+  /// same deck must produce the same geometry on Windows, Linux, and Android.
+  /// A system font can't guarantee that — `Consolas` and `Cascadia Mono` don't
+  /// exist off Windows, and a bare `monospace` alias resolves to whatever the
+  /// host's fontconfig picks (or, if nothing matches, to a PROPORTIONAL
+  /// fallback, which silently breaks the fixed-width layout).
+  ///
+  /// The `packages/<name>/` prefix is how Flutter addresses a font declared in
+  /// a dependency's pubspec; see `fonts:` in ui_kit's `pubspec.yaml`.
+  static const String monospaceFamily =
+      'packages/learn_anywhere_ui_kit/JetBrainsMono';
+
+  /// System monospace families tried only if the bundled font is somehow
+  /// unavailable (e.g. an asset-stripped build). Kept as a safety net so the
+  /// containers degrade to *a* fixed-width font rather than a proportional one.
   static const List<String> monospaceFallback = <String>[
     'Cascadia Mono',
     'Consolas',
     'DejaVu Sans Mono',
     'monospace',
   ];
+
+  /// Returns [base] restyled onto the bundled monospace family.
+  ///
+  /// Use this everywhere a fixed-width container is measured or rendered, so
+  /// the measuring style and the painting style can never drift apart.
+  static TextStyle monospace(TextStyle? base) {
+    return (base ?? const TextStyle()).copyWith(
+      fontFamily: monospaceFamily,
+      fontFamilyFallback: monospaceFallback,
+    );
+  }
 
   /// Minimum width of a field row's label column.
   static const double fieldLabelMinWidth = 64;

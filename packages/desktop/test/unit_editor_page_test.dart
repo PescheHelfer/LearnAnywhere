@@ -85,4 +85,59 @@ void main() {
       expect(find.text('Choose category'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'field value containers render with the BUNDLED monospace family',
+    (WidgetTester tester) async {
+      // The PRD's fixed-width containers size themselves by measuring one
+      // character, so they must not fall back to a host font: Consolas and
+      // Cascadia Mono do not exist on Linux, and a generic "monospace" request
+      // can resolve to a PROPORTIONAL face. Assert the concrete family reaches
+      // the rendered field, not just that a fallback list was supplied.
+      const LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{0: FieldValue.plain('bonjour')},
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: UnitEditorPage(
+              deck: deck,
+              onChanged:
+                  (LearningDeck value, {int? insertedAt, int? deletedAt}) {},
+              onDone: () {},
+              onCancel: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final Finder fieldRow = find.byType(FieldRow);
+      expect(fieldRow, findsWidgets);
+      final Finder valueField = find.descendant(
+        of: fieldRow.first,
+        matching: find.byType(EditableText),
+      );
+      expect(valueField, findsOneWidget);
+      final EditableText editable = tester.widget<EditableText>(valueField);
+      expect(
+        editable.style.fontFamily,
+        LearnAnywhereTokens.monospaceFamily,
+        reason: 'the value column must use the ui_kit-bundled JetBrains Mono',
+      );
+      expect(
+        editable.style.fontFamilyFallback,
+        LearnAnywhereTokens.monospaceFallback,
+      );
+    },
+  );
 }

@@ -1191,11 +1191,9 @@ final class _GridRowState extends State<_GridRow> {
     }
     final Color bgColor = accentColor.withValues(alpha: bgOpacity);
 
-    final TextStyle valueStyle =
-        Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontFamilyFallback: LearnAnywhereTokens.monospaceFallback,
-        ) ??
-        const TextStyle();
+    final TextStyle valueStyle = LearnAnywhereTokens.monospace(
+      Theme.of(context).textTheme.bodyMedium,
+    );
     final double charWidth = measureMonospaceCharWidth(valueStyle);
     final double counterReserve =
         measureTextWidth(

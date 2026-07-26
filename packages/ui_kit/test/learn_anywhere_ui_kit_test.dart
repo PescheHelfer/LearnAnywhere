@@ -10,6 +10,31 @@ void main() {
       expect(LearnAnywhereTheme.dark().brightness, Brightness.dark);
     });
 
+    test('tokens name the BUNDLED monospace family, not a system font', () {
+      // The fixed-width containers must not depend on host fonts, so the
+      // family has to be the ui_kit-bundled one; the system list stays only as
+      // a fallback.
+      expect(
+        LearnAnywhereTokens.monospaceFamily,
+        'packages/learn_anywhere_ui_kit/JetBrainsMono',
+      );
+      expect(
+        LearnAnywhereTokens.monospace(const TextStyle(fontSize: 13)).fontFamily,
+        LearnAnywhereTokens.monospaceFamily,
+      );
+      expect(
+        LearnAnywhereTokens.monospace(
+          const TextStyle(fontSize: 13),
+        ).fontFamilyFallback,
+        LearnAnywhereTokens.monospaceFallback,
+      );
+      // The caller's own properties survive.
+      expect(
+        LearnAnywhereTokens.monospace(const TextStyle(fontSize: 13)).fontSize,
+        13,
+      );
+    });
+
     test('tokens expose fixed learning typography fallback', () {
       expect(LearnAnywhereTokens.monospaceFallback, contains('Cascadia Mono'));
       expect(

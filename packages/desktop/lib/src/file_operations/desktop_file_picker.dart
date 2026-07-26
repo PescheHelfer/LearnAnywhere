@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart' as fs;
+import 'package:path/path.dart' as p;
 
 /// Bridges desktop file operations to the native OS open/save dialogs.
 ///
@@ -73,34 +74,32 @@ final class DesktopFilePicker {
   }
 
   /// Returns the file name portion of [path] (without its directory).
-  String fileNameOf(String path) {
-    final int slash = path.lastIndexOf('/');
-    final int backslash = path.lastIndexOf(r'\');
-    final int separator = slash > backslash ? slash : backslash;
-    return separator < 0 ? path : path.substring(separator + 1);
-  }
+  ///
+  /// Uses the host's path rules, so on Linux a backslash inside a file name is
+  /// kept as part of the name instead of being mistaken for a separator.
+  String fileNameOf(String path) => p.basename(path);
 
   /// Returns the directory portion of [path], or an empty string when [path]
   /// has no directory component.
   String directoryOf(String path) {
-    final int slash = path.lastIndexOf('/');
-    final int backslash = path.lastIndexOf(r'\');
-    final int separator = slash > backslash ? slash : backslash;
-    return separator < 0 ? '' : path.substring(0, separator);
+    final String directory = p.dirname(path);
+    // `p.dirname` reports '.' for a bare file name; callers here treat "no
+    // directory" as the empty string and fall back to the documents folder.
+    return directory == '.' && !path.startsWith('.') ? '' : directory;
   }
 
   String? _documentsOrHome() {
     final Map<String, String> env = Platform.environment;
-    final String sep = Platform.pathSeparator;
-    if (Platform.isWindows) {
-      final String? profile = env['USERPROFILE'];
-      if (profile != null && profile.isNotEmpty) {
-        final Directory documents = Directory('$profile${sep}Documents');
-        return documents.existsSync() ? documents.path : profile;
-      }
+    final String? base = Platform.isWindows
+        ? env['USERPROFILE']
+        : env['HOME'];
+    if (base == null || base.isEmpty) {
       return null;
     }
-    final String? home = env['HOME'];
-    return home != null && home.isNotEmpty ? home : null;
+    // Prefer the user's documents folder on both platforms, falling back to the
+    // profile/home root when it doesn't exist (a Linux desktop may localize or
+    // omit ~/Documents entirely).
+    final Directory documents = Directory(p.join(base, 'Documents'));
+    return documents.existsSync() ? documents.path : base;
   }
 }

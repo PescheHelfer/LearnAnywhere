@@ -751,14 +751,11 @@ final class _FieldGroup extends StatelessWidget {
                       const SizedBox(height: LearnAnywhereTokens.gapSmall),
                       LearnAnywhereRichText(
                         value: entry.value,
-                        style:
-                            (large
-                                    ? textTheme.displaySmall
-                                    : textTheme.bodyLarge)
-                                ?.copyWith(
-                                  fontFamilyFallback:
-                                      LearnAnywhereTokens.monospaceFallback,
-                                ),
+                        style: LearnAnywhereTokens.monospace(
+                          large
+                              ? textTheme.displaySmall
+                              : textTheme.bodyLarge,
+                        ),
                       ),
                     ],
                   ),
