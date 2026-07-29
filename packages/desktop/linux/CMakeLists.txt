@@ -21,8 +21,8 @@ set(BINARY_NAME "LearnAnywhere")
 # Windows equivalent (taskbar grouping and pinning identity).
 #
 # When packaging the AppImage, name the desktop entry to match:
-#   com.sbitfire.LearnAnywhere.desktop
-set(APPLICATION_ID "com.sbitfire.LearnAnywhere")
+#   com.sbitfire.learnanywhere.desktop
+set(APPLICATION_ID "com.sbitfire.learnanywhere")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

@@ -12,7 +12,7 @@
 constexpr char kWindowTitle[] = "Learn Anywhere";
 
 // Bare icon name looked up in the freedesktop icon theme. Must match `Icon=` in
-// packaging/linux/com.sbitfire.LearnAnywhere.desktop and the file names written
+// packaging/linux/com.sbitfire.learnanywhere.desktop and the file names written
 // by packaging/linux/install-icons.sh.
 constexpr char kIconName[] = "learn_anywhere";
 

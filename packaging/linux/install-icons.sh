@@ -10,7 +10,7 @@
 #   PREFIX="$HOME/.local" ./install-icons.sh   # per-user install
 #
 # Icons are installed as <size>x<size>/apps/learn_anywhere.png, matching
-# Icon=learn_anywhere in com.sbitfire.LearnAnywhere.desktop and kIconName in
+# Icon=learn_anywhere in com.sbitfire.learnanywhere.desktop and kIconName in
 # packages/desktop/linux/runner/my_application.cc.
 
 set -eu
@@ -22,7 +22,7 @@ ICON_SOURCE_DIR="$REPO_ROOT/design/icons/linux"
 DESTDIR=${DESTDIR:-}
 PREFIX=${PREFIX:-/usr}
 ICON_NAME=learn_anywhere
-DESKTOP_ENTRY=com.sbitfire.LearnAnywhere.desktop
+DESKTOP_ENTRY=com.sbitfire.learnanywhere.desktop
 
 ICON_ROOT="$DESTDIR$PREFIX/share/icons/hicolor"
 APPLICATIONS_DIR="$DESTDIR$PREFIX/share/applications"
