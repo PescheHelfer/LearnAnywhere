@@ -158,7 +158,7 @@ _AppTheme _appThemeFromPrefs(DesktopPrefs prefs) {
       }
     }
   }
-  return _AppTheme.system;
+  return _AppTheme.darkBlue;
 }
 
 Locale _localeFromPrefs(DesktopPrefs prefs) {
