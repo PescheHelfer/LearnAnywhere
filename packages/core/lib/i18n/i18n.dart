@@ -233,6 +233,12 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.4.1.
   aboutVersion041,
 
+  /// About page version history entry for 0.5.0.
+  aboutVersion050,
+
+  /// About page bundled-font credit.
+  aboutFontCredit,
+
   /// Desktop bottom shortcut hint bar text.
   desktopHintBar,
 
@@ -1214,6 +1220,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutVersion040: '0.4.0 – Add Level learning mode.',
       LearnAnywhereMessage.aboutVersion041:
           '0.4.1 – Many small improvements and fixes across the app.',
+      LearnAnywhereMessage.aboutVersion050:
+          '0.5.0 – Added Linux packaging as an AppImage.',
+      LearnAnywhereMessage.aboutFontCredit:
+          'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1676,6 +1686,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutVersion041:
           '0.4.1 – Viele kleine Verbesserungen und Korrekturen in der '
           'gesamten App.',
+      LearnAnywhereMessage.aboutVersion050:
+          '0.5.0 – Linux-Paketierung als AppImage hinzugefügt.',
+      LearnAnywhereMessage.aboutFontCredit:
+          'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.desktopHintBar:
           'F1 Hilfe   F2 Zurück   F3 Weiter   F5 Suche   F6 Springen   F7 Löschen   F8 Einfügen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

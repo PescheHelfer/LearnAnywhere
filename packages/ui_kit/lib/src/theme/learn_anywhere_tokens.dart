@@ -17,7 +17,8 @@ final class LearnAnywhereTokens {
   static const double gapLarge = 24;
 
   /// The bundled fixed-width family every fixed-dimension learning container
-  /// renders with.
+  /// renders with, and the family every question/answer/remark field value
+  /// is displayed in.
   ///
   /// This is an EXPLICITLY NAMED family, not a generic "monospace" request:
   /// `FieldRow` column widths are computed by measuring one character, so the
@@ -30,7 +31,7 @@ final class LearnAnywhereTokens {
   /// The `packages/<name>/` prefix is how Flutter addresses a font declared in
   /// a dependency's pubspec; see `fonts:` in ui_kit's `pubspec.yaml`.
   static const String monospaceFamily =
-      'packages/learn_anywhere_ui_kit/JetBrainsMono';
+      'packages/learn_anywhere_ui_kit/LabMono';
 
   /// System monospace families tried only if the bundled font is somehow
   /// unavailable (e.g. an asset-stripped build). Kept as a safety net so the

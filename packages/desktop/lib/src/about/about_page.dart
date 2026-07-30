@@ -98,7 +98,14 @@ final class AboutPage extends StatelessWidget {
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: LearnAnywhereTokens.gapLarge),
+                    const SizedBox(height: LearnAnywhereTokens.gapSmall),
+                    Text(
+                      messages.message(LearnAnywhereMessage.aboutFontCredit),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: LearnAnywhereTokens.gapMedium),
                     Divider(color: colorScheme.outlineVariant),
                     const SizedBox(height: LearnAnywhereTokens.gapMedium),
                     Text(
@@ -110,6 +117,7 @@ final class AboutPage extends StatelessWidget {
                     const SizedBox(height: LearnAnywhereTokens.gapSmall),
                     _VersionHistoryList(
                       labels: <String>[
+                        messages.message(LearnAnywhereMessage.aboutVersion050),
                         messages.message(LearnAnywhereMessage.aboutVersion041),
                         messages.message(LearnAnywhereMessage.aboutVersion040),
                         messages.message(LearnAnywhereMessage.aboutVersion031),

@@ -16,7 +16,7 @@ void main() {
       // a fallback.
       expect(
         LearnAnywhereTokens.monospaceFamily,
-        'packages/learn_anywhere_ui_kit/JetBrainsMono',
+        'packages/learn_anywhere_ui_kit/LabMono',
       );
       expect(
         LearnAnywhereTokens.monospace(const TextStyle(fontSize: 13)).fontFamily,

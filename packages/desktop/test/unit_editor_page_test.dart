@@ -132,7 +132,7 @@ void main() {
       expect(
         editable.style.fontFamily,
         LearnAnywhereTokens.monospaceFamily,
-        reason: 'the value column must use the ui_kit-bundled JetBrains Mono',
+        reason: 'the value column must use the ui_kit-bundled Lab Mono',
       );
       expect(
         editable.style.fontFamilyFallback,
