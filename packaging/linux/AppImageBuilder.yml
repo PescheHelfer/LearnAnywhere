@@ -1,0 +1,61 @@
+version: 1
+
+script:
+  - rm -rf AppDir || true
+  - cp -r packages/desktop/build/linux/x64/release/bundle AppDir
+  - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps/
+  - mv AppDir/lib/ AppDir/usr/
+  - mkdir -p AppDir/lib
+  - ln -s ../usr/lib/libapp.so AppDir/lib/libapp.so
+  - cp packages/desktop/assets/icons/learn_anywhere.png AppDir/usr/share/icons/hicolor/256x256/apps/
+
+AppDir:
+  path: ./AppDir
+
+  app_info:
+    id: com.sbitfire.learnanywhere
+    name: Learn Anywhere
+    icon: learn_anywhere
+    version: 0.5.0
+    exec: LearnAnywhere
+    exec_args: $@
+
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse'
+        # Zorin 18 -> Ubuntu 24.04 -> noble
+
+    include:
+      # Bundle a coherent GTK / pixbuf userspace stack
+      - libgtk-3-0
+      - libgdk-pixbuf2.0-0
+      - librsvg2-common
+      - shared-mime-info
+      - hicolor-icon-theme
+
+    exclude:
+      # Never bundle the core toolchain — bundled libc breaks host graphics drivers
+      - libc6
+      - libstdc++6
+      - libgcc-s1
+      - zlib1g
+      - gcc-14-base
+
+  files:
+    exclude:
+      # Prefer the HOST graphics stack. Bundling these causes driver/ABI mismatches —
+      # this is the single most likely cause of failure on the Nobara machine.
+      - usr/lib/x86_64-linux-gnu/libGL*
+      - usr/lib/x86_64-linux-gnu/libEGL*
+      - usr/lib/x86_64-linux-gnu/libGLES*
+      - usr/lib/x86_64-linux-gnu/libgbm*
+      - usr/lib/x86_64-linux-gnu/libdrm*
+      - usr/lib/x86_64-linux-gnu/libwayland-*
+
+  runtime:
+    env:
+      # Libraries prefer the bundle...
+      LD_LIBRARY_PATH: '$APPDIR/usr/lib:$APPDIR/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH'
+      # ...but themes and icons prefer the host, so the app looks native.
+      XDG_DATA_DIRS: '/usr/local/share:/usr/share:$XDG_DATA_DIRS:$APPDIR/usr/share'

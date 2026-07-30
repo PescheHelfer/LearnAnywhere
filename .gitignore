@@ -37,6 +37,12 @@ packages/*/ios/Flutter/flutter_export_environment.sh
 app.*.symbols
 app.*.map.json
 
+# AppImage build staging and output — regenerated from packaging/linux/AppImageBuilder.yml,
+# never committed. The built .AppImage is distributed as a GitHub Release asset instead.
+/AppDir/
+/appimage-build/
+*.AppImage
+
 # IDE metadata
 .idea/
 *.iml
