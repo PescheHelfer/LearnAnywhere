@@ -1,11 +1,15 @@
 # Learn Anywhere file-format contract (`.inf` / `.vok`)
 
-These two files are the **canonical, authoritative** examples of the current
-on-disk format. They are produced by the real serializers in
-`packages/core/lib/serialization/` (regenerate with
-`dart run tool/generate_format_examples.dart` from `packages/core`), and the
-core round-trip test asserts they re-encode byte-for-byte. **The Converter must
-conform to what is described here — not the other way around.**
+The canonical, authoritative examples of the current on-disk format live in
+`packages/core/test/fixtures/` as `example.inf` and `example.vok`. They sit
+beside the test that reads them rather than in this folder, because they are a
+test fixture first and an illustration second.
+
+They are produced by the real serializers in `packages/core/lib/serialization/`
+(regenerate with `dart run tool/generate_format_examples.dart` from
+`packages/core`), and the core round-trip test asserts they re-encode
+byte-for-byte. **The Converter must conform to what is described here — not the
+other way around.**
 
 Both files are human-readable UTF-8 JSON. There is no database.
 

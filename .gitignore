@@ -1,3 +1,27 @@
+# Shortcut to the maintainer's local project archive (requirements history,
+# feedback rounds, implementation prompts, build snapshots). Not part of the
+# repository and deliberately not referenced from any tracked file. The
+# directory form is defensive: if the shortcut is ever replaced by a junction,
+# git must still refuse to descend into it.
+/_archive.lnk
+/_archive/
+
+# Claude Code: personal/machine-specific settings and runtime state. Shared
+# project config (settings.json, commands/, agents/, skills/) stays trackable,
+# which is why this is not a blanket `.claude/` ignore. These rules live here
+# rather than in a global ignore file so they hold on every machine.
+.claude/settings.local.json
+.claude/scheduled_tasks.json
+.claude/scheduled_tasks.lock
+.claude/routines/.state/
+.claude/worktrees/
+.claude/checkpoints/
+.claude/mailbox/
+.claude/agent-registry.json
+.claude/agent-memory-local
+.claude/first-run
+.claude/assistant-daemon-state.json
+
 # Visual Studio Code
 .vscode/*
 !.vscode/settings.json
@@ -47,12 +71,8 @@ app.*.map.json
 .idea/
 *.iml
 
-# Other
-# `docs/*` rather than `docs/` so the negation below can take effect: git will
-# not descend into an excluded DIRECTORY, so a re-include under `docs/` would be
-# silently ignored.
-docs/*
-# The canonical format examples are a TEST FIXTURE, not documentation:
-# packages/core's `core_test.dart` reads docs/format-examples/*, so they must be
-# in the repo or that test fails on any fresh clone (e.g. the Linux machine).
-!docs/format-examples/
+# NOTE: `docs/` is tracked. It holds living developer reference only; project
+# history (feedback, prompts, audits, screenshots) lives in the local archive
+# above. Test fixtures belong under their own package's `test/fixtures/`, never
+# in `docs/` — that is what the old `docs/*` + negation pair existed to work
+# around, and why it is gone.
