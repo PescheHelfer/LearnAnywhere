@@ -36,14 +36,15 @@ void main() {
     });
 
     test('canonical format examples load and re-encode losslessly', () {
-      // These files under docs/format-examples/ are the format contract handed
-      // to the Converter. They must always re-encode byte-for-byte through the
-      // real serializers (regenerate via tool/generate_format_examples.dart).
+      // These files under test/fixtures/ are the format contract handed to the
+      // Converter, documented in docs/file-formats.md. They must always
+      // re-encode byte-for-byte through the real serializers (regenerate via
+      // tool/generate_format_examples.dart).
       final String infSource = File(
-        '../../docs/format-examples/example.inf',
+        'test/fixtures/example.inf',
       ).readAsStringSync();
       final String vokSource = File(
-        '../../docs/format-examples/example.vok',
+        'test/fixtures/example.vok',
       ).readAsStringSync();
 
       final LearningMask mask = decodeMaskJson(infSource);

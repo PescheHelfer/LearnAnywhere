@@ -1,9 +1,9 @@
-/// Regenerates the canonical `.inf`/`.vok` format examples in
-/// `docs/format-examples/`.
+/// Regenerates the canonical `.inf`/`.vok` format examples in `test/fixtures/`.
 ///
-/// These files are the format CONTRACT handed to the Converter agent. They are
-/// produced by the real serializers so they can never drift from the code; the
-/// round-trip test in `core_test.dart` re-encodes them and asserts equality.
+/// These files are the format CONTRACT handed to the Converter agent, and are
+/// documented in `docs/file-formats.md`. They are produced by the real
+/// serializers so they can never drift from the code; the round-trip test in
+/// `core_test.dart` re-encodes them and asserts equality.
 ///
 /// Run from the package root:
 ///   dart run tool/generate_format_examples.dart
@@ -124,7 +124,7 @@ void main() {
     ],
   );
 
-  final Directory outDir = Directory('../../docs/format-examples');
+  final Directory outDir = Directory('test/fixtures');
   outDir.createSync(recursive: true);
   File('${outDir.path}/example.inf').writeAsStringSync(encodeMaskJson(mask));
   File('${outDir.path}/example.vok').writeAsStringSync(encodeDeckJson(deck));
