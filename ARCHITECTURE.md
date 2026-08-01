@@ -121,7 +121,7 @@ Mask labels and field names are user data, not UI messages. They must remain in 
 
 ## Reference Screenshots
 
-Legacy reference screenshots live in `docs/legacy-reference/`.
+The legacy reference screenshots are source material rather than documentation, so they are not shipped with the repository; they are kept in the maintainer's local project archive. Appendix A of `docs/build-specification.md` is the normative record of what each screenshot contributes, and it is written out in full prose — nothing in the build depends on seeing the images.
 
 They are used only to preserve layout, terminology, and shortcut placement in Phase 2. They must not drive DOS-era visual styling. Phase 2 should modernize typography, controls, spacing, colors, dark mode, and charts while keeping the familiar structure.
 

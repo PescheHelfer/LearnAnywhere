@@ -633,8 +633,9 @@ formats, and business logic implemented and unit-tested** — but no feature UI 
 4. Scaffold **`desktop`** and **`mobile`** apps that build and launch a blank themed shell on
    Windows, Linux, and Android, both wired to `core` and `ui_kit`. Set up i18n scaffolding (DE/EN).
 5. Produce a short **ARCHITECTURE.md** documenting the model, file formats, package boundaries,
-   and how desktop/mobile share `core`. Place the legacy reference screenshots (Appendix A) in
-   `docs/legacy-reference/` so Phase 2 can match the familiar layouts.
+   and how desktop/mobile share `core`. The legacy reference screenshots are not shipped with
+   the repository; Appendix A below is the normative record of what each one contributes, and
+   Phase 2 matches the familiar layouts from those descriptions.
 
 **Phase 1 exit criteria (must all hold before Phase 2):** monorepo builds; `core` has green
 tests covering every rule above; both apps launch blank shells on all three targets; file
@@ -692,7 +693,10 @@ modular, documented, and the change has been summarized for approval.
 
 ## 11. Appendix A — Legacy reference screenshots (familiarity)
 
-A curated set of original screenshots ships in `docs/legacy-reference/`. **Their purpose is to
+A curated set of original screenshots exists, but is **not** shipped with the repository — it is
+source material rather than documentation, and is kept in the maintainer's local project archive.
+The table below is therefore the normative record: everything Phase 2 must preserve from each
+screenshot is written out here, so no work depends on seeing the images. **Their purpose is to
 convey the familiar information layout, terminology, and shortcut placement — NOT the visual
 style.** For every reference: reproduce the *arrangement, labels/wording, and shortcut hints*;
 **modernize** the look (modern monospace type, modern controls, spacing, theming, dark mode,

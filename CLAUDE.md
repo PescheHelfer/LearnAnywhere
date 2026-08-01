@@ -72,9 +72,15 @@ to CRLF). `*.vok` / `*.inf` / `*.sta` are compared **byte for byte** by
 - Before adding a package, confirm it resolves a **Linux and an Android**
   implementation, not just Windows. Check `pubspec.lock` and the generated
   `linux/flutter/generated_plugin_registrant.cc`.
-- Anything a test reads must be **committed**. `docs/` is gitignored except the
-  negated `!docs/format-examples/`, which `core_test.dart` depends on — a gitignored
-  fixture passes locally and fails on every fresh clone.
+- Anything a test reads must be **committed**, and must live under that package's own
+  `test/fixtures/` — never in `docs/`. `core_test.dart` reads
+  `packages/core/test/fixtures/example.{inf,vok}` by a package-root-relative path, so
+  the test works under `melos run test:core` and under a bare `dart test` alike. A
+  gitignored or out-of-package fixture passes locally and fails on every fresh clone.
+- `docs/` is tracked and holds living developer reference only. Project history
+  (requirements lineage, feedback rounds, implementation prompts, audits, legacy
+  screenshots) is kept outside the repository in the maintainer's local archive; don't
+  add it back, and don't reference its path from a tracked file.
 
 ## Verifying cross-platform work
 
