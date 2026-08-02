@@ -136,8 +136,39 @@ enum LearnAnywhereMessage {
   /// Help menu label.
   menuHelp,
 
+  /// Help submenu: opens the bundled user guide.
+  helpUserGuide,
+
   /// About command.
   helpAbout,
+
+  /// User guide route title.
+  routeHelpTitle,
+
+  /// User guide: heading above the chapter list.
+  helpContents,
+
+  /// User guide: placeholder text of the search field.
+  helpSearchHint,
+
+  /// User guide: shown when a search matched nothing.
+  helpNoResults,
+
+  /// User guide: number of search matches. Placeholder: {count}.
+  helpMatchCount,
+
+  /// User guide: shown on a chapter that has no translation for the active
+  /// language and is therefore displayed in English.
+  helpEnglishFallback,
+
+  /// User guide: title of the dialog offering a non-chapter link for copying.
+  helpLinkTitle,
+
+  /// User guide: copies the link shown in the link dialog.
+  helpCopyLink,
+
+  /// User guide: shown when the bundled guide could not be read at all.
+  helpUnavailable,
 
   /// Options menu label.
   menuOptions,
@@ -236,11 +267,11 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.5.0.
   aboutVersion050,
 
+  /// About page version history entry for 0.6.0.
+  aboutVersion060,
+
   /// About page bundled-font credit.
   aboutFontCredit,
-
-  /// Desktop bottom shortcut hint bar text.
-  desktopHintBar,
 
   /// Unit editor empty-state title.
   editorEmptyTitle,
@@ -364,9 +395,6 @@ enum LearnAnywhereMessage {
 
   /// Unit editor delete confirmation message.
   editorDeleteConfirm,
-
-  /// Unit editor help title.
-  editorHelpTitle,
 
   /// Unit editor missing categories message.
   editorNoCategories,
@@ -1174,6 +1202,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuStatistics: '&Statistics', // top-bar S
       LearnAnywhereMessage.menuLexicon: 'Le&xicon', // top-bar X
       LearnAnywhereMessage.menuHelp: '&Help', // top-bar H
+      LearnAnywhereMessage.helpUserGuide: '&User guide', // U
       LearnAnywhereMessage.helpAbout: '&About', // A
       LearnAnywhereMessage.menuOptions: '&Options', // top-bar O
       LearnAnywhereMessage.menuOptionsAdvancedLearning: '&Advanced Learning Options', // A
@@ -1201,6 +1230,17 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.routeFileOperationsTitle: 'File operations',
       LearnAnywhereMessage.routeMaskEditorTitle: 'Mask Editor',
       LearnAnywhereMessage.routeAboutTitle: 'About',
+      LearnAnywhereMessage.routeHelpTitle: 'User guide',
+      LearnAnywhereMessage.helpContents: 'Contents',
+      LearnAnywhereMessage.helpSearchHint: 'Search the guide...',
+      LearnAnywhereMessage.helpNoResults: 'Nothing in the guide matches that.',
+      LearnAnywhereMessage.helpMatchCount: '{count} matches',
+      LearnAnywhereMessage.helpEnglishFallback:
+          'This chapter has not been translated yet and is shown in English.',
+      LearnAnywhereMessage.helpLinkTitle: 'External link',
+      LearnAnywhereMessage.helpCopyLink: 'Copy link',
+      LearnAnywhereMessage.helpUnavailable:
+          'The user guide could not be loaded.',
       LearnAnywhereMessage.aboutIntro:
           'Learn Anywhere is a modern conversion of Lern PC plus.',
       LearnAnywhereMessage.aboutOriginalCredit:
@@ -1222,10 +1262,11 @@ final class LearnAnywhereCatalog {
           '0.4.1 – Many small improvements and fixes across the app.',
       LearnAnywhereMessage.aboutVersion050:
           '0.5.0 – Added Linux packaging as an AppImage.',
+      LearnAnywhereMessage.aboutVersion060:
+          '0.6.0 – Added the built-in user guide under Help, in English and '
+          'German.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
-      LearnAnywhereMessage.desktopHintBar:
-          'F1 Help   F2 Back   F3 Next   F5 Search   F6 Jump   F7 Delete   F8 Insert   F10 Done   Esc Cancel',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
       LearnAnywhereMessage.editorEmptyBody:
           'Insert a unit to begin editing this deck.',
@@ -1270,7 +1311,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorNoMatches: 'No matching units found.',
       LearnAnywhereMessage.editorDeleteConfirm:
           'Delete the current learning unit?',
-      LearnAnywhereMessage.editorHelpTitle: 'Editor shortcuts',
       LearnAnywhereMessage.editorNoCategories:
           'The current mask has no categories.',
       LearnAnywhereMessage.learnEmptyTitle: 'No learning units',
@@ -1637,6 +1677,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuStatistics: '&Statistik', // top-bar S
       LearnAnywhereMessage.menuLexicon: 'Le&xikon', // top-bar X
       LearnAnywhereMessage.menuHelp: '&Hilfe', // top-bar H
+      LearnAnywhereMessage.helpUserGuide: '&Benutzerhandbuch', // B
       LearnAnywhereMessage.helpAbout: '&Programminfo', // P
       LearnAnywhereMessage.menuOptions: '&Optionen', // top-bar O
       LearnAnywhereMessage.menuOptionsAdvancedLearning: '&Erweiterte Lernoptionen', // E
@@ -1665,6 +1706,19 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.routeFileOperationsTitle: 'Dateioperationen',
       LearnAnywhereMessage.routeMaskEditorTitle: 'Mask Editor',
       LearnAnywhereMessage.routeAboutTitle: 'Programminfo',
+      LearnAnywhereMessage.routeHelpTitle: 'Benutzerhandbuch',
+      LearnAnywhereMessage.helpContents: 'Inhalt',
+      LearnAnywhereMessage.helpSearchHint: 'Handbuch durchsuchen...',
+      LearnAnywhereMessage.helpNoResults:
+          'Dazu findet sich nichts im Handbuch.',
+      LearnAnywhereMessage.helpMatchCount: '{count} Treffer',
+      LearnAnywhereMessage.helpEnglishFallback:
+          'Dieses Kapitel ist noch nicht übersetzt und wird auf Englisch '
+          'angezeigt.',
+      LearnAnywhereMessage.helpLinkTitle: 'Externer Link',
+      LearnAnywhereMessage.helpCopyLink: 'Link kopieren',
+      LearnAnywhereMessage.helpUnavailable:
+          'Das Benutzerhandbuch konnte nicht geladen werden.',
       LearnAnywhereMessage.aboutIntro:
           'Learn Anywhere ist eine moderne Umsetzung von Lern PC plus.',
       LearnAnywhereMessage.aboutOriginalCredit:
@@ -1688,10 +1742,11 @@ final class LearnAnywhereCatalog {
           'gesamten App.',
       LearnAnywhereMessage.aboutVersion050:
           '0.5.0 – Linux-Paketierung als AppImage hinzugefügt.',
+      LearnAnywhereMessage.aboutVersion060:
+          '0.6.0 – Eingebautes Benutzerhandbuch unter "Hilfe" hinzugefügt, auf '
+          'Deutsch und Englisch.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
-      LearnAnywhereMessage.desktopHintBar:
-          'F1 Hilfe   F2 Zurück   F3 Weiter   F5 Suche   F6 Springen   F7 Löschen   F8 Einfügen   F10 Fertig   Esc Abbruch',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
       LearnAnywhereMessage.editorEmptyBody:
           'Fügen Sie eine Lerneinheit ein, um diese Lern-Datei zu bearbeiten.',
@@ -1737,7 +1792,6 @@ final class LearnAnywhereCatalog {
           'Keine passenden Lerneinheiten gefunden.',
       LearnAnywhereMessage.editorDeleteConfirm:
           'Aktuelle Lerneinheit löschen?',
-      LearnAnywhereMessage.editorHelpTitle: 'Editor-Tasten',
       LearnAnywhereMessage.editorNoCategories:
           'Die aktuelle Maske hat keine Kategorien.',
       LearnAnywhereMessage.learnEmptyTitle: 'Keine Lerneinheiten',

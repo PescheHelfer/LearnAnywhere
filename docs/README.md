@@ -1,10 +1,13 @@
 # Learn Anywhere documentation
 
 This folder holds **living developer reference** — documents that describe how the
-project works today and that the code or the build depends on staying accurate.
+project works today and that the code or the build depends on staying accurate — plus
+one pointer to the user-facing guide, which is shipped inside the app and therefore
+lives with the app's assets.
 
 | Document | What it is |
 |---|---|
+| [`user-guide.md`](user-guide.md) | Pointer to the end-user guide (English and German) under `packages/ui_kit/assets/help/`, and the rules for editing it. Not developer reference — it is what the program shows under **Help ▸ User guide**. |
 | [`build-specification.md`](build-specification.md) | The product specification the whole build derives from: domain model, file formats, business rules, per-shell app specs, and Appendix A's record of the legacy program's screens. |
 | [`file-formats.md`](file-formats.md) | The `.inf` / `.vok` on-disk contract — identity conventions, id spaces, ordering rules. Anything reading or writing Learn Anywhere data conforms to this. |
 | [`menu-alt-mnemonics.md`](menu-alt-mnemonics.md) | How the desktop ALT-mnemonic system works and why Flutter's `MenuAcceleratorLabel` cannot be used. Five source comments link here; keep it current. |

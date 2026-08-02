@@ -1,17 +1,16 @@
 # learn_anywhere_desktop
 
-A new Flutter project.
+The Windows and Linux application of [Learn Anywhere](../../README.md) — the
+full-featured shell: file operations, the unit and mask editors, learning sessions,
+statistics, the lexicon, and the menu bar.
 
-## Getting Started
+Build and run from this directory with `flutter run -d windows` or
+`flutter run -d linux`, and `flutter test` for the widget suite.
 
-This project is a starting point for a Flutter application.
+Read [`CLAUDE.md`](CLAUDE.md) here before touching the menu bar, the version number, or
+either the `windows/` or `linux/` runner directory — only build the target you are
+sitting on, and never regenerate a platform folder.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Note that the native binary is named `LearnAnywhere` while this pub package is
+`learn_anywhere_desktop`; every `package:learn_anywhere_desktop/...` import depends on
+the latter. They are not meant to match.

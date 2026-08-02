@@ -12,6 +12,11 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  # Renders the bundled user guide inside the app. This is the maintained
+  # successor to Google's discontinued flutter_markdown; it is a pure Flutter
+  # package (markdown/meta/path, no platform channels), so it needs no Linux or
+  # Android plugin registration and leaves generated_plugin_registrant.cc alone.
+  flutter_markdown_plus: ^1.0.12
   flutter_localizations:
     sdk: flutter
   learn_anywhere_core:
@@ -23,6 +28,18 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
+  # The user guide is bundled here — not in a shell — for the same reason the
+  # font is: BOTH shells (desktop and mobile) show the same Help viewer, and a
+  # Flutter asset can only be declared by the package that owns the file. One
+  # copy, addressed as packages/learn_anywhere_ui_kit/assets/help/<lang>/...
+  #
+  # Chapters are DISCOVERED at runtime from the asset manifest (see
+  # lib/src/help/help_content.dart), so adding a chapter means adding the file
+  # to both language folders — there is no chapter list in Dart to update.
+  assets:
+    - assets/help/en/
+    - assets/help/de/
+
   # Lab Mono is bundled rather than relying on a system monospace font: the
   # PRD's fixed-width unit and field containers are sized by measuring one
   # character, so their geometry must not depend on which fonts the host

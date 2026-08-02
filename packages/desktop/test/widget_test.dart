@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learn_anywhere_desktop/main.dart';
+import 'package:learn_anywhere_desktop/src/editor/unit_editor_page.dart';
 import 'package:learn_anywhere_desktop/src/preferences/desktop_prefs.dart';
+import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -70,6 +73,73 @@ void main() {
     expect(find.textContaining('SbitFire Software'), findsOneWidget);
     expect(find.text('Version history'), findsOneWidget);
     expect(find.textContaining('0.4.1'), findsOneWidget);
+  });
+
+  testWidgets('help user guide opens with a contents list and search', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byType(SingleChildScrollView).first,
+      const Offset(-600, 0),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Help'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('User guide'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HelpViewer), findsOneWidget);
+    expect(find.text('Contents'), findsOneWidget);
+    expect(find.text('Search the guide...'), findsOneWidget);
+    // Chapter titles come from each file's own "# " heading, so finding them
+    // proves the assets were bundled, discovered and parsed.
+    expect(find.text('Getting started'), findsWidgets);
+    expect(find.text('Troubleshooting'), findsWidgets);
+  });
+
+  testWidgets('F1 opens the user guide from the home screen', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.f1);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HelpViewer), findsOneWidget);
+  });
+
+  testWidgets('F1 opens the guide over the editor and leaves it intact', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit editor').last);
+    await tester.pumpAndSettle();
+    expect(find.byType(UnitEditorPage), findsOneWidget);
+
+    // The guide opens as a dialog, so the editor stays mounted underneath
+    // rather than being routed away and rebuilt.
+    await tester.sendKeyEvent(LogicalKeyboardKey.f1);
+    await tester.pumpAndSettle();
+    expect(find.byType(HelpViewer), findsOneWidget);
+    expect(find.byType(UnitEditorPage), findsOneWidget);
+
+    // A second F1 must not stack another copy on top.
+    await tester.sendKeyEvent(LogicalKeyboardKey.f1);
+    await tester.pumpAndSettle();
+    expect(find.byType(HelpViewer), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(HelpViewer), findsNothing);
+    expect(find.byType(UnitEditorPage), findsOneWidget);
   });
 
   testWidgets('editor inserts units and edits length-limited fields', (

@@ -168,7 +168,9 @@ LearnAnywhereMessage _answerViewModeMessage(_AnswerViewMode mode) {
 final class _LearnSessionPageState extends State<LearnSessionPage> {
   static const Map<ShortcutActivator, Intent> _kShortcuts =
       <ShortcutActivator, Intent>{
-        SingleActivator(LogicalKeyboardKey.f1): _LearnHelpIntent(),
+        // F1 is deliberately absent: it belongs to the app-wide user guide
+        // (see `_handleHelpKey` in main.dart), which opens over this page
+        // without interrupting the running session.
         SingleActivator(LogicalKeyboardKey.f3): _LearnContinueIntent(),
         SingleActivator(LogicalKeyboardKey.enter): _LearnContinueIntent(),
         SingleActivator(LogicalKeyboardKey.f5): _LearnRate1Intent(),
@@ -364,12 +366,6 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         shortcuts: _kShortcuts,
         child: Actions(
           actions: <Type, Action<Intent>>{
-            _LearnHelpIntent: CallbackAction<_LearnHelpIntent>(
-              onInvoke: (_) {
-                _showHelp();
-                return null;
-              },
-            ),
             _LearnContinueIntent: CallbackAction<_LearnContinueIntent>(
               onInvoke: (_) {
                 if (_enterAwaitingRelease) return null;
@@ -1193,17 +1189,6 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         SystemSound.play(SystemSoundType.alert);
       }
     });
-  }
-
-  void _showHelp() {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(messages.message(LearnAnywhereMessage.desktopHintBar)),
-      ),
-    );
   }
 
   /// Returns the ordered rating entries shown as evaluation buttons.
@@ -3150,10 +3135,6 @@ final class _ToggleViewButtonState extends State<_ToggleViewButton> {
 }
 
 // ─── Intents ──────────────────────────────────────────────────────────────────
-
-final class _LearnHelpIntent extends Intent {
-  const _LearnHelpIntent();
-}
 
 final class _LearnContinueIntent extends Intent {
   const _LearnContinueIntent();

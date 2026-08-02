@@ -1,39 +1,15 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# learn_anywhere_ui_kit
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+Shared Flutter layer of [Learn Anywhere](../../README.md), used by both the desktop and
+the mobile shell: themes and design tokens, the localization adapter, rich-text
+rendering, field-row widgets, the ALT-mnemonic menu labels, and the user-guide viewer.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+It also owns the bundled assets, because a Flutter asset can only be declared by the
+package that owns the file and both shells need these:
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+- `assets/fonts/` — the Lab Mono typeface, pinned so fixed-width layouts measure the
+  same on every host.
+- `assets/help/en/`, `assets/help/de/` — the user guide. See
+  [`docs/user-guide.md`](../../docs/user-guide.md) before editing it.
 
-## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
-```dart
-const like = 'sample';
-```
-
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+Run its suite with `flutter test` from this directory.

@@ -195,7 +195,9 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
   static const Map<ShortcutActivator, Intent> _kShortcuts =
       <ShortcutActivator, Intent>{
         SingleActivator(LogicalKeyboardKey.enter): _EnterIntent(),
-        SingleActivator(LogicalKeyboardKey.f1): _HelpIntent(),
+        // F1 is deliberately absent: it belongs to the app-wide user guide
+        // (see `_handleHelpKey` in main.dart), which opens over this page
+        // without disturbing the edit in progress.
         SingleActivator(LogicalKeyboardKey.f2): _PreviousIntent(),
         SingleActivator(LogicalKeyboardKey.f3): _NextIntent(),
         SingleActivator(LogicalKeyboardKey.f5): _SearchIntent(),
@@ -254,12 +256,6 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
           _EnterIntent: CallbackAction<_EnterIntent>(
             onInvoke: (_) {
               if (widget.deck.units.isEmpty) _appendUnit();
-              return null;
-            },
-          ),
-          _HelpIntent: CallbackAction<_HelpIntent>(
-            onInvoke: (_) {
-              _showHelp();
               return null;
             },
           ),
@@ -570,30 +566,6 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
       _lastUsedCategory = result;
     }
     return result;
-  }
-
-  void _showHelp() {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(messages.message(LearnAnywhereMessage.editorHelpTitle)),
-          content: Text(messages.message(LearnAnywhereMessage.desktopHintBar)),
-          actions: <Widget>[
-            FilledButton(
-              autofocus: true,
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                messages.message(LearnAnywhereMessage.actionContinue),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _updateCurrentUnitField(int fieldId, FieldValue value) {
@@ -1448,10 +1420,6 @@ String _unitHeader(
 
 final class _EnterIntent extends Intent {
   const _EnterIntent();
-}
-
-final class _HelpIntent extends Intent {
-  const _HelpIntent();
 }
 
 final class _PreviousIntent extends Intent {

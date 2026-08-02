@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -383,11 +384,107 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     return true;
   }
 
+  /// Opens the bundled user guide on F1, from anywhere in the app.
+  ///
+  /// A [HardwareKeyboard] handler rather than a `Shortcuts` entry next to the
+  /// global ESC binding: a `Shortcuts` entry only fires while focus sits inside
+  /// its subtree, and on a freshly launched app nothing in the content scope
+  /// has focus yet — F1 would silently do nothing until the user clicked
+  /// something. Handling it here also means the Unit Editor and the Learn
+  /// session get F1 without binding it themselves; the guide opens *over* them
+  /// (see [_showHelpDialog]), so neither is interrupted.
+  bool _handleHelpKey(KeyEvent event) {
+    if (event is! KeyDownEvent ||
+        event.logicalKey != LogicalKeyboardKey.f1 ||
+        _menuActive) {
+      return false;
+    }
+    final HardwareKeyboard keyboard = HardwareKeyboard.instance;
+    if (keyboard.isAltPressed ||
+        keyboard.isControlPressed ||
+        keyboard.isShiftPressed) {
+      return false;
+    }
+    // Anything already modal — a confirmation prompt, or the guide itself —
+    // makes this route non-current. Don't stack a second dialog on top of it.
+    if (ModalRoute.of(context)?.isCurrent == false) {
+      return false;
+    }
+    unawaited(_showHelpDialog());
+    return true;
+  }
+
+  /// Shows the bundled user guide over whatever is currently on screen.
+  ///
+  /// A dialog rather than a route on purpose. The guide is most wanted in the
+  /// middle of an edit or a running session, and routing away would rebuild —
+  /// and so discard — the page underneath. As a dialog everything stays
+  /// mounted, and Esc or Close returns the reader to exactly where they were.
+  Future<void> _showHelpDialog() async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final Size size = MediaQuery.sizeOf(dialogContext);
+        const double inset = LearnAnywhereTokens.gapLarge;
+        return Dialog(
+          insetPadding: const EdgeInsets.all(inset),
+          clipBehavior: Clip.antiAlias,
+          child: SizedBox(
+            // Nearly the whole window, but capped so the prose does not run to
+            // an unreadable line length on a wide monitor.
+            width: math.min(1100, size.width - 2 * inset),
+            height: size.height - 2 * inset,
+            child: Column(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    LearnAnywhereTokens.gapLarge,
+                    LearnAnywhereTokens.gapSmall,
+                    LearnAnywhereTokens.gapSmall,
+                    LearnAnywhereTokens.gapSmall,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          messages.message(
+                            LearnAnywhereMessage.routeHelpTitle,
+                          ),
+                          style: Theme.of(dialogContext).textTheme.titleMedium,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        tooltip: messages.message(
+                          LearnAnywhereMessage.actionClose,
+                        ),
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  color: Theme.of(dialogContext).colorScheme.outlineVariant,
+                ),
+                const Expanded(child: HelpViewer()),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     windowManager.addListener(this);
     HardwareKeyboard.instance.addHandler(_handleMenuAccelerator);
+    HardwareKeyboard.instance.addHandler(_handleHelpKey);
     _settingsPath = _fileService.settingsFilePath();
     _range = resetUnitRange(_document.deck.units.length);
     _queryOptions = _optionsFromSettings(_settings);
@@ -430,6 +527,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   void dispose() {
     windowManager.removeListener(this);
     HardwareKeyboard.instance.removeHandler(_handleMenuAccelerator);
+    HardwareKeyboard.instance.removeHandler(_handleHelpKey);
     _menuScrollController.dispose();
     _contentFocusScope.dispose();
     _statisticsMenuFocusNode.dispose();
@@ -922,6 +1020,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           // Lexicon, About, Options, Mask Editor) is returned to home. Screens
           // with their own inner Shortcuts (UnitEditor, LearnSession) take
           // priority because Flutter processes the innermost Shortcuts first.
+          //
+          // F1 (the user guide) deliberately does NOT live here — see
+          // [_handleHelpKey] for why it needs a HardwareKeyboard handler, and
+          // [_showHelpDialog] for why the guide is a dialog and not a route.
           Expanded(
             child: Shortcuts(
               shortcuts: const <ShortcutActivator, Intent>{
@@ -1292,6 +1394,15 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onOpen: _onMenuOpened,
         onClose: _onMenuClosed,
         menuChildren: <Widget>[
+          MenuItemButton(
+            // Opens over the current screen, exactly like F1 — picking it in
+            // the middle of a session must not end the session.
+            onPressed: () => unawaited(_showHelpDialog()),
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.helpUserGuide),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
           MenuItemButton(
             onPressed: () => _selectRoute(_DesktopRoute.about),
             child: MenuAcceleratorLabel(

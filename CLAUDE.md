@@ -60,6 +60,29 @@ Never reach for `'Consolas'`, `'Cascadia Mono'`, or a bare `'monospace'` as the 
 — those are Windows-only or resolve to a *proportional* face. Bundle new fonts in
 `packages/ui_kit/assets/fonts/` (both shells consume ui_kit) with a permissive licence.
 
+## Documentation must move with the change
+
+The user guide ships **inside** the app (`packages/ui_kit/assets/help/en/` and
+`.../de/`), rendered by `HelpViewer` under **Help ▸ User guide** / `F1`. It is not a
+side artefact — it is a screen of the program, and a stale chapter is a bug.
+
+- Any **user-visible** change — a menu item, screen, option, shortcut, message, file
+  format or behaviour — updates the guide **in both languages, in the same commit**.
+- The two language folders keep **identical file names** and the same heading
+  structure. Add a chapter by adding the file to both; the chapter list is discovered
+  from the asset manifest, so there is no list in Dart to edit.
+- One `#` heading per chapter (its title in the contents list). `##` headings are the
+  anchors, the search granularity, and the **only** scroll targets — never link to a
+  `#` or `###` anchor.
+- Quote UI labels **verbatim from the matching catalog** in
+  `packages/core/lib/i18n/i18n.dart` — the German guide names the German labels. Never
+  translate a label freshly; a reader must be able to find it on screen.
+- `packages/ui_kit/test/help_content_test.dart` enforces parity, single titles, and
+  that every cross-chapter link and `#anchor` resolves. Run it after editing chapters.
+- Changes to the feature list, install steps or build commands also update the root
+  `README.md`. Developer-facing structure goes to `ARCHITECTURE.md` / `docs/`, not the
+  user guide. A version bump follows the rule in `packages/desktop/CLAUDE.md`.
+
 ## Line endings
 
 `.gitattributes` pins the repo to LF (`* text=auto eol=lf`). Don't run tools that

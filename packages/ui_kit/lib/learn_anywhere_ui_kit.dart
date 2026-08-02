@@ -3,6 +3,8 @@ library;
 
 export 'src/fields/field_row.dart';
 export 'src/fields/field_row_grid.dart';
+export 'src/help/help_content.dart';
+export 'src/help/help_viewer.dart';
 export 'src/i18n/learn_anywhere_localizations.dart';
 export 'src/menu/menu_accelerator_builder.dart';
 export 'src/menu/menu_accelerator_display_label.dart';
