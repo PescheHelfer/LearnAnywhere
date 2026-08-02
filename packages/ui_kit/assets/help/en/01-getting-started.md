@@ -7,14 +7,18 @@ one from scratch.
 
 ## Installing
 
-**Windows.** Unpack the release folder anywhere you like and run `LearnAnywhere.exe`.
-The program needs no installation and writes nothing outside your own user profile.
+Download it from the
+[Releases page](https://github.com/PescheHelfer/LearnAnywhere/releases/latest).
+
+**Windows.** Unzip the downloaded folder anywhere you like, keeping its files
+together, and run `LearnAnywhere.exe` from inside it. The program needs no
+installation and writes nothing outside your own user profile.
 
 **Linux.** Learn Anywhere is distributed as an AppImage. Mark it executable and run it:
 
 ```
-chmod +x LearnAnywhere-x86_64.AppImage
-./LearnAnywhere-x86_64.AppImage
+chmod +x Learn_Anywhere-*.AppImage
+./Learn_Anywhere-*.AppImage
 ```
 
 The Android companion is not released yet.
