@@ -119,3 +119,15 @@ confirm a mobile failure reproduces at `HEAD` before treating it as yours.
 Keep `packages/mobile` depending only on `core` + `ui_kit`, never on `desktop`. Any
 file/path behaviour it needs belongs in **core** behind the shared API so all three
 shells derive paths identically.
+
+## Agent skills
+
+### Issue tracker
+
+Local markdown under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Multi-context: root `CONTEXT-MAP.md` plus a `CONTEXT.md` and `docs/adr/` per package
+(`packages/core`, `packages/ui_kit`, `packages/desktop`, `packages/mobile`). See
+`docs/agents/domain.md`.

@@ -76,3 +76,9 @@ app.*.map.json
 # above. Test fixtures belong under their own package's `test/fixtures/`, never
 # in `docs/` — that is what the old `docs/*` + negation pair existed to work
 # around, and why it is gone.
+
+# Local-markdown issue tracker (see docs/agents/issue-tracker.md). Same
+# category as the local archive above: working issue/spec state, not a
+# repository deliverable — and it stands in for a remote tracker (GitHub
+# Issues), which is never part of the repo either.
+/.scratch/
