@@ -135,7 +135,8 @@ final class _FakeMobileFileService extends MobileFileService {
   List<UnitStats> savedStatistics = const <UnitStats>[];
 
   @override
-  Future<MobileDeckDocument?> openDeck() async => _document();
+  Future<MobileDeckDocument?> openDeck({required String typeLabel}) async =>
+      _document();
 
   @override
   Future<void> saveStatistics(

@@ -173,7 +173,9 @@ final class _MobileHomeState extends State<MobileHome> {
       context,
     );
     try {
-      final MobileDeckDocument? opened = await widget.fileService.openDeck();
+      final MobileDeckDocument? opened = await widget.fileService.openDeck(
+        typeLabel: messages.message(LearnAnywhereMessage.filePickerDeckType),
+      );
       if (opened == null) {
         return;
       }

@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart' as fs;
 import 'package:learn_anywhere_core/core.dart';
 
 /// Loaded mobile deck and its optional sidecar state.
@@ -35,21 +34,24 @@ final class MobileDeckDocument {
 /// Handles Android deck opening and statistics sidecar persistence.
 class MobileFileService {
   /// Opens a `.vok` deck selected through the platform file picker.
-  Future<MobileDeckDocument?> openDeck() async {
-    final FilePickerResult? result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const <String>['vok'],
-      withData: true,
+  ///
+  /// [typeLabel] is the localized caption for the extension filter; it is
+  /// passed in by the caller so this service holds no user-facing strings.
+  /// Android has no MIME type registered for `.vok`, so the system picker
+  /// lists all files there and the label stays hidden — a file that does not
+  /// decode surfaces as a load error, exactly as a wrong pick did before.
+  Future<MobileDeckDocument?> openDeck({required String typeLabel}) async {
+    final fs.XFile? picked = await fs.openFile(
+      acceptedTypeGroups: <fs.XTypeGroup>[
+        fs.XTypeGroup(label: typeLabel, extensions: const <String>['vok']),
+      ],
     );
-    if (result == null || result.files.isEmpty) {
+    if (picked == null) {
       return null;
     }
-    final PlatformFile picked = result.files.single;
-    final String source = picked.path != null
-        ? await File(picked.path!).readAsString()
-        : utf8.decode(picked.bytes ?? const <int>[]);
+    final String source = await picked.readAsString();
     final LearningDeck deck = decodeDeckJson(source);
-    final String? path = picked.path;
+    final String path = picked.path;
     return MobileDeckDocument(
       deck: deck,
       deckPath: path,
