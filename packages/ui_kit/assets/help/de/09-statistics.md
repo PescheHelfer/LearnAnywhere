@@ -8,7 +8,8 @@ Jeder Reiter teilt sich einen Schalter **Ansicht** — **Kombiniert**,
 **Abfragerichtung 1** oder **Abfragerichtung 2** — sowie dieselben Befehle
 **Statistik laden... / Statistik speichern / Statistik speichern unter... /
 Statistik löschen...**, die sich auch im [Menü Datei](03-managing-files.md#statistik)
-finden.
+finden. Was mit diesen Zählern geschieht, wenn sich die Lern-Datei selbst ändert, steht
+unter [Wenn die Lern-Datei anderswo bearbeitet wurde](03-managing-files.md#wenn-die-lern-datei-anderswo-bearbeitet-wurde).
 
 ## Die sieben Bereiche
 

@@ -8,6 +8,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  crypto: ^3.0.6
   diacritic: ^0.1.6
   meta: ^1.16.0
   path: ^1.9.0

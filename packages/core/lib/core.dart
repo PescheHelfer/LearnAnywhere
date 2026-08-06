@@ -9,3 +9,4 @@ export 'paths/deck_paths.dart';
 export 'rich_text/rich_text_ops.dart';
 export 'serialization/serialization.dart';
 export 'settings/settings.dart';
+export 'statistics/unit_identity.dart';

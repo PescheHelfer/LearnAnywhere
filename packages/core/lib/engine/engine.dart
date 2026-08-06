@@ -718,10 +718,7 @@ bool hasRecordedStatistics({
   if (levelStatistics.isNotEmpty) {
     return true;
   }
-  return statistics.any(
-    (UnitStats stats) =>
-        stats.direction1.attempts > 0 || stats.direction2.attempts > 0,
-  );
+  return statistics.any((UnitStats stats) => stats.hasAttempts);
 }
 
 /// Returns the statistics bucket for [stats].

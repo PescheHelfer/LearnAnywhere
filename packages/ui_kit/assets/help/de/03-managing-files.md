@@ -47,6 +47,33 @@ irgendwo gespeichert werden können.
 Diese vier Befehle finden sich auch auf dem Bildschirm [Statistik](09-statistics.md)
 selbst wieder, sodass Sie ihn zum Sichern Ihrer Ergebnisse nie verlassen müssen.
 
+## Wenn die Lern-Datei anderswo bearbeitet wurde
+
+Die Statistik wird je Einheit verzeichnet. Eine Lern-Datei, die sich nach dem Schreiben
+ihrer `.sta` geändert hat — in einer anderen Kopie des Programms bearbeitet, vom
+Konverter neu erzeugt, auf dem Telefon neu importiert —, könnte deshalb leicht die
+falschen Zähler den falschen Einheiten zuordnen.
+
+Das tut sie nicht. Jede `.sta` speichert neben den Zählern einen Fingerabdruck jeder
+Einheit, gebildet aus deren Frage- und Antwortfeldern. Beim Laden der Statistik folgt
+jeder Zähler seinem Fingerabdruck dorthin, wo die Einheit jetzt steht; umgestellte,
+eingefügte oder gelöschte Einheiten lassen die Geschichte des übrigen Bestands also
+genau dort, wo sie hingehört. Bemerkungsfelder bleiben bewusst außen vor: eine
+umgeschriebene Bemerkung kostet eine Einheit nie ihre Ergebnisse.
+
+Zwei Änderungen setzen Ergebnisse bewusst zurück:
+
+- Wird der **Frage- oder Antworttext** einer Einheit geändert, ist es eine andere
+  Einheit — sie beginnt bei null, alle übrigen bleiben unberührt.
+- Wird die **Rolle eines Feldes** in der [Maske](05-mask-editor.md) geändert, erhalten
+  alle Einheiten einen neuen Fingerabdruck, die ganze Lern-Datei beginnt also bei null.
+
+Ging nichts verloren — der Normalfall —, sagt das Laden dazu nichts. Gingen Ergebnisse
+verloren, meldet die Statuszeile, wie viele Einheiten es betrifft, zum Beispiel **Die
+Statistik von 3 Einheiten wurde zurückgesetzt — diese Einheiten haben sich geändert.**
+Eine `.sta`, die vor Einführung der Fingerabdrücke geschrieben wurde, hat keine und wird
+wie eh und je nach Position geladen.
+
 ## Automatisch laden und automatisch speichern
 
 Zwei unabhängige Schalter unter **Optionen ▸ Statistiken** ersparen Ihnen den Weg über

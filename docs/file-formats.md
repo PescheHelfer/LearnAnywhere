@@ -1,4 +1,4 @@
-# Learn Anywhere file-format contract (`.inf` / `.vok`)
+# Learn Anywhere file-format contract (`.inf` / `.vok` / `.sta`)
 
 The canonical, authoritative examples of the current on-disk format live in
 `packages/core/test/fixtures/` as `example.inf` and `example.vok`. They sit
@@ -55,3 +55,30 @@ Top-level `format` is `learn-anywhere/lessons`, `version` `1`, then:
 
 Only `attempts` + `correct` per unit+direction are stored (in the separate
 `.sta` sidecar), and the super-query active pool is always a derived view.
+
+## `.sta` (statistics sidecar) — per-unit `hash`
+
+Top-level `format` is `learn-anywhere/statistics`, `version` `2`, then `deckRef`
+and `perUnit`. Each `perUnit` entry has `index` (1-based), `dir1`, `dir2`, and
+**optionally `hash`** — the identity of the unit those counters were recorded
+for, so a deck edited outside the app can have its statistics realigned instead
+of silently landing on the wrong units.
+
+- **Input:** the unit's `categoryId`, then every field of that category whose
+  `role1` **or** `role2` is `Q` or `A`, in the category's field order. Fields
+  that are `R` in *both* directions are excluded, so editing a remark never
+  changes a unit's identity. Each field contributes its id and the field value's
+  **plain text** (formatting runs flattened), so re-colouring an answer does not
+  change the identity either.
+- **Encoding:** `c<categoryId>` followed by `|<fieldId>:<charLength>:<value>`
+  per contributing field, UTF-8 encoded; the hash is the **first 16 lowercase
+  hex characters of the SHA-256 digest** of that string. The length prefix is
+  what makes the encoding unambiguous — a value may contain any character,
+  including whatever separator one might otherwise pick.
+- **Version stays `2`.** The key is additive: decoders on both sides ignore keys
+  they do not know, so a hashed file loads in an older build and an unhashed
+  file loads here (positionally, exactly as before). Bumping to `3` would only
+  make current builds reject the file.
+
+`packages/core/lib/statistics/unit_identity.dart` is the implementation and the
+tie-breaker for anything this section leaves open.

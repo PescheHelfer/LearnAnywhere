@@ -21,6 +21,12 @@ const int currentFormatVersion = 1;
 ///
 /// Version 2 adds the optional `levelLearning` section. Decoding accepts both
 /// version 1 (no Level-Learning data) and version 2.
+///
+/// The per-unit `hash` ([UnitStats.hash]) is deliberately an ADDITIVE field at
+/// version 2 rather than a version 3: unknown keys are ignored in both
+/// directions, so a file with hashes still loads in a build that predates them,
+/// and a file without hashes still loads here. Bumping the version would only
+/// make older builds reject the file for no gain.
 const int currentStatisticsVersion = 2;
 
 /// A user-facing validation failure for a loaded file.
@@ -510,16 +516,21 @@ UnitStats _decodeUnitStats(Object? value, String path) {
       path: '$path.index',
     );
   }
+  // Optional and additive: files written before per-unit hashes existed simply
+  // have no `hash` key, and decode to a null hash ("identity unknown").
+  final Object? rawHash = json['hash'];
   return UnitStats(
     index: index,
     direction1: _decodeDirectionStats(json['dir1'], '$path.dir1'),
     direction2: _decodeDirectionStats(json['dir2'], '$path.dir2'),
+    hash: rawHash is String && rawHash.isNotEmpty ? rawHash : null,
   );
 }
 
 Map<String, Object?> _encodeUnitStats(UnitStats stats) {
   return <String, Object?>{
     'index': stats.index,
+    if (stats.hash != null) 'hash': stats.hash,
     'dir1': _encodeDirectionStats(stats.direction1),
     'dir2': _encodeDirectionStats(stats.direction2),
   };

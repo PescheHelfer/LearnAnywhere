@@ -414,23 +414,36 @@ final class DesktopFileService {
   }
 
   /// Loads a `.sta` statistics file into the current document.
-  Future<DesktopDocument> loadStatistics(
+  ///
+  /// The stored counters are realigned onto the deck by their per-unit hashes,
+  /// so a deck edited outside the app keeps the history of every unit that is
+  /// still there. The result reports how many units' statistics could not be
+  /// carried over, which is the only thing worth telling the user about.
+  Future<StatisticsLoadResult> loadStatistics(
     DesktopDocument current,
     String path,
   ) async {
     final StatisticsFile statistics = decodeStatisticsJson(
       await File(path).readAsString(),
     );
-    return current.copyWith(
-      statistics: resizeUnitStats(
-        statistics.perUnit,
-        current.deck.units.length,
-      ),
+    final StatisticsRealignment realigned = realignStatistics(
+      deck: current.deck,
+      statistics: statistics.perUnit,
       levelStatistics:
           statistics.levelLearning?.perUnit ?? const <LevelUnitStats>[],
-      statisticsPath: path,
-      lastSessionMode: statistics.lastSessionMode,
-      clearLastSessionMode: statistics.lastSessionMode == null,
+    );
+    return StatisticsLoadResult(
+      document: current.copyWith(
+        statistics: realigned.statistics,
+        levelStatistics: realigned.levelStatistics,
+        statisticsPath: path,
+        lastSessionMode: statistics.lastSessionMode,
+        clearLastSessionMode: statistics.lastSessionMode == null,
+      ),
+      // With no deck open there is nothing for the numbers to attach to, so
+      // every entry is "unmatched" — but no unit changed, and saying so would
+      // be nonsense. Loading stats before a deck has always discarded them.
+      resetUnits: current.deck.units.isEmpty ? 0 : realigned.resetUnits,
     );
   }
 
@@ -454,7 +467,9 @@ final class DesktopFileService {
           deckRef: document.deckPath == null
               ? 'unsaved.vok'
               : DeckPaths.fileName(document.deckPath!),
-          perUnit: document.statistics,
+          // Hashes are computed here, on every write, so the file always
+          // identifies the deck exactly as it stands at this moment.
+          perUnit: withUnitHashes(document.deck, document.statistics),
           levelLearning: _levelSection(document.levelStatistics),
           lastSessionMode: document.lastSessionMode,
         ),
@@ -624,6 +639,24 @@ final class DesktopFileService {
       totalUnits: summary.totalUnits,
     );
   }
+}
+
+/// A loaded `.sta` and what realigning it onto the current deck cost.
+final class StatisticsLoadResult {
+  /// Creates a statistics load result.
+  const StatisticsLoadResult({
+    required this.document,
+    required this.resetUnits,
+  });
+
+  /// The document with the loaded statistics applied.
+  final DesktopDocument document;
+
+  /// How many units' recorded statistics could not be carried over.
+  ///
+  /// Zero for the ordinary case of an unchanged deck; non-zero only when the
+  /// deck was edited outside the app, which is worth reporting.
+  final int resetUnits;
 }
 
 /// A timestamped session `.sta` discovered beside a deck, with its parsed time.

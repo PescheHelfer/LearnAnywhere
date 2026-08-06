@@ -579,6 +579,7 @@ final class UnitStats {
     required this.index,
     this.direction1 = const DirectionStats(),
     this.direction2 = const DirectionStats(),
+    this.hash,
   });
 
   /// One-based unit index.
@@ -589,6 +590,14 @@ final class UnitStats {
 
   /// Statistics for direction 2.
   final DirectionStats direction2;
+
+  /// Identity of the unit these counters were recorded for, when known.
+  ///
+  /// Written by `withUnitHashes` and read back from the `.sta` file, this is
+  /// what lets `realignStatistics` follow a unit that moved, and notice one
+  /// whose question or answer text changed. `null` means "unknown" — a `.sta`
+  /// written before hashes existed, or counters not yet matched to a deck.
+  final String? hash;
 
   /// Returns the stats for [direction].
   DirectionStats statsFor(QueryDirection direction) {
@@ -605,14 +614,34 @@ final class UnitStats {
         index: index,
         direction1: stats,
         direction2: direction2,
+        hash: hash,
       ),
       QueryDirection.direction2 => UnitStats(
         index: index,
         direction1: direction1,
         direction2: stats,
+        hash: hash,
       ),
     };
   }
+
+  /// Returns a copy sitting at [index] and identified by [hash].
+  ///
+  /// The counters themselves always travel unchanged — moving a unit, or
+  /// learning what its identity is, must never alter what it has recorded.
+  /// [hash] is required precisely because it is nullable: an omitted argument
+  /// would silently erase an identity rather than keep it.
+  UnitStats withIdentity({required int index, required String? hash}) {
+    return UnitStats(
+      index: index,
+      direction1: direction1,
+      direction2: direction2,
+      hash: hash,
+    );
+  }
+
+  /// Whether anything has ever been recorded for this unit.
+  bool get hasAttempts => direction1.attempts > 0 || direction2.attempts > 0;
 }
 
 /// Level-Learning statistics for one direction of one unit.

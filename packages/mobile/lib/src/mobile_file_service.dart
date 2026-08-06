@@ -72,7 +72,15 @@ class MobileFileService {
       encodeStatisticsJson(
         // Store the deck's file name only (not the absolute device path), to
         // match desktop and keep the .sta portable across platforms.
-        StatisticsFile(deckRef: _fileName(deckPath), perUnit: statistics),
+        StatisticsFile(
+          deckRef: _fileName(deckPath),
+          // Hashes are recomputed from the deck on every write, exactly as on
+          // desktop. Passing the counters through unhashed would leave the
+          // phone's sidecars unidentifiable; passing them through with the
+          // hashes they were loaded with would be worse still, since this
+          // shell still re-indexes them positionally.
+          perUnit: withUnitHashes(document.deck, statistics),
+        ),
       ),
     );
   }

@@ -6,7 +6,9 @@ not a submenu) reads the same counters your sessions write to. It has three tabs
 
 Every tab shares a **View** switch — **Combined**, **Direction 1** or **Direction 2** —
 and the same **Load stats... / Save stats / Save stats as... / Clear stats...** commands
-also found on the [File menu](03-managing-files.md#statistics).
+also found on the [File menu](03-managing-files.md#statistics). What happens to these
+counters when the deck itself changes is covered under
+[When the deck was edited elsewhere](03-managing-files.md#when-the-deck-was-edited-elsewhere).
 
 ## The seven buckets
 

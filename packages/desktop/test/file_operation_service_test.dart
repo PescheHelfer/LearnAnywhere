@@ -286,11 +286,12 @@ void main() {
       final DesktopDocument cleared = service.clearStatisticsInMemory(saved);
       expect(cleared.statistics.single.direction1.attempts, 0);
 
-      final DesktopDocument loaded = await service.loadStatistics(
+      final StatisticsLoadResult loaded = await service.loadStatistics(
         cleared,
         statsPath,
       );
-      expect(loaded.statistics.single.direction1.correct, 2);
+      expect(loaded.document.statistics.single.direction1.correct, 2);
+      expect(loaded.resetUnits, 0);
 
       await service.saveDeckSnapshot(deck, selectedPath);
       expect(
@@ -343,10 +344,10 @@ void main() {
       );
 
       await service.saveStatistics(document, statsPath);
-      final DesktopDocument reloaded = await service.loadStatistics(
+      final DesktopDocument reloaded = (await service.loadStatistics(
         DesktopDocument(deck: deck, statistics: clearStatistics(deck)),
         statsPath,
-      );
+      )).document;
       expect(reloaded.lastSessionMode, SessionMode.levelLearning);
       expect(reloaded.levelStatistics, hasLength(1));
 
@@ -357,20 +358,84 @@ void main() {
       expect(cleared.statistics.single.direction1.attempts, 0);
 
       // A file written before the field existed loads as "unknown".
-      final DesktopDocument legacy = await service.loadStatistics(
+      final DesktopDocument legacy = (await service.loadStatistics(
         DesktopDocument(deck: deck, statistics: clearStatistics(deck)),
         statsPath,
-      );
+      )).document;
       await File(statsPath).writeAsString(
         encodeStatisticsJson(
           StatisticsFile(deckRef: 'deck.vok', perUnit: legacy.statistics),
         ),
       );
-      final DesktopDocument unknown = await service.loadStatistics(
+      final DesktopDocument unknown = (await service.loadStatistics(
         legacy,
         statsPath,
-      );
+      )).document;
       expect(unknown.lastSessionMode, isNull);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('realigns loaded statistics onto a deck edited outside the app', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_stats_realign',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String statsPath = '${temp.path}${Platform.pathSeparator}deck.sta';
+      LearningUnit unit(String question) => LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{0: FieldValue.plain(question)},
+      );
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: <LearningUnit>[unit('one'), unit('two'), unit('three')],
+      );
+
+      await service.saveStatistics(
+        DesktopDocument(
+          deck: deck,
+          statistics: const <UnitStats>[
+            UnitStats(index: 1, direction1: DirectionStats(attempts: 1, correct: 1)),
+            UnitStats(index: 2, direction1: DirectionStats(attempts: 2, correct: 2)),
+            UnitStats(index: 3, direction1: DirectionStats(attempts: 3, correct: 3)),
+          ],
+        ),
+        statsPath,
+      );
+
+      // The deck comes back reordered, with unit "two" rewritten and a new one
+      // appended — exactly what a re-import or an outside edit looks like.
+      final LearningDeck edited = LearningDeck(
+        mask: sampleMask(),
+        units: <LearningUnit>[
+          unit('three'),
+          unit('two!'),
+          unit('one'),
+          unit('four'),
+        ],
+      );
+      final StatisticsLoadResult loaded = await service.loadStatistics(
+        DesktopDocument(deck: edited, statistics: clearStatistics(edited)),
+        statsPath,
+      );
+
+      expect(
+        loaded.document.statistics.map((UnitStats s) => s.direction1.attempts),
+        <int>[3, 0, 1, 0],
+      );
+      expect(loaded.resetUnits, 1);
+
+      // With no deck open there is nothing the counters could belong to, and
+      // nothing changed — loading must not claim units were reset.
+      final LearningDeck none = LearningDeck(
+        mask: sampleMask(),
+        units: const <LearningUnit>[],
+      );
+      final StatisticsLoadResult withoutDeck = await service.loadStatistics(
+        DesktopDocument(deck: none, statistics: clearStatistics(none)),
+        statsPath,
+      );
+      expect(withoutDeck.resetUnits, 0);
 
       await temp.delete(recursive: true);
     });

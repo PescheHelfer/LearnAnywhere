@@ -783,6 +783,366 @@ void main() {
     });
   });
 
+  group('unit identity hashes', () {
+    LearningUnit unitOf(
+      String de,
+      String fr, {
+      String note = '',
+      int categoryId = 1,
+    }) {
+      return LearningUnit(
+        categoryId: categoryId,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain(de), // DE — Q in dir 1, A in dir 2
+          1: FieldValue.plain(fr), // FR1 — A in dir 1, Q in dir 2
+          3: FieldValue.plain(note), // Note — remark in both directions
+        },
+      );
+    }
+
+    test('is stable across repeated computations', () {
+      final LearningMask mask = sampleMask();
+      final LearningUnit unit = unitOf('Haus', 'maison');
+      expect(unitIdentityHash(mask, unit), unitIdentityHash(mask, unit));
+      expect(unitIdentityHash(mask, unit), matches(RegExp(r'^[0-9a-f]{16}$')));
+    });
+
+    test('ignores remark fields', () {
+      final LearningMask mask = sampleMask();
+      expect(
+        unitIdentityHash(mask, unitOf('Haus', 'maison', note: 'noun')),
+        unitIdentityHash(mask, unitOf('Haus', 'maison', note: 'rewritten')),
+      );
+    });
+
+    test('changes when a question or answer value changes', () {
+      final LearningMask mask = sampleMask();
+      final String base = unitIdentityHash(mask, unitOf('Haus', 'maison'));
+      expect(unitIdentityHash(mask, unitOf('Hause', 'maison')), isNot(base));
+      expect(unitIdentityHash(mask, unitOf('Haus', 'maisons')), isNot(base));
+    });
+
+    test('ignores rich-text formatting, tracking plain text only', () {
+      final LearningMask mask = sampleMask();
+      final LearningUnit plain = unitOf('Haus', 'maison');
+      final LearningUnit formatted = LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{
+          0: const FieldValue.plain('Haus'),
+          1: FieldValue.rich(<RichTextRun>[
+            const RichTextRun(text: 'maison', bold: true, color: '#CC0000'),
+          ]),
+          3: const FieldValue.plain(''),
+        },
+      );
+      expect(unitIdentityHash(mask, formatted), unitIdentityHash(mask, plain));
+    });
+
+    test('changes when a field role changes', () {
+      final LearningMask mask = sampleMask();
+      final CategoryDefinition category = mask.categories.single;
+      final LearningMask rerolled = mask.copyWith(
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: category.id,
+            name: category.name,
+            fields: <FieldDefinition>[
+              for (final FieldDefinition field in category.fields)
+                if (field.id == 1)
+                  FieldDefinition(
+                    id: field.id,
+                    name: field.name,
+                    length: field.length,
+                    equalGroup: field.equalGroup,
+                    role1: FieldRole.remark,
+                    role2: FieldRole.remark,
+                  )
+                else
+                  field,
+            ],
+          ),
+        ],
+      );
+      expect(
+        unitIdentityHash(rerolled, unitOf('Haus', 'maison')),
+        isNot(unitIdentityHash(mask, unitOf('Haus', 'maison'))),
+      );
+    });
+
+    test('round-trips through the .sta file byte-for-byte', () {
+      final LearningDeck deck = sampleDeck();
+      final StatisticsFile file = StatisticsFile(
+        deckRef: 'french1.vok',
+        perUnit: withUnitHashes(deck, <UnitStats>[
+          const UnitStats(
+            index: 1,
+            direction1: DirectionStats(attempts: 2, correct: 1),
+          ),
+          const UnitStats(index: 2),
+        ]),
+      );
+
+      final String encoded = encodeStatisticsJson(file);
+      final StatisticsFile restored = decodeStatisticsJson(encoded);
+      expect(restored.perUnit.first.hash, deckUnitHashes(deck).first);
+      expect(encodeStatisticsJson(restored), encoded);
+    });
+
+    test('omits the hash key entirely when no hash is known', () {
+      const StatisticsFile file = StatisticsFile(
+        deckRef: 'french1.vok',
+        perUnit: <UnitStats>[UnitStats(index: 1)],
+      );
+      final Map<String, Object?> raw =
+          jsonDecode(encodeStatisticsJson(file)) as Map<String, Object?>;
+      final Map<String, Object?> entry =
+          (raw['perUnit']! as List<Object?>).single as Map<String, Object?>;
+      expect(entry.containsKey('hash'), isFalse);
+      expect(raw['version'], currentStatisticsVersion);
+    });
+  });
+
+  group('statistics realignment', () {
+    LearningUnit unitOf(String de, String fr, {String note = ''}) {
+      return LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain(de),
+          1: FieldValue.plain(fr),
+          3: FieldValue.plain(note),
+        },
+      );
+    }
+
+    final LearningUnit a = unitOf('eins', 'un', note: 'first');
+    final LearningUnit b = unitOf('zwei', 'deux');
+    final LearningUnit c = unitOf('drei', 'trois');
+
+    LearningDeck deckOf(List<LearningUnit> units) =>
+        LearningDeck(mask: sampleMask(), units: units);
+
+    /// Stats carrying `attempts` attempts (all correct) per unit, hashed
+    /// against [deck] exactly as a `.sta` written for that deck would be.
+    List<UnitStats> hashedStats(LearningDeck deck, List<int> attempts) {
+      return withUnitHashes(deck, <UnitStats>[
+        for (var i = 0; i < attempts.length; i += 1)
+          UnitStats(
+            index: i + 1,
+            direction1: DirectionStats(
+              attempts: attempts[i],
+              correct: attempts[i],
+            ),
+          ),
+      ]);
+    }
+
+    List<int> attemptsOf(List<UnitStats> stats) => <int>[
+      for (final UnitStats entry in stats) entry.direction1.attempts,
+    ];
+
+    final LearningDeck original = deckOf(<LearningUnit>[a, b, c]);
+
+    test('an unchanged deck keeps every unit in place', () {
+      final StatisticsRealignment result = realignStatistics(
+        deck: original,
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 2, 3]);
+      expect(result.resetUnits, 0);
+    });
+
+    test('appended units start clean without reporting a reset', () {
+      final LearningDeck grown = deckOf(<LearningUnit>[
+        a,
+        b,
+        c,
+        unitOf('vier', 'quatre'),
+      ]);
+      final StatisticsRealignment result = realignStatistics(
+        deck: grown,
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 2, 3, 0]);
+      expect(result.resetUnits, 0);
+    });
+
+    test('a trailing deletion keeps the survivors and reports the loss', () {
+      final StatisticsRealignment result = realignStatistics(
+        deck: deckOf(<LearningUnit>[a, b]),
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 2]);
+      expect(result.resetUnits, 1);
+    });
+
+    test('a mid-insertion shifts later units without losing anything', () {
+      final LearningDeck inserted = deckOf(<LearningUnit>[
+        a,
+        unitOf('neu', 'nouveau'),
+        b,
+        c,
+      ]);
+      final StatisticsRealignment result = realignStatistics(
+        deck: inserted,
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 0, 2, 3]);
+      expect(result.resetUnits, 0);
+    });
+
+    test('a mid-deletion pulls later units down', () {
+      final StatisticsRealignment result = realignStatistics(
+        deck: deckOf(<LearningUnit>[a, c]),
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 3]);
+      expect(result.resetUnits, 1);
+    });
+
+    test('a reorder carries statistics to the new positions', () {
+      final StatisticsRealignment result = realignStatistics(
+        deck: deckOf(<LearningUnit>[c, a, b]),
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[3, 1, 2]);
+      expect(result.resetUnits, 0);
+    });
+
+    test('a remark-only edit keeps the unit\'s statistics', () {
+      final StatisticsRealignment result = realignStatistics(
+        deck: deckOf(<LearningUnit>[
+          unitOf('eins', 'un', note: 'rewritten remark'),
+          b,
+          c,
+        ]),
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 2, 3]);
+      expect(result.resetUnits, 0);
+    });
+
+    test('a question or answer edit resets only that unit', () {
+      final StatisticsRealignment result = realignStatistics(
+        deck: deckOf(<LearningUnit>[a, unitOf('zwei', 'deux!'), c]),
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 0, 3]);
+      expect(result.resetUnits, 1);
+    });
+
+    test('an untouched unit that was never queried is not counted', () {
+      // Unit 2 is deleted but had no recorded attempts: nothing was lost.
+      final StatisticsRealignment result = realignStatistics(
+        deck: deckOf(<LearningUnit>[a, c]),
+        statistics: hashedStats(original, <int>[1, 0, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 3]);
+      expect(result.resetUnits, 0);
+    });
+
+    test('duplicate units keep their own counters in stored order', () {
+      final LearningDeck twins = deckOf(<LearningUnit>[a, b, a]);
+      final StatisticsRealignment result = realignStatistics(
+        deck: twins,
+        statistics: hashedStats(twins, <int>[1, 2, 3]),
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 2, 3]);
+      expect(result.resetUnits, 0);
+    });
+
+    test('a legacy .sta without hashes still loads by index', () {
+      final StatisticsRealignment result = realignStatistics(
+        deck: deckOf(<LearningUnit>[c, a, b, unitOf('vier', 'quatre')]),
+        statistics: const <UnitStats>[
+          UnitStats(index: 1, direction1: DirectionStats(attempts: 1, correct: 1)),
+          UnitStats(index: 2, direction1: DirectionStats(attempts: 2, correct: 2)),
+          UnitStats(index: 3, direction1: DirectionStats(attempts: 3, correct: 3)),
+        ],
+      );
+      expect(attemptsOf(result.statistics), <int>[1, 2, 3, 0]);
+      expect(result.resetUnits, 0);
+    });
+
+    test('the realigned statistics carry the deck\'s current hashes', () {
+      final LearningDeck moved = deckOf(<LearningUnit>[b, a, c]);
+      final StatisticsRealignment result = realignStatistics(
+        deck: moved,
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(
+        result.statistics.map((UnitStats s) => s.hash),
+        deckUnitHashes(moved),
+      );
+    });
+
+    test('Level-Learning statistics follow the same mapping', () {
+      const LevelDirectionStats fresh = LevelDirectionStats(
+        currentLevel: 3,
+        levels: <int, DirectionStats>{
+          3: DirectionStats(),
+          2: DirectionStats(),
+          1: DirectionStats(),
+          0: DirectionStats(),
+        },
+      );
+      LevelUnitStats levelAt(int index, int level) => LevelUnitStats(
+        index: index,
+        dir1: LevelDirectionStats(
+          currentLevel: level,
+          levels: const <int, DirectionStats>{
+            3: DirectionStats(attempts: 1, correct: 1),
+            2: DirectionStats(),
+            1: DirectionStats(),
+            0: DirectionStats(),
+          },
+        ),
+        dir2: fresh,
+      );
+
+      final StatisticsRealignment result = realignStatistics(
+        deck: deckOf(<LearningUnit>[c, a, b]),
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+        levelStatistics: <LevelUnitStats>[levelAt(1, 2), levelAt(3, 1)],
+      );
+
+      expect(result.levelStatistics, hasLength(2));
+      // Unit 1 moved to position 2, unit 3 to position 1.
+      expect(
+        <int, int>{
+          for (final LevelUnitStats stats in result.levelStatistics)
+            stats.index: stats.dir1.currentLevel,
+        },
+        <int, int>{2: 2, 1: 1},
+      );
+    });
+
+    test('a lost unit with only ladder history still counts as reset', () {
+      // The engine materializes a ladder entry as soon as a unit is practised
+      // in Level Learning, which can happen before any drill attempt exists.
+      final StatisticsRealignment result = realignStatistics(
+        deck: deckOf(<LearningUnit>[a, c]),
+        statistics: hashedStats(original, <int>[0, 0, 0]),
+        levelStatistics: <LevelUnitStats>[
+          LevelUnitStats(
+            index: 2,
+            dir1: LevelDirectionStats.fresh(kMaxSupportLevel),
+            dir2: LevelDirectionStats.fresh(kMaxSupportLevel),
+          ),
+        ],
+      );
+      expect(result.levelStatistics, isEmpty);
+      expect(result.resetUnits, 1);
+    });
+
+    test('empty Level-Learning statistics stay empty', () {
+      final StatisticsRealignment result = realignStatistics(
+        deck: original,
+        statistics: hashedStats(original, <int>[1, 2, 3]),
+      );
+      expect(result.levelStatistics, isEmpty);
+    });
+  });
+
   group('rich text ops', () {
     test('normalizeRuns merges adjacent equal runs and drops empties', () {
       final List<RichTextRun> runs = normalizeRuns(<RichTextRun>[

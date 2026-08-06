@@ -2566,11 +2566,31 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       return;
     }
     await _guardedFileOperation(() async {
-      _document = (await _fileService.loadStatistics(_document, latest.path))
-          .copyWith(autoSaveTargetPath: latest.path);
+      final StatisticsLoadResult result = await _fileService.loadStatistics(
+        _document,
+        latest.path,
+      );
+      _document = result.document.copyWith(autoSaveTargetPath: latest.path);
       _setLastDir('sta', latest.path);
-      _showStatus(LearnAnywhereMessage.statisticsLoaded);
+      _reportStatisticsLoad(result);
     });
+  }
+
+  /// Reports the outcome of loading a `.sta`.
+  ///
+  /// Realignment normally carries every unit's history across silently, so the
+  /// plain "loaded" status is all the student sees. Only when the deck was
+  /// edited elsewhere and some history could not be carried over does the
+  /// status say so, naming the number of units affected.
+  void _reportStatisticsLoad(StatisticsLoadResult result) {
+    if (result.resetUnits > 0) {
+      _showStatus(
+        LearnAnywhereMessage.statisticsUnitsReset,
+        count: result.resetUnits,
+      );
+      return;
+    }
+    _showStatus(LearnAnywhereMessage.statisticsLoaded);
   }
 
   /// Yes/No prompt offering to load a discovered session `.sta` (§3.7).
@@ -2745,9 +2765,13 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     }
     bool loaded = false;
     await _guardedFileOperation(() async {
-      _document = await _fileService.loadStatistics(_document, path);
+      final StatisticsLoadResult result = await _fileService.loadStatistics(
+        _document,
+        path,
+      );
+      _document = result.document;
       _setLastDir('sta', path);
-      _showStatus(LearnAnywhereMessage.statisticsLoaded);
+      _reportStatisticsLoad(result);
       loaded = true;
     });
     // A manual load asks whether to adopt the file for auto-saving; declining
@@ -3109,14 +3133,16 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     ).showSnackBar(SnackBar(content: Text(_lastFileStatus!)));
   }
 
-  void _showStatus(LearnAnywhereMessage message) {
+  void _showStatus(LearnAnywhereMessage message, {int count = 0}) {
     if (!mounted) {
       return;
     }
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final String status = messages.message(message);
+    final String status = messages
+        .message(message)
+        .replaceAll('{count}', count.toString());
     setState(() => _lastFileStatus = status);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status)));
   }

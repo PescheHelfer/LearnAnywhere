@@ -750,6 +750,10 @@ enum LearnAnywhereMessage {
   /// Statistics loaded status.
   statisticsLoaded,
 
+  /// Status shown when loaded statistics could not be carried over in full,
+  /// because the deck was edited outside the app. Takes `{count}`.
+  statisticsUnitsReset,
+
   /// Statistics saved status.
   statisticsSaved,
 
@@ -1459,6 +1463,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSaveStatsAs: 'Save stats as...',
       LearnAnywhereMessage.statisticsClear: 'Clear stats...',
       LearnAnywhereMessage.statisticsLoaded: 'Statistics loaded.',
+      LearnAnywhereMessage.statisticsUnitsReset:
+          'Statistics for {count} units were reset '
+          '— those units changed.',
       LearnAnywhereMessage.statisticsSaved: 'Statistics saved.',
       LearnAnywhereMessage.statisticsCleared: 'Statistics cleared.',
       LearnAnywhereMessage.statisticsSelectedSaved: 'Selected units saved.',
@@ -1946,6 +1953,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSaveStatsAs: 'Statistik speichern unter...',
       LearnAnywhereMessage.statisticsClear: 'Statistik löschen...',
       LearnAnywhereMessage.statisticsLoaded: 'Statistik geladen.',
+      LearnAnywhereMessage.statisticsUnitsReset:
+          'Die Statistik von {count} Einheiten wurde zurückgesetzt '
+          '— diese Einheiten haben sich geändert.',
       LearnAnywhereMessage.statisticsSaved: 'Statistik gespeichert.',
       LearnAnywhereMessage.statisticsCleared: 'Statistik gelöscht.',
       LearnAnywhereMessage.statisticsSelectedSaved:
