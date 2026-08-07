@@ -72,7 +72,11 @@ void main() {
     );
     expect(find.textContaining('SbitFire Software'), findsOneWidget);
     expect(find.text('Version history'), findsOneWidget);
-    expect(find.textContaining('0.4.1'), findsOneWidget);
+    // Pins the NEWEST history entry, not an arbitrary older one: the list is a
+    // fixed-height lazy ListView that only builds its first ~3 rows, so an
+    // older version silently falls out of the built range on the next bump.
+    // Update this together with the version — see packages/desktop/CLAUDE.md.
+    expect(find.textContaining('0.6.1'), findsOneWidget);
   });
 
   testWidgets('help user guide opens with a contents list and search', (

@@ -83,6 +83,43 @@ side artefact — it is a screen of the program, and a stale chapter is a bug.
   `README.md`. Developer-facing structure goes to `ARCHITECTURE.md` / `docs/`, not the
   user guide. A version bump follows the rule in `packages/desktop/CLAUDE.md`.
 
+## Versions and tags — two products, two tracks
+
+Desktop and Android ship **separately, with different feature sets**, so they carry
+**independent versions**: `packages/desktop/pubspec.yaml` and
+`packages/mobile/pubspec.yaml` move on their own. Neither is "the" project version, and
+there is no version in the root `pubspec.yaml`.
+
+Bump the version of **each app whose users see a difference** — not each package that
+was touched. `core` and `ui_kit` are never versioned or released on their own; they
+ship inside whichever shell they affect. Two consequences that look surprising but are
+correct:
+
+- A change that edits **only** `core` (say, a new engine behaviour desktop surfaces)
+  still bumps **desktop**, because a desktop user sees it.
+- A change that edits `core` **and** desktop files but alters nothing a desktop user
+  can observe — e.g. adding mobile-only message keys to `i18n.dart` — bumps **Android
+  only**.
+
+Git tags are **prefixed per product**, because one tag namespace covers both:
+
+| Product | Tag | Bump rule |
+|---|---|---|
+| Desktop | `desktop-v0.6.1` | `packages/desktop/CLAUDE.md` (pubspec **and** About history) |
+| Android | `android-v0.1.0` | `packages/mobile/pubspec.yaml`; About shows version + licence only |
+
+Bare `v0.2.0`…`v0.6.0` are pre-split desktop history; leave them alone. Prefixes also
+keep `git describe --tags --match 'desktop-v*'` honest once the two series interleave —
+with bare tags an Android release silently becomes the nearest tag to a desktop commit.
+
+**Tag on `master`, after merging**, never on the feature branch: a squash or rebase
+merge rewrites the branch's commits and strands the tag on an orphan.
+
+`README.md` must not link to GitHub's `/releases/latest`. That URL resolves to whichever
+release was published most recently **across the whole repository** — GitHub ignores tag
+prefixes — so once an Android release exists it can hand a desktop user an APK. Link to
+`/releases` instead.
+
 ## Line endings
 
 `.gitattributes` pins the repo to LF (`* text=auto eol=lf`). Don't run tools that

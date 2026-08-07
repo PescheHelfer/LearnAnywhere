@@ -39,6 +39,16 @@ Whenever the app version changes, update both of these together — never just o
   `LearnAnywhereMessage` enum and both catalogs (EN + DE) in
   `packages/core/lib/i18n/i18n.dart`, then prepend it (newest first) to the
   `labels` list in `packages/desktop/lib/src/about/about_page.dart`.
+- The version string asserted by the About test in `test/widget_test.dart`
+  ("help about shows legacy and conversion credits"). It pins the **newest**
+  entry on purpose, so it fails loudly when a bump forgets the two steps above.
+  Don't "fix" it by pointing it at an older version: the history is a
+  fixed-height lazy `ListView` that only builds its first ~3 rows, so an older
+  entry stops existing in the widget tree as soon as newer ones push it down.
+
+Also update the root `README.md` "Status" line, which names the current desktop
+version. Tagging and the two-product version split are covered in the root
+[`CLAUDE.md`](../../CLAUDE.md) under "Versions and tags".
 
 ## Keep `test/*.dart` in sync with UI drift
 

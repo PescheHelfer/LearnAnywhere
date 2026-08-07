@@ -146,8 +146,8 @@ on-disk contract is documented in [`docs/file-formats.md`](docs/file-formats.md)
 
 ## Install
 
-Download the latest release from the
-[Releases page](https://github.com/PescheHelfer/LearnAnywhere/releases/latest).
+Download the newest **desktop** release — its tag is named `desktop-v*` — from the
+[Releases page](https://github.com/PescheHelfer/LearnAnywhere/releases).
 
 **Windows.** Unzip the downloaded folder anywhere you like, keeping its files
 together, and run `LearnAnywhere.exe` from inside it. No installer; the program
@@ -204,8 +204,9 @@ One pub workspace, four packages:
 
 ## Status
 
-The desktop application is the released target; the current version is 0.6.0. The
-Android companion is an early scaffold and is not released yet.
+The desktop application is the released target; the current version is 0.6.1. The
+Android companion is in early development on its own version track, currently 0.1.0,
+and is not published for download yet.
 
 ## Credits
 

@@ -270,6 +270,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.6.0.
   aboutVersion060,
 
+  /// About page version history entry for 0.6.1.
+  aboutVersion061,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1269,6 +1272,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutVersion060:
           '0.6.0 – Added the built-in user guide under Help, in English and '
           'German.',
+      LearnAnywhereMessage.aboutVersion061:
+          '0.6.1 – Statistics now follow their units when a deck is edited '
+          'outside the app, and the app reports any that were reset.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1752,6 +1758,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutVersion060:
           '0.6.0 – Eingebautes Benutzerhandbuch unter "Hilfe" hinzugefügt, auf '
           'Deutsch und Englisch.',
+      LearnAnywhereMessage.aboutVersion061:
+          '0.6.1 – Statistiken folgen ihren Einheiten, wenn eine Lern-Datei '
+          'außerhalb der App bearbeitet wurde; zurückgesetzte Einheiten werden '
+          'gemeldet.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
