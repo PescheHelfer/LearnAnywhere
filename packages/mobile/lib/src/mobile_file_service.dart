@@ -63,11 +63,19 @@ class MobileFileService {
   /// Creates a mobile file service.
   ///
   /// [libraryDirectory] lets tests point the service at a fake directory
-  /// instead of real device storage.
-  MobileFileService({Directory? libraryDirectory})
-    : _libraryDirectoryOverride = libraryDirectory;
+  /// instead of real device storage. [documentsDirectory] does the same for
+  /// the settings file, which lives beside — not inside — the library.
+  MobileFileService({Directory? libraryDirectory, Directory? documentsDirectory})
+    : _libraryDirectoryOverride = libraryDirectory,
+      _documentsDirectoryOverride = documentsDirectory;
 
   final Directory? _libraryDirectoryOverride;
+  final Directory? _documentsDirectoryOverride;
+
+  // Resolved once and reused: getApplicationDocumentsDirectory() is a
+  // platform-channel round trip, and settingsFilePath() is called on every
+  // keystroke while editing a guardrail value.
+  Directory? _resolvedDocumentsDirectory;
 
   /// Returns the library directory, creating it if it does not exist yet.
   Future<Directory> libraryDirectory() async {
@@ -242,6 +250,26 @@ class MobileFileService {
   /// Returns the `.sta` sidecar path for [deckPath].
   String statisticsSidecarPath(String deckPath) {
     return DeckPaths.statisticsSidecar(deckPath);
+  }
+
+  /// Returns the path of the user settings file, in the app documents
+  /// directory (a sibling of the library folder, not inside it).
+  Future<String> settingsFilePath() async {
+    final Directory documents =
+        _documentsDirectoryOverride ??
+        (_resolvedDocumentsDirectory ??= await getApplicationDocumentsDirectory());
+    return p.join(documents.path, settingsFileName);
+  }
+
+  /// Loads the guardrail settings (minimum-attempts guard, wrong-answer
+  /// ceiling), falling back to defaults when nothing has been saved yet.
+  Future<LearnAnywhereSettings> loadSettings() async {
+    return readSettingsFile(await settingsFilePath());
+  }
+
+  /// Persists [settings] to the settings file.
+  Future<void> saveSettings(LearnAnywhereSettings settings) async {
+    await writeSettingsFile(await settingsFilePath(), settings);
   }
 
   Future<List<UnitStats>> _loadStatistics(

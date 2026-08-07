@@ -12,17 +12,23 @@ import 'package:learn_anywhere_mobile/src/mobile_file_service.dart';
 void main() {
   late Directory library;
   late Directory scratch;
+  late Directory documents;
   late MobileFileService service;
 
   setUp(() {
     library = Directory.systemTemp.createTempSync('la_mobile_library_');
     scratch = Directory.systemTemp.createTempSync('la_mobile_scratch_');
-    service = MobileFileService(libraryDirectory: library);
+    documents = Directory.systemTemp.createTempSync('la_mobile_documents_');
+    service = MobileFileService(
+      libraryDirectory: library,
+      documentsDirectory: documents,
+    );
   });
 
   tearDown(() {
     library.deleteSync(recursive: true);
     scratch.deleteSync(recursive: true);
+    documents.deleteSync(recursive: true);
   });
 
   test('importFiles copies picked decks into the library', () async {
@@ -147,6 +153,29 @@ void main() {
 
     final MobileDeckDocument reopened = await service.openDeck(deckFile.path);
     expect(reopened.statistics.single.direction1.attempts, 1);
+  });
+
+  test('loadSettings and saveSettings round-trip, beside the library', () async {
+    final LearnAnywhereSettings defaults = await service.loadSettings();
+    expect(defaults.minimumAttemptsGuardEnabled, isFalse);
+
+    const LearnAnywhereSettings guardrails = LearnAnywhereSettings(
+      minimumAttemptsGuardEnabled: true,
+      minAttempts: 3,
+      wrongAnswerCeilingEnabled: true,
+      wrongAnswerCeiling: 5,
+    );
+    await service.saveSettings(guardrails);
+
+    final File settingsFile = File(await service.settingsFilePath());
+    expect(settingsFile.existsSync(), isTrue);
+    expect(settingsFile.parent.path, documents.path);
+
+    final LearnAnywhereSettings reloaded = await service.loadSettings();
+    expect(reloaded.minimumAttemptsGuardEnabled, isTrue);
+    expect(reloaded.minAttempts, 3);
+    expect(reloaded.wrongAnswerCeilingEnabled, isTrue);
+    expect(reloaded.wrongAnswerCeiling, 5);
   });
 }
 

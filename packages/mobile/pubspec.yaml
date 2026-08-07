@@ -14,6 +14,7 @@ dependencies:
     sdk: flutter
   path: ^1.9.0
   path_provider: ^2.1.6
+  shared_preferences: ^2.3.2
   learn_anywhere_core:
     path: ../core
   learn_anywhere_ui_kit:

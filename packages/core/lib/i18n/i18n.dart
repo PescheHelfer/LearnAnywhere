@@ -79,6 +79,12 @@ enum LearnAnywhereMessage {
   /// Mobile delete-deck confirmation dialog body.
   mobileDeleteDeckConfirmBody,
 
+  /// Mobile settings screen title, and the app bar action that opens it.
+  mobileSettingsTitle,
+
+  /// Mobile session "show answer" action (first tap of the two-tap flow).
+  mobileShowAnswer,
+
   /// Super-query completion message.
   superQueryCompleted,
 
@@ -1217,6 +1223,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.mobileDeleteDeckConfirmTitle: 'Delete deck?',
       LearnAnywhereMessage.mobileDeleteDeckConfirmBody:
           'This removes the deck and its statistics from this device.',
+      LearnAnywhereMessage.mobileSettingsTitle: 'Settings',
+      LearnAnywhereMessage.mobileShowAnswer: 'Show answer',
       LearnAnywhereMessage.superQueryCompleted:
           'You have now mastered all learning units in the selected range. Congratulations!',
       LearnAnywhereMessage.desktopHomeTitle: 'Workspace',
@@ -1706,6 +1714,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.mobileDeleteDeckConfirmBody:
           'Dadurch werden die Lern-Datei und ihre Statistik von diesem Gerät '
           'entfernt.',
+      LearnAnywhereMessage.mobileSettingsTitle: 'Einstellungen',
+      LearnAnywhereMessage.mobileShowAnswer: 'Antwort zeigen',
       LearnAnywhereMessage.superQueryCompleted:
           'Sie beherrschen nun alle Lerneinheiten im gewählten Bereich! Herzlichen Glückwunsch!',
       LearnAnywhereMessage.desktopHomeTitle: 'Arbeitsbereich',
