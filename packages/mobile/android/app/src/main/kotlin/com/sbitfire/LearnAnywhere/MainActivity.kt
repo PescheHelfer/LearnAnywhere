@@ -1,4 +1,4 @@
-package com.example.learn_anywhere_mobile
+package com.sbitfire.LearnAnywhere
 
 import io.flutter.embedding.android.FlutterActivity
 

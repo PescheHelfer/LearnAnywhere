@@ -13,16 +13,9 @@ void main() {
 /// Android companion app for read-only Learn Anywhere practice.
 final class LearnAnywhereMobileApp extends StatefulWidget {
   /// Creates the Android companion app.
-  const LearnAnywhereMobileApp({
-    this.initialDocument,
-    this.fileService,
-    super.key,
-  });
+  const LearnAnywhereMobileApp({this.fileService, super.key});
 
-  /// Optional initial document used by tests and deep launches.
-  final MobileDeckDocument? initialDocument;
-
-  /// File service used to open decks and persist statistics.
+  /// File service used to manage the library and persist statistics.
   final MobileFileService? fileService;
 
   @override
@@ -40,36 +33,298 @@ final class _LearnAnywhereMobileAppState extends State<LearnAnywhereMobileApp> {
       themeMode: ThemeMode.system,
       supportedLocales: LearnAnywhereLocalizations.supportedLocales,
       localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
-      home: MobileHome(
-        initialDocument: widget.initialDocument,
-        fileService: widget.fileService ?? MobileFileService(),
+      home: MobileLibraryScreen(fileService: widget.fileService ?? MobileFileService()),
+    );
+  }
+}
+
+/// Library home screen: lists decks, and imports, opens or deletes them.
+final class MobileLibraryScreen extends StatefulWidget {
+  /// Creates the library screen.
+  const MobileLibraryScreen({required this.fileService, super.key});
+
+  /// File service used to list, import, open and delete decks.
+  final MobileFileService fileService;
+
+  @override
+  State<MobileLibraryScreen> createState() => _MobileLibraryScreenState();
+}
+
+final class _MobileLibraryScreenState extends State<MobileLibraryScreen> {
+  List<LibraryDeckEntry>? _entries;
+  String? _status;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final List<LibraryDeckEntry> entries = await widget.fileService
+        .listDecks();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _entries = entries);
+  }
+
+  Future<void> _import() async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    try {
+      final int count = await widget.fileService.importDecks();
+      if (count == 0) {
+        return;
+      }
+      await _refresh();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _status = messages
+            .message(LearnAnywhereMessage.mobileImportSuccess)
+            .replaceAll('{count}', count.toString());
+      });
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _status = messages.message(LearnAnywhereMessage.mobileImportFailed);
+      });
+    }
+  }
+
+  Future<void> _open(LibraryDeckEntry entry) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    try {
+      final MobileDeckDocument document = await widget.fileService.openDeck(
+        entry.path,
+      );
+      if (!mounted) {
+        return;
+      }
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (BuildContext context) => MobileSessionScreen(
+            document: document,
+            fileService: widget.fileService,
+          ),
+        ),
+      );
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _status = messages.message(LearnAnywhereMessage.mobileDeckLoadFailed);
+      });
+    }
+  }
+
+  Future<void> _delete(LibraryDeckEntry entry) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final bool confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: Text(
+              messages.message(
+                LearnAnywhereMessage.mobileDeleteDeckConfirmTitle,
+              ),
+            ),
+            content: Text(
+              messages.message(
+                LearnAnywhereMessage.mobileDeleteDeckConfirmBody,
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(
+                  MaterialLocalizations.of(context).cancelButtonLabel,
+                ),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(
+                  messages.message(LearnAnywhereMessage.mobileDeleteDeck),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) {
+      return;
+    }
+    await widget.fileService.deleteDeck(entry.path);
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final List<LibraryDeckEntry>? entries = _entries;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(messages.message(LearnAnywhereMessage.mobileLibraryTitle)),
+        actions: <Widget>[
+          IconButton(
+            tooltip: messages.message(LearnAnywhereMessage.mobileImportDecks),
+            onPressed: _import,
+            icon: const Icon(Icons.file_upload_outlined),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: entries == null
+            ? const Center(child: CircularProgressIndicator())
+            : entries.isEmpty
+            ? _LibraryEmptyState(status: _status, onImport: _import)
+            : _LibraryList(
+                entries: entries,
+                status: _status,
+                onOpen: _open,
+                onDelete: _delete,
+              ),
       ),
     );
   }
 }
 
-/// Mobile home and read-only learning session.
-final class MobileHome extends StatefulWidget {
-  /// Creates the mobile learning home.
-  const MobileHome({
+final class _LibraryEmptyState extends StatelessWidget {
+  const _LibraryEmptyState({required this.onImport, this.status});
+
+  final VoidCallback onImport;
+  final String? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(Icons.school_outlined, size: 56),
+            const SizedBox(height: LearnAnywhereTokens.gapMedium),
+            Text(
+              messages.message(LearnAnywhereMessage.mobileLibraryEmptyTitle),
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapSmall),
+            Text(
+              messages.message(LearnAnywhereMessage.mobileLibraryEmptyBody),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: LearnAnywhereTokens.gapLarge),
+            FilledButton.icon(
+              onPressed: onImport,
+              icon: const Icon(Icons.file_upload_outlined),
+              label: Text(
+                messages.message(LearnAnywhereMessage.mobileImportDecks),
+              ),
+            ),
+            if (status != null) ...<Widget>[
+              const SizedBox(height: LearnAnywhereTokens.gapMedium),
+              Text(status!),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _LibraryList extends StatelessWidget {
+  const _LibraryList({
+    required this.entries,
+    required this.onOpen,
+    required this.onDelete,
+    this.status,
+  });
+
+  final List<LibraryDeckEntry> entries;
+  final ValueChanged<LibraryDeckEntry> onOpen;
+  final ValueChanged<LibraryDeckEntry> onDelete;
+  final String? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return Column(
+      children: <Widget>[
+        if (status != null)
+          Padding(
+            padding: const EdgeInsets.all(LearnAnywhereTokens.gapSmall),
+            child: Text(status!, style: Theme.of(context).textTheme.bodySmall),
+          ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: entries.length,
+            itemBuilder: (BuildContext context, int index) {
+              final LibraryDeckEntry entry = entries[index];
+              return ListTile(
+                leading: const Icon(Icons.school_outlined),
+                title: Text(entry.name),
+                subtitle: Text(
+                  '${messages.message(LearnAnywhereMessage.mobileUnits)}: '
+                  '${entry.unitCount}',
+                ),
+                onTap: () => onOpen(entry),
+                trailing: IconButton(
+                  tooltip: messages.message(
+                    LearnAnywhereMessage.mobileDeleteDeck,
+                  ),
+                  onPressed: () => onDelete(entry),
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Mobile read-only learning session for one already-opened deck.
+final class MobileSessionScreen extends StatefulWidget {
+  /// Creates the mobile learning session screen.
+  const MobileSessionScreen({
+    required this.document,
     required this.fileService,
-    this.initialDocument,
     super.key,
   });
 
-  /// Optional initial document used by tests and deep launches.
-  final MobileDeckDocument? initialDocument;
+  /// Deck opened from the library, plus its loaded statistics.
+  final MobileDeckDocument document;
 
-  /// File service used to open decks and persist statistics.
+  /// File service used to persist statistics.
   final MobileFileService fileService;
 
   @override
-  State<MobileHome> createState() => _MobileHomeState();
+  State<MobileSessionScreen> createState() => _MobileSessionScreenState();
 }
 
 enum _MobileSessionStage { setup, prompt, reveal, rating, completed }
 
-final class _MobileHomeState extends State<MobileHome> {
+final class _MobileSessionScreenState extends State<MobileSessionScreen> {
   final Random _random = Random();
   final Set<SessionItem> _seenItems = <SessionItem>{};
   final SessionParameters _parameters = const SessionParameters(
@@ -77,7 +332,7 @@ final class _MobileHomeState extends State<MobileHome> {
     mode: SessionMode.onceThrough,
   );
 
-  MobileDeckDocument? _document;
+  late MobileDeckDocument _document;
   _MobileSessionStage _stage = _MobileSessionStage.setup;
   SessionItem? _currentItem;
   // Think-only default is "Knew it" (like desktop): the one-tap fast path
@@ -85,12 +340,11 @@ final class _MobileHomeState extends State<MobileHome> {
   AttemptRating _selectedRating = AttemptRating.correct;
   int _sessionAttempts = 0;
   int _sessionCorrect = 0;
-  String? _status;
 
   @override
   void initState() {
     super.initState();
-    _document = widget.initialDocument;
+    _document = widget.document;
   }
 
   @override
@@ -99,50 +353,33 @@ final class _MobileHomeState extends State<MobileHome> {
       context,
     );
     return Scaffold(
-      appBar: AppBar(
-        title: Text(messages.appTitle),
-        actions: <Widget>[
-          IconButton(
-            tooltip: messages.message(LearnAnywhereMessage.mobileOpenDeck),
-            onPressed: _openDeck,
-            icon: const Icon(Icons.folder_open),
-          ),
-        ],
-      ),
-      body: SafeArea(child: _body(messages)),
+      appBar: AppBar(title: Text(messages.appTitle)),
+      body: SafeArea(child: _body()),
     );
   }
 
-  Widget _body(LearnAnywhereLocalizations messages) {
-    final MobileDeckDocument? document = _document;
-    if (document == null) {
-      return _EmptyMobileState(status: _status, onOpenDeck: _openDeck);
-    }
-    if (document.deck.units.isEmpty) {
-      return _EmptyMobileState(status: _status, onOpenDeck: _openDeck);
-    }
+  Widget _body() {
     final SessionItem? item = _currentItem;
     return Column(
       children: <Widget>[
         _MobileSessionHeader(
-          document: document,
+          document: _document,
           parameters: _parameters,
           attempts: _sessionAttempts,
           correct: _sessionCorrect,
-          status: _status,
         ),
         Expanded(
           child: switch (_stage) {
             _MobileSessionStage.setup => _MobileSetupView(
-              document: document,
+              document: _document,
               onStart: _startSession,
             ),
             _MobileSessionStage.prompt when item != null => _PromptView(
-              document: document,
+              document: _document,
               item: item,
             ),
             _MobileSessionStage.reveal when item != null => _RevealView(
-              document: document,
+              document: _document,
               item: item,
             ),
             _MobileSessionStage.rating when item != null => _RatingView(
@@ -154,7 +391,7 @@ final class _MobileHomeState extends State<MobileHome> {
             _MobileSessionStage.completed => _CompletedView(
               onExtend: _extendSession,
             ),
-            _ => _MobileSetupView(document: document, onStart: _startSession),
+            _ => _MobileSetupView(document: _document, onStart: _startSession),
           },
         ),
         if (_stage != _MobileSessionStage.setup &&
@@ -166,29 +403,6 @@ final class _MobileHomeState extends State<MobileHome> {
           ),
       ],
     );
-  }
-
-  Future<void> _openDeck() async {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    try {
-      final MobileDeckDocument? opened = await widget.fileService.openDeck(
-        typeLabel: messages.message(LearnAnywhereMessage.filePickerDeckType),
-      );
-      if (opened == null) {
-        return;
-      }
-      setState(() {
-        _document = opened;
-        _status = messages.message(LearnAnywhereMessage.mobileDeckLoaded);
-        _resetSession();
-      });
-    } on Object {
-      setState(() {
-        _status = messages.message(LearnAnywhereMessage.mobileDeckLoadFailed);
-      });
-    }
   }
 
   void _startSession() {
@@ -218,17 +432,16 @@ final class _MobileHomeState extends State<MobileHome> {
   }
 
   Future<void> _continueAfterRating() async {
-    final MobileDeckDocument? document = _document;
     final SessionItem? item = _currentItem;
-    if (document == null || item == null) {
+    if (item == null) {
       return;
     }
     final List<UnitStats> updated = _recordRating(
-      document,
+      _document,
       item,
       _selectedRating,
     );
-    final MobileDeckDocument updatedDocument = document.copyWith(
+    final MobileDeckDocument updatedDocument = _document.copyWith(
       statistics: updated,
     );
     setState(() {
@@ -263,13 +476,8 @@ final class _MobileHomeState extends State<MobileHome> {
   }
 
   void _selectNextItem() {
-    final MobileDeckDocument? document = _document;
-    if (document == null) {
-      _resetSession();
-      return;
-    }
     final SessionItem? next = pickPracticeItem(
-      deck: document.deck,
+      deck: _document.deck,
       parameters: _parameters,
       random: _random,
       seenItems: _seenItems,
@@ -284,63 +492,6 @@ final class _MobileHomeState extends State<MobileHome> {
     _selectedRating = AttemptRating.correct;
     _stage = _MobileSessionStage.prompt;
   }
-
-  void _resetSession() {
-    _seenItems.clear();
-    _stage = _MobileSessionStage.setup;
-    _currentItem = null;
-    _selectedRating = AttemptRating.correct;
-    _sessionAttempts = 0;
-    _sessionCorrect = 0;
-  }
-}
-
-final class _EmptyMobileState extends StatelessWidget {
-  const _EmptyMobileState({required this.onOpenDeck, this.status});
-
-  final VoidCallback onOpenDeck;
-  final String? status;
-
-  @override
-  Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(Icons.school_outlined, size: 56),
-            const SizedBox(height: LearnAnywhereTokens.gapMedium),
-            Text(
-              messages.message(LearnAnywhereMessage.mobileNoDeckTitle),
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: LearnAnywhereTokens.gapSmall),
-            Text(
-              messages.message(LearnAnywhereMessage.mobileNoDeckBody),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: LearnAnywhereTokens.gapLarge),
-            FilledButton.icon(
-              onPressed: onOpenDeck,
-              icon: const Icon(Icons.folder_open),
-              label: Text(
-                messages.message(LearnAnywhereMessage.mobileOpenDeck),
-              ),
-            ),
-            if (status != null) ...<Widget>[
-              const SizedBox(height: LearnAnywhereTokens.gapMedium),
-              Text(status!),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 final class _MobileSessionHeader extends StatelessWidget {
@@ -349,14 +500,12 @@ final class _MobileSessionHeader extends StatelessWidget {
     required this.parameters,
     required this.attempts,
     required this.correct,
-    this.status,
   });
 
   final MobileDeckDocument document;
   final SessionParameters parameters;
   final int attempts;
   final int correct;
-  final String? status;
 
   @override
   Widget build(BuildContext context) {
@@ -425,10 +574,6 @@ final class _MobileSessionHeader extends StatelessWidget {
               ),
             ],
           ),
-          if (status != null) ...<Widget>[
-            const SizedBox(height: LearnAnywhereTokens.gapSmall),
-            Text(status!, style: Theme.of(context).textTheme.bodySmall),
-          ],
         ],
       ),
     );

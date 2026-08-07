@@ -52,6 +52,33 @@ enum LearnAnywhereMessage {
   /// Mobile rating prompt.
   mobileRatePrompt,
 
+  /// Mobile library screen title (app home).
+  mobileLibraryTitle,
+
+  /// Mobile library empty-state title.
+  mobileLibraryEmptyTitle,
+
+  /// Mobile library empty-state body.
+  mobileLibraryEmptyBody,
+
+  /// Mobile import-decks action.
+  mobileImportDecks,
+
+  /// Mobile import success status, with a `{count}` placeholder.
+  mobileImportSuccess,
+
+  /// Mobile import failure status.
+  mobileImportFailed,
+
+  /// Mobile delete-deck action.
+  mobileDeleteDeck,
+
+  /// Mobile delete-deck confirmation dialog title.
+  mobileDeleteDeckConfirmTitle,
+
+  /// Mobile delete-deck confirmation dialog body.
+  mobileDeleteDeckConfirmBody,
+
   /// Super-query completion message.
   superQueryCompleted,
 
@@ -1179,6 +1206,17 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.mobileUnits: 'Units',
       LearnAnywhereMessage.mobileNext: 'Next',
       LearnAnywhereMessage.mobileRatePrompt: 'How did it go?',
+      LearnAnywhereMessage.mobileLibraryTitle: 'Library',
+      LearnAnywhereMessage.mobileLibraryEmptyTitle: 'No decks yet',
+      LearnAnywhereMessage.mobileLibraryEmptyBody:
+          'Import a .vok deck to start a read-only learning session.',
+      LearnAnywhereMessage.mobileImportDecks: 'Import decks',
+      LearnAnywhereMessage.mobileImportSuccess: '{count} deck(s) imported.',
+      LearnAnywhereMessage.mobileImportFailed: 'Import failed.',
+      LearnAnywhereMessage.mobileDeleteDeck: 'Delete',
+      LearnAnywhereMessage.mobileDeleteDeckConfirmTitle: 'Delete deck?',
+      LearnAnywhereMessage.mobileDeleteDeckConfirmBody:
+          'This removes the deck and its statistics from this device.',
       LearnAnywhereMessage.superQueryCompleted:
           'You have now mastered all learning units in the selected range. Congratulations!',
       LearnAnywhereMessage.desktopHomeTitle: 'Workspace',
@@ -1653,6 +1691,21 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.mobileUnits: 'Einheiten',
       LearnAnywhereMessage.mobileNext: 'Weiter',
       LearnAnywhereMessage.mobileRatePrompt: 'Wie lief es?',
+      LearnAnywhereMessage.mobileLibraryTitle: 'Bibliothek',
+      LearnAnywhereMessage.mobileLibraryEmptyTitle: 'Noch keine Lern-Dateien',
+      LearnAnywhereMessage.mobileLibraryEmptyBody:
+          'Importieren Sie eine .vok-Datei, um eine reine Lesesitzung zu '
+          'starten.',
+      LearnAnywhereMessage.mobileImportDecks: 'Lern-Dateien importieren',
+      LearnAnywhereMessage.mobileImportSuccess:
+          '{count} Lern-Datei(en) importiert.',
+      LearnAnywhereMessage.mobileImportFailed: 'Import fehlgeschlagen.',
+      LearnAnywhereMessage.mobileDeleteDeck: 'Löschen',
+      LearnAnywhereMessage.mobileDeleteDeckConfirmTitle:
+          'Lern-Datei löschen?',
+      LearnAnywhereMessage.mobileDeleteDeckConfirmBody:
+          'Dadurch werden die Lern-Datei und ihre Statistik von diesem Gerät '
+          'entfernt.',
       LearnAnywhereMessage.superQueryCompleted:
           'Sie beherrschen nun alle Lerneinheiten im gewählten Bereich! Herzlichen Glückwunsch!',
       LearnAnywhereMessage.desktopHomeTitle: 'Arbeitsbereich',

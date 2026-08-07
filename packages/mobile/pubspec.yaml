@@ -1,7 +1,7 @@
 name: learn_anywhere_mobile
 description: Android companion shell for Learn Anywhere.
 publish_to: 'none'
-version: 1.0.0+1
+version: 0.1.0+1
 
 environment:
   sdk: ^3.12.2
@@ -12,6 +12,8 @@ dependencies:
   file_selector: ^1.0.3
   flutter:
     sdk: flutter
+  path: ^1.9.0
+  path_provider: ^2.1.6
   learn_anywhere_core:
     path: ../core
   learn_anywhere_ui_kit:
@@ -21,6 +23,18 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # Pinned to 0.9.3: this workspace's melos (root pubspec) requires cli_util
+  # ^0.5.0, and every flutter_launcher_icons release newer than 0.9.x pins
+  # cli_util ^0.4.x, so anything newer fails workspace resolution outright.
+  # 0.9.3 still generates correct adaptive icons; its config key is the
+  # legacy `flutter_icons:` (not `flutter_launcher_icons:`) below.
+  flutter_launcher_icons: 0.9.3
 
 flutter:
   uses-material-design: true
+
+flutter_icons:
+  android: true
+  image_path: "../../design/icons/learn-anywhere-1024.png"
+  adaptive_icon_background: "#002451"
+  adaptive_icon_foreground: "../../design/icons/learn-anywhere-1024.png"
