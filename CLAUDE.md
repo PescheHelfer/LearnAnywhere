@@ -115,6 +115,30 @@ with bare tags an Android release silently becomes the nearest tag to a desktop 
 **Tag on `master`, after merging**, never on the feature branch: a squash or rebase
 merge rewrites the branch's commits and strands the tag on an orphan.
 
+**Android's `versionCode` must strictly increase, every single release.** It is not a
+separate field to maintain — `app/build.gradle.kts` takes `versionCode =
+flutter.versionCode`, which Flutter derives from the **build number after the `+`** in
+`packages/mobile/pubspec.yaml` (`0.1.0+1` → `1`). Android's package manager refuses to
+install an APK over an installed one with an equal or lower `versionCode`, and a
+sideloaded build has no store to catch the mistake: the phone just says the app is not
+installed and gives no reason. So bump `+N` on **every** shipped Android build, including
+a rebuild of the same semver.
+
+## Tags are not releases
+
+A git tag — pushed or not — is only a marker. It appears under the **Tags** tab of
+GitHub's releases page and nothing more. A **Release** (notes, attached binaries, and the
+only thing `/releases/latest` considers) is a separate object created deliberately in the
+UI or with `gh release create`. Nothing promotes a tag into one automatically.
+
+So tagging a development milestone is free: `android-v0.1.0` marks where the Android
+foundation landed without claiming the app is shippable.
+
+Pushing follows the same split. `git push origin master` pushes the branch **only** —
+tags never ride along with a branch push unless `push.followTags` is set.
+`--follow-tags` adds the *annotated* tags reachable from the pushed commits; blunt
+`git push --tags` shoves every local tag at the remote and is best avoided.
+
 `README.md` must not link to GitHub's `/releases/latest`. That URL resolves to whichever
 release was published most recently **across the whole repository** — GitHub ignores tag
 prefixes — so once an Android release exists it can hand a desktop user an APK. Link to
