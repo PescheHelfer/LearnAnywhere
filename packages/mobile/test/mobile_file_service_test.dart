@@ -48,6 +48,31 @@ void main() {
   });
 
   test(
+    'importFiles stores a picked deck as .vok even when the picker renamed it',
+    () async {
+      // file_selector_android copies the picked file into a cache directory
+      // and REWRITES its extension from the content resolver's MIME type
+      // (FileUtils.getPathFromCopyOfFileFromUri). `.vok` has no registered
+      // MIME type, so the provider reports application/octet-stream and the
+      // copy arrives as `<base>.bin`. Deriving the library name from that
+      // path stored a file listDecks then filtered out — a "1 deck imported"
+      // message over a library that stayed empty.
+      final File picked = File('${scratch.path}/sample.bin')
+        ..writeAsStringSync(encodeDeckJson(_deck()));
+
+      final int count = await service.importFiles(<fs.XFile>[
+        fs.XFile(picked.path),
+      ]);
+
+      expect(count, 1);
+      expect(File('${library.path}/sample.vok').existsSync(), isTrue);
+      final List<LibraryDeckEntry> entries = await service.listDecks();
+      expect(entries, hasLength(1));
+      expect(entries.single.name, 'Mobile sample');
+    },
+  );
+
+  test(
     'importFiles on a name collision replaces the deck and realigns statistics',
     () async {
       final LearningDeck original = _deck();

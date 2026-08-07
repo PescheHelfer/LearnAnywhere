@@ -159,6 +159,15 @@ class MobileFileService {
   /// Split out from [importDecks] so the copy and collision-replace logic can
   /// be exercised without driving the system file picker: tests pass in
   /// [fs.XFile]s built from fixture files instead.
+  ///
+  /// The picked file's own extension is **not** trusted — only its base name
+  /// is. `file_selector_android` copies the chosen document into a cache
+  /// directory and rewrites the copy's extension from the content resolver's
+  /// MIME type (`FileUtils.getPathFromCopyOfFileFromUri`). Since `.vok` has no
+  /// registered MIME type, the provider reports `application/octet-stream` and
+  /// the copy arrives named `<base>.bin`; storing that name would put a file
+  /// in the library that [listDecks] filters right back out, so the import
+  /// would report success over a library that stayed empty.
   Future<int> importFiles(List<fs.XFile> files) async {
     final Directory dir = await libraryDirectory();
     for (final fs.XFile file in files) {
@@ -166,7 +175,10 @@ class MobileFileService {
       final LearningDeck deck = decodeDeckJson(source);
       final String destinationPath = p.join(
         dir.path,
-        DeckPaths.fileName(file.path),
+        DeckPaths.withExtension(
+          DeckPaths.fileName(file.path),
+          deckExtension,
+        ),
       );
       await _importOne(
         destinationPath: destinationPath,
