@@ -46,9 +46,19 @@ Whenever the app version changes, update both of these together — never just o
   fixed-height lazy `ListView` that only builds its first ~3 rows, so an older
   entry stops existing in the widget tree as soon as newer ones push it down.
 
+- `app_info.version` in
+  [`packaging/linux/AppImageBuilder.yml`](../../packaging/linux/AppImageBuilder.yml).
+  Nothing derives it from `pubspec.yaml`, and no test or build on Windows reads
+  it, so it drifts silently and only shows up in the shipped AppImage's
+  metadata.
+
 Also update the root `README.md` "Status" line, which names the current desktop
 version. Tagging and the two-product version split are covered in the root
 [`CLAUDE.md`](../../CLAUDE.md) under "Versions and tags".
+
+Grep for the **outgoing** version (the one being replaced), not the incoming one,
+when hunting for stragglers — searching for the new number finds nothing by
+definition, which is how the AppImage version silently sat a release behind.
 
 ## Keep `test/*.dart` in sync with UI drift
 

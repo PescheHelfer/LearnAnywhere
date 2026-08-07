@@ -123,11 +123,21 @@ locally between builds.
 The `.AppImage` is a build artifact, not source — don't commit it. Attach it to a
 GitHub Release instead:
 
+Desktop tags are prefixed `desktop-v*`, because one tag namespace covers both the
+desktop app and the Android companion, which version independently. See "Versions and
+tags" in the root [`CLAUDE.md`](../../CLAUDE.md).
+
 ```bash
-git tag v0.5.0
-git push --tags
-gh release create v0.5.0 Learn_Anywhere-0.5.0-x86_64.AppImage
+git tag -a desktop-v0.6.1 -m "Desktop 0.6.1"
+git push origin desktop-v0.6.1
+gh release create desktop-v0.6.1 Learn_Anywhere-0.6.1-x86_64.AppImage
 ```
+
+Push the one tag, not `git push --tags` — the latter shoves every local tag at the
+remote, including any Android or scratch tags that aren't ready to be published.
+
+Only a **Release** (this `gh release create`) is a download. A bare pushed tag just
+appears under the Tags tab, so tagging a development milestone publishes nothing.
 
 ## Before a public release
 
