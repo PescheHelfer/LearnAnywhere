@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart' as fs;
@@ -45,6 +46,59 @@ void main() {
     expect(entries, hasLength(1));
     expect(entries.single.name, 'Mobile sample');
     expect(entries.single.unitCount, 1);
+  });
+
+  test('importFiles keeps umlauts through a bytes-backed pick', () async {
+    // file_selector_android returns XFile.fromData(bytes), NOT a path-backed
+    // XFile like the desktop pickers do. cross_file's bytes branch answers
+    // readAsString() with String.fromCharCodes(bytes) — one code unit per
+    // byte, i.e. Latin-1 — and ignores the encoding argument, so every
+    // multi-byte character arrived doubled. Constructing the XFile the same
+    // way here reproduces Android on the host; fs.XFile(path) does not,
+    // which is why the whole suite stayed green while phones showed "fÃ¼r".
+    const String german = 'Haben Sie einen Tisch für vier Personen?';
+    const String italian = 'Avete un tavolo per quattro persone?';
+    final LearningDeck deck = LearningDeck(
+      mask: _deck().mask,
+      units: const <LearningUnit>[
+        LearningUnit(
+          categoryId: 1,
+          fields: <int, FieldValue>{
+            0: PlainFieldValue(german),
+            1: PlainFieldValue(italian),
+          },
+        ),
+      ],
+    );
+
+    final int count = await service.importFiles(<fs.XFile>[
+      fs.XFile.fromData(
+        utf8.encode(encodeDeckJson(deck)),
+        name: 'umlauts.vok',
+        path: 'umlauts.vok',
+      ),
+    ]);
+
+    expect(count, 1);
+    final MobileDeckDocument opened = await service.openDeck(
+      '${library.path}/umlauts.vok',
+    );
+    final LearningUnit unit = opened.deck.units.single;
+    expect(unit.fields[0]!.plainText, german);
+    // The umlaut survives as one character, not as the two the Latin-1
+    // branch produced.
+    expect(unit.fields[0]!.plainText.contains('für'), isTrue);
+    expect(
+      unit.fields[0]!.plainText.codeUnitAt(german.indexOf('ü')),
+      0x00FC,
+    );
+
+    // The bytes on disk must be re-encodable UTF-8 too: the mangled text used
+    // to be written straight back out as the library's copy of the deck.
+    expect(
+      utf8.decode(File('${library.path}/umlauts.vok').readAsBytesSync()),
+      contains(german),
+    );
   });
 
   test(

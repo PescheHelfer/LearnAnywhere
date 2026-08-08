@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart' as fs;
@@ -171,7 +172,16 @@ class MobileFileService {
   Future<int> importFiles(List<fs.XFile> files) async {
     final Directory dir = await libraryDirectory();
     for (final fs.XFile file in files) {
-      final String source = await file.readAsString();
+      // Decoded here rather than via XFile.readAsString(), which cannot be
+      // trusted on Android: file_selector_android hands back an
+      // XFile.fromData, and cross_file's bytes branch returns
+      // String.fromCharCodes(bytes) — one code unit per byte, i.e. Latin-1 —
+      // ignoring the encoding argument entirely. Every multi-byte character
+      // in a UTF-8 deck came through doubled ("für" as "fÃ¼r"), and the
+      // mangled text was then written into the library as the deck itself.
+      // The desktop pickers return a path-backed XFile, which takes
+      // cross_file's other (correct) branch, so this never showed there.
+      final String source = utf8.decode(await file.readAsBytes());
       final LearningDeck deck = decodeDeckJson(source);
       final String destinationPath = p.join(
         dir.path,
