@@ -34,6 +34,17 @@ class MenuAcceleratorDisplayLabel extends StatefulWidget {
   /// Builds the visual representation; defaults to [menuAcceleratorBuilder].
   final MenuAcceleratorChildBuilder builder;
 
+  /// Returns [label] with its `&` accelerator markers removed.
+  ///
+  /// For places that show a menu label as plain, non-interactive text — a
+  /// section heading on a touch screen, say — where the widget's ALT-underline
+  /// behaviour is meaningless but the raw `&` would be visible. Catalog entries
+  /// carry the marker because the desktop menu bar needs it, so anything
+  /// rendering one through a bare [Text] must strip it.
+  static String displayTextOf(String label) {
+    return MenuAcceleratorLabel.stripAcceleratorMarkers(label);
+  }
+
   /// Returns the lower-case access character for [label], or `null` when the
   /// label carries no `&` accelerator marker.
   ///

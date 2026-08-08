@@ -3,9 +3,9 @@ import 'package:learn_anywhere_core/core.dart';
 
 import 'mobile_app_theme.dart';
 
-/// Live app-level state — theme, locale, and guardrail settings — reachable
-/// from any route the app's `Navigator` has pushed, including the `home`
-/// route.
+/// Live app-level state — theme, locale, and the persisted
+/// [LearnAnywhereSettings] — reachable from any route the app's `Navigator`
+/// has pushed, including the `home` route.
 ///
 /// `MaterialApp`/`Navigator` build a route's content once and cache it
 /// (`ModalRoute`'s `_page ??= ...`); passing mutable values as plain
@@ -20,10 +20,10 @@ final class MobileAppScope extends InheritedWidget {
   const MobileAppScope({
     required this.theme,
     required this.locale,
-    required this.guardSettings,
+    required this.settings,
     required this.onThemeChanged,
     required this.onLocaleChanged,
-    required this.onGuardSettingsChanged,
+    required this.onSettingsChanged,
     required super.child,
     super.key,
   });
@@ -34,8 +34,10 @@ final class MobileAppScope extends InheritedWidget {
   /// Currently active locale.
   final Locale locale;
 
-  /// Currently active guardrail settings.
-  final LearnAnywhereSettings guardSettings;
+  /// Currently active persisted settings: the guardrails from the Settings
+  /// screen and the practice-setup choices (mode, direction, shuffle, mastery
+  /// threshold) the setup screen remembers between sessions.
+  final LearnAnywhereSettings settings;
 
   /// Called to change the active theme.
   final ValueChanged<MobileAppTheme> onThemeChanged;
@@ -43,8 +45,8 @@ final class MobileAppScope extends InheritedWidget {
   /// Called to change the active locale.
   final ValueChanged<Locale> onLocaleChanged;
 
-  /// Called to change the active guardrail settings.
-  final ValueChanged<LearnAnywhereSettings> onGuardSettingsChanged;
+  /// Called to change the active settings.
+  final ValueChanged<LearnAnywhereSettings> onSettingsChanged;
 
   /// Returns the nearest [MobileAppScope], registering [context] to rebuild
   /// whenever it changes.
@@ -59,6 +61,6 @@ final class MobileAppScope extends InheritedWidget {
   bool updateShouldNotify(MobileAppScope oldWidget) {
     return theme != oldWidget.theme ||
         locale != oldWidget.locale ||
-        guardSettings != oldWidget.guardSettings;
+        settings != oldWidget.settings;
   }
 }

@@ -37,7 +37,7 @@ final class _LearnAnywhereMobileAppState extends State<LearnAnywhereMobileApp> {
   late final MobileFileService _fileService;
   late MobileAppTheme _theme;
   late Locale _locale;
-  LearnAnywhereSettings _guardSettings = const LearnAnywhereSettings();
+  LearnAnywhereSettings _settings = const LearnAnywhereSettings();
 
   @override
   void initState() {
@@ -45,15 +45,15 @@ final class _LearnAnywhereMobileAppState extends State<LearnAnywhereMobileApp> {
     _fileService = widget.fileService ?? MobileFileService();
     _theme = mobileAppThemeFromName(widget.prefs.theme);
     _locale = _localeFromPrefs(widget.prefs);
-    unawaited(_loadGuardSettings());
+    unawaited(_loadSettings());
   }
 
-  Future<void> _loadGuardSettings() async {
+  Future<void> _loadSettings() async {
     final LearnAnywhereSettings loaded = await _fileService.loadSettings();
     if (!mounted) {
       return;
     }
-    setState(() => _guardSettings = loaded);
+    setState(() => _settings = loaded);
   }
 
   void _onThemeChanged(MobileAppTheme value) {
@@ -64,8 +64,8 @@ final class _LearnAnywhereMobileAppState extends State<LearnAnywhereMobileApp> {
     setState(() => _locale = value);
   }
 
-  void _onGuardSettingsChanged(LearnAnywhereSettings value) {
-    setState(() => _guardSettings = value);
+  void _onSettingsChanged(LearnAnywhereSettings value) {
+    setState(() => _settings = value);
   }
 
   @override
@@ -73,15 +73,15 @@ final class _LearnAnywhereMobileAppState extends State<LearnAnywhereMobileApp> {
     // MobileAppScope wraps MaterialApp (not the other way around) so that
     // every route the Navigator pushes — including the cached `home` route —
     // sits below it in the element tree and can read live theme/locale/
-    // guardSettings via MobileAppScope.of(context), instead of the frozen
+    // settings via MobileAppScope.of(context), instead of the frozen
     // constructor snapshot a routed screen would otherwise be stuck with.
     return MobileAppScope(
       theme: _theme,
       locale: _locale,
-      guardSettings: _guardSettings,
+      settings: _settings,
       onThemeChanged: _onThemeChanged,
       onLocaleChanged: _onLocaleChanged,
-      onGuardSettingsChanged: _onGuardSettingsChanged,
+      onSettingsChanged: _onSettingsChanged,
       child: MaterialApp(
         onGenerateTitle: (BuildContext context) =>
             LearnAnywhereLocalizations.of(context).appTitle,
@@ -186,17 +186,11 @@ final class _MobileLibraryScreenState extends State<MobileLibraryScreen> {
       if (!mounted) {
         return;
       }
-      // Read live, not from a frozen constructor snapshot: guardrails may
-      // have changed in Settings since this screen was first built.
-      final LearnAnywhereSettings guardSettings = MobileAppScope.of(
-        context,
-      ).guardSettings;
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
           builder: (BuildContext context) => MobileSetupScreen(
             document: document,
             fileService: widget.fileService,
-            guardSettings: guardSettings,
           ),
         ),
       );

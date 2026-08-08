@@ -4,6 +4,30 @@ import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
 void main() {
+  group('menu accelerator markers', () {
+    test('displayTextOf strips the & a bare Text would otherwise show', () {
+      // Every catalog entry that names a desktop menu carries the marker; a
+      // touch screen has no ALT key, so anything rendering one as plain text
+      // has to strip it or the "&" reaches the user.
+      expect(MenuAcceleratorDisplayLabel.displayTextOf('&Theme'), 'Theme');
+      expect(
+        MenuAcceleratorDisplayLabel.displayTextOf('&Darstellung'),
+        'Darstellung',
+      );
+      expect(
+        MenuAcceleratorDisplayLabel.displayTextOf('&Language'),
+        'Language',
+      );
+      expect(MenuAcceleratorDisplayLabel.displayTextOf('&Sprache'), 'Sprache');
+    });
+
+    test('displayTextOf leaves an unmarked label and an escaped && alone', () {
+      expect(MenuAcceleratorDisplayLabel.displayTextOf('Settings'), 'Settings');
+      expect(MenuAcceleratorDisplayLabel.displayTextOf('Fish && Chips'),
+          'Fish & Chips');
+    });
+  });
+
   group('themes', () {
     test('shared themes expose light and dark color schemes', () {
       expect(LearnAnywhereTheme.light().brightness, Brightness.light);

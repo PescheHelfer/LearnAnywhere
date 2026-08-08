@@ -47,9 +47,9 @@ final class _MobileSettingsScreenState extends State<MobileSettingsScreen> {
     MobileAppScope.of(context).onLocaleChanged(value);
   }
 
-  void _applyGuardSettings(LearnAnywhereSettings next) {
+  void _applySettings(LearnAnywhereSettings next) {
     unawaited(widget.fileService.saveSettings(next));
-    MobileAppScope.of(context).onGuardSettingsChanged(next);
+    MobileAppScope.of(context).onSettingsChanged(next);
   }
 
   @override
@@ -58,7 +58,7 @@ final class _MobileSettingsScreenState extends State<MobileSettingsScreen> {
       context,
     );
     final MobileAppScope scope = MobileAppScope.of(context);
-    final LearnAnywhereSettings guardSettings = scope.guardSettings;
+    final LearnAnywhereSettings settings = scope.settings;
     return Scaffold(
       appBar: AppBar(
         title: Text(messages.message(LearnAnywhereMessage.mobileSettingsTitle)),
@@ -68,7 +68,12 @@ final class _MobileSettingsScreenState extends State<MobileSettingsScreen> {
           padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
           children: <Widget>[
             Text(
-              messages.message(LearnAnywhereMessage.themeLabel),
+              // Section headings, not menu items: the catalog carries the `&`
+              // for desktop's menu bar, and a phone has no ALT key to reveal
+              // it, so the marker is stripped rather than rendered.
+              MenuAcceleratorDisplayLabel.displayTextOf(
+                messages.message(LearnAnywhereMessage.themeLabel),
+              ),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             RadioGroup<MobileAppTheme>(
@@ -93,7 +98,9 @@ final class _MobileSettingsScreenState extends State<MobileSettingsScreen> {
             ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
             Text(
-              messages.message(LearnAnywhereMessage.languageLabel),
+              MenuAcceleratorDisplayLabel.displayTextOf(
+                messages.message(LearnAnywhereMessage.languageLabel),
+              ),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             RadioGroup<Locale>(
@@ -127,10 +134,10 @@ final class _MobileSettingsScreenState extends State<MobileSettingsScreen> {
               label: messages.message(
                 LearnAnywhereMessage.queryOptionMinimumAttemptsGuard,
               ),
-              value: guardSettings.minimumAttemptsGuardEnabled,
+              value: settings.minimumAttemptsGuardEnabled,
               onChanged: (bool value) {
-                _applyGuardSettings(
-                  guardSettings.copyWith(minimumAttemptsGuardEnabled: value),
+                _applySettings(
+                  settings.copyWith(minimumAttemptsGuardEnabled: value),
                 );
               },
             ),
@@ -138,21 +145,21 @@ final class _MobileSettingsScreenState extends State<MobileSettingsScreen> {
               label: messages.message(
                 LearnAnywhereMessage.queryOptionMinimumAttempts,
               ),
-              value: guardSettings.minAttempts,
+              value: settings.minAttempts,
               minimum: 1,
-              enabled: guardSettings.minimumAttemptsGuardEnabled,
+              enabled: settings.minimumAttemptsGuardEnabled,
               onChanged: (int value) {
-                _applyGuardSettings(guardSettings.copyWith(minAttempts: value));
+                _applySettings(settings.copyWith(minAttempts: value));
               },
             ),
             MobileToggleRow(
               label: messages.message(
                 LearnAnywhereMessage.queryOptionWrongAnswerCeiling,
               ),
-              value: guardSettings.wrongAnswerCeilingEnabled,
+              value: settings.wrongAnswerCeilingEnabled,
               onChanged: (bool value) {
-                _applyGuardSettings(
-                  guardSettings.copyWith(wrongAnswerCeilingEnabled: value),
+                _applySettings(
+                  settings.copyWith(wrongAnswerCeilingEnabled: value),
                 );
               },
             ),
@@ -160,12 +167,12 @@ final class _MobileSettingsScreenState extends State<MobileSettingsScreen> {
               label: messages.message(
                 LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue,
               ),
-              value: guardSettings.wrongAnswerCeiling,
+              value: settings.wrongAnswerCeiling,
               minimum: 1,
-              enabled: guardSettings.wrongAnswerCeilingEnabled,
+              enabled: settings.wrongAnswerCeilingEnabled,
               onChanged: (int value) {
-                _applyGuardSettings(
-                  guardSettings.copyWith(wrongAnswerCeiling: value),
+                _applySettings(
+                  settings.copyWith(wrongAnswerCeiling: value),
                 );
               },
             ),

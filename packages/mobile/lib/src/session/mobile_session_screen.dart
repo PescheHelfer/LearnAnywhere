@@ -363,21 +363,54 @@ final class _PromptView extends StatelessWidget {
       context,
     );
     final LearningUnit unit = document.deck.units[item.unitIndex - 1];
+    final Map<FieldDefinition, FieldValue> fields = promptFields(
+      document.deck,
+      unit,
+      item.direction,
+    );
     return _UnitScaffold(
       document: document,
       item: item,
       child: Column(
         children: <Widget>[
           Expanded(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
-                child: _FieldGroup(
-                  title: messages.message(LearnAnywhereMessage.learnPrompt),
-                  fields: promptFields(document.deck, unit, item.direction),
-                  large: true,
-                ),
-              ),
+            // Shrink-then-scroll: the value style is sized down toward
+            // kMinCardFontSize until the group fits the card, and the group is
+            // scrollable so a unit that stays too big at the floor (a long
+            // prompt, or a category with many fields) still reaches the reader
+            // instead of overflowing off the bottom.
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                const EdgeInsets padding = EdgeInsets.all(
+                  LearnAnywhereTokens.gapLarge,
+                );
+                final TextStyle style = _fittedCardStyle(
+                  context: context,
+                  fields: fields,
+                  available: Size(
+                    constraints.maxWidth - padding.horizontal,
+                    constraints.maxHeight - padding.vertical,
+                  ),
+                );
+                return SingleChildScrollView(
+                  padding: padding,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - padding.vertical,
+                    ),
+                    // Centred while it fits, top-aligned once it scrolls.
+                    child: Center(
+                      child: _FieldGroup(
+                        title: messages.message(
+                          LearnAnywhereMessage.learnPrompt,
+                        ),
+                        fields: fields,
+                        valueStyle: style,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           Padding(
@@ -428,12 +461,21 @@ final class _RevealView extends StatelessWidget {
                 _FieldGroup(
                   title: messages.message(LearnAnywhereMessage.learnSolution),
                   fields: answerFields(document.deck, unit, item.direction),
+                  // Same size as the prompt: the two are one card the eye
+                  // compares, so the solution is set apart by the tinted
+                  // panel and its label, not by being smaller.
+                  valueStyle: _cardValueStyle(context),
                   highlight: true,
                 ),
                 const SizedBox(height: LearnAnywhereTokens.gapLarge),
                 _FieldGroup(
                   title: messages.message(LearnAnywhereMessage.learnRemarks),
                   fields: remarkFields(document.deck, unit, item.direction),
+                  // Remarks are supporting notes, not the thing being
+                  // recalled, so they stay at body size.
+                  valueStyle: LearnAnywhereTokens.monospace(
+                    Theme.of(context).textTheme.bodyLarge,
+                  ),
                 ),
               ],
             ),
@@ -552,17 +594,101 @@ final class _UnitScaffold extends StatelessWidget {
   }
 }
 
+/// Largest size a prompt or solution value is set at.
+///
+/// Chosen over the theme's `displaySmall` (36): at 36 the bundled fixed-width
+/// face fits barely fourteen characters across a phone, so ordinary vocabulary
+/// wrapped into a wall of text and anything longer ran off the card.
+const double _kCardFontSize = 24;
+
+/// Floor the prompt is allowed to shrink to before it scrolls instead.
+const double _kCardMinFontSize = 14;
+
+/// The full-size style for a prompt or solution value.
+TextStyle _cardValueStyle(BuildContext context) {
+  return LearnAnywhereTokens.monospace(
+    Theme.of(context).textTheme.headlineSmall,
+  ).copyWith(fontSize: _kCardFontSize);
+}
+
+/// The largest style at or below [_kCardFontSize] that lays [fields] out
+/// within [available], down to [_kCardMinFontSize].
+///
+/// Only the field values are measured. The group's chrome — title, per-field
+/// labels, padding and gaps — keeps a fixed size and is accounted for as a
+/// constant, so this is an estimate; being an estimate is harmless because the
+/// caller scrolls whatever still does not fit.
+TextStyle _fittedCardStyle({
+  required BuildContext context,
+  required Map<FieldDefinition, FieldValue> fields,
+  required Size available,
+}) {
+  final TextStyle base = _cardValueStyle(context);
+  if (fields.isEmpty || available.width <= 0 || available.height <= 0) {
+    return base;
+  }
+  final TextScaler scaler = MediaQuery.textScalerOf(context);
+  // Group padding (top and bottom), title line, and the gap under it.
+  const double groupChrome = LearnAnywhereTokens.gapMedium * 2 + 24 +
+      LearnAnywhereTokens.gapMedium;
+  // Per field: the label line, the gap under it, and the trailing gap.
+  const double fieldChrome =
+      20 + LearnAnywhereTokens.gapSmall + LearnAnywhereTokens.gapMedium;
+  final double budget =
+      available.height - groupChrome - fieldChrome * fields.length;
+  if (budget <= 0) {
+    return base.copyWith(fontSize: _kCardMinFontSize);
+  }
+  final double contentWidth = available.width - LearnAnywhereTokens.gapMedium * 2;
+  for (double size = _kCardFontSize; size > _kCardMinFontSize; size -= 1) {
+    final TextStyle candidate = base.copyWith(fontSize: size);
+    double total = 0;
+    for (final FieldValue value in fields.values) {
+      total += _measuredHeight(
+        text: value.plainText,
+        style: candidate,
+        maxWidth: contentWidth,
+        scaler: scaler,
+      );
+    }
+    if (total <= budget) {
+      return candidate;
+    }
+  }
+  return base.copyWith(fontSize: _kCardMinFontSize);
+}
+
+double _measuredHeight({
+  required String text,
+  required TextStyle style,
+  required double maxWidth,
+  required TextScaler scaler,
+}) {
+  final TextPainter painter = TextPainter(
+    text: TextSpan(text: text.isEmpty ? ' ' : text, style: style),
+    textDirection: TextDirection.ltr,
+    textScaler: scaler,
+  )..layout(maxWidth: maxWidth < 0 ? 0 : maxWidth);
+  final double height = painter.height;
+  painter.dispose();
+  return height;
+}
+
 final class _FieldGroup extends StatelessWidget {
   const _FieldGroup({
     required this.title,
     required this.fields,
-    this.large = false,
+    required this.valueStyle,
     this.highlight = false,
   });
 
   final String title;
   final Map<FieldDefinition, FieldValue> fields;
-  final bool large;
+
+  /// Style for the field values. Sized by the caller so the prompt can shrink
+  /// to fit while the solution stays at its full size.
+  final TextStyle valueStyle;
+
   final bool highlight;
 
   @override
@@ -598,11 +724,7 @@ final class _FieldGroup extends StatelessWidget {
                       const SizedBox(height: LearnAnywhereTokens.gapSmall),
                       LearnAnywhereRichText(
                         value: entry.value,
-                        style: LearnAnywhereTokens.monospace(
-                          large
-                              ? textTheme.displaySmall
-                              : textTheme.bodyLarge,
-                        ),
+                        style: valueStyle,
                       ),
                     ],
                   ),

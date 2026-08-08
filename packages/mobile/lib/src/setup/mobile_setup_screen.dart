@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
+import '../mobile_app_scope.dart';
 import '../mobile_file_service.dart';
 import '../session/mobile_session_screen.dart';
 import '../statistics/mobile_statistics_screen.dart';
@@ -10,24 +13,31 @@ import '../widgets/mobile_form_rows.dart';
 /// Practice-setup screen for one deck: direction, mode, shuffle, unit range,
 /// and (Drill only) mastery threshold. Reached by opening a deck from the
 /// library; starting pushes the session.
+///
+/// Mode, direction, shuffle and the mastery threshold are read from and
+/// written straight back to the persisted [LearnAnywhereSettings] through
+/// [MobileAppScope], so each choice survives leaving the screen and restarting
+/// the app — the same options desktop remembers, in the same file. They are
+/// deliberately NOT mirrored into local state: a second copy could drift from
+/// the stored one, and the scope already rebuilds this screen on every change.
+///
+/// The unit range is the exception and stays local, matching the rule
+/// [LearnAnywhereSettings] documents for itself — start and end are per-deck
+/// and reset when a deck is opened, because a range that fits one deck is
+/// meaningless for the next.
 final class MobileSetupScreen extends StatefulWidget {
   /// Creates the mobile setup screen.
   const MobileSetupScreen({
     required this.document,
     required this.fileService,
-    required this.guardSettings,
     super.key,
   });
 
   /// Deck opened from the library, plus its loaded statistics.
   final MobileDeckDocument document;
 
-  /// File service used to persist statistics and reload the deck.
+  /// File service used to persist statistics, settings, and reload the deck.
   final MobileFileService fileService;
-
-  /// Guardrail settings (minimum-attempts guard, wrong-answer ceiling) from
-  /// the Settings screen.
-  final LearnAnywhereSettings guardSettings;
 
   @override
   State<MobileSetupScreen> createState() => _MobileSetupScreenState();
@@ -42,16 +52,29 @@ const List<SessionMode> _kMobileModes = <SessionMode>[
 
 final class _MobileSetupScreenState extends State<MobileSetupScreen> {
   late MobileDeckDocument _document;
-  DirectionSelection _direction = DirectionSelection.both;
-  SessionMode _mode = SessionMode.practice;
-  bool _shuffle = false;
   late int _startUnit;
   late int _endUnit;
-  // Matches SessionParameters.masteryThreshold's own default (0.4).
-  int _thresholdPercent = 40;
 
   int get _maxUnit =>
       _document.deck.units.length < 1 ? 1 : _document.deck.units.length;
+
+  /// The persisted settings, read live so a change made here (or in Settings)
+  /// is visible immediately.
+  LearnAnywhereSettings get _settings => MobileAppScope.of(context).settings;
+
+  /// Mastery threshold as the whole percent the Drill row edits.
+  int get _thresholdPercent => (_settings.masteryThreshold * 100).round();
+
+  /// Writes [next] to the settings file and publishes it to the app scope.
+  ///
+  /// Saved on every change rather than on "Start session", so a choice made
+  /// and then backed out of is still remembered — and so the file survives the
+  /// process being killed, which on Android can happen the moment the app
+  /// leaves the foreground.
+  void _apply(LearnAnywhereSettings next) {
+    unawaited(widget.fileService.saveSettings(next));
+    MobileAppScope.of(context).onSettingsChanged(next);
+  }
 
   @override
   void initState() {
@@ -94,17 +117,17 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
   Future<void> _startSession() async {
     final int start = _startUnit.clamp(1, _maxUnit).toInt();
     final int end = _endUnit.clamp(start, _maxUnit).toInt();
+    final LearnAnywhereSettings settings = _settings;
     final SessionParameters parameters = SessionParameters(
-      directionSelection: _direction,
+      directionSelection: settings.direction,
       startIndex: start,
       endIndex: end,
       withInput: false,
-      mode: _mode,
-      shuffle: _shuffle,
-      masteryThreshold: _thresholdPercent / 100,
-      minimumAttemptsGuardEnabled:
-          widget.guardSettings.minimumAttemptsGuardEnabled,
-      minAttempts: widget.guardSettings.minAttempts,
+      mode: settings.mode,
+      shuffle: settings.shuffle,
+      masteryThreshold: settings.masteryThreshold,
+      minimumAttemptsGuardEnabled: settings.minimumAttemptsGuardEnabled,
+      minAttempts: settings.minAttempts,
     );
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
@@ -112,8 +135,8 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
           document: _document,
           parameters: parameters,
           wrongAnswerCeiling: WrongAnswerCeiling(
-            enabled: widget.guardSettings.wrongAnswerCeilingEnabled,
-            value: widget.guardSettings.wrongAnswerCeiling,
+            enabled: settings.wrongAnswerCeilingEnabled,
+            value: settings.wrongAnswerCeiling,
           ),
           fileService: widget.fileService,
         ),
@@ -127,7 +150,8 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final bool isDrill = _mode == SessionMode.superQuery;
+    final LearnAnywhereSettings settings = _settings;
+    final bool isDrill = settings.mode == SessionMode.superQuery;
     return Scaffold(
       appBar: AppBar(
         title: Text(_document.deck.mask.name),
@@ -150,7 +174,7 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
             MobileDropdownRow<DirectionSelection>(
               label: messages.message(LearnAnywhereMessage.learnDirection),
-              value: _direction,
+              value: settings.direction,
               items: <DropdownMenuItem<DirectionSelection>>[
                 DropdownMenuItem<DirectionSelection>(
                   value: DirectionSelection.direction1,
@@ -168,12 +192,12 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
                 ),
               ],
               onChanged: (DirectionSelection value) {
-                setState(() => _direction = value);
+                _apply(settings.copyWith(direction: value));
               },
             ),
             MobileDropdownRow<SessionMode>(
               label: messages.message(LearnAnywhereMessage.learnMode),
-              value: _mode,
+              value: settings.mode,
               items: <DropdownMenuItem<SessionMode>>[
                 for (final SessionMode mode in _kMobileModes)
                   DropdownMenuItem<SessionMode>(
@@ -182,7 +206,7 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
                   ),
               ],
               onChanged: (SessionMode value) {
-                setState(() => _mode = value);
+                _apply(settings.copyWith(mode: value));
               },
             ),
             if (isDrill)
@@ -194,14 +218,14 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
                 minimum: 1,
                 maximum: 100,
                 onChanged: (int value) {
-                  setState(() => _thresholdPercent = value);
+                  _apply(settings.copyWith(masteryThreshold: value / 100));
                 },
               ),
             MobileToggleRow(
               label: messages.message(LearnAnywhereMessage.learnShuffleUnits),
-              value: _shuffle,
+              value: settings.shuffle,
               onChanged: (bool value) {
-                setState(() => _shuffle = value);
+                _apply(settings.copyWith(shuffle: value));
               },
             ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),

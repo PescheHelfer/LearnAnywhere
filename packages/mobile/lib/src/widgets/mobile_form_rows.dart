@@ -113,26 +113,79 @@ final class MobileNumberRow extends StatefulWidget {
 
 final class _MobileNumberRowState extends State<MobileNumberRow> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.value.toString());
+    _focusNode = FocusNode()..addListener(_onFocusChanged);
   }
 
   @override
   void didUpdateWidget(MobileNumberRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final String text = widget.value.toString();
-    if (_controller.text != text) {
-      _controller.text = text;
+    // Never rewrite the field the user is typing in. Doing so is what made the
+    // leading digit undeletable: clearing "45" down to "" reported the minimum
+    // back up, which came straight back as text and refilled the field.
+    if (_focusNode.hasFocus) {
+      return;
     }
+    _setText(widget.value.toString());
   }
 
   @override
   void dispose() {
+    _focusNode
+      ..removeListener(_onFocusChanged)
+      ..dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Replaces the field's text, keeping the caret at the end.
+  ///
+  /// `TextEditingController.text =` collapses the selection to offset -1, which
+  /// renders as a caret pinned before the first character — the reason editing
+  /// previously required typing ahead of the old digit and deleting backwards.
+  void _setText(String text) {
+    if (_controller.text == text) {
+      return;
+    }
+    _controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
+  /// Normalizes the field once editing ends, so an empty or out-of-range entry
+  /// settles on a legal value instead of fighting the user mid-keystroke.
+  void _onFocusChanged() {
+    if (_focusNode.hasFocus) {
+      return;
+    }
+    final int settled = _clamp(int.tryParse(_controller.text));
+    _setText(settled.toString());
+    if (settled != widget.value) {
+      widget.onChanged(settled);
+    }
+  }
+
+  int _clamp(int? value) {
+    if (value == null) {
+      // Left empty: keep whatever the parent already holds rather than
+      // snapping to the minimum, which silently discarded a range the user had
+      // only meant to retype.
+      return widget.value;
+    }
+    if (value < widget.minimum) {
+      return widget.minimum;
+    }
+    final int? maximum = widget.maximum;
+    if (maximum != null && value > maximum) {
+      return maximum;
+    }
+    return value;
   }
 
   @override
@@ -143,22 +196,24 @@ final class _MobileNumberRowState extends State<MobileNumberRow> {
       ),
       child: TextField(
         controller: _controller,
+        focusNode: _focusNode,
         enabled: widget.enabled,
         keyboardType: TextInputType.number,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (String _) => _focusNode.unfocus(),
         inputFormatters: <TextInputFormatter>[
           FilteringTextInputFormatter.digitsOnly,
         ],
         decoration: InputDecoration(labelText: widget.label),
         onChanged: (String value) {
-          var parsed = int.tryParse(value) ?? widget.minimum;
-          if (parsed < widget.minimum) {
-            parsed = widget.minimum;
+          // While typing, report only what parses, clamped, and leave the text
+          // alone. An empty field reports nothing at all, so it can stay empty
+          // long enough to type a replacement.
+          final int? parsed = int.tryParse(value);
+          if (parsed == null) {
+            return;
           }
-          final int? maximum = widget.maximum;
-          if (maximum != null && parsed > maximum) {
-            parsed = maximum;
-          }
-          widget.onChanged(parsed);
+          widget.onChanged(_clamp(parsed));
         },
       ),
     );
