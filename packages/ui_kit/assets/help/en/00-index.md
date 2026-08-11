@@ -38,6 +38,7 @@ learning units, and the drill still runs until everything is mastered.
 | [Settings](11-settings.md) | Learning options, appearance, language, and where settings are stored |
 | [Keyboard shortcuts](12-keyboard-shortcuts.md) | Every key the program listens to |
 | [Troubleshooting](13-troubleshooting.md) | What the warnings mean and how to get out of trouble |
+| [The Android companion](14-android-companion.md) | The read-only phone app: importing decks, practising, and what it leaves out |
 
 ## How this guide is written
 

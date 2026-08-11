@@ -40,6 +40,7 @@ lange, bis alles beherrscht ist.
 | [Einstellungen](11-settings.md) | Lernoptionen, Darstellung, Sprache und wo Einstellungen gespeichert werden |
 | [Tastaturbefehle](12-keyboard-shortcuts.md) | Alle Tasten, auf die das Programm reagiert |
 | [Problembehebung](13-troubleshooting.md) | Was die Warnungen bedeuten und wie Sie wieder herauskommen |
+| [Die Android-Begleit-App](14-android-companion.md) | Die App fürs Telefon: Lern-Dateien importieren, üben, und was sie weglässt |
 
 ## Zur Schreibweise in diesem Handbuch
 

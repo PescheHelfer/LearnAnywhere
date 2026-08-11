@@ -5,6 +5,8 @@ import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/about/mobile_about_screen.dart';
+import 'src/help/mobile_help_screen.dart';
 import 'src/mobile_app_scope.dart';
 import 'src/mobile_app_theme.dart';
 import 'src/mobile_file_service.dart';
@@ -108,6 +110,13 @@ Locale _localeFromPrefs(MobilePrefs prefs) {
   }
   return const Locale('en');
 }
+
+/// The library's overflow-menu entries.
+///
+/// Import stays a top-level icon because it is the one action a new user must
+/// find; these three are reference material and configuration, which the spec
+/// puts behind the overflow menu.
+enum _LibraryMenuAction { userGuide, settings, about }
 
 /// Library home screen: lists decks, and imports, opens or deletes them.
 final class MobileLibraryScreen extends StatefulWidget {
@@ -216,6 +225,33 @@ final class _MobileLibraryScreenState extends State<MobileLibraryScreen> {
     );
   }
 
+  Future<void> _openHelp() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => const MobileHelpScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openAbout() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => const MobileAboutScreen(),
+      ),
+    );
+  }
+
+  void _onMenuSelected(_LibraryMenuAction action) {
+    switch (action) {
+      case _LibraryMenuAction.userGuide:
+        unawaited(_openHelp());
+      case _LibraryMenuAction.settings:
+        unawaited(_openSettings());
+      case _LibraryMenuAction.about:
+        unawaited(_openAbout());
+    }
+  }
+
   Future<void> _delete(LibraryDeckEntry entry) async {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
@@ -273,10 +309,31 @@ final class _MobileLibraryScreenState extends State<MobileLibraryScreen> {
             onPressed: _import,
             icon: const Icon(Icons.file_upload_outlined),
           ),
-          IconButton(
-            tooltip: messages.message(LearnAnywhereMessage.mobileSettingsTitle),
-            onPressed: _openSettings,
-            icon: const Icon(Icons.settings_outlined),
+          PopupMenuButton<_LibraryMenuAction>(
+            onSelected: _onMenuSelected,
+            itemBuilder: (BuildContext context) =>
+                <PopupMenuEntry<_LibraryMenuAction>>[
+                  PopupMenuItem<_LibraryMenuAction>(
+                    value: _LibraryMenuAction.userGuide,
+                    child: Text(
+                      messages.message(LearnAnywhereMessage.routeHelpTitle),
+                    ),
+                  ),
+                  PopupMenuItem<_LibraryMenuAction>(
+                    value: _LibraryMenuAction.settings,
+                    child: Text(
+                      messages.message(
+                        LearnAnywhereMessage.mobileSettingsTitle,
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem<_LibraryMenuAction>(
+                    value: _LibraryMenuAction.about,
+                    child: Text(
+                      messages.message(LearnAnywhereMessage.routeAboutTitle),
+                    ),
+                  ),
+                ],
           ),
         ],
       ),

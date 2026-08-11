@@ -6,7 +6,7 @@ anatomy terms.
 
 Learn Anywhere is a modern rebuild of the DOS-era German program *Lern PC plus*
 (© 1990/92 Ulrich Veigel Softwareservice), written in Flutter for **Windows** and
-**Linux**, with an Android companion planned.
+**Linux**, with a read-only Android companion app.
 
 Nothing about any subject is built in. You describe what one card looks like — its
 fields, their roles, and which way round they can be asked — and the program handles
@@ -59,6 +59,9 @@ which wrote the code.
 - **A lexicon.** Search the units in memory, or sweep a whole folder tree of decks on disk.
 - **Rich text in fields.** Bold, italic, underline, colour and highlight, stored portably.
 - **English and German** interface and user guide, five themes, and full keyboard operation including ALT menu mnemonics.
+- **An Android companion.** Import your decks onto a phone and keep practising them
+  away from the computer: think-only, two taps per card, with its own statistics.
+  Read-only by design, so nothing is edited or synced back.
 - **No database, no account, no network.** Three plain UTF-8 JSON file types you can read, diff and back up with any tool.
 
 
@@ -162,6 +165,16 @@ chmod +x Learn_Anywhere-*.AppImage
 
 Build details for the AppImage are in [`packaging/linux/README.md`](packaging/linux/README.md).
 
+**Android.** The companion app is sideloaded, not published on the Play Store. Download
+the newest **Android** release, whose tag is named `android-v*`, and take the
+`app-arm64-v8a-release.apk` file: it is the right build for essentially every phone sold
+in the last decade. Open it with your file manager and allow the installation when
+Android asks. Installing a newer APK over an older one keeps your library and statistics.
+
+Android refuses to install a build whose version is older than the installed one, and
+says so only as a generic failure. If an install is rejected on a phone that already has
+the app, check the version rather than the file.
+
 ## Build from source
 
 Requires the Flutter SDK (>= 3.44.0, Dart >= 3.12.2) with desktop support enabled for your platform.
@@ -177,6 +190,9 @@ flutter test                 # run inside packages/ui_kit and packages/desktop
 
 flutter build windows        # from packages/desktop
 flutter build linux          # from packages/desktop
+
+# from packages/mobile; needs the Android SDK and NDK
+flutter build apk --split-per-abi --obfuscate --split-debug-info=build/symbols
 ```
 
 `melos` itself comes from the root dev dependency, so `dart run melos <script>` works
@@ -200,13 +216,13 @@ One pub workspace, four packages:
 | [`packages/core`](packages/core) | Pure Dart: domain model, file formats, learning engines, settings, message catalogs. Never imports Flutter. |
 | [`packages/ui_kit`](packages/ui_kit) | Shared Flutter themes, tokens, rich-text rendering, widgets, and the bundled user guide. |
 | [`packages/desktop`](packages/desktop) | The Windows and Linux application. |
-| [`packages/mobile`](packages/mobile) | The Android companion (early stage; depends only on core and ui_kit). |
+| [`packages/mobile`](packages/mobile) | The read-only Android companion (depends only on core and ui_kit). |
 
 ## Status
 
-The desktop application is the released target; the current version is 0.6.1. The
-Android companion is in early development on its own version track, currently 0.1.0,
-and is not published for download yet.
+The two applications ship separately, on independent version tracks and with different
+feature sets. The desktop application is at 0.6.1; the Android companion is at 0.3.0 and
+is distributed as a sideloaded APK.
 
 ## Credits
 

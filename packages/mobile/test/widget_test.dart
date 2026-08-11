@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_mobile/main.dart';
+import 'package:learn_anywhere_mobile/src/mobile_app_version.dart';
 import 'package:learn_anywhere_mobile/src/mobile_file_service.dart';
 import 'package:learn_anywhere_mobile/src/mobile_prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -375,8 +376,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Settings'));
-    await tester.pumpAndSettle();
+    await _openFromOverflow(tester, 'Settings');
 
     expect(find.text('Settings'), findsOneWidget);
 
@@ -425,6 +425,73 @@ void main() {
     expect(find.textContaining('&'), findsNothing);
   });
 
+  testWidgets('the overflow menu opens only the Android guide chapter', (
+    WidgetTester tester,
+  ) async {
+    await _setPhoneSurface(tester);
+
+    await tester.pumpWidget(
+      LearnAnywhereMobileApp(
+        prefs: await _fakePrefs(),
+        fileService: _FakeMobileFileService(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await _openFromOverflow(tester, 'User guide');
+
+    // Reading a chapter is real file I/O, which a test's fake clock does not
+    // advance; without yielding to the real event loop the viewer is still on
+    // its blank pre-load frame. Polled rather than given one fixed delay,
+    // which would be tuned to this machine and fail on a slower one.
+    //
+    // The chapter renders as Markdown, so its heading is rich text.
+    final Finder chapterTitle = find.textContaining(
+      'The Android companion',
+      findRichText: true,
+    );
+    await _pumpUntil(tester, () => chapterTitle.evaluate().isNotEmpty);
+
+    expect(chapterTitle, findsWidgets);
+    // Single-chapter mode: no contents list, no search box, and none of the
+    // desktop-only chapters the phone has no features for.
+    expect(find.text('Contents'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+    // No other chapter is reachable. "Getting started" is the title of one and
+    // a phrase this chapter never uses, so finding it would mean the viewer
+    // rendered the whole guide.
+    expect(
+      find.textContaining('Getting started', findRichText: true),
+      findsNothing,
+    );
+  });
+
+  testWidgets('About shows the app version and licence', (
+    WidgetTester tester,
+  ) async {
+    await _setPhoneSurface(tester);
+
+    await tester.pumpWidget(
+      LearnAnywhereMobileApp(
+        prefs: await _fakePrefs(),
+        fileService: _FakeMobileFileService(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await _openFromOverflow(tester, 'About');
+
+    expect(find.text('Learn Anywhere'), findsWidgets);
+    expect(find.text('Version $kMobileAppVersion'), findsOneWidget);
+    expect(
+      find.text('Free software under the GNU General Public License v3.0.'),
+      findsOneWidget,
+    );
+    expect(find.text(kMobileProjectUrl), findsOneWidget);
+    // Desktop's bilingual version history is deliberately not here.
+    expect(find.text('Version history'), findsNothing);
+  });
+
   testWidgets(
     'a guardrail enabled in Settings applies to a session opened afterward',
     (WidgetTester tester) async {
@@ -445,8 +512,7 @@ void main() {
       // Navigator `home` route, built once and cached, so this only reaches
       // the setup screen below if it re-reads the settings live rather than
       // from a frozen constructor snapshot.
-      await tester.tap(find.byTooltip('Settings'));
-      await tester.pumpAndSettle();
+      await _openFromOverflow(tester, 'Settings');
       await tester.tap(find.text('Minimum-attempts guard'));
       await tester.pumpAndSettle();
       expect(fileService.savedSettings.minimumAttemptsGuardEnabled, isTrue);
@@ -710,6 +776,40 @@ Future<void> _setPhoneSurface(WidgetTester tester, [Size size = const Size(360, 
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+/// Opens the library's overflow menu and taps the entry labelled [label].
+///
+/// The user guide, Settings and About all live behind the overflow menu, so a
+/// test reaching any of them takes two taps rather than one.
+Future<void> _openFromOverflow(WidgetTester tester, String label) async {
+  await tester.tap(find.byIcon(Icons.more_vert));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(label));
+  await tester.pumpAndSettle();
+}
+
+/// Pumps, yielding to real async work between frames, until [ready] holds.
+///
+/// The bundled guide is read from the asset bundle with real file I/O, which a
+/// test's fake clock never advances. Fails rather than hanging if the
+/// condition never becomes true.
+Future<void> _pumpUntil(
+  WidgetTester tester,
+  bool Function() ready, {
+  Duration timeout = const Duration(seconds: 10),
+}) async {
+  final DateTime deadline = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(deadline)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pumpAndSettle();
+    if (ready()) {
+      return;
+    }
+  }
+  fail('timed out waiting for the help chapter to load');
 }
 
 Future<MobilePrefs> _fakePrefs() async {

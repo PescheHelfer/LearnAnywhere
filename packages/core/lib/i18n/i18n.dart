@@ -85,6 +85,15 @@ enum LearnAnywhereMessage {
   /// Mobile session "show answer" action (first tap of the two-tap flow).
   mobileShowAnswer,
 
+  /// Mobile About version line, with a `{version}` placeholder.
+  mobileAboutVersion,
+
+  /// Mobile About licence line.
+  mobileAboutLicence,
+
+  /// Mobile About project-page label, shown above the repository address.
+  mobileAboutProject,
+
   /// Super-query completion message.
   superQueryCompleted,
 
@@ -1225,6 +1234,10 @@ final class LearnAnywhereCatalog {
           'This removes the deck and its statistics from this device.',
       LearnAnywhereMessage.mobileSettingsTitle: 'Settings',
       LearnAnywhereMessage.mobileShowAnswer: 'Show answer',
+      LearnAnywhereMessage.mobileAboutVersion: 'Version {version}',
+      LearnAnywhereMessage.mobileAboutLicence:
+          'Free software under the GNU General Public License v3.0.',
+      LearnAnywhereMessage.mobileAboutProject: 'Project page',
       LearnAnywhereMessage.superQueryCompleted:
           'You have now mastered all learning units in the selected range. Congratulations!',
       LearnAnywhereMessage.desktopHomeTitle: 'Workspace',
@@ -1716,6 +1729,10 @@ final class LearnAnywhereCatalog {
           'entfernt.',
       LearnAnywhereMessage.mobileSettingsTitle: 'Einstellungen',
       LearnAnywhereMessage.mobileShowAnswer: 'Antwort zeigen',
+      LearnAnywhereMessage.mobileAboutVersion: 'Version {version}',
+      LearnAnywhereMessage.mobileAboutLicence:
+          'Freie Software unter der GNU General Public License v3.0.',
+      LearnAnywhereMessage.mobileAboutProject: 'Projektseite',
       LearnAnywhereMessage.superQueryCompleted:
           'Sie beherrschen nun alle Lerneinheiten im gewählten Bereich! Herzlichen Glückwunsch!',
       LearnAnywhereMessage.desktopHomeTitle: 'Arbeitsbereich',

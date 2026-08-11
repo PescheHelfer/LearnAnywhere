@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
@@ -82,6 +83,69 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Frage'), findsOneWidget);
+    });
+  });
+
+  group('help viewer', () {
+    // `rootBundle` caches every asset it reads, and those cached futures were
+    // created inside the previous test's async zone — reused from the next
+    // test they never deliver, and the viewer renders its blank pre-load frame
+    // forever. Purely an artefact of running many tests in one process; a real
+    // app has one zone and wants the cache. Without this, only the first test
+    // in this group can pass.
+    //
+    // Cleared on the way out as well as in, so the next asset-reading test
+    // added to this file does not inherit this group's poisoned cache.
+    setUp(rootBundle.clear);
+    tearDown(rootBundle.clear);
+
+    // The Android shell shows one chapter and nothing else: the rest of the
+    // guide describes menus, F-keys, editors and Level Learning that the phone
+    // does not have, so a contents list would be a list of dead ends.
+    testWidgets('single-chapter mode shows only that chapter', (
+      WidgetTester tester,
+    ) async {
+      await _pumpHelpViewer(
+        tester,
+        const HelpViewer(singleChapterFileName: '14-android-companion.md'),
+      );
+
+      expect(find.text('The Android companion'), findsOneWidget);
+      // No contents list, no search box, and no other chapter's title.
+      expect(find.text('Contents'), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      expect(find.text('Getting started'), findsNothing);
+    });
+
+    testWidgets('the full viewer still lists every chapter', (
+      WidgetTester tester,
+    ) async {
+      await _pumpHelpViewer(tester, const HelpViewer());
+
+      expect(find.text('Contents'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      // findsWidgets, not findsOneWidget: the opening chapter is 00-index,
+      // whose own table of chapters repeats the titles the contents list
+      // beside it already shows.
+      expect(find.text('Getting started'), findsWidgets);
+      expect(find.text('The Android companion'), findsWidgets);
+    });
+
+    testWidgets('an unknown chapter name reports the guide as unavailable', (
+      WidgetTester tester,
+    ) async {
+      await _pumpHelpViewer(
+        tester,
+        const HelpViewer(singleChapterFileName: 'no-such-chapter.md'),
+      );
+
+      expect(find.text('Contents'), findsNothing);
+      expect(
+        find.textContaining('user guide'),
+        findsWidgets,
+        reason: 'the viewer must say the guide is unavailable, not crash or '
+            'silently fall back to an unrelated chapter',
+      );
     });
   });
 
@@ -270,6 +334,58 @@ void main() {
       expect(controller.fieldValue, original);
     });
   });
+}
+
+/// Pumps [viewer] on a surface wide enough for the side-by-side layout.
+///
+/// ui_kit's own tests see the bundled chapters under their bare asset keys
+/// (`assets/help/en/...`), so the real guide loads here — the viewer is
+/// exercised against the chapters that actually ship, not a fixture.
+Future<void> _pumpHelpViewer(WidgetTester tester, HelpViewer viewer) async {
+  tester.view.physicalSize = const Size(1200, 900);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+      localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
+      home: viewer,
+    ),
+  );
+
+  // The viewer reads its chapters from the asset bundle, which is real file
+  // I/O. A test body runs on a fake clock that such I/O does not advance, so
+  // `pumpAndSettle` alone returns with the load still in flight and the viewer
+  // rendering its blank pre-load frame. `runAsync` hands control back to the
+  // real event loop so the reads can finish.
+  //
+  // Polled rather than given one fixed delay: reading fifteen chapters takes
+  // as long as the host takes, and a delay tuned on a warm machine is a test
+  // that fails on a cold or loaded one. The pre-load frame is the only state
+  // with no text in it at all, so any Text means the load has landed.
+  await _pumpUntil(tester, () => find.byType(Text).evaluate().isNotEmpty);
+}
+
+/// Pumps, yielding to real async work between frames, until [ready] holds.
+///
+/// Fails the test rather than hanging if the condition never becomes true.
+Future<void> _pumpUntil(
+  WidgetTester tester,
+  bool Function() ready, {
+  Duration timeout = const Duration(seconds: 10),
+}) async {
+  final DateTime deadline = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(deadline)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pumpAndSettle();
+    if (ready()) {
+      return;
+    }
+  }
+  fail('timed out waiting for the help viewer to finish loading');
 }
 
 final class _LocalizationProbe extends StatelessWidget {

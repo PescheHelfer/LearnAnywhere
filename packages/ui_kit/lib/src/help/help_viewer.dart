@@ -17,7 +17,21 @@ import 'help_content.dart';
 /// surface, which is what the Android shell will get.
 final class HelpViewer extends StatefulWidget {
   /// Creates the user guide viewer.
-  const HelpViewer({super.key});
+  const HelpViewer({this.singleChapterFileName, super.key});
+
+  /// Base file name of the only chapter to show, e.g.
+  /// `14-android-companion.md`, or `null` for the whole guide.
+  ///
+  /// Exists for the Android shell, which has no menus, F-keys, editors or
+  /// Level Learning: showing it the full contents list would offer a page of
+  /// chapters describing features the phone does not have. In this mode the
+  /// contents list, the search box and the back button are all gone, because
+  /// there is nothing to navigate between.
+  ///
+  /// The name is resolved in the reader's own language like any other chapter
+  /// — the language folders hold identical file names — and falls back to
+  /// English when only that translation exists.
+  final String? singleChapterFileName;
 
   /// Width below which the contents list and the chapter share one column
   /// instead of sitting side by side.
@@ -68,6 +82,14 @@ final class _HelpViewerState extends State<HelpViewer> {
     }
     setState(() {
       _library = library;
+      final String? only = widget.singleChapterFileName;
+      if (only != null) {
+        // Not "the first chapter if that one is missing": in single-chapter
+        // mode an unknown name means the caller asked for something this guide
+        // does not have, and showing an unrelated chapter would hide that.
+        _selectedFileName = only;
+        return;
+      }
       // Keep the reader on the same chapter across a language switch; the file
       // names are identical in every language folder.
       if (library.chapterByFileName(_selectedFileName ?? '') == null) {
@@ -130,6 +152,14 @@ final class _HelpViewerState extends State<HelpViewer> {
       _selectChapter(_selectedFileName!, anchor: anchor);
       return;
     }
+    if (widget.singleChapterFileName != null &&
+        file != widget.singleChapterFileName) {
+      // Single-chapter mode has no second chapter to navigate to, so a
+      // cross-chapter link is offered for copying rather than silently
+      // replacing the one chapter this viewer exists to show.
+      unawaited(_showLinkDialog(href));
+      return;
+    }
     if (library.chapterByFileName(file) != null) {
       _selectChapter(file, anchor: anchor);
       return;
@@ -184,13 +214,26 @@ final class _HelpViewerState extends State<HelpViewer> {
       // would hang every widget test that opens this screen.
       return Material(color: colorScheme.surface);
     }
-    if (library.isEmpty) {
+    final String? only = widget.singleChapterFileName;
+    final HelpChapter? single = only == null
+        ? null
+        : library.chapterByFileName(only);
+
+    if (library.isEmpty || (only != null && single == null)) {
       return Material(
+        color: colorScheme.surface,
         child: Center(
           child: Text(
             messages.message(LearnAnywhereMessage.helpUnavailable),
           ),
         ),
+      );
+    }
+
+    if (single != null) {
+      return Material(
+        color: colorScheme.surface,
+        child: _buildChapter(library, messages),
       );
     }
 
