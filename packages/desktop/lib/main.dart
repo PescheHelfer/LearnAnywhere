@@ -265,8 +265,6 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   String? _lastInfDir;
   // Last folder chosen for a Lexicon file search (Batch 8, §4.2).
   String? _lastFileSearchDir;
-  int _learnSessionAttempts = 0;
-  int _learnSessionCorrect = 0;
   // Bumped by Learn ▸ Practice setup; makes an already-open learn page drop
   // back to its practice setup.
   int _learnResetSignal = 0;
@@ -2159,8 +2157,6 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onSessionActiveChanged: _setLearnSessionActive,
         options: _queryOptions,
         parameters: _learnParameters,
-        sessionAttempts: _learnSessionAttempts,
-        sessionCorrect: _learnSessionCorrect,
         onParametersChanged: (SessionParameters value) {
           setState(() => _learnParameters = value);
           unawaited(_saveSettings());
@@ -2201,12 +2197,6 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         },
         onSessionStarted: _prepareSessionStart,
         onPersistStatistics: _persistSessionStatistics,
-        onSessionProgressChanged: (int attempts, int correct) {
-          setState(() {
-            _learnSessionAttempts = attempts;
-            _learnSessionCorrect = correct;
-          });
-        },
         onOpenEditor: () => _selectRoute(_DesktopRoute.editor),
         onExit: () => _selectRoute(_DesktopRoute.home),
       ),
@@ -2849,12 +2839,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     if (result != true) {
       return;
     }
+    // The live Attempts/Accuracy readouts are derived from these statistics,
+    // so clearing them takes the pills back to zero with no counter to reset.
     setState(() {
       _document = _fileService.clearStatisticsInMemory(_document);
-      // Clearing statistics also resets the live session counters so the
-      // Attempts/Accuracy pills start from zero again.
-      _learnSessionAttempts = 0;
-      _learnSessionCorrect = 0;
     });
     _showStatus(LearnAnywhereMessage.statisticsCleared);
   }

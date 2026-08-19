@@ -65,6 +65,17 @@ Eine Live-Anzeige verfolgt **Versuche**, **Beherrscht**, **Übrig**, **Korrekt**
 Trefferquote der aktuellen Einheit sowie — falls in den
 [Einstellungen](11-settings.md#lernoptionen) eingeschaltet — die verstrichene **Zeit**.
 
+**Versuche** und **Korrekt** sind Gesamtwerte der ganzen Lern-Datei aus deren Statistik
+— keine Zähler für die aktuelle Sitzung. Sie beginnen mit dem, was bereits verzeichnet
+ist, behalten ihren Wert, wenn Sie eine Sitzung verlassen und eine neue starten, und sind
+auch nach dem Schließen und erneuten Öffnen des Programms noch da. Sie zählen beide
+Richtungen und sind damit dieselben Zahlen, die der Bildschirm
+[Statistik](09-statistics.md) mit dem Schalter **Ansicht** auf **Kombiniert** als
+**Abfrage-Versuche** und **Korrekte Versuche** ausweist — es gibt also nur einen Satz
+Zahlen, dem Sie trauen müssen. Beim Laden einer anderen Lern-Datei erscheinen deren
+eigene Gesamtwerte und nichts aus der vorherigen. Ein mit **Nicht zählen** bewerteter Versuch verzeichnet nichts
+und bewegt sie deshalb ebenfalls nicht.
+
 `Esc` beendet die Sitzung und kehrt zur Einrichtung zurück. Im Drill-Modus geht dabei
 nichts verloren: der Pool wird beim nächsten Start aus der Statistik neu aufgebaut.
 

@@ -895,6 +895,51 @@ LevelBucketMatrix levelBucketMatrix({
   );
 }
 
+/// Deck-wide Level-Learning attempt totals.
+///
+/// Summed across **every** level of the ladder and **both** directions, so a
+/// unit's climb from level 3 to level 0 keeps counting after it has left a
+/// level behind. Deliberately larger than [StatisticsSummary.totalAttempts] for
+/// the same deck: only attempts answered at level 0 (free recall) are written
+/// through to the mode-agnostic statistics.
+final class LadderAttemptTotals {
+  /// Creates ladder attempt totals.
+  const LadderAttemptTotals({required this.attempts, required this.correct});
+
+  /// Sum of attempts across all levels and both directions.
+  final int attempts;
+
+  /// Sum of correct attempts across all levels and both directions.
+  final int correct;
+}
+
+/// Sums the Level-Learning ladder's own counters for the whole deck.
+///
+/// Every entry in [levelStatistics] contributes both directions and all four
+/// per-level counters. Units without a ladder entry contribute nothing — they
+/// have not entered Level Learning — so no unit count or scope is needed.
+///
+/// This is what the live **Attempts** readout shows in Level Learning, where
+/// the mode-agnostic statistics would sit almost still while the student climbs.
+LadderAttemptTotals aggregateLadderAttempts({
+  required List<LevelUnitStats> levelStatistics,
+}) {
+  var attempts = 0;
+  var correct = 0;
+  for (final LevelUnitStats unit in levelStatistics) {
+    for (final LevelDirectionStats direction in <LevelDirectionStats>[
+      unit.dir1,
+      unit.dir2,
+    ]) {
+      for (final DirectionStats stats in direction.levels.values) {
+        attempts += stats.attempts;
+        correct += stats.correct;
+      }
+    }
+  }
+  return LadderAttemptTotals(attempts: attempts, correct: correct);
+}
+
 // --- Level Learning: masking ------------------------------------------------
 
 final RegExp _maskWhitespace = RegExp(r'\s');

@@ -8,9 +8,6 @@ import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
 import 'desktop_query_options.dart';
 
-/// Callback used to persist live session counters in the shell.
-typedef LearnSessionProgressChanged = void Function(int attempts, int correct);
-
 /// Desktop learning session page.
 final class LearnSessionPage extends StatefulWidget {
   /// Creates a desktop learning session page.
@@ -19,11 +16,8 @@ final class LearnSessionPage extends StatefulWidget {
     required this.statistics,
     required this.options,
     required this.parameters,
-    required this.sessionAttempts,
-    required this.sessionCorrect,
     required this.onParametersChanged,
     required this.onStatisticsChanged,
-    required this.onSessionProgressChanged,
     required this.onOpenEditor,
     this.onSessionStarted,
     this.onPersistStatistics,
@@ -81,20 +75,11 @@ final class LearnSessionPage extends StatefulWidget {
   /// Session parameters retained by the shell.
   final SessionParameters parameters;
 
-  /// Counted attempts in the current in-memory session.
-  final int sessionAttempts;
-
-  /// Counted correct attempts in the current in-memory session.
-  final int sessionCorrect;
-
   /// Called when setup parameters change.
   final ValueChanged<SessionParameters> onParametersChanged;
 
   /// Called when statistics are updated by a rating.
   final ValueChanged<List<UnitStats>> onStatisticsChanged;
-
-  /// Called when live session counters change.
-  final LearnSessionProgressChanged onSessionProgressChanged;
 
   /// Called when a session is about to start, so the shell can create a
   /// timestamped auto-save target when none is loaded yet (§3.7) and warn when
@@ -533,8 +518,6 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       answerFocusNodes: _answerFocusNodes,
       enteredAnswers: _lastEntered,
       elapsedSeconds: _elapsedSeconds,
-      sessionAttempts: widget.sessionAttempts,
-      sessionCorrect: widget.sessionCorrect,
       viewMode: _viewMode,
       onReveal: _primaryPreCheck,
       onCellAnswerChanged: (int fieldId, String value) {
@@ -1093,13 +1076,6 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       final List<UnitStats> updated = _recordRating(item, _selectedRating);
       widget.onStatisticsChanged(updated);
     }
-    // Attempts counts every check→continue cycle; correct counts only
-    // correct-rated attempts (accuracy is correct/attempts).
-    final bool correct = _selectedRating == AttemptRating.correct;
-    widget.onSessionProgressChanged(
-      widget.sessionAttempts + 1,
-      widget.sessionCorrect + (correct ? 1 : 0),
-    );
     // Persist the just-recorded attempt to the auto-save target. Runs after the
     // stats callbacks above so the shell's document already holds this attempt;
     // the shell queues the write asynchronously so it never stalls the cycle.
@@ -1603,8 +1579,6 @@ final class _SessionView extends StatelessWidget {
     required this.answerFocusNodes,
     required this.enteredAnswers,
     required this.elapsedSeconds,
-    required this.sessionAttempts,
-    required this.sessionCorrect,
     required this.viewMode,
     required this.onReveal,
     required this.onCellAnswerChanged,
@@ -1644,8 +1618,6 @@ final class _SessionView extends StatelessWidget {
   final Map<int, FocusNode> answerFocusNodes;
   final Map<int, String> enteredAnswers;
   final int elapsedSeconds;
-  final int sessionAttempts;
-  final int sessionCorrect;
   final _AnswerViewMode viewMode;
   final VoidCallback onReveal;
 
@@ -1695,15 +1667,35 @@ final class _SessionView extends StatelessWidget {
   /// Learning: one pill per level (highest support first) with the count of
   /// in-scope units at that level and its share. The clock pill is appended for
   /// both when enabled.
+  ///
+  /// Attempts and Accuracy are **derived from the deck's statistics**, never
+  /// counted per sitting, so they agree with the statistics screen for the same
+  /// deck and survive leaving a session or restarting the app. Level Learning
+  /// reads the ladder instead ([aggregateLadderAttempts]): only its level-0
+  /// attempts reach the mode-agnostic statistics, so its Attempts figure is
+  /// deliberately larger than the statistics screen's total.
   List<Widget> _statPills(
     LearnAnywhereLocalizations messages,
     bool timeWarning,
   ) {
     final int totalItems = _totalItems(deck, parameters);
+    // Deck-wide drill totals: both directions over every unit, the same figures
+    // the statistics screen's Combined view sums into Total Attempts and
+    // Correct Attempts. Level Learning never reads them, so it never pays for
+    // the pass.
+    final StatisticsSummary? drillTotals = _isLevelLearning
+        ? null
+        : aggregateStatistics(
+            unitCount: deck.units.length,
+            statistics: statistics,
+          );
+    final int attempts =
+        drillTotals?.totalAttempts ??
+        aggregateLadderAttempts(levelStatistics: levelStatistics).attempts;
     final List<Widget> pills = <Widget>[
       _StatPill(
         label: messages.message(LearnAnywhereMessage.learnLiveAttempts),
-        value: '$sessionAttempts',
+        value: '$attempts',
       ),
     ];
     if (_isLevelLearning) {
@@ -1744,9 +1736,9 @@ final class _SessionView extends StatelessWidget {
         parameters: parameters,
       );
       final int mastered = (totalItems - pool.length).clamp(0, totalItems);
-      final int pct = sessionAttempts == 0
-          ? 0
-          : ((sessionCorrect / sessionAttempts) * 100).round();
+      // Non-null in this branch: only Level Learning skips the aggregation.
+      final int correct = drillTotals!.totalCorrect;
+      final int pct = attempts == 0 ? 0 : ((correct / attempts) * 100).round();
       pills.addAll(<Widget>[
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveMastered),
@@ -1758,7 +1750,7 @@ final class _SessionView extends StatelessWidget {
         ),
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveAccuracy),
-          value: '$sessionCorrect/$sessionAttempts ($pct%)',
+          value: '$correct/$attempts ($pct%)',
         ),
       ]);
     }

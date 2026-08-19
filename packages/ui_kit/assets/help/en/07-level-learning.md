@@ -58,3 +58,10 @@ Level Learning keeps its own per-level counters, viewable as a level-by-accuracy
 on the [Statistics](09-statistics.md#level-learning) screen. A unit that has reached
 level 0 also counts toward your overall (non-Level-Learning) statistics, so switching to
 Drill mode later treats it as already practised rather than starting from scratch.
+
+The live **Attempts** figure during a Level-Learning session is read from those per-level
+counters: it counts every attempt at every level, in both directions, across the whole
+deck, so a session spent climbing the ladder shows movement. That makes it deliberately
+larger than **Total Attempts** on the [Statistics](09-statistics.md) screen, which only
+ever sees the level-0 results. The two carry the same label because a longer one would
+not fit on the pill — in Level Learning, read **Attempts** as ladder work.

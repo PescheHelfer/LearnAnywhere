@@ -2143,6 +2143,69 @@ void main() {
     });
   });
 
+  group('level-learning ladder attempt totals', () {
+    // Unit 1 climbed 3 -> 2 -> 1 in direction 1 (2 + 3 + 1 attempts, 4 correct)
+    // and has one direction-2 attempt at level 3. Unit 2 sits untouched at
+    // level 3. Unit 3 has no ladder entry at all.
+    const List<LevelUnitStats> levelStats = <LevelUnitStats>[
+      LevelUnitStats(
+        index: 1,
+        dir1: LevelDirectionStats(
+          currentLevel: 1,
+          levels: <int, DirectionStats>{
+            3: DirectionStats(attempts: 2, correct: 2),
+            2: DirectionStats(attempts: 3, correct: 1),
+            1: DirectionStats(attempts: 1, correct: 1),
+            0: DirectionStats(),
+          },
+        ),
+        dir2: LevelDirectionStats(
+          currentLevel: 3,
+          levels: <int, DirectionStats>{3: DirectionStats(attempts: 1)},
+        ),
+      ),
+      LevelUnitStats(
+        index: 2,
+        dir1: LevelDirectionStats(
+          currentLevel: 3,
+          levels: <int, DirectionStats>{3: DirectionStats()},
+        ),
+        dir2: LevelDirectionStats(
+          currentLevel: 3,
+          levels: <int, DirectionStats>{3: DirectionStats()},
+        ),
+      ),
+    ];
+
+    test('sums every level and both directions across the whole deck', () {
+      final LadderAttemptTotals totals = aggregateLadderAttempts(
+        levelStatistics: levelStats,
+      );
+      // 2 + 3 + 1 (unit 1, direction 1) + 1 (unit 1, direction 2); unit 2 is
+      // untouched and unit 3 has no entry.
+      expect(totals.attempts, 7);
+      expect(totals.correct, 4);
+    });
+
+    test('counts levels a unit has left, not only its current one', () {
+      final LadderAttemptTotals totals = aggregateLadderAttempts(
+        levelStatistics: levelStats,
+      );
+      // Unit 1 sits at level 1, whose own counters hold a single attempt. The
+      // deck-wide figure is larger because the climb below it is included.
+      expect(levelStats.first.dir1.currentLevelStats.attempts, 1);
+      expect(totals.attempts, 7);
+    });
+
+    test('an empty ladder totals zero', () {
+      final LadderAttemptTotals totals = aggregateLadderAttempts(
+        levelStatistics: const <LevelUnitStats>[],
+      );
+      expect(totals.attempts, 0);
+      expect(totals.correct, 0);
+    });
+  });
+
   group('level-learning statistics serialization', () {
     LevelLearningStats sampleLevelStats() => const LevelLearningStats(
       perUnit: <LevelUnitStats>[

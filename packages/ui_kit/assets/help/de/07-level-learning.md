@@ -64,3 +64,11 @@ Matrix auf dem Bildschirm [Statistik](09-statistics.md#stufenlernen). Eine Einhe
 Stufe 0 erreicht hat, zählt auch zur Gesamtstatistik (außerhalb des Stufenlernens), sodass
 ein späterer Wechsel in den Drill-Modus sie als bereits geübt behandelt statt bei null zu
 beginnen.
+
+Die Live-Anzeige **Versuche** einer Stufenlern-Sitzung wird aus genau diesen Zählern je
+Stufe gelesen: sie zählt jeden Versuch auf jeder Stufe, in beiden Richtungen, über die
+ganze Lern-Datei — eine Sitzung, in der Sie die Leiter hinuntergehen, zeigt also
+Bewegung. Damit liegt sie bewusst höher als die **Abfrage-Versuche** auf dem Bildschirm
+[Statistik](09-statistics.md), der nur die Ergebnisse der Stufe 0 zu sehen bekommt. Beide
+tragen dieselbe Beschriftung, weil eine längere nicht auf die Anzeige passt — im
+Stufenlernen sind **Versuche** also die Arbeit auf der Leiter.

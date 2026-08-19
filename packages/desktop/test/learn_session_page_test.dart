@@ -79,11 +79,8 @@ void main() {
             directionSelection: DirectionSelection.direction1,
             shuffle: false,
           ),
-          sessionAttempts: 0,
-          sessionCorrect: 0,
           onParametersChanged: (SessionParameters _) {},
           onStatisticsChanged: (List<UnitStats> _) {},
-          onSessionProgressChanged: (int _, int __) {},
           onOpenEditor: () {},
           onExit: onExit,
         ),
@@ -317,7 +314,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // A fresh deck seeds level 3 (Beginner): full solution shown, no input,
-      // and the primary action is "Hide & type".
+      // and the primary action is "Hide & type". Attempts here is the ladder's
+      // own deck-wide total, not a counter for this sitting.
       expect(find.text('Attempts: 0'), findsOneWidget);
       expect(find.text('Beginner: 1 (100%)'), findsOneWidget);
       expect(find.text('Hide & type'), findsOneWidget);
@@ -339,8 +337,11 @@ void main() {
       );
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
+      // One attempt recorded at level 3 — the ladder is the only place it
+      // exists, and Attempts reads it.
       expect(find.text('Attempts: 1'), findsOneWidget);
       expect(find.text('Learner: 1 (100%)'), findsOneWidget);
+      expect(harnessState().drillStatsPushes, isEmpty);
 
       // Level 2: 'one' shows o/e revealed and one blank cell for 'n'.
       await tester.enterText(find.byType(TextField), 'n');
@@ -368,7 +369,9 @@ void main() {
 
       // Levels 3, 2 and 1 are scaffolded recall, so nothing has reached the
       // drill statistics yet — including the attempt that promoted 1 -> 0,
-      // which was answered at level 1.
+      // which was answered at level 1. The two readings agree: "Attempts: 3"
+      // above counts the climb through the ladder, while the drill statistics
+      // this deck would show are still untouched at zero.
       expect(harnessState().drillStatsPushes, isEmpty);
 
       // Level 0: free recall; a correct answer masters the unit and, with an
@@ -501,10 +504,132 @@ void main() {
       );
     },
   );
+
+  // A third unit keeps the once-through session running past the two attempts
+  // the readout tests make.
+  final LearningDeck drillDeck = LearningDeck(
+    mask: mask,
+    units: const <LearningUnit>[
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('eins'),
+          1: FieldValue.plain('one'),
+        },
+      ),
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('zwei'),
+          1: FieldValue.plain('two'),
+        },
+      ),
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('drei'),
+          1: FieldValue.plain('three'),
+        },
+      ),
+    ],
+  );
+
+  testWidgets(
+    'the live Attempts and Accuracy pills read the deck statistics, so they '
+    'open on what is already recorded and ignore an uncounted answer',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // Statistics as they arrive from a loaded `.sta` — recorded before this
+      // run of the app: 4 correct out of 6 across the deck.
+      await tester.pumpWidget(
+        _DrillHarness(
+          deck: drillDeck,
+          statistics: const <UnitStats>[
+            UnitStats(
+              index: 1,
+              direction1: DirectionStats(attempts: 4, correct: 3),
+            ),
+            UnitStats(
+              index: 2,
+              direction1: DirectionStats(attempts: 2, correct: 1),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // Nothing has been answered in this sitting, yet the pills already carry
+      // the deck's totals instead of starting from zero.
+      expect(find.text('Attempts: 6'), findsOneWidget);
+      expect(find.text('Accuracy: 4/6 (67%)'), findsOneWidget);
+
+      // A counted attempt moves both figures.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Knew it'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Attempts: 7'), findsOneWidget);
+      expect(find.text('Accuracy: 5/7 (71%)'), findsOneWidget);
+
+      // "No count" records nothing, so the readouts must not move either.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('No count'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Attempts: 7'), findsOneWidget);
+      expect(find.text('Accuracy: 5/7 (71%)'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'opening a second deck in the same run carries nothing over from the first',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        _DrillHarness(
+          deck: drillDeck,
+          statistics: const <UnitStats>[
+            UnitStats(
+              index: 1,
+              direction1: DirectionStats(attempts: 4, correct: 3),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+      expect(find.text('Attempts: 4'), findsOneWidget);
+
+      // The shell loads another deck: its statistics replace the first deck's
+      // wholesale, and the readouts must follow them down again.
+      tester
+          .state<_DrillHarnessState>(find.byType(_DrillHarness))
+          .openDeck(const <UnitStats>[]);
+      await tester.pumpAndSettle();
+      expect(find.text('Attempts: 0'), findsOneWidget);
+      expect(find.text('Accuracy: 0/0 (0%)'), findsOneWidget);
+    },
+  );
 }
 
 /// Minimal shell that holds the mutable Level-Learning state the page pushes
-/// back, so promotions and live counters survive across prompts in the test.
+/// back, so promotions and the ladder the Attempts pill reads survive across
+/// prompts in the test.
 class _LevelLearningHarness extends StatefulWidget {
   const _LevelLearningHarness({
     required this.deck,
@@ -520,8 +645,6 @@ class _LevelLearningHarness extends StatefulWidget {
 
 class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
   List<LevelUnitStats> _levelStats = const <LevelUnitStats>[];
-  int _attempts = 0;
-  int _correct = 0;
   int _resetSignal = 0;
 
   /// Every drill-mode statistics push the page made, in order.
@@ -553,8 +676,6 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
             endIndex: 1,
             shuffle: false,
           ),
-          sessionAttempts: _attempts,
-          sessionCorrect: _correct,
           onParametersChanged: (SessionParameters _) {},
           onStatisticsChanged: (List<UnitStats> value) {
             drillStatsPushes.add(value);
@@ -562,11 +683,54 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
           onLevelStatisticsChanged: (List<LevelUnitStats> value) {
             setState(() => _levelStats = value);
           },
-          onSessionProgressChanged: (int attempts, int correct) {
-            setState(() {
-              _attempts = attempts;
-              _correct = correct;
-            });
+          onOpenEditor: () {},
+          onExit: () {},
+        ),
+      ),
+    );
+  }
+}
+
+/// Minimal shell for the non-ladder readout tests: it holds the statistics the
+/// page pushes back, exactly as the desktop shell's document does, so the live
+/// pills can be read against a deck total rather than a sitting's counter.
+class _DrillHarness extends StatefulWidget {
+  const _DrillHarness({required this.deck, required this.statistics});
+
+  final LearningDeck deck;
+  final List<UnitStats> statistics;
+
+  @override
+  State<_DrillHarness> createState() => _DrillHarnessState();
+}
+
+class _DrillHarnessState extends State<_DrillHarness> {
+  late List<UnitStats> _statistics = widget.statistics;
+
+  /// Mimics the shell opening another deck: statistics are replaced wholesale.
+  void openDeck(List<UnitStats> statistics) {
+    setState(() => _statistics = statistics);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
+      supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+      home: Scaffold(
+        body: LearnSessionPage(
+          deck: widget.deck,
+          statistics: _statistics,
+          options: const DesktopQueryOptions(),
+          parameters: const SessionParameters(
+            withInput: false,
+            mode: SessionMode.onceThrough,
+            directionSelection: DirectionSelection.direction1,
+            shuffle: false,
+          ),
+          onParametersChanged: (SessionParameters _) {},
+          onStatisticsChanged: (List<UnitStats> value) {
+            setState(() => _statistics = value);
           },
           onOpenEditor: () {},
           onExit: () {},
