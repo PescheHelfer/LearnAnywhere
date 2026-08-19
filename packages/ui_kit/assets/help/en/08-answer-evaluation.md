@@ -17,7 +17,10 @@ Before comparing, both your answer and the solution are **normalized**:
 
 If **Complete input required** is on (the default), every field with a non-empty
 solution must be filled in — an answer missing one of several required fields does not
-match, even if what you did type is correct.
+match, even if what you did type is correct. In
+[Level learning](07-level-learning.md) the scaffold fills part of every answer in for
+you and those characters count as typed, so a scaffolded field never arrives empty
+whichever way this option is set.
 
 Fields sharing a non-zero [equal group](02-concepts.md#equal-group) are checked
 together: any field in the group matching the corresponding solution field is accepted

@@ -10,12 +10,28 @@ Nichts hervorzubringen.
 | Stufe | Was Sie sehen |
 |---|---|
 | 3 | Die ganze Lösung wird zuerst gezeigt. Die Hauptschaltfläche (`F10`, beschriftet **Verdecken & tippen**) verdeckt sie und macht aus dem Feld eine leere Box, in die dieselbe Antwort aus dem Gedächtnis eingetippt wird, bevor geprüft wird. |
-| 2 | Ein **bearbeitbares Gerüst**: jedes zweite Zeichen der Lösung ist bereits eingetragen und fest, die Lücken dazwischen füllen Sie aus. |
-| 1 | Nur das erste und letzte Zeichen werden gezeigt, alles dazwischen ist leer. Ein ein- oder zweizeichiges Wort wird auf dieser Stufe vollständig gezeigt, da es kein "Dazwischen" gibt. |
+| 2 | Ein **bearbeitbares Gerüst**: jedes zweite Zeichen der Lösung ist bereits eingetragen und fest, die Lücken dazwischen füllen Sie aus. Das **erste** Zeichen jedes Wortes gehört immer Ihnen, sodass selbst eine einzeichige Antwort abgefragt wird. |
+| 1 | Nur das erste und letzte Zeichen werden gezeigt, alles dazwischen ist leer. Kurze Wörter fragen dennoch etwas ab: ein zweizeichiges Wort zeigt das erste Zeichen und lässt das letzte offen, ein einzeichiges Wort bleibt leer. |
 | 0 | Freies Erinnern — nichts wird gezeigt. Das entspricht dem Antworten ganz ohne Unterstützung durch Stufenlernen. |
 
 Satzzeichen und Leerzeichen werden nie verdeckt, nur Buchstaben und Ziffern — die
 eigenen Zeichen eines Wortes tragen die Schwierigkeit, nicht seine Form.
+
+Unterhalb von Stufe 3 behält jedes Wort mindestens eine Lücke, sodass Ihnen nie ein
+Feld ohne etwas zu beantworten vorgelegt wird. Eine Folge davon ist bewusst so gewählt:
+bei einem dreizeichigen Wort zeigt Stufe 1 zwei Zeichen, Stufe 2 nur eines — bei genau
+dieser Länge ist Stufe 1 also geringfügig leichter. Bei einem, zwei, vier und fünf
+Zeichen zeigen beide Stufen gleich viele Zeichen, nur an anderen Stellen; ab sechs
+Zeichen zeigt Stufe 2 stets mehr.
+
+Die Zeichen, die das Gerüst auf den Bildschirm bringt, zählen als Teil Ihrer Antwort.
+Gezeigte Buchstaben sowie die nie verdeckten Satzzeichen und Leerzeichen werden
+bewertet, als hätten Sie sie getippt, und sie erscheinen in der Ansicht
+**Ihre Antwort**. Ein Feld, das Sie unberührt lassen, wird daher mit seinen gezeigten
+Zeichen abgeschickt und nicht als leere Antwort — bei ausgeschalteter Option
+**Vollständige Eingabe erforderlich** (siehe
+[Wie Antworten bewertet werden](08-answer-evaluation.md)) gilt ein Gerüstfeld also nie
+als unbeantwortet.
 
 ## Die Leiter hinuntergehen
 

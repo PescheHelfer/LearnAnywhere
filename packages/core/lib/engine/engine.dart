@@ -955,10 +955,17 @@ final RegExp _maskCandidate = RegExp(r'[\p{L}\p{N}]', unicode: true);
 ///
 /// Per candidate, by [level] (higher = more support):
 /// - **3** every candidate [MaskCellKind.revealed];
-/// - **2** even candidate index revealed, odd [MaskCellKind.blank];
-/// - **1** first and last candidate revealed, middle blank (a 1–2-candidate word
-///   is fully revealed);
+/// - **2** even candidate index [MaskCellKind.blank], odd revealed;
+/// - **1** first and last candidate revealed, middle blank; a two-candidate word
+///   reveals the first and blanks the last, a one-candidate word is blank;
 /// - **0** every candidate blank.
+///
+/// Below level 3 every word therefore keeps at least one blank, so no field is
+/// ever served with nothing for the student to type. One consequence is
+/// accepted: a three-candidate word reveals two characters at level 1 and one at
+/// level 2, so level 1 is marginally easier at that single length. The two levels
+/// also reveal equally many characters at 1, 2, 4 and 5 candidates; only from 6 on
+/// does level 2 reveal strictly more.
 ///
 /// This is a pure rendering concern; grading still runs the student's full typed
 /// string through [evaluateAnswer].
@@ -1007,8 +1014,18 @@ MaskCellKind _maskCellKind(int level, int candidateIndex, int candidateCount) {
     case 3:
       return MaskCellKind.revealed;
     case 2:
-      return candidateIndex.isEven ? MaskCellKind.revealed : MaskCellKind.blank;
+      // Even candidates are the student's, so the first letter of every word —
+      // and the only letter of a one-letter word — has to be recalled.
+      return candidateIndex.isEven ? MaskCellKind.blank : MaskCellKind.revealed;
     case 1:
+      if (candidateCount == 1) {
+        return MaskCellKind.blank;
+      }
+      if (candidateCount == 2) {
+        // No "between" to blank: keep the first as the anchor and ask for the
+        // last, rather than revealing the whole word.
+        return candidateIndex == 0 ? MaskCellKind.revealed : MaskCellKind.blank;
+      }
       final bool isEdge =
           candidateIndex == 0 || candidateIndex == candidateCount - 1;
       return isEdge ? MaskCellKind.revealed : MaskCellKind.blank;

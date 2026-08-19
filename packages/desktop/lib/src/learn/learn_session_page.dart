@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
@@ -2433,6 +2434,12 @@ final class _BlankSlot extends StatelessWidget {
 /// The editable scaffold (levels 1 and 2): locked revealed letters interleaved
 /// with per-blank single-character inputs the student fills. Reconstructs the
 /// full answer string (revealed + typed + shown) and reports it via [onChanged].
+///
+/// It reports whenever it is built or rebuilt, not only when a blank is typed
+/// into, so a field the scaffold reveals whole reaches grading as the letters
+/// it displayed rather than as an empty answer. Reporting writes into the
+/// host's answer buffer, so the build-time report is deferred to after the
+/// frame.
 final class _LevelScaffoldInput extends StatefulWidget {
   const _LevelScaffoldInput({
     required this.cells,
@@ -2469,6 +2476,7 @@ final class _LevelScaffoldInputState extends State<_LevelScaffoldInput> {
   void initState() {
     super.initState();
     _build();
+    _reportAfterFrame();
     if (widget.autofocus && _nodes.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _nodes.first.requestFocus();
@@ -2482,6 +2490,9 @@ final class _LevelScaffoldInputState extends State<_LevelScaffoldInput> {
     if (_blankCount != _controllers.length) {
       _dispose();
       _build();
+    }
+    if (!listEquals(widget.cells, oldWidget.cells)) {
+      _reportAfterFrame();
     }
   }
 
@@ -2524,6 +2535,14 @@ final class _LevelScaffoldInputState extends State<_LevelScaffoldInput> {
       }
     }
     widget.onChanged(buffer.toString());
+  }
+
+  /// Reports the reconstruction once the current frame is done, so building
+  /// this scaffold never writes into the host's answer buffer mid-build.
+  void _reportAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _report();
+    });
   }
 
   KeyEventResult _onKey(int index, KeyEvent event) {

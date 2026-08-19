@@ -343,8 +343,12 @@ void main() {
       expect(find.text('Learner: 1 (100%)'), findsOneWidget);
       expect(harnessState().drillStatsPushes, isEmpty);
 
-      // Level 2: 'one' shows o/e revealed and one blank cell for 'n'.
-      await tester.enterText(find.byType(TextField), 'n');
+      // Level 2: 'one' blanks the even candidates, so 'n' is revealed between
+      // the two cells the student fills.
+      expect(find.byType(TextField), findsNWidgets(2));
+      await tester.enterText(find.byType(TextField).at(0), 'o');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(1), 'e');
       await tester.pumpAndSettle();
       await tester.tap(find.text('Check'));
       await tester.pumpAndSettle();
@@ -417,7 +421,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       // A mask whose direction 1 has two answer fields (like infinitive +
-      // past tense), each masked to a single blank cell at level 2.
+      // past tense), each masked to two blank cells at level 2.
       const LearningMask twoAnswerMask = LearningMask(
         maskId: 'm_new_two-answer-fixture',
         name: 'Verbs',
@@ -478,12 +482,15 @@ void main() {
       await tester.tap(find.text('Start session'));
       await tester.pumpAndSettle();
 
-      // 'eat' -> e[a]t, 'ate' -> a[t]e: one blank cell per answer field.
-      expect(find.byType(TextField), findsNWidgets(2));
+      // 'eat' -> [e]a[t], 'ate' -> [a]t[e]: two blank cells per answer field.
+      expect(find.byType(TextField), findsNWidgets(4));
 
-      // Fill the first field's blank and press Enter. This must NOT check the
-      // answer (the second field is still empty) — it advances to it.
-      await tester.enterText(find.byType(TextField).at(0), 'a');
+      // Fill the first field's blanks and press Enter on its last one. This
+      // must NOT check the answer (the second field is still empty) — it
+      // advances to it.
+      await tester.enterText(find.byType(TextField).at(0), 'e');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(1), 't');
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
@@ -493,8 +500,10 @@ void main() {
         findsNothing,
       );
 
-      // Fill the last field's blank and Enter: now the answer is checked.
-      await tester.enterText(find.byType(TextField).at(1), 't');
+      // Fill the last field's blanks and Enter: now the answer is checked.
+      await tester.enterText(find.byType(TextField).at(2), 'a');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(3), 'e');
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
@@ -623,6 +632,148 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Attempts: 0'), findsOneWidget);
       expect(find.text('Accuracy: 0/0 (0%)'), findsOneWidget);
+    },
+  );
+
+  // A category whose direction-1 answers cover both ends of the scaffold: a
+  // normal word, a "no plural" marker with no mask candidates at all, and a
+  // one-letter gender marker.
+  const LearningMask markerMask = LearningMask(
+    maskId: 'm_new_marker-fixture',
+    name: 'Nouns',
+    direction1Label: 'DE',
+    direction2Label: 'FR',
+    categories: <CategoryDefinition>[
+      CategoryDefinition(
+        id: 0,
+        name: 'Noun',
+        fields: <FieldDefinition>[
+          FieldDefinition(
+            id: 0,
+            name: 'German',
+            length: 20,
+            equalGroup: 0,
+            role1: FieldRole.question,
+            role2: FieldRole.answer,
+          ),
+          FieldDefinition(
+            id: 1,
+            name: 'French',
+            length: 20,
+            equalGroup: 0,
+            role1: FieldRole.answer,
+            role2: FieldRole.question,
+          ),
+          FieldDefinition(
+            id: 2,
+            name: 'Plural',
+            length: 20,
+            equalGroup: 0,
+            role1: FieldRole.answer,
+            role2: FieldRole.question,
+          ),
+          FieldDefinition(
+            id: 3,
+            name: 'Gender',
+            length: 20,
+            equalGroup: 0,
+            role1: FieldRole.answer,
+            role2: FieldRole.question,
+          ),
+        ],
+      ),
+    ],
+  );
+  final LearningDeck markerDeck = LearningDeck(
+    mask: markerMask,
+    units: const <LearningUnit>[
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('Katze'),
+          1: FieldValue.plain('chat'),
+          2: FieldValue.plain('-'),
+          3: FieldValue.plain('m'),
+        },
+      ),
+    ],
+  );
+
+  testWidgets(
+    'level learning: a field the scaffold reveals whole is graded as the '
+    'letters shown and appears answered, and every other field still asks for '
+    'a letter',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        _LevelLearningHarness(deck: markerDeck, entryLevelCap: 2),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // At level 2 even candidates are blank: 'chat' -> [c]h[a]t (two blanks)
+      // and the one-letter 'm' -> [m] (one). '-' has no candidates at all, so
+      // it is shown whole and contributes no blank.
+      expect(find.byType(TextField), findsNWidgets(3));
+
+      await tester.enterText(find.byType(TextField).at(0), 'c');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(1), 'a');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(2), 'm');
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+
+      // The marker field is graded as the character the scaffold displayed,
+      // not as the empty answer it was never given a chance to receive.
+      expect(
+        find.text('Your answer is correct. Congratulations!'),
+        findsOneWidget,
+      );
+
+      // ... and "Your answer" shows it as answered rather than blank.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f9);
+      await tester.pumpAndSettle();
+      expect(find.text('-', findRichText: true), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'level learning: an untouched scaffold submits the letters it displays',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        _LevelLearningHarness(deck: markerDeck, entryLevelCap: 2),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // Check without typing anything at all.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      expect(find.text('The answer is unfortunately wrong.'), findsOneWidget);
+
+      // The scaffold reported on build, so "Your answer" carries the revealed
+      // letters of the untouched word field and the whole marker field. A wrong
+      // answer opens on the correction view, so it takes two steps to get
+      // there (correction -> solution -> your answer).
+      await tester.sendKeyEvent(LogicalKeyboardKey.f9);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f9);
+      await tester.pumpAndSettle();
+      expect(find.text('ht', findRichText: true), findsOneWidget);
+      expect(find.text('-', findRichText: true), findsOneWidget);
     },
   );
 }

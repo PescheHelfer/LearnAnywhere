@@ -1803,14 +1803,14 @@ void main() {
 
     test('applies each level to a single word', () {
       expect(render('CHOCOLAT', 3), 'CHOCOLAT');
-      expect(render('CHOCOLAT', 2), 'C_O_O_A_');
+      expect(render('CHOCOLAT', 2), '_H_C_L_T');
       expect(render('CHOCOLAT', 1), 'C______T');
       expect(render('CHOCOLAT', 0), '________');
     });
 
     test('restarts the pattern per word and always shows whitespace', () {
       final List<MaskCell> cells = maskFieldValue('le petit chat', 1);
-      expect(render('le petit chat', 1), 'le p___t c__t');
+      expect(render('le petit chat', 1), 'l_ p___t c__t');
       // The two spaces are shown verbatim, never blanks.
       final Iterable<MaskCell> spaces = cells.where(
         (MaskCell cell) => cell.char == ' ',
@@ -1823,23 +1823,43 @@ void main() {
     });
 
     test('shows punctuation without counting it as a candidate', () {
-      // Apostrophe is shown; candidates are l,e,a,u → level 2 reveals l,a.
-      expect(render("l'eau", 2), "l'_a_");
+      // Apostrophe is shown; candidates are l,e,a,u → level 2 reveals e,u.
+      expect(render("l'eau", 2), "_'e_u");
       final List<MaskCell> cells = maskFieldValue("l'eau", 2);
       expect(cells[1].char, "'");
       expect(cells[1].kind, MaskCellKind.shown);
     });
 
-    test('fully reveals 1- and 2-candidate words at level 1', () {
-      expect(render('an', 1), 'an');
-      expect(render('a', 1), 'a');
-      expect(
-        maskFieldValue(
-          'an',
-          1,
-        ).every((MaskCell cell) => cell.kind == MaskCellKind.revealed),
-        isTrue,
-      );
+    test('always leaves a letter to type in a short word at level 2', () {
+      // Even candidates are blank, so the first letter is always the
+      // student's — a one-letter field asks for its one letter.
+      expect(render('a', 2), '_');
+      expect(render('an', 2), '_n');
+      expect(render('ane', 2), '_n_');
+    });
+
+    test('leaves the last letter of a short word at level 1', () {
+      // One candidate is blank; two reveal the first and blank the last;
+      // three or more keep the first-and-last rule.
+      expect(render('a', 1), '_');
+      expect(render('an', 1), 'a_');
+      expect(render('ane', 1), 'a_e');
+      final List<MaskCell> two = maskFieldValue('an', 1);
+      expect(two.first.kind, MaskCellKind.revealed);
+      expect(two.last.kind, MaskCellKind.blank);
+    });
+
+    test('leaves at least one blank per word at every scaffolded level', () {
+      for (final String word in <String>['a', 'an', 'ane', 'chat', 'CHOCOLAT']) {
+        for (final int level in <int>[0, 1, 2]) {
+          expect(
+            maskFieldValue(word, level)
+                .any((MaskCell cell) => cell.kind == MaskCellKind.blank),
+            isTrue,
+            reason: '"$word" at level $level has nothing to type',
+          );
+        }
+      }
     });
 
     test('rejects an out-of-range level', () {

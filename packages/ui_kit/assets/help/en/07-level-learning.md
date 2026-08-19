@@ -9,12 +9,27 @@ is producing the answer from nothing.
 | Level | What you see |
 |---|---|
 | 3 | The whole solution is shown first. Pressing the primary button (`F10`, labelled **Hide & type**) hides it and turns the field into an empty box you type the same answer into from memory, before it is checked. |
-| 2 | An **editable scaffold**: every other character of the solution is already filled in and fixed; you fill in the blanks between them. |
-| 1 | Only the first and last character are shown; everything between is blank. A one- or two-character word is fully shown at this level, since there is no "between." |
+| 2 | An **editable scaffold**: every other character of the solution is already filled in and fixed; you fill in the blanks between them. The **first** character of each word is always one of yours, so even a one-character answer asks you to recall it. |
+| 1 | Only the first and last character are shown; everything between is blank. Short words still ask for something: a two-character word shows the first character and leaves the last, and a one-character word is left blank. |
 | 0 | Free recall — nothing is shown. This is the same as answering with no Level Learning support at all. |
 
 Punctuation and spaces are never blanked, only letters and digits — a word's own
 characters are what carry the difficulty, not its shape.
+
+Below level 3 every word keeps at least one blank, so you are never shown a field with
+nothing to answer. One consequence is deliberate: for a three-character word level 1
+shows two characters where level 2 shows only one, so level 1 is marginally easier at
+that single length. At one, two, four and five characters the two levels show the same
+number of characters, only in different places; from six characters on, level 2 always
+shows more.
+
+The characters the scaffold puts on screen count as part of your answer. Revealed
+letters, and the punctuation and spaces it never blanks, are graded as though you had
+typed them, and they appear in the **Your answer** view. A field you leave untouched is
+therefore submitted with its revealed characters rather than as an empty answer — so
+with **Complete input required** switched off (see
+[How answers are judged](08-answer-evaluation.md)), a scaffolded field is never treated
+as unanswered.
 
 ## Moving down the ladder
 

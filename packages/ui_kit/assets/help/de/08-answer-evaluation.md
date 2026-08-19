@@ -22,6 +22,9 @@ Vor dem Vergleich werden sowohl Ihre Antwort als auch die Lösung **normalisiert
 Ist **Vollständige Eingabe erforderlich** eingeschaltet (Standard), muss jedes Feld mit
 nicht leerer Lösung ausgefüllt werden — fehlt in einer Antwort eines von mehreren
 erforderlichen Feldern, gilt sie nicht als Treffer, auch wenn das Getippte korrekt ist.
+Im [Stufenlernen](07-level-learning.md) füllt das Gerüst einen Teil jeder Antwort für
+Sie aus, und diese Zeichen gelten als getippt — ein Gerüstfeld kommt also nie leer an,
+unabhängig davon, wie diese Option eingestellt ist.
 
 Felder mit derselben von Null verschiedenen
 [Gleichheitsgruppe](02-concepts.md#gleichheitsgruppe) werden zusammen geprüft: jedes
