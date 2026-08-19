@@ -26,6 +26,12 @@ Stück (live angezeigt als **"Kategorien: {count}/20"**). Für jede:
   darauf aus, in welcher Reihenfolge sie beim
   [Einfügen einer Einheit](04-unit-editor.md#einheiten-hinzufgen-und-entfernen)
   angeboten werden.
+- **Kategorie klonen** fügt direkt nach der geklonten Kategorie eine Kopie ein, benannt
+  nach ihr mit angehängtem "(Kopie)", und wählt die Kopie aus, damit sie sofort
+  umbenannt werden kann. Die Felder der Kopie sind unabhängig — neue Feld-Identitäten,
+  sodass das Bearbeiten der einen Seite die andere nie berührt —, enthalten aber keine
+  Einheiten; kopiert wird das *Schema*, keine Daten. Nicht verfügbar, sobald die Maske
+  die Kategorie-Obergrenze erreicht hat, genau wie **Kategorie hinzufügen**.
 - **Kategorie löschen** entfernt sie. Verwendet noch eine Einheit diese Kategorie, ist
   das eine der Änderungen, die beim Speichern
   [bestehende Lern-Dateien beschädigen](#lern-dateien-synchron-halten) können.

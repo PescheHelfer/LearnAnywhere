@@ -94,6 +94,7 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
                   setState(() => _selectedCategoryIndex = index);
                 },
                 onAdd: _addCategory,
+                onClone: _cloneCategory,
                 onDelete: _deleteCategory,
                 onRename: _renameCategory,
                 onMove: _moveCategory,
@@ -224,6 +225,52 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
       ),
     );
     setState(() => _selectedCategoryIndex = categories.length - 1);
+    _replaceCategories(categories);
+  }
+
+  /// Clones the category at [index] into a copy inserted directly after it,
+  /// carrying newly minted, mask-unique field ids. No unit is touched, so the
+  /// clone starts empty of units even though its fields carry values.
+  void _cloneCategory(int index) {
+    if (widget.mask.categories.length >= maxCategoriesPerMask) {
+      return;
+    }
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final List<CategoryDefinition> categories = widget.mask.categories.toList();
+    final CategoryDefinition source = categories[index];
+    // Allocate the whole run of new field ids against the UNMODIFIED mask up
+    // front; calling `_nextFieldId` once per field would keep returning the
+    // same id, since none of those calls would have added a field yet.
+    final int firstNewFieldId = _nextFieldId(widget.mask);
+    final List<FieldDefinition> clonedFields = <FieldDefinition>[
+      for (var i = 0; i < source.fields.length; i += 1)
+        FieldDefinition(
+          id: firstNewFieldId + i,
+          name: source.fields[i].name,
+          length: source.fields[i].length,
+          equalGroup: source.fields[i].equalGroup,
+          role1: source.fields[i].role1,
+          role2: source.fields[i].role2,
+        ),
+    ];
+    final String cloneName = messages
+        .message(LearnAnywhereMessage.maskEditorClonedCategoryName)
+        .replaceAll('{name}', source.name);
+    final CategoryDefinition clone = CategoryDefinition(
+      id: _nextCategoryId(categories),
+      // The copy marker can push a name past the 40-character cap the rename
+      // field enforces (see `_CategoryTile`'s `maxLength`); serialization
+      // never re-checks this on save, so an over-length name would write
+      // successfully and only fail the next time the file is opened.
+      name: cloneName.length > maxCategoryNameLength
+          ? cloneName.substring(0, maxCategoryNameLength)
+          : cloneName,
+      fields: List<FieldDefinition>.unmodifiable(clonedFields),
+    );
+    categories.insert(index + 1, clone);
+    setState(() => _selectedCategoryIndex = index + 1);
     _replaceCategories(categories);
   }
 
@@ -463,6 +510,7 @@ final class _CategoryList extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
     required this.onAdd,
+    required this.onClone,
     required this.onDelete,
     required this.onRename,
     required this.onMove,
@@ -472,6 +520,7 @@ final class _CategoryList extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final VoidCallback onAdd;
+  final ValueChanged<int> onClone;
   final ValueChanged<int> onDelete;
   final void Function(int index, String name) onRename;
   final void Function(int index, int delta) onMove;
@@ -517,7 +566,9 @@ final class _CategoryList extends StatelessWidget {
                 selected: index == selectedIndex,
                 index: index,
                 count: mask.categories.length,
+                cloneEnabled: !atLimit,
                 onSelected: onSelected,
+                onClone: onClone,
                 onDelete: onDelete,
                 onRename: onRename,
                 onMove: onMove,
@@ -553,7 +604,9 @@ final class _CategoryTile extends StatelessWidget {
     required this.selected,
     required this.index,
     required this.count,
+    required this.cloneEnabled,
     required this.onSelected,
+    required this.onClone,
     required this.onDelete,
     required this.onRename,
     required this.onMove,
@@ -563,7 +616,9 @@ final class _CategoryTile extends StatelessWidget {
   final bool selected;
   final int index;
   final int count;
+  final bool cloneEnabled;
   final ValueChanged<int> onSelected;
+  final ValueChanged<int> onClone;
   final ValueChanged<int> onDelete;
   final void Function(int index, String name) onRename;
   final void Function(int index, int delta) onMove;
@@ -627,6 +682,15 @@ final class _CategoryTile extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                   onPressed: index >= count - 1 ? null : () => onMove(index, 1),
                   icon: const Icon(Icons.keyboard_arrow_down),
+                ),
+                IconButton(
+                  key: ValueKey<String>('category-clone-${category.id}'),
+                  tooltip: messages.message(
+                    LearnAnywhereMessage.maskEditorCloneCategory,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: cloneEnabled ? () => onClone(index) : null,
+                  icon: const Icon(Icons.copy_outlined),
                 ),
                 IconButton(
                   key: ValueKey<String>('category-delete-${category.id}'),
@@ -805,17 +869,20 @@ final class _FieldGridState extends State<_FieldGrid> {
     int fieldCount,
     FieldDefinition field,
   ) {
-    // Row input keys embed the owning category's stable id so that selecting a
-    // different category rebuilds fresh controllers. Keying by list index alone
-    // let Flutter reuse another category's TextEditingControllers (whose text
-    // is only seeded from initialValue once), scrambling the displayed fields.
+    // Row input keys embed the owning category's stable id AND the field's own
+    // stable id — never the list position. Position-keyed controllers (text is
+    // only seeded from initialValue once) get reused for whichever field lands
+    // on that row next, be it another category's field or the same category's
+    // field after a reorder, leaving the row showing stale text. Keying by
+    // field id makes Flutter's keyed reconciliation move each field's own
+    // controller state along with it instead.
     return DataRow(
       cells: <DataCell>[
         DataCell(
           SizedBox(
             width: 200,
             child: TextFormField(
-              key: ValueKey<String>('field-name-$categoryId-$index'),
+              key: ValueKey<String>('field-name-$categoryId-${field.id}'),
               initialValue: field.name,
               decoration: const InputDecoration(counterText: '', isDense: true),
               onChanged: (String value) {
@@ -828,7 +895,7 @@ final class _FieldGridState extends State<_FieldGrid> {
           SizedBox(
             width: 72,
             child: TextFormField(
-              key: ValueKey<String>('field-length-$categoryId-$index'),
+              key: ValueKey<String>('field-length-$categoryId-${field.id}'),
               initialValue: field.length.toString(),
               keyboardType: TextInputType.number,
               inputFormatters: <TextInputFormatter>[
@@ -855,7 +922,9 @@ final class _FieldGridState extends State<_FieldGrid> {
           SizedBox(
             width: 56,
             child: TextFormField(
-              key: ValueKey<String>('field-equal-group-$categoryId-$index'),
+              key: ValueKey<String>(
+                'field-equal-group-$categoryId-${field.id}',
+              ),
               initialValue: field.equalGroup.toString(),
               keyboardType: TextInputType.number,
               inputFormatters: <TextInputFormatter>[
@@ -873,7 +942,7 @@ final class _FieldGridState extends State<_FieldGrid> {
         ),
         DataCell(
           _RoleMenu(
-            key: ValueKey<String>('field-role1-$categoryId-$index'),
+            key: ValueKey<String>('field-role1-$categoryId-${field.id}'),
             value: field.role1,
             onChanged: (FieldRole value) {
               widget.onFieldChanged(index, _copyField(field, role1: value));
@@ -882,7 +951,7 @@ final class _FieldGridState extends State<_FieldGrid> {
         ),
         DataCell(
           _RoleMenu(
-            key: ValueKey<String>('field-role2-$categoryId-$index'),
+            key: ValueKey<String>('field-role2-$categoryId-${field.id}'),
             value: field.role2,
             onChanged: (FieldRole value) {
               widget.onFieldChanged(index, _copyField(field, role2: value));

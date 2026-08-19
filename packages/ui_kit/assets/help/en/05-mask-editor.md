@@ -22,6 +22,12 @@ them (shown live as **"Categories: {count}/20"**). For each:
 - Select a category to rename it — names are capped at 40 characters.
 - **Move up** / **Move down** reorder categories; order only affects how they are
   offered when [inserting a unit](04-unit-editor.md#adding-and-removing-units).
+- **Clone category** inserts a copy directly after the category it was cloned from,
+  named after it with "(copy)" added, and selects the copy so it can be renamed right
+  away. The copy's fields are independent — new field identities, so editing one side
+  never touches the other — but start with no units in them; it copies the *schema*,
+  not any data. Unavailable once the mask is at the category limit, exactly like **Add
+  category**.
 - **Delete category** removes it. If any unit still uses it, this is one of the changes
   that can [break existing decks](#keeping-decks-in-sync) when you save.
 

@@ -910,6 +910,9 @@ enum LearnAnywhereMessage {
   /// Delete category action.
   maskEditorDeleteCategory,
 
+  /// Clone category action (per-row, produces a copy after the source).
+  maskEditorCloneCategory,
+
   /// Mask editor: move a category or field up one position.
   maskEditorMoveUp,
 
@@ -1193,6 +1196,10 @@ enum LearnAnywhereMessage {
 
   /// Seed name for a new category. Placeholder: {n} (1-based position).
   defaultCategoryName,
+
+  /// Name given to a cloned category. Placeholder: {name} (the source
+  /// category's name).
+  maskEditorClonedCategoryName,
 
   /// Seed name for the question field of a new mask.
   defaultFieldQuestion,
@@ -1569,6 +1576,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorDirection2: 'Direction 2 label',
       LearnAnywhereMessage.maskEditorCategories: 'Categories',
       LearnAnywhereMessage.maskEditorAddCategory: 'Add category',
+      LearnAnywhereMessage.maskEditorCloneCategory: 'Clone category',
       LearnAnywhereMessage.maskEditorDeleteCategory: 'Delete category',
       LearnAnywhereMessage.maskEditorMoveUp: 'Move up',
       LearnAnywhereMessage.maskEditorMoveDown: 'Move down',
@@ -1696,6 +1704,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.defaultDirection1Label: 'Direction 1',
       LearnAnywhereMessage.defaultDirection2Label: 'Direction 2',
       LearnAnywhereMessage.defaultCategoryName: 'Category {n}',
+      LearnAnywhereMessage.maskEditorClonedCategoryName: '{name} (copy)',
       LearnAnywhereMessage.defaultFieldQuestion: 'Question',
       LearnAnywhereMessage.defaultFieldAnswer: 'Answer',
       LearnAnywhereMessage.defaultFieldRemark: 'Remark',
@@ -2087,6 +2096,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorDirection2: 'Name Abfragerichtung 2',
       LearnAnywhereMessage.maskEditorCategories: 'Kategorien',
       LearnAnywhereMessage.maskEditorAddCategory: 'Kategorie hinzufügen',
+      LearnAnywhereMessage.maskEditorCloneCategory: 'Kategorie klonen',
       LearnAnywhereMessage.maskEditorDeleteCategory: 'Kategorie löschen',
       LearnAnywhereMessage.maskEditorMoveUp: 'Nach oben',
       LearnAnywhereMessage.maskEditorMoveDown: 'Nach unten',
@@ -2227,6 +2237,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.defaultDirection1Label: 'Abfragerichtung 1',
       LearnAnywhereMessage.defaultDirection2Label: 'Abfragerichtung 2',
       LearnAnywhereMessage.defaultCategoryName: 'Kategorie {n}',
+      LearnAnywhereMessage.maskEditorClonedCategoryName: '{name} (Kopie)',
       LearnAnywhereMessage.defaultFieldQuestion: 'Frage',
       LearnAnywhereMessage.defaultFieldAnswer: 'Antwort',
       LearnAnywhereMessage.defaultFieldRemark: 'Bemerkung',

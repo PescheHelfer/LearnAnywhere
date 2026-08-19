@@ -93,11 +93,11 @@ void main() {
       await tester.tap(find.text('Zweizeiler'));
       await tester.pumpAndSettle();
 
-      expect(fieldName(tester, 2, 0), 'Deutsch 1');
-      expect(fieldName(tester, 2, 1), 'Deutsch 2');
-      expect(fieldName(tester, 2, 2), 'Franz 1');
-      expect(fieldLength(tester, 2, 0), '60');
-      expect(fieldEqualGroup(tester, 2, 0), '1');
+      expect(fieldName(tester, 2, 2), 'Deutsch 1');
+      expect(fieldName(tester, 2, 3), 'Deutsch 2');
+      expect(fieldName(tester, 2, 4), 'Franz 1');
+      expect(fieldLength(tester, 2, 2), '60');
+      expect(fieldEqualGroup(tester, 2, 2), '1');
 
       // Switch back to category 1 and confirm it is still intact.
       await tester.tap(find.text('Einzeiler'));
@@ -330,15 +330,15 @@ void main() {
               id: 0,
               name: 'Alpha',
               length: 40,
-              equalGroup: 0,
+              equalGroup: 1,
               role1: FieldRole.question,
               role2: FieldRole.answer,
             ),
             FieldDefinition(
               id: 1,
               name: 'Beta',
-              length: 40,
-              equalGroup: 0,
+              length: 55,
+              equalGroup: 2,
               role1: FieldRole.answer,
               role2: FieldRole.question,
             ),
@@ -398,6 +398,18 @@ void main() {
       'Beta',
       'Alpha',
     ]);
+
+    // The row on screen must describe the field it now belongs to: every
+    // column moves with the field, read through the cell's own editing
+    // controller — not merely asserted against the emitted mask above. This
+    // is the layer the original bug lived in (stale, position-keyed
+    // controllers left every column but the roles showing the old field).
+    expect(fieldNameAtRow(tester, 0), 'Beta');
+    expect(fieldLengthAtRow(tester, 0), '55');
+    expect(fieldEqualGroupAtRow(tester, 0), '2');
+    expect(fieldNameAtRow(tester, 1), 'Alpha');
+    expect(fieldLengthAtRow(tester, 1), '40');
+    expect(fieldEqualGroupAtRow(tester, 1), '1');
   });
 
   testWidgets('deleting a category does not recycle its id on the next add', (
@@ -453,6 +465,183 @@ void main() {
       <int>[0, 2, 3],
     );
   });
+
+  testWidgets(
+    'cloning a category inserts a copy after it, selects it, and mints '
+    'fresh field ids as one contiguous run',
+    (WidgetTester tester) async {
+      // Field ids 0/1 belong to the source category; the OTHER category (id
+      // 5, chosen non-contiguous on purpose) has no fields at all. If the
+      // clone re-derived "the next id" once per field against the
+      // unmodified mask, both cloned fields would collide on id 2 instead
+      // of landing on 2 and 3.
+      const LearningMask mask = LearningMask(
+        maskId: 'm_new_clone-fixture',
+        name: 'Clone',
+        direction1Label: 'A',
+        direction2Label: 'B',
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 0,
+            name: 'First',
+            fields: <FieldDefinition>[
+              FieldDefinition(
+                id: 0,
+                name: 'Alpha',
+                length: 40,
+                equalGroup: 1,
+                role1: FieldRole.question,
+                role2: FieldRole.answer,
+              ),
+              FieldDefinition(
+                id: 1,
+                name: 'Beta',
+                length: 55,
+                equalGroup: 2,
+                role1: FieldRole.answer,
+                role2: FieldRole.question,
+              ),
+            ],
+          ),
+          CategoryDefinition(id: 5, name: 'Other', fields: <FieldDefinition>[]),
+        ],
+      );
+      LearningMask emitted = mask;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return MaskEditorPage(
+                  mask: emitted,
+                  onChanged: (LearningMask value) =>
+                      setState(() => emitted = value),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey<String>('category-clone-0')));
+      await tester.pumpAndSettle();
+
+      expect(
+        emitted.categories.map((CategoryDefinition c) => c.id),
+        <int>[0, 6, 5],
+      );
+      final CategoryDefinition clone = emitted.categories[1];
+      expect(clone.name, 'First (copy)');
+      expect(clone.fields.map((FieldDefinition f) => f.id), <int>[2, 3]);
+      expect(clone.fields.map((FieldDefinition f) => f.name), <String>[
+        'Alpha',
+        'Beta',
+      ]);
+      expect(clone.fields.map((FieldDefinition f) => f.length), <int>[40, 55]);
+      // The source category is untouched.
+      expect(
+        emitted.categories.first.fields.map((FieldDefinition f) => f.id),
+        <int>[0, 1],
+      );
+
+      // The clone is selected immediately, so it can be renamed straight
+      // away — read through the category-name field's own controller.
+      final Finder cloneNameField = find.descendant(
+        of: find.byKey(const ValueKey<String>('category-name-6')),
+        matching: find.byType(EditableText),
+      );
+      expect(
+        tester.widget<EditableText>(cloneNameField).controller.text,
+        'First (copy)',
+      );
+    },
+  );
+
+  testWidgets('cloning a long-named category clamps the copy name to 40 characters', (
+    WidgetTester tester,
+  ) async {
+    // 38 chars: legal on its own (the rename field's cap is 40), but "{name}
+    // (copy)" would run to 45 without clamping.
+    const String longName = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLM';
+    const LearningMask mask = LearningMask(
+      maskId: 'm_new_clone-long-name-fixture',
+      name: 'LongName',
+      direction1Label: 'A',
+      direction2Label: 'B',
+      categories: <CategoryDefinition>[
+        CategoryDefinition(id: 0, name: longName, fields: <FieldDefinition>[]),
+      ],
+    );
+    LearningMask emitted = mask;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates:
+            LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return MaskEditorPage(
+                mask: emitted,
+                onChanged: (LearningMask value) =>
+                    setState(() => emitted = value),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('category-clone-0')));
+    await tester.pumpAndSettle();
+
+    final CategoryDefinition clone = emitted.categories[1];
+    expect(clone.name.length, lessThanOrEqualTo(maxCategoryNameLength));
+  });
+
+  testWidgets('clone is unavailable at the category limit, exactly as add is', (
+    WidgetTester tester,
+  ) async {
+    final LearningMask mask = LearningMask(
+      maskId: 'm_new_clone-limit-fixture',
+      name: 'ClonedLimit',
+      direction1Label: 'A',
+      direction2Label: 'B',
+      categories: List<CategoryDefinition>.generate(
+        maxCategoriesPerMask,
+        (int i) => CategoryDefinition(
+          id: i,
+          name: 'C$i',
+          fields: const <FieldDefinition>[],
+        ),
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates:
+            LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: Scaffold(
+          body: MaskEditorPage(mask: mask, onChanged: (LearningMask _) {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final FilledButton addButton = tester.widget<FilledButton>(
+      find.byKey(const ValueKey<String>('add-category-button')),
+    );
+    final IconButton cloneButton = tester.widget<IconButton>(
+      find.byKey(const ValueKey<String>('category-clone-0')),
+    );
+    expect(addButton.onPressed, isNull);
+    expect(cloneButton.onPressed, isNull);
+  });
 }
 
 // Reads the text actually rendered in a field cell (its internal controller),
@@ -466,14 +655,42 @@ String _cellText(WidgetTester tester, String key) {
   return tester.widget<EditableText>(editable).controller.text;
 }
 
-String fieldName(WidgetTester tester, int categoryId, int index) {
-  return _cellText(tester, 'field-name-$categoryId-$index');
+// Field cells are keyed by the field's own stable id, not its position — see
+// the production comment in `_fieldRow`. Callers pass that id, not an index.
+String fieldName(WidgetTester tester, int categoryId, int fieldId) {
+  return _cellText(tester, 'field-name-$categoryId-$fieldId');
 }
 
-String fieldLength(WidgetTester tester, int categoryId, int index) {
-  return _cellText(tester, 'field-length-$categoryId-$index');
+String fieldLength(WidgetTester tester, int categoryId, int fieldId) {
+  return _cellText(tester, 'field-length-$categoryId-$fieldId');
 }
 
-String fieldEqualGroup(WidgetTester tester, int categoryId, int index) {
-  return _cellText(tester, 'field-equal-group-$categoryId-$index');
+String fieldEqualGroup(WidgetTester tester, int categoryId, int fieldId) {
+  return _cellText(tester, 'field-equal-group-$categoryId-$fieldId');
 }
+
+// Reads the text actually rendered at a given VISUAL row/column position in
+// the fields DataTable, independent of whatever key scheme the rows use. This
+// is what catches a regression to position-keyed controllers: a stale
+// controller still renders under some key, but it never renders at the right
+// row position once the underlying field there has changed.
+String _fieldCellAtRow(WidgetTester tester, int rowIndex, int columnOffset) {
+  final Iterable<EditableText> editors = tester.widgetList<EditableText>(
+    find.descendant(
+      of: find.byType(DataTable),
+      matching: find.byType(EditableText),
+    ),
+  );
+  // Three text columns per row: name, length, equal-group (role columns are
+  // dropdowns, not EditableText).
+  return editors.elementAt(rowIndex * 3 + columnOffset).controller.text;
+}
+
+String fieldNameAtRow(WidgetTester tester, int rowIndex) =>
+    _fieldCellAtRow(tester, rowIndex, 0);
+
+String fieldLengthAtRow(WidgetTester tester, int rowIndex) =>
+    _fieldCellAtRow(tester, rowIndex, 1);
+
+String fieldEqualGroupAtRow(WidgetTester tester, int rowIndex) =>
+    _fieldCellAtRow(tester, rowIndex, 2);
