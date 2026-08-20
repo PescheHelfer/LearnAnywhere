@@ -76,8 +76,8 @@ final class LearnAnywhereSettings {
   const LearnAnywhereSettings({
     this.wrongInputCorrectable = true,
     this.completeInputRequired = true,
-    this.caseSensitive = false,
-    this.accentSensitive = false,
+    this.caseSensitive = true,
+    this.accentSensitive = true,
     this.almostEnabled = false,
     this.almostThreshold = kDefaultAlmostThreshold,
     this.showClock = false,

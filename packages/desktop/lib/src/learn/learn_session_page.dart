@@ -893,11 +893,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     ).keys.toList(growable: false);
     for (int i = 0; i < fields.length; i++) {
       final FieldDefinition field = fields[i];
+      final bool isFirst = i == 0;
       final bool isLast = i == fields.length - 1;
       _answerControllers[field.id] = TextEditingController();
       _answerFocusNodes[field.id] = FocusNode(
         onKeyEvent: (FocusNode node, KeyEvent event) =>
-            _handleAnswerFieldKey(node, event, isLast),
+            _handleAnswerFieldKey(node, event, isFirst, isLast),
       );
     }
     // A reset always begins a fresh prompt: only the normal text field (any
@@ -920,10 +921,14 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   /// Tab always moves to the next answer field. Enter on a non-last field also
   /// advances; on the last field Enter triggers Check (before reveal) or
   /// Continue (after reveal). A mandatory key-release cycle prevents the held
-  /// Enter key from racing through multiple units.
+  /// Enter key from racing through multiple units. Arrow Down/Up move to the
+  /// next/previous field but do not wrap: at the first or last field the key
+  /// is consumed with no effect, so the default single-line caret jump never
+  /// fires.
   KeyEventResult _handleAnswerFieldKey(
     FocusNode node,
     KeyEvent event,
+    bool isFirst,
     bool isLast,
   ) {
     final LogicalKeyboardKey key = event.logicalKey;
@@ -962,6 +967,16 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
 
     if (isForwardTab) {
       node.nextFocus();
+      return KeyEventResult.handled;
+    }
+
+    if (key == LogicalKeyboardKey.arrowDown) {
+      if (!isLast) node.nextFocus();
+      return KeyEventResult.handled;
+    }
+
+    if (key == LogicalKeyboardKey.arrowUp) {
+      if (!isFirst) node.previousFocus();
       return KeyEventResult.handled;
     }
 
@@ -1311,7 +1326,9 @@ final class _EmptyLearnState extends StatelessWidget {
           FilledButton.icon(
             onPressed: onOpenEditor,
             icon: const Icon(Icons.edit),
-            label: Text(messages.message(LearnAnywhereMessage.menuEdit)),
+            label: Text(
+              messages.message(LearnAnywhereMessage.learnEmptyOpenEditor),
+            ),
           ),
         ],
       ),

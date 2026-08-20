@@ -61,6 +61,8 @@ See [The unit editor](04-unit-editor.md) for what each of these does in detail.
 | `Esc` | Cancel session, back to setup |
 | `Enter` / `Tab` | Next blank, in a multi-blank field |
 | `Backspace` (on an empty blank) | Previous blank |
+| `Arrow Down` | Next answer field |
+| `Arrow Up` | Previous answer field |
 
 See [Learning sessions](06-learning-sessions.md),
 [Level learning](07-level-learning.md), and

@@ -14,8 +14,8 @@ check an answer; changing one mid-session takes effect immediately.
 |---|---|---|
 | Wrong input correctable | On | Offers "Actually correct" on a wrong answer's rating row |
 | Complete input required | On | Every non-empty solution field must be answered for a match |
-| Case sensitive | Off | Distinguishes upper/lower case when matching |
-| Accent sensitive | Off | Distinguishes accented characters when matching |
+| Case sensitive | On | Distinguishes upper/lower case when matching |
+| Accent sensitive | On | Distinguishes accented characters when matching |
 | Accept near-misses as 'Almost' | Off | Enables the Almost outcome |
 | 'Almost' similarity threshold (%) | 80 | How close a near-miss must be to count as Almost |
 | Show clock | Off | Shows elapsed time during a session |

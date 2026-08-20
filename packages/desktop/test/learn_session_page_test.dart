@@ -776,6 +776,80 @@ void main() {
       expect(find.text('-', findRichText: true), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'Arrow Down/Up move focus between answer fields without wrapping',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: LearnSessionPage(
+              deck: markerDeck,
+              statistics: const <UnitStats>[],
+              options: const DesktopQueryOptions(),
+              parameters: const SessionParameters(
+                withInput: true,
+                mode: SessionMode.onceThrough,
+                directionSelection: DirectionSelection.direction1,
+                shuffle: false,
+              ),
+              onParametersChanged: (SessionParameters _) {},
+              onStatisticsChanged: (List<UnitStats> _) {},
+              onOpenEditor: () {},
+              onExit: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // French, Plural, Gender: three answer fields in direction 1.
+      final Finder fields = find.byType(TextField);
+      expect(fields, findsNWidgets(3));
+      FocusNode nodeAt(int i) =>
+          tester.widget<TextField>(fields.at(i)).focusNode!;
+
+      // The first field claims focus as soon as the unit is served.
+      expect(FocusManager.instance.primaryFocus, nodeAt(0));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, nodeAt(1));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, nodeAt(2));
+
+      // Consumed at the last field: nothing changes.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, nodeAt(2));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, nodeAt(1));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, nodeAt(0));
+
+      // Consumed at the first field: nothing changes.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, nodeAt(0));
+    },
+  );
+
 }
 
 /// Minimal shell that holds the mutable Level-Learning state the page pushes

@@ -14,8 +14,8 @@ Antwortprüfung aus; eine Änderung mitten in einer Sitzung wirkt sofort.
 |---|---|---|
 | Falsche Eingabe korrigierbar | An | Bietet bei einer falschen Antwort "Eigentlich richtig" in der Bewertungszeile an |
 | Vollständige Eingabe erforderlich | An | Jedes nicht leere Lösungsfeld muss für einen Treffer beantwortet werden |
-| Groß-/Kleinschreibung beachten | Aus | Unterscheidet Groß-/Kleinschreibung beim Vergleich |
-| Akzente beachten | Aus | Unterscheidet Akzente beim Vergleich |
+| Groß-/Kleinschreibung beachten | An | Unterscheidet Groß-/Kleinschreibung beim Vergleich |
+| Akzente beachten | An | Unterscheidet Akzente beim Vergleich |
 | Beinahe-Treffer als „Fast“ akzeptieren | Aus | Schaltet das Ergebnis "Fast" frei |
 | Ähnlichkeitsschwelle für „Fast“ (%) | 80 | Wie nah ein Beinahe-Treffer sein muss, um als "Fast" zu zählen |
 | Uhr anzeigen | Aus | Zeigt die verstrichene Zeit während einer Sitzung |

@@ -315,6 +315,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.6.1.
   aboutVersion061,
 
+  /// About page version history entry for 0.6.2.
+  aboutVersion062,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -449,6 +452,10 @@ enum LearnAnywhereMessage {
 
   /// Learn empty-state body.
   learnEmptyBody,
+
+  /// Learn empty-state button, opening the unit editor. Same wording as
+  /// [menuEditUnitEditor] with the mnemonic ampersand stripped.
+  learnEmptyOpenEditor,
 
   /// Learn setup title.
   learnSetupTitle,
@@ -1341,6 +1348,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutVersion061:
           '0.6.1 – Statistics now follow their units when a deck is edited '
           'outside the app, and the app reports any that were reset.',
+      LearnAnywhereMessage.aboutVersion062:
+          '0.6.2 – New installs grade case- and accent-sensitively by '
+          'default, Arrow Down/Up now move between answer fields, and the '
+          'practice empty state names the unit editor correctly.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1392,6 +1403,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnEmptyTitle: 'No learning units',
       LearnAnywhereMessage.learnEmptyBody:
           'Create or open a deck with learning units before starting a session.',
+      LearnAnywhereMessage.learnEmptyOpenEditor: 'Unit editor',
       LearnAnywhereMessage.learnSetupTitle: 'Practice setup',
       LearnAnywhereMessage.learnDirection: 'Direction',
       LearnAnywhereMessage.learnBothDirections: 'Both',
@@ -1851,6 +1863,11 @@ final class LearnAnywhereCatalog {
           '0.6.1 – Statistiken folgen ihren Einheiten, wenn eine Lern-Datei '
           'außerhalb der App bearbeitet wurde; zurückgesetzte Einheiten werden '
           'gemeldet.',
+      LearnAnywhereMessage.aboutVersion062:
+          '0.6.2 – Neuinstallationen werten standardmäßig Groß-/'
+          'Kleinschreibung und Akzente streng, Pfeil hoch/runter wechseln '
+          'jetzt zwischen Antwortfeldern, und der Übungs-Leerzustand nennt '
+          'den Eingabe-Maske-Befehl korrekt.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
@@ -1903,6 +1920,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnEmptyTitle: 'Keine Lerneinheiten',
       LearnAnywhereMessage.learnEmptyBody:
           'Erstellen oder laden Sie eine Lern-Datei mit Lerneinheiten, bevor Sie eine Sitzung starten.',
+      LearnAnywhereMessage.learnEmptyOpenEditor: 'Eingabe-Maske',
       LearnAnywhereMessage.learnSetupTitle: 'Übung einrichten',
       LearnAnywhereMessage.learnDirection: 'Abfragerichtung',
       LearnAnywhereMessage.learnBothDirections: 'Beide',

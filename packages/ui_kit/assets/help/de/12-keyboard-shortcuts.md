@@ -64,6 +64,8 @@ Was jede dieser Tasten im Einzelnen bewirkt, steht in
 | `Esc` | Sitzung abbrechen, zurück zur Einrichtung |
 | `Enter` / `Tab` | Nächste Lücke in einem mehrteiligen Feld |
 | `Rücktaste` (bei leerer Lücke) | Vorherige Lücke |
+| `Pfeiltaste nach unten` | Nächstes Antwortfeld |
+| `Pfeiltaste nach oben` | Vorheriges Antwortfeld |
 
 Was jede Bewertungsschaltfläche in einer gegebenen Situation bedeutet, steht in
 [Lernsitzungen](06-learning-sessions.md), [Stufenlernen](07-level-learning.md) und
