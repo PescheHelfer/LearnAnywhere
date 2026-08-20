@@ -924,13 +924,23 @@ final class LadderAttemptTotals {
 /// the mode-agnostic statistics would sit almost still while the student climbs.
 /// Pass the session's own view ([directionViewFor]) so a single-direction
 /// session does not count the direction it never asks.
+///
+/// Entries whose index falls outside [unitCount] are ignored, like every
+/// sibling aggregator ([aggregateStatistics], [levelBucketMatrix]) bounds
+/// itself to the deck. This is the only consumer that walks the entry list
+/// instead of the deck, so it is the one place a stray out-of-range entry
+/// (an orphan a producer failed to drop) could otherwise reach the pill.
 LadderAttemptTotals aggregateLadderAttempts({
   required List<LevelUnitStats> levelStatistics,
+  required int unitCount,
   StatisticsDirectionView view = StatisticsDirectionView.combined,
 }) {
   var attempts = 0;
   var correct = 0;
   for (final LevelUnitStats unit in levelStatistics) {
+    if (unit.index < 1 || unit.index > unitCount) {
+      continue;
+    }
     for (final LevelDirectionStats direction in <LevelDirectionStats>[
       if (view != StatisticsDirectionView.direction2) unit.dir1,
       if (view != StatisticsDirectionView.direction1) unit.dir2,
@@ -1269,6 +1279,76 @@ List<UnitStats> statsAfterDelete(
             direction2: source.direction2,
           );
   }, growable: false);
+}
+
+/// Returns [levelStatistics] with entries outside a deck of [unitCount] units
+/// dropped.
+///
+/// Unlike [resizeUnitStats], missing indices are not filled in: a
+/// Level-Learning entry exists only once a unit has actually entered the
+/// ladder (see [levelStatsAfterInsert]), so the list stays sparse by design.
+/// Used whenever a deck's unit count changes without a positional
+/// insert/delete (open, merge, load-stats).
+List<LevelUnitStats> resizeLevelStats(
+  List<LevelUnitStats> levelStatistics,
+  int unitCount,
+) {
+  return List<LevelUnitStats>.unmodifiable(<LevelUnitStats>[
+    for (final LevelUnitStats stats in levelStatistics)
+      if (stats.index >= 1 && stats.index <= unitCount) stats,
+  ]);
+}
+
+/// Remaps Level-Learning [levelStatistics] after a unit is inserted at
+/// 1-based [position], mirroring how [statsAfterInsert] shifts drill
+/// statistics.
+///
+/// Entries at or after [position] shift up by one index. Unlike
+/// [statsAfterInsert], the newly inserted position gets **no** entry: a fresh
+/// unit has no drill stats to seed a ladder entry from, and minting a zeroed
+/// one here would freeze the entry-level cap as it stood at insert time
+/// instead of the cap in force when the unit is first served. It is seeded
+/// lazily on first serve instead, exactly like a freshly appended unit.
+List<LevelUnitStats> levelStatsAfterInsert(
+  List<LevelUnitStats> levelStatistics,
+  int position,
+) {
+  return List<LevelUnitStats>.unmodifiable(<LevelUnitStats>[
+    for (final LevelUnitStats stats in levelStatistics)
+      if (stats.index < position)
+        stats
+      else
+        LevelUnitStats(
+          index: stats.index + 1,
+          dir1: stats.dir1,
+          dir2: stats.dir2,
+        ),
+  ]);
+}
+
+/// Remaps Level-Learning [levelStatistics] after the unit at 1-based
+/// [position] is removed, mirroring how [statsAfterDelete] shifts drill
+/// statistics.
+///
+/// The removed unit's ladder entry is dropped and reports nothing: the
+/// delete already asks for confirmation, and losing that unit's ladder
+/// history is the point of the action, not a loss to flag. Every later entry
+/// shifts down by one index.
+List<LevelUnitStats> levelStatsAfterDelete(
+  List<LevelUnitStats> levelStatistics,
+  int position,
+) {
+  return List<LevelUnitStats>.unmodifiable(<LevelUnitStats>[
+    for (final LevelUnitStats stats in levelStatistics)
+      if (stats.index < position)
+        stats
+      else if (stats.index > position)
+        LevelUnitStats(
+          index: stats.index - 1,
+          dir1: stats.dir1,
+          dir2: stats.dir2,
+        ),
+  ]);
 }
 
 /// Searches the in-memory deck.

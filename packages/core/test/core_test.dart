@@ -781,6 +781,151 @@ void main() {
       expect(result[0].direction1.attempts, 1);
       expect(result[1].direction1.attempts, 3);
     });
+
+    LevelUnitStats levelSeedAt(int index, int level) => LevelUnitStats(
+      index: index,
+      dir1: LevelDirectionStats(
+        currentLevel: level,
+        levels: const <int, DirectionStats>{
+          3: DirectionStats(attempts: 1, correct: 1),
+        },
+      ),
+      dir2: LevelDirectionStats.fresh(kMaxSupportLevel),
+    );
+
+    test('resizeLevelStats drops out-of-range entries without filling gaps', () {
+      final List<LevelUnitStats> seeded = <LevelUnitStats>[
+        levelSeedAt(1, 3),
+        levelSeedAt(3, 2),
+      ];
+      expect(resizeLevelStats(seeded, 5), hasLength(2));
+      expect(
+        resizeLevelStats(seeded, 2).map((LevelUnitStats s) => s.index),
+        <int>[1],
+      );
+    });
+
+    test('levelStatsAfterInsert shifts later entries and adds no entry for '
+        'the new unit', () {
+      final List<LevelUnitStats> seeded = <LevelUnitStats>[
+        levelSeedAt(1, 3),
+        levelSeedAt(2, 2),
+      ];
+      final List<LevelUnitStats> result = levelStatsAfterInsert(seeded, 2);
+      // Unit 1 unchanged; old unit 2 shifts to 3; nothing at index 2.
+      expect(
+        <int, int>{
+          for (final LevelUnitStats s in result) s.index: s.dir1.currentLevel,
+        },
+        <int, int>{1: 3, 3: 2},
+      );
+    });
+
+    test(
+      'levelStatsAfterDelete drops the removed unit\'s entry and shifts '
+      'later down',
+      () {
+        final List<LevelUnitStats> seeded = <LevelUnitStats>[
+          levelSeedAt(1, 3),
+          levelSeedAt(2, 2),
+          levelSeedAt(3, 1),
+        ];
+        final List<LevelUnitStats> result = levelStatsAfterDelete(seeded, 2);
+        expect(
+          <int, int>{
+            for (final LevelUnitStats s in result)
+              s.index: s.dir1.currentLevel,
+          },
+          <int, int>{1: 3, 2: 1},
+        );
+      },
+    );
+
+    test('levelStatsAfterInsert/Delete leave entries before the position '
+        'untouched', () {
+      final List<LevelUnitStats> seeded = <LevelUnitStats>[levelSeedAt(1, 3)];
+      expect(levelStatsAfterInsert(seeded, 2), seeded);
+      expect(levelStatsAfterDelete(seeded, 2), seeded);
+    });
+  });
+
+  group('level-learning statistics follow an editor edit through save/load', () {
+    LearningUnit unitOf(String de, String fr) {
+      return LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain(de),
+          1: FieldValue.plain(fr),
+        },
+      );
+    }
+
+    test(
+      'a save/load round trip after an editor delete keeps the corrected '
+      'pairing',
+      () {
+        final LearningUnit a = unitOf('eins', 'un');
+        final LearningUnit c = unitOf('drei', 'trois');
+        // The editor already deleted unit 2 ('zwei'): only a and c remain.
+        final LearningDeck edited = LearningDeck(
+          mask: sampleMask(),
+          units: <LearningUnit>[a, c],
+        );
+
+        // Unit c carried ladder progress at its OLD index (3); the fix's
+        // remap (levelStatsAfterDelete) is what _updateDeckFromEditor calls
+        // to shift it onto c's new index (2) before it is ever saved.
+        final List<LevelUnitStats> beforeDelete = <LevelUnitStats>[
+          LevelUnitStats(
+            index: 3,
+            dir1: const LevelDirectionStats(
+              currentLevel: 1,
+              levels: <int, DirectionStats>{
+                3: DirectionStats(attempts: 2, correct: 2),
+              },
+            ),
+            dir2: LevelDirectionStats.fresh(kMaxSupportLevel),
+          ),
+        ];
+        final List<LevelUnitStats> remapped = levelStatsAfterDelete(
+          beforeDelete,
+          2,
+        );
+        expect(remapped.single.index, 2);
+
+        // Save: hash the drill stats against the edited deck (as
+        // writeStatistics does) and wrap the already-remapped ladder entries.
+        final StatisticsFile file = StatisticsFile(
+          deckRef: 'deck.vok',
+          perUnit: withUnitHashes(
+            edited,
+            resizeUnitStats(const <UnitStats>[], edited.units.length),
+          ),
+          levelLearning: LevelLearningStats(perUnit: remapped),
+        );
+        final StatisticsFile reloaded = decodeStatisticsJson(
+          encodeStatisticsJson(file),
+        );
+
+        // Load: realign onto the deck and confirm c's ladder progress is
+        // still attached to c, at its current index, not silently lost or
+        // paired to whichever unit now sits at the old index 3.
+        final StatisticsRealignment realignment = realignStatistics(
+          deck: edited,
+          statistics: reloaded.perUnit,
+          levelStatistics:
+              reloaded.levelLearning?.perUnit ?? const <LevelUnitStats>[],
+        );
+        expect(realignment.resetUnits, 0);
+        expect(realignment.levelStatistics, hasLength(1));
+        expect(realignment.levelStatistics.single.index, 2);
+        expect(realignment.levelStatistics.single.dir1.currentLevel, 1);
+        expect(
+          realignment.levelStatistics.single.dir1.levels[3],
+          const DirectionStats(attempts: 2, correct: 2),
+        );
+      },
+    );
   });
 
   group('unit identity hashes', () {
@@ -2200,6 +2345,7 @@ void main() {
     test('sums every level and both directions across the whole deck', () {
       final LadderAttemptTotals totals = aggregateLadderAttempts(
         levelStatistics: levelStats,
+        unitCount: 3,
         view: StatisticsDirectionView.combined,
       );
       // 2 + 3 + 1 (unit 1, direction 1) + 1 (unit 1, direction 2); unit 2 is
@@ -2211,6 +2357,7 @@ void main() {
     test('counts levels a unit has left, not only its current one', () {
       final LadderAttemptTotals totals = aggregateLadderAttempts(
         levelStatistics: levelStats,
+        unitCount: 3,
         view: StatisticsDirectionView.combined,
       );
       // Unit 1 sits at level 1, whose own counters hold a single attempt. The
@@ -2222,6 +2369,7 @@ void main() {
     test('a single-direction view counts that direction only', () {
       final LadderAttemptTotals direction1 = aggregateLadderAttempts(
         levelStatistics: levelStats,
+        unitCount: 3,
         view: StatisticsDirectionView.direction1,
       );
       expect(direction1.attempts, 6);
@@ -2229,6 +2377,7 @@ void main() {
 
       final LadderAttemptTotals direction2 = aggregateLadderAttempts(
         levelStatistics: levelStats,
+        unitCount: 3,
         view: StatisticsDirectionView.direction2,
       );
       expect(direction2.attempts, 1);
@@ -2238,10 +2387,24 @@ void main() {
     test('an empty ladder totals zero', () {
       final LadderAttemptTotals totals = aggregateLadderAttempts(
         levelStatistics: const <LevelUnitStats>[],
+        unitCount: 0,
         view: StatisticsDirectionView.combined,
       );
       expect(totals.attempts, 0);
       expect(totals.correct, 0);
+    });
+
+    test('an entry past unitCount is ignored, like every sibling aggregator', () {
+      // Simulates the orphan left behind by a delete that a producer failed
+      // to remap: an entry for a unit index the deck no longer has.
+      final LadderAttemptTotals totals = aggregateLadderAttempts(
+        levelStatistics: levelStats,
+        unitCount: 1,
+        view: StatisticsDirectionView.combined,
+      );
+      // Unit 1 alone: 6 attempts in direction 1 plus 1 in direction 2.
+      expect(totals.attempts, 7);
+      expect(totals.correct, 4);
     });
   });
 

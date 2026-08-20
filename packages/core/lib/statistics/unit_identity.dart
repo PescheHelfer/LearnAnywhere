@@ -141,7 +141,7 @@ StatisticsRealignment realignStatistics({
   if (!statistics.any((UnitStats stats) => stats.hash != null)) {
     return StatisticsRealignment(
       statistics: withUnitHashes(deck, resizeUnitStats(statistics, unitCount)),
-      levelStatistics: _resizeLevelStats(levelStatistics, unitCount),
+      levelStatistics: resizeLevelStats(levelStatistics, unitCount),
       resetUnits: 0,
     );
   }
@@ -208,15 +208,4 @@ StatisticsRealignment realignStatistics({
 /// in both directions does not.
 bool _countsTowardsIdentity(FieldDefinition field) {
   return field.role1 != FieldRole.remark || field.role2 != FieldRole.remark;
-}
-
-/// Drops Level-Learning entries that fall outside a deck of [unitCount] units.
-List<LevelUnitStats> _resizeLevelStats(
-  List<LevelUnitStats> levelStatistics,
-  int unitCount,
-) {
-  return List<LevelUnitStats>.unmodifiable(<LevelUnitStats>[
-    for (final LevelUnitStats stats in levelStatistics)
-      if (stats.index >= 1 && stats.index <= unitCount) stats,
-  ]);
 }

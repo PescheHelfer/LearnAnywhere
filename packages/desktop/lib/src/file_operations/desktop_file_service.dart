@@ -84,6 +84,9 @@ final class DesktopFileService {
         ...convertedIncoming.units,
       ]),
     );
+    // Incoming units are appended at the end, so no existing index shifts and
+    // current.levelStatistics stays valid without a remap — unlike an
+    // editor insert/delete, merge never needs levelStatsAfterInsert/Delete.
     return current.copyWith(
       deck: merged,
       statistics: resizeUnitStats(current.statistics, merged.units.length),

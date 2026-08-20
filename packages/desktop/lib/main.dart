@@ -2262,17 +2262,35 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     // no position) keeps existing indices and pads/truncates; a field edit
     // leaves them untouched.
     final List<UnitStats> statistics;
+    final List<LevelUnitStats> levelStatistics;
     if (insertedAt != null) {
       statistics = statsAfterInsert(_document.statistics, insertedAt, newCount);
+      levelStatistics = levelStatsAfterInsert(
+        _document.levelStatistics,
+        insertedAt,
+      );
     } else if (deletedAt != null) {
       statistics = statsAfterDelete(_document.statistics, deletedAt, newCount);
+      // The deleted unit's ladder entry is dropped, not reported: the delete
+      // already asked for confirmation, and losing that unit's history is the
+      // point of the action (see levelStatsAfterDelete).
+      levelStatistics = levelStatsAfterDelete(
+        _document.levelStatistics,
+        deletedAt,
+      );
     } else if (newCount != previousCount) {
       statistics = resizeUnitStats(_document.statistics, newCount);
+      levelStatistics = resizeLevelStats(_document.levelStatistics, newCount);
     } else {
       statistics = _document.statistics;
+      levelStatistics = _document.levelStatistics;
     }
     setState(() {
-      _document = _document.copyWith(deck: deck, statistics: statistics);
+      _document = _document.copyWith(
+        deck: deck,
+        statistics: statistics,
+        levelStatistics: levelStatistics,
+      );
       _range = _clampRange(
         autoExpandEndUnit(
           _range,

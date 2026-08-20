@@ -1723,6 +1723,7 @@ final class _SessionView extends StatelessWidget {
         drillTotals?.totalAttempts ??
         aggregateLadderAttempts(
           levelStatistics: levelStatistics,
+          unitCount: deck.units.length,
           view: view,
         ).attempts;
     final List<Widget> pills = <Widget>[
