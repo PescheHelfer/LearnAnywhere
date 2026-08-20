@@ -65,16 +65,28 @@ Eine Live-Anzeige verfolgt **Versuche**, **Beherrscht**, **Übrig**, **Korrekt**
 Trefferquote der aktuellen Einheit sowie — falls in den
 [Einstellungen](11-settings.md#lernoptionen) eingeschaltet — die verstrichene **Zeit**.
 
-**Versuche** und **Korrekt** sind Gesamtwerte der ganzen Lern-Datei aus deren Statistik
-— keine Zähler für die aktuelle Sitzung. Sie beginnen mit dem, was bereits verzeichnet
-ist, behalten ihren Wert, wenn Sie eine Sitzung verlassen und eine neue starten, und sind
-auch nach dem Schließen und erneuten Öffnen des Programms noch da. Sie zählen beide
-Richtungen und sind damit dieselben Zahlen, die der Bildschirm
-[Statistik](09-statistics.md) mit dem Schalter **Ansicht** auf **Kombiniert** als
-**Abfrage-Versuche** und **Korrekte Versuche** ausweist — es gibt also nur einen Satz
-Zahlen, dem Sie trauen müssen. Beim Laden einer anderen Lern-Datei erscheinen deren
-eigene Gesamtwerte und nichts aus der vorherigen. Ein mit **Nicht zählen** bewerteter Versuch verzeichnet nichts
-und bewegt sie deshalb ebenfalls nicht.
+**Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben jeweils **die ganze
+Lern-Datei in der Richtung, in der diese Sitzung fragt** — nicht die Sitzung und nicht den
+Einheitenbereich. (Die beiden folgenden Anzeigen sind bewusst enger: die Trefferquote der
+aktuellen Einheit gilt nur dieser Einheit, und **Zeit** ist die Uhr dieser Sitzung.) Ein
+eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das, was gezählt wird; die
+vier nebeneinanderstehenden Zahlen beschreiben also immer dieselbe Menge: eine Sitzung über
+die Einheiten 5–10 einer Datei mit 200 Einheiten weist **Beherrscht** und **Übrig**
+weiterhin von allen 200 aus. Ist unter **Abfragerichtung** eine der beiden Richtungen der
+Maske gewählt, zählen sie nur diese; bei **Beide** jede Einheit in beiden Richtungen.
+
+**Versuche** und **Korrekt** werden aus der Statistik der Lern-Datei gelesen — es sind
+keine Zähler für die aktuelle Sitzung. Sie beginnen mit dem, was bereits verzeichnet ist,
+behalten ihren Wert, wenn Sie eine Sitzung verlassen und eine neue starten, und sind auch
+nach dem Schließen und erneuten Öffnen des Programms noch da. Damit sind es dieselben
+Zahlen, die der Bildschirm [Statistik](09-statistics.md) als **Abfrage-Versuche** und
+**Korrekte Versuche** ausweist, sofern dessen Schalter **Ansicht** zur Sitzung passt:
+**Kombiniert** bei **Beide**, sonst **Abfragerichtung 1** bzw. **Abfragerichtung 2**. (Der
+Bildschirm öffnet sich auf **Abfragerichtung 1**, zum Vergleichen also umschalten.) Es
+gibt somit nur einen Satz Zahlen, dem Sie trauen müssen. Beim Laden einer anderen
+Lern-Datei erscheinen deren eigene Gesamtwerte und nichts aus der vorherigen. Ein mit
+**Nicht zählen** bewerteter Versuch verzeichnet nichts und bewegt sie deshalb ebenfalls
+nicht.
 
 `Esc` beendet die Sitzung und kehrt zur Einrichtung zurück. Im Drill-Modus geht dabei
 nichts verloren: der Pool wird beim nächsten Start aus der Statistik neu aufgebaut.

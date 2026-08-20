@@ -1193,7 +1193,7 @@ List<_UnitStatisticsRow> _rowsFor(
     final DirectionStats stats =
         statsOverride != null
         ? (statsOverride[index] ?? const DirectionStats())
-        : _statsForView(unitStats, view);
+        : statsForDirectionView(unitStats, view);
     return _UnitStatisticsRow(
       index: index,
       bucket: bucketFor(stats),
@@ -1246,17 +1246,6 @@ String _truncate(String text, [int max = 30]) {
     return collapsed;
   }
   return '${collapsed.substring(0, max)}…';
-}
-
-DirectionStats _statsForView(UnitStats stats, StatisticsDirectionView view) {
-  return switch (view) {
-    StatisticsDirectionView.direction1 => stats.direction1,
-    StatisticsDirectionView.direction2 => stats.direction2,
-    StatisticsDirectionView.combined => DirectionStats(
-      attempts: stats.direction1.attempts + stats.direction2.attempts,
-      correct: stats.direction1.correct + stats.direction2.correct,
-    ),
-  };
 }
 
 String _bucketLabel(LearnAnywhereLocalizations messages, HitRateBucket bucket) {

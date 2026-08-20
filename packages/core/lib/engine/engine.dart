@@ -915,21 +915,25 @@ final class LadderAttemptTotals {
 
 /// Sums the Level-Learning ladder's own counters for the whole deck.
 ///
-/// Every entry in [levelStatistics] contributes both directions and all four
-/// per-level counters. Units without a ladder entry contribute nothing — they
-/// have not entered Level Learning — so no unit count or scope is needed.
+/// Every entry in [levelStatistics] contributes all four per-level counters of
+/// each direction [view] selects; the combined view sums both. Units without a
+/// ladder entry contribute nothing — they have not entered Level Learning — so
+/// no unit count or scope is needed.
 ///
 /// This is what the live **Attempts** readout shows in Level Learning, where
 /// the mode-agnostic statistics would sit almost still while the student climbs.
+/// Pass the session's own view ([directionViewFor]) so a single-direction
+/// session does not count the direction it never asks.
 LadderAttemptTotals aggregateLadderAttempts({
   required List<LevelUnitStats> levelStatistics,
+  StatisticsDirectionView view = StatisticsDirectionView.combined,
 }) {
   var attempts = 0;
   var correct = 0;
   for (final LevelUnitStats unit in levelStatistics) {
     for (final LevelDirectionStats direction in <LevelDirectionStats>[
-      unit.dir1,
-      unit.dir2,
+      if (view != StatisticsDirectionView.direction2) unit.dir1,
+      if (view != StatisticsDirectionView.direction1) unit.dir2,
     ]) {
       for (final DirectionStats stats in direction.levels.values) {
         attempts += stats.attempts;
@@ -1513,6 +1517,69 @@ DirectionStats statsForDirectionView(
       attempts: stats.direction1.attempts + stats.direction2.attempts,
       correct: stats.direction1.correct + stats.direction2.correct,
     ),
+  };
+}
+
+// --- Live readout scope -----------------------------------------------------
+//
+// The rule the live readouts follow: attempts, accuracy, what is mastered, what
+// is left, and each Level-Learning level are **deck totals in the session's
+// direction**. Restricting the unit range narrows what is asked, never what is
+// counted, so figures standing side by side cannot contradict each other;
+// selecting a single direction narrows both. Item selection keeps the session's
+// own parameters — pass [deckWideScope] only where a readout is computed.
+//
+// The rule lives here, rather than in one shell's session page, so that every
+// shell showing these readouts derives the same figures from the same helpers
+// instead of restating it.
+
+/// The readout scope for a session run with [parameters]: the whole deck.
+///
+/// Drops the unit range and keeps everything else — above all the direction
+/// selection and the mastery rule, so the widened readout still answers the same
+/// question, just about every unit. [parameters] itself is untouched.
+SessionParameters deckWideScope(SessionParameters parameters) {
+  // Not copyWith: its `??` fallbacks cannot clear an index back to null.
+  return SessionParameters(
+    directionSelection: parameters.directionSelection,
+    withInput: parameters.withInput,
+    mode: parameters.mode,
+    shuffle: parameters.shuffle,
+    masteryThreshold: parameters.masteryThreshold,
+    minimumAttemptsGuardEnabled: parameters.minimumAttemptsGuardEnabled,
+    minAttempts: parameters.minAttempts,
+  );
+}
+
+/// The statistics view that shows exactly what a [selection] session asks.
+///
+/// Its point is that a readout and the statistics screen agree: a **Both**
+/// session is the screen's **Combined** view, and a single-direction session is
+/// that direction's view.
+StatisticsDirectionView directionViewFor(DirectionSelection selection) {
+  return switch (selection) {
+    DirectionSelection.both => StatisticsDirectionView.combined,
+    DirectionSelection.direction1 => StatisticsDirectionView.direction1,
+    DirectionSelection.direction2 => StatisticsDirectionView.direction2,
+  };
+}
+
+/// How many unit+direction items [parameters] covers over a deck of [unitCount].
+///
+/// A unit range reaching past either end of the deck is clamped, so an
+/// out-of-range range counts zero rather than a negative. **Both** counts each
+/// unit twice — one item per direction. Pass [deckWideScope] parameters for the
+/// denominator of a live readout, the session's own for what it will serve.
+int sessionItemCount({
+  required int unitCount,
+  required SessionParameters parameters,
+}) {
+  final int start = max(1, parameters.startIndex ?? 1);
+  final int end = min(parameters.endIndex ?? unitCount, unitCount);
+  final int units = max(0, end - start + 1);
+  return switch (parameters.directionSelection) {
+    DirectionSelection.both => units * 2,
+    DirectionSelection.direction1 || DirectionSelection.direction2 => units,
   };
 }
 

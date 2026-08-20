@@ -2200,6 +2200,7 @@ void main() {
     test('sums every level and both directions across the whole deck', () {
       final LadderAttemptTotals totals = aggregateLadderAttempts(
         levelStatistics: levelStats,
+        view: StatisticsDirectionView.combined,
       );
       // 2 + 3 + 1 (unit 1, direction 1) + 1 (unit 1, direction 2); unit 2 is
       // untouched and unit 3 has no entry.
@@ -2210,6 +2211,7 @@ void main() {
     test('counts levels a unit has left, not only its current one', () {
       final LadderAttemptTotals totals = aggregateLadderAttempts(
         levelStatistics: levelStats,
+        view: StatisticsDirectionView.combined,
       );
       // Unit 1 sits at level 1, whose own counters hold a single attempt. The
       // deck-wide figure is larger because the climb below it is included.
@@ -2217,12 +2219,121 @@ void main() {
       expect(totals.attempts, 7);
     });
 
+    test('a single-direction view counts that direction only', () {
+      final LadderAttemptTotals direction1 = aggregateLadderAttempts(
+        levelStatistics: levelStats,
+        view: StatisticsDirectionView.direction1,
+      );
+      expect(direction1.attempts, 6);
+      expect(direction1.correct, 4);
+
+      final LadderAttemptTotals direction2 = aggregateLadderAttempts(
+        levelStatistics: levelStats,
+        view: StatisticsDirectionView.direction2,
+      );
+      expect(direction2.attempts, 1);
+      expect(direction2.correct, 0);
+    });
+
     test('an empty ladder totals zero', () {
       final LadderAttemptTotals totals = aggregateLadderAttempts(
         levelStatistics: const <LevelUnitStats>[],
+        view: StatisticsDirectionView.combined,
       );
       expect(totals.attempts, 0);
       expect(totals.correct, 0);
+    });
+  });
+
+  group('live readout scope', () {
+    test('the deck-wide scope drops the unit range and keeps everything else', () {
+      const SessionParameters restricted = SessionParameters(
+        directionSelection: DirectionSelection.direction2,
+        startIndex: 5,
+        endIndex: 10,
+        withInput: false,
+        mode: SessionMode.superQuery,
+        shuffle: true,
+        masteryThreshold: 0.8,
+        minimumAttemptsGuardEnabled: true,
+        minAttempts: 3,
+      );
+
+      final SessionParameters wide = deckWideScope(restricted);
+
+      expect(wide.startIndex, isNull);
+      expect(wide.endIndex, isNull);
+      // Everything that decides what "mastered" means travels unchanged, so the
+      // readout answers the same question about more units.
+      expect(wide.directionSelection, DirectionSelection.direction2);
+      expect(wide.withInput, isFalse);
+      expect(wide.mode, SessionMode.superQuery);
+      expect(wide.shuffle, isTrue);
+      expect(wide.masteryThreshold, 0.8);
+      expect(wide.minimumAttemptsGuardEnabled, isTrue);
+      expect(wide.minAttempts, 3);
+      // The session's own scope is untouched: only the readouts widen.
+      expect(restricted.startIndex, 5);
+      expect(restricted.endIndex, 10);
+    });
+
+    test('a direction selection maps to the matching statistics view', () {
+      expect(
+        directionViewFor(DirectionSelection.both),
+        StatisticsDirectionView.combined,
+      );
+      expect(
+        directionViewFor(DirectionSelection.direction1),
+        StatisticsDirectionView.direction1,
+      );
+      expect(
+        directionViewFor(DirectionSelection.direction2),
+        StatisticsDirectionView.direction2,
+      );
+    });
+
+    test('the in-scope item count follows the range and the direction', () {
+      const SessionParameters both = SessionParameters(
+        startIndex: 5,
+        endIndex: 10,
+      );
+      expect(sessionItemCount(unitCount: 20, parameters: both), 12);
+      expect(
+        sessionItemCount(
+          unitCount: 20,
+          parameters: both.copyWith(
+            directionSelection: DirectionSelection.direction1,
+          ),
+        ),
+        6,
+      );
+      // Deck-wide: every unit, both directions.
+      expect(
+        sessionItemCount(unitCount: 20, parameters: deckWideScope(both)),
+        40,
+      );
+    });
+
+    test('the in-scope item count clamps a range that leaves the deck', () {
+      const SessionParameters past = SessionParameters(
+        startIndex: 3,
+        endIndex: 99,
+      );
+      expect(sessionItemCount(unitCount: 4, parameters: past), 4);
+      expect(
+        sessionItemCount(
+          unitCount: 4,
+          parameters: const SessionParameters(startIndex: 9, endIndex: 12),
+        ),
+        0,
+      );
+      expect(
+        sessionItemCount(
+          unitCount: 0,
+          parameters: const SessionParameters(),
+        ),
+        0,
+      );
     });
   });
 

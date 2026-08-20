@@ -75,8 +75,14 @@ level 0 also counts toward your overall (non-Level-Learning) statistics, so swit
 Drill mode later treats it as already practised rather than starting from scratch.
 
 The live **Attempts** figure during a Level-Learning session is read from those per-level
-counters: it counts every attempt at every level, in both directions, across the whole
-deck, so a session spent climbing the ladder shows movement. That makes it deliberately
-larger than **Total Attempts** on the [Statistics](09-statistics.md) screen, which only
-ever sees the level-0 results. The two carry the same label because a longer one would
-not fit on the pill — in Level Learning, read **Attempts** as ladder work.
+counters: it counts every attempt at every level, across the whole deck, in the direction
+the session is set to — both directions only when it is set to **Both** — so a session
+spent climbing the ladder shows movement. That makes it deliberately larger than **Total
+Attempts** on the [Statistics](09-statistics.md) screen, which only ever sees the level-0
+results. The two carry the same label because a longer one would not fit on the pill — in
+Level Learning, read **Attempts** as ladder work.
+
+The level pills and **Mastered** follow the same rule as everywhere else: each one is a
+deck total in the session's direction. A session restricted to a unit range still shows how
+every unit of the deck is spread across the four levels, and what share of the whole deck
+has reached mastery — the range decides what you are asked, not what is counted.

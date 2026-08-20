@@ -82,9 +82,16 @@ ein späterer Wechsel in den Drill-Modus sie als bereits geübt behandelt statt 
 beginnen.
 
 Die Live-Anzeige **Versuche** einer Stufenlern-Sitzung wird aus genau diesen Zählern je
-Stufe gelesen: sie zählt jeden Versuch auf jeder Stufe, in beiden Richtungen, über die
-ganze Lern-Datei — eine Sitzung, in der Sie die Leiter hinuntergehen, zeigt also
-Bewegung. Damit liegt sie bewusst höher als die **Abfrage-Versuche** auf dem Bildschirm
-[Statistik](09-statistics.md), der nur die Ergebnisse der Stufe 0 zu sehen bekommt. Beide
-tragen dieselbe Beschriftung, weil eine längere nicht auf die Anzeige passt — im
-Stufenlernen sind **Versuche** also die Arbeit auf der Leiter.
+Stufe gelesen: sie zählt jeden Versuch auf jeder Stufe über die ganze Lern-Datei, in der
+Richtung, in der die Sitzung fragt — beide Richtungen nur bei **Beide** — eine Sitzung, in
+der Sie die Leiter hinuntergehen, zeigt also Bewegung. Damit liegt sie bewusst höher als
+die **Abfrage-Versuche** auf dem Bildschirm [Statistik](09-statistics.md), der nur die
+Ergebnisse der Stufe 0 zu sehen bekommt. Beide tragen dieselbe Beschriftung, weil eine
+längere nicht auf die Anzeige passt — im Stufenlernen sind **Versuche** also die Arbeit
+auf der Leiter.
+
+Für die Stufen-Anzeigen und **Beherrscht** gilt dieselbe Regel wie überall sonst: jede ist
+ein Gesamtwert der ganzen Lern-Datei in der Richtung der Sitzung. Eine auf einen
+Einheitenbereich eingeschränkte Sitzung zeigt weiterhin, wie sich alle Einheiten der Datei
+auf die vier Stufen verteilen und welcher Anteil der ganzen Datei bereits gemeistert ist —
+der Bereich entscheidet, was Sie gefragt werden, nicht, was gezählt wird.

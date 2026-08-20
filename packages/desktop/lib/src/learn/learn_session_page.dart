@@ -1683,33 +1683,48 @@ final class _SessionView extends StatelessWidget {
   ///
   /// Non-Level-Learning: Mastered / Remaining / Accuracy `x/y (z%)`. Level
   /// Learning: one pill per level (highest support first) with the count of
-  /// in-scope units at that level and its share. The clock pill is appended for
-  /// both when enabled.
+  /// units at that level and its share. The clock pill is appended for both when
+  /// enabled.
   ///
-  /// Attempts and Accuracy are **derived from the deck's statistics**, never
-  /// counted per sitting, so they agree with the statistics screen for the same
-  /// deck and survive leaving a session or restarting the app. Level Learning
-  /// reads the ladder instead ([aggregateLadderAttempts]): only its level-0
-  /// attempts reach the mode-agnostic statistics, so its Attempts figure is
-  /// deliberately larger than the statistics screen's total.
+  /// Every pill is a **deck total in the session's direction** ([deckWideScope],
+  /// [directionViewFor]): restricting the unit range narrows what is asked, not
+  /// what is counted, so no two pills describe different populations. They are
+  /// also **derived from the statistics**, never counted per sitting, so they
+  /// agree with the statistics screen for the same deck — its **View** on
+  /// **Combined** for a Both session, on that direction otherwise — and survive
+  /// leaving a session or restarting the app. Level Learning reads the ladder
+  /// instead ([aggregateLadderAttempts]): only its level-0 attempts reach the
+  /// mode-agnostic statistics, so its Attempts figure is deliberately larger
+  /// than the statistics screen's total.
   List<Widget> _statPills(
     LearnAnywhereLocalizations messages,
     bool timeWarning,
   ) {
-    final int totalItems = _totalItems(deck, parameters);
-    // Deck-wide drill totals: both directions over every unit, the same figures
-    // the statistics screen's Combined view sums into Total Attempts and
-    // Correct Attempts. Level Learning never reads them, so it never pays for
-    // the pass.
+    final SessionParameters readoutScope = deckWideScope(parameters);
+    final StatisticsDirectionView view = directionViewFor(
+      parameters.directionSelection,
+    );
+    final int totalItems = sessionItemCount(
+      unitCount: deck.units.length,
+      parameters: readoutScope,
+    );
+    // Deck-wide drill totals in the session's direction — the same figures the
+    // statistics screen sums into Total Attempts and Correct Attempts under the
+    // matching View. Level Learning never reads them, so it never pays for the
+    // pass.
     final StatisticsSummary? drillTotals = _isLevelLearning
         ? null
         : aggregateStatistics(
             unitCount: deck.units.length,
             statistics: statistics,
+            view: view,
           );
     final int attempts =
         drillTotals?.totalAttempts ??
-        aggregateLadderAttempts(levelStatistics: levelStatistics).attempts;
+        aggregateLadderAttempts(
+          levelStatistics: levelStatistics,
+          view: view,
+        ).attempts;
     final List<Widget> pills = <Widget>[
       _StatPill(
         label: messages.message(LearnAnywhereMessage.learnLiveAttempts),
@@ -1717,7 +1732,7 @@ final class _SessionView extends StatelessWidget {
       ),
     ];
     if (_isLevelLearning) {
-      final Map<int, int> counts = _levelCounts();
+      final Map<int, int> counts = _levelCounts(readoutScope);
       var inPool = 0;
       for (
         int level = kMaxSupportLevel;
@@ -1751,7 +1766,7 @@ final class _SessionView extends StatelessWidget {
       final List<SessionItem> pool = activeSuperQueryPool(
         deck: deck,
         statistics: statistics,
-        parameters: parameters,
+        parameters: readoutScope,
       );
       final int mastered = (totalItems - pool.length).clamp(0, totalItems);
       // Non-null in this branch: only Level Learning skips the aggregation.
@@ -1784,13 +1799,16 @@ final class _SessionView extends StatelessWidget {
     return pills;
   }
 
-  /// Counts in-scope, not-yet-mastered Level-Learning units by current level.
-  Map<int, int> _levelCounts() {
+  /// Counts not-yet-mastered Level-Learning units by current level.
+  ///
+  /// [readoutScope] is the deck-wide scope the pills describe, not the session's
+  /// own range — see [_statPills].
+  Map<int, int> _levelCounts(SessionParameters readoutScope) {
     final List<SessionItem> pool = activeLevelLearningPool(
       deck: deck,
       statistics: statistics,
       levelStatistics: levelStatistics,
-      parameters: parameters,
+      parameters: readoutScope,
       entryLevelCap: entryLevelCap,
     );
     final Map<int, LevelUnitStats> byIndex = <int, LevelUnitStats>{
@@ -3028,19 +3046,6 @@ String _learnUnitHeader(
       .message(LearnAnywhereMessage.learnUnitHeader)
       .replaceAll('{index}', index.toString())
       .replaceAll('{total}', total.toString());
-}
-
-int _totalItems(LearningDeck deck, SessionParameters parameters) {
-  final int start = parameters.startIndex ?? 1;
-  final int end = parameters.endIndex ?? deck.units.length;
-  final int unitCount = max(
-    0,
-    min(end, deck.units.length) - max(1, start) + 1,
-  ).toInt();
-  return switch (parameters.directionSelection) {
-    DirectionSelection.both => unitCount * 2,
-    DirectionSelection.direction1 || DirectionSelection.direction2 => unitCount,
-  };
 }
 
 String _clockText(int seconds) {

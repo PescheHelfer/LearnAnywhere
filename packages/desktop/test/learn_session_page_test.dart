@@ -316,8 +316,11 @@ void main() {
       // A fresh deck seeds level 3 (Beginner): full solution shown, no input,
       // and the primary action is "Hide & type". Attempts here is the ladder's
       // own deck-wide total, not a counter for this sitting.
+      //
+      // The session is restricted to unit 1, but the level pills count the whole
+      // deck in the session's direction, so both units show — 2 of 2 items.
       expect(find.text('Attempts: 0'), findsOneWidget);
-      expect(find.text('Beginner: 1 (100%)'), findsOneWidget);
+      expect(find.text('Beginner: 2 (100%)'), findsOneWidget);
       expect(find.text('Hide & type'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
 
@@ -340,7 +343,10 @@ void main() {
       // One attempt recorded at level 3 — the ladder is the only place it
       // exists, and Attempts reads it.
       expect(find.text('Attempts: 1'), findsOneWidget);
-      expect(find.text('Learner: 1 (100%)'), findsOneWidget);
+      // Unit 1 has climbed to Learner; unit 2, never served, still sits at
+      // Beginner and is still counted.
+      expect(find.text('Learner: 1 (50%)'), findsOneWidget);
+      expect(find.text('Beginner: 1 (50%)'), findsOneWidget);
       expect(harnessState().drillStatsPushes, isEmpty);
 
       // Level 2: 'one' blanks the even candidates, so 'n' is revealed between
@@ -359,7 +365,7 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
       expect(find.text('Attempts: 2'), findsOneWidget);
-      expect(find.text('Almost There: 1 (100%)'), findsOneWidget);
+      expect(find.text('Almost There: 1 (50%)'), findsOneWidget);
 
       // Level 1: first/last revealed, middle blank filled in place (one cell).
       await tester.enterText(find.byType(TextField), 'n');
@@ -368,7 +374,7 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
       expect(find.text('Attempts: 3'), findsOneWidget);
-      expect(find.text('Champion: 1 (100%)'), findsOneWidget);
+      expect(find.text('Champion: 1 (50%)'), findsOneWidget);
       expect(find.text('Mastered: 0 (0%)'), findsOneWidget);
 
       // Levels 3, 2 and 1 are scaffolded recall, so nothing has reached the
@@ -597,6 +603,213 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Attempts: 7'), findsOneWidget);
       expect(find.text('Accuracy: 5/7 (71%)'), findsOneWidget);
+    },
+  );
+
+  // Six units, so a session can be restricted to a couple of them and still
+  // leave plenty of deck outside the range for the readouts to count.
+  final LearningDeck scopeDeck = LearningDeck(
+    mask: mask,
+    units: const <LearningUnit>[
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('eins'),
+          1: FieldValue.plain('one'),
+        },
+      ),
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('zwei'),
+          1: FieldValue.plain('two'),
+        },
+      ),
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('drei'),
+          1: FieldValue.plain('three'),
+        },
+      ),
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('vier'),
+          1: FieldValue.plain('four'),
+        },
+      ),
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('fünf'),
+          1: FieldValue.plain('five'),
+        },
+      ),
+      LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('sechs'),
+          1: FieldValue.plain('six'),
+        },
+      ),
+    ],
+  );
+
+  testWidgets(
+    'a range-restricted, single-direction session reads every pill as a deck '
+    'total in that direction',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        _DrillHarness(
+          deck: scopeDeck,
+          // Direction 1 across the deck: 9 attempts, 6 correct, with units 1 and
+          // 3 above the mastery threshold. Direction 2 carries a further 12
+          // attempts that this session must not count.
+          statistics: const <UnitStats>[
+            UnitStats(
+              index: 1,
+              direction1: DirectionStats(attempts: 4, correct: 3),
+              direction2: DirectionStats(attempts: 5, correct: 5),
+            ),
+            UnitStats(
+              index: 2,
+              direction1: DirectionStats(attempts: 2),
+            ),
+            UnitStats(
+              index: 3,
+              direction1: DirectionStats(attempts: 3, correct: 3),
+            ),
+            UnitStats(
+              index: 4,
+              direction2: DirectionStats(attempts: 7, correct: 1),
+            ),
+          ],
+          parameters: const SessionParameters(
+            withInput: false,
+            mode: SessionMode.onceThrough,
+            directionSelection: DirectionSelection.direction1,
+            startIndex: 1,
+            endIndex: 2,
+            shuffle: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // The range holds two units; every pill still describes all six, and the
+      // direction selection holds them all to direction 1.
+      expect(find.text('Attempts: 9'), findsOneWidget);
+      expect(find.text('Accuracy: 6/9 (67%)'), findsOneWidget);
+      // Units 1 and 3 are mastered in direction 1; 2, 4, 5 and 6 are not.
+      expect(find.text('Mastered: 2/6'), findsOneWidget);
+      expect(find.text('Remaining: 4'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    "direction-2 statistics leave a direction-1 session's Attempts and "
+    'Accuracy alone',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        _DrillHarness(
+          deck: scopeDeck,
+          // A deck drilled hard in direction 2 and barely at all in direction 1.
+          statistics: const <UnitStats>[
+            UnitStats(
+              index: 1,
+              direction1: DirectionStats(attempts: 2, correct: 1),
+              direction2: DirectionStats(attempts: 10, correct: 10),
+            ),
+            UnitStats(
+              index: 2,
+              direction2: DirectionStats(attempts: 4, correct: 4),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // Direction 1 only: the 14 direction-2 attempts are not added in, so the
+      // figures match the statistics screen's Direction 1 view.
+      expect(find.text('Attempts: 2'), findsOneWidget);
+      expect(find.text('Accuracy: 1/2 (50%)'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'widening the readouts leaves what the session serves untouched: only the '
+    'unit range, only the chosen direction',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        _DrillHarness(
+          deck: scopeDeck,
+          statistics: const <UnitStats>[],
+          parameters: const SessionParameters(
+            withInput: false,
+            mode: SessionMode.onceThrough,
+            directionSelection: DirectionSelection.direction1,
+            startIndex: 3,
+            endIndex: 4,
+            shuffle: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      /// The header of the card on screen ("Unit 3/6 - Cat - A - This unit: …").
+      String header() => tester
+          .widgetList<Text>(find.textContaining('Unit '))
+          .map((Text text) => text.data ?? '')
+          .single;
+
+      final List<String> served = <String>[];
+      // Two items in scope; a third pass would mean the session had widened.
+      for (var card = 0; card < 3; card += 1) {
+        if (find.text('Extend session').evaluate().isNotEmpty) {
+          break;
+        }
+        served.add(header());
+        await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Knew it'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+
+      expect(served, hasLength(2));
+      // Units 3 and 4 only — never 1, 2, 5 or 6 — and 'A' is the direction-1
+      // label of the fixture mask, so direction 2 was never served either.
+      expect(served.where((String h) => h.contains('Unit 3/6')), hasLength(1));
+      expect(served.where((String h) => h.contains('Unit 4/6')), hasLength(1));
+      for (final String head in served) {
+        expect(head, contains(' - A - '));
+        expect(head, isNot(contains(' - B - ')));
+      }
+      // With both in-scope items answered the session is over.
+      expect(find.text('Extend session'), findsOneWidget);
     },
   );
 
@@ -920,10 +1133,23 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
 /// page pushes back, exactly as the desktop shell's document does, so the live
 /// pills can be read against a deck total rather than a sitting's counter.
 class _DrillHarness extends StatefulWidget {
-  const _DrillHarness({required this.deck, required this.statistics});
+  const _DrillHarness({
+    required this.deck,
+    required this.statistics,
+    this.parameters = const SessionParameters(
+      withInput: false,
+      mode: SessionMode.onceThrough,
+      directionSelection: DirectionSelection.direction1,
+      shuffle: false,
+    ),
+  });
 
   final LearningDeck deck;
   final List<UnitStats> statistics;
+
+  /// The session's own scope — what it serves. The live readouts widen it to
+  /// the whole deck themselves.
+  final SessionParameters parameters;
 
   @override
   State<_DrillHarness> createState() => _DrillHarnessState();
@@ -947,12 +1173,7 @@ class _DrillHarnessState extends State<_DrillHarness> {
           deck: widget.deck,
           statistics: _statistics,
           options: const DesktopQueryOptions(),
-          parameters: const SessionParameters(
-            withInput: false,
-            mode: SessionMode.onceThrough,
-            directionSelection: DirectionSelection.direction1,
-            shuffle: false,
-          ),
+          parameters: widget.parameters,
           onParametersChanged: (SessionParameters _) {},
           onStatisticsChanged: (List<UnitStats> value) {
             setState(() => _statistics = value);

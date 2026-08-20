@@ -62,15 +62,26 @@ A live panel tracks **Attempts**, **Mastered**, **Remaining**, **Accuracy**, the
 unit's own accuracy, and — if enabled in
 [Settings](11-settings.md#learning-options) — elapsed **Time**.
 
-**Attempts** and **Accuracy** are totals for the whole deck, read from its statistics —
-not counters for this sitting. They open on whatever the deck has already recorded, keep
-their value when you leave a session and start another, and are still there after you
-close and reopen the program. They count both directions, so they are the same figures
-the [Statistics](09-statistics.md) screen reports as **Total Attempts** and **Correct
-Attempts** with its **View** switch on **Combined** — there is only one set of numbers to
-trust. Loading another deck shows that deck's own totals and nothing from the previous
-one. An attempt rated **No count**
-records nothing, so it does not move them either.
+**Attempts**, **Mastered**, **Remaining** and **Accuracy** each describe **the whole deck,
+in the direction this session asks** — not the sitting, and not the unit range. (The two
+readouts after them are deliberately narrower: the current unit's own accuracy is about
+that unit, and **Time** is this sitting's clock.) Restricting the range narrows what you
+are asked, never what is counted, so the four figures standing side by side always describe
+the same population: a session on units 5–10 of a 200-unit deck still reports **Mastered**
+and **Remaining** out of all 200. With one of the mask's two directions chosen under
+**Direction** they cover that direction alone; with **Both**, every unit in both
+directions.
+
+**Attempts** and **Accuracy** are read from the deck's statistics — they are not counters
+for this sitting. They open on whatever the deck has already recorded, keep their value
+when you leave a session and start another, and are still there after you close and reopen
+the program. That makes them the same figures the [Statistics](09-statistics.md) screen
+reports as **Total Attempts** and **Correct Attempts** when its **View** switch matches the
+session: **Combined** for a **Both** session, **Direction 1** or **Direction 2** for a
+single-direction one. (The screen opens on **Direction 1**, so switch it to compare.) There
+is only one set of numbers to trust. Loading another deck shows that deck's own totals and
+nothing from the previous one. An attempt rated **No count** records nothing, so it does
+not move them either.
 
 `Esc` ends the session and returns to setup. In Drill mode nothing is lost by doing
 this: the pool is rebuilt from statistics the next time you start.

@@ -254,7 +254,10 @@ final class _MobileSessionHeader extends StatelessWidget {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final int total = _totalItems(document.deck, parameters);
+    final int total = sessionItemCount(
+      unitCount: document.deck.units.length,
+      parameters: parameters,
+    );
     final int remaining = activeSuperQueryPool(
       deck: document.deck,
       statistics: document.statistics,
@@ -759,15 +762,3 @@ String _learnUnitHeader(
       .replaceAll('{direction}', direction);
 }
 
-int _totalItems(LearningDeck deck, SessionParameters parameters) {
-  final int start = parameters.startIndex ?? 1;
-  final int end = parameters.endIndex ?? deck.units.length;
-  final int unitCount = max(
-    0,
-    min(end, deck.units.length) - max(1, start) + 1,
-  ).toInt();
-  return switch (parameters.directionSelection) {
-    DirectionSelection.both => unitCount * 2,
-    DirectionSelection.direction1 || DirectionSelection.direction2 => unitCount,
-  };
-}
