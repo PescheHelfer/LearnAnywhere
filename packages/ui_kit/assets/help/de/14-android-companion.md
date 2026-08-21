@@ -118,10 +118,16 @@ eigener Schritt zum Weiterblättern entfällt. Das entspricht dem Desktop, wo Si
 Lösung anzeigen und dann eine von drei Tasten drücken. Die nächste Karte beginnt immer
 wieder bei der Frage, unabhängig davon, wie der Umschalter bei der vorigen Karte stand.
 
-Über der Karte verfolgt eine Leiste **Beherrscht** und **Übrig** für den laufenden
-Durchgang sowie **Korrekt** — korrekte Versuche von allen Versuchen, mit einer
-Prozentzahl — als laufende Summe für die ganze Lern-Datei, dieselbe Zahl, die auch die
-Statistik zeigt.
+Über der Karte beschreiben eine Fortschrittsleiste und drei Zahlen — **Beherrscht**,
+**Übrig** und **Korrekt** — **die ganze Lern-Datei in der Richtung, in der diese Sitzung
+fragt**, nicht den laufenden Durchgang und nicht den gewählten Einheitenbereich: ein
+eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das, was hier gezählt
+wird, sodass die Leiste beim Einschränken des Bereichs nicht springt. **Korrekt** —
+korrekte Versuche von allen Versuchen, mit einer Prozentzahl — zählt nur diese Richtung.
+Diese Zahlen stimmen mit den Live-Anzeigen des Desktops für dieselbe Datei und Richtung
+überein; die Statistik des Telefons zeigt immer die kombinierte Zahl, da sie keine eigene
+Richtungsansicht hat, und stimmt deshalb nur genau überein, wenn Sie **Beide** Richtungen
+üben.
 
 Gehen einer Drill-Sitzung oder einem Durchgang die Karten aus, sagt die App das und
 bietet **Sitzung erweitern** an, um weiterzumachen.

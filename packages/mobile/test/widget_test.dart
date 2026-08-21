@@ -388,6 +388,115 @@ void main() {
   );
 
   testWidgets(
+    'a single-direction session counts only that direction, not both',
+    (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final LearningDeck deck = _deck();
+      final List<UnitStats> recorded = <UnitStats>[
+        UnitStats(
+          index: 1,
+          direction1: recordAttempt(
+            const DirectionStats(),
+            AttemptRating.correct,
+          ),
+          direction2: recordAttempt(const DirectionStats(), AttemptRating.wrong),
+        ),
+      ];
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck(
+          'mobile_sample.vok',
+          deck,
+          statistics: withUnitHashes(deck, recorded),
+        );
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mobile sample'));
+      await tester.pumpAndSettle();
+
+      // Direction 1 ("Forward") is the first-run default. Direction 2's wrong
+      // attempt above must not be added into a direction-1 session's figures.
+      expect(find.text('Forward'), findsOneWidget);
+
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Accuracy: 1/1 (100%)'), findsOneWidget);
+      expect(find.text('Mastered: 1'), findsOneWidget);
+      expect(find.text('Remaining: 0'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Mastered and Remaining are deck totals, not narrowed by the unit range',
+    (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final LearningDeck deck = _deck(
+        extraUnits: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{
+              0: PlainFieldValue('goodbye'),
+              1: PlainFieldValue('au revoir'),
+              2: PlainFieldValue('farewell'),
+            },
+          ),
+        ],
+      );
+      // Unit 1 mastered (one correct direction-1 attempt clears the default
+      // 0.4 threshold); unit 2 untouched.
+      final List<UnitStats> recorded = <UnitStats>[
+        UnitStats(
+          index: 1,
+          direction1: recordAttempt(
+            const DirectionStats(),
+            AttemptRating.correct,
+          ),
+        ),
+      ];
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck(
+          'mobile_sample.vok',
+          deck,
+          statistics: withUnitHashes(deck, recorded),
+        );
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mobile sample'));
+      await tester.pumpAndSettle();
+
+      // Restrict the range to unit 2 only — this narrows what is asked, not
+      // what the readouts count.
+      await tester.enterText(find.widgetWithText(TextField, 'Start unit'), '2');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextField, 'End unit'), '2');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // Deck-wide (2 units, direction 1 only): unit 1 mastered, unit 2 not —
+      // even though the session itself only ever serves unit 2.
+      expect(find.text('Mastered: 1'), findsOneWidget);
+      expect(find.text('Remaining: 1'), findsOneWidget);
+      expect(find.textContaining('Unit 2/2'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'the reveal screen can switch back to the question and stays rateable',
     (WidgetTester tester) async {
       await _setPhoneSurface(tester);

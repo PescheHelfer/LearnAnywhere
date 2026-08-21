@@ -107,9 +107,15 @@ there is no separate "next" step. This mirrors the desktop, where you reveal the
 and then press one of three keys. The next card always starts back on the question,
 however the switch was left on the one before.
 
-Above the card, a bar tracks **Mastered** and **Remaining** for the run you are in, and
-**Accuracy** — correct attempts out of total attempts, with a percentage — as a running
-total for the whole deck, the same figure the statistics screen reports.
+Above the card, a progress bar and three figures — **Mastered**, **Remaining** and
+**Accuracy** — describe **the whole deck, in the direction this session asks**, not the
+run you are in and not the unit range you chose: restricting the range narrows what you
+are asked, never what these count, so the bar does not jump when you narrow it.
+**Accuracy** — correct attempts out of total attempts, with a percentage — counts that
+same direction only. These match the desktop's own live readouts for the same deck and
+direction; the phone's Statistics screen always shows the combined figure, since it has
+no direction view of its own, so it only matches exactly when you practise **Both**
+directions.
 
 When a Drill or Once-through session runs out of cards, the app says so and offers
 **Extend session** to keep going.

@@ -240,21 +240,28 @@ final class _MobileSessionHeader extends StatelessWidget {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
+    // Deck total in the session's direction, matching desktop's live pills and
+    // the statistics screen for this deck — never a narrower, range-restricted
+    // slice and never a per-sitting counter. See deckWideScope/directionViewFor
+    // in engine.dart.
+    final SessionParameters readoutScope = deckWideScope(parameters);
+    final StatisticsDirectionView view = directionViewFor(
+      parameters.directionSelection,
+    );
     final int total = sessionItemCount(
       unitCount: document.deck.units.length,
-      parameters: parameters,
+      parameters: readoutScope,
     );
     final int remaining = activeSuperQueryPool(
       deck: document.deck,
       statistics: document.statistics,
-      parameters: parameters,
+      parameters: readoutScope,
     ).length;
-    final int mastered = max(0, total - remaining);
-    // Deck total, matching the statistics screen for this deck — never a
-    // per-sitting counter. See aggregateStatistics in mobile_statistics_screen.
+    final int mastered = (total - remaining).clamp(0, total);
     final StatisticsSummary summary = aggregateStatistics(
       unitCount: document.deck.units.length,
       statistics: document.statistics,
+      view: view,
     );
     final int accuracyPct = summary.totalAttempts == 0
         ? 0
