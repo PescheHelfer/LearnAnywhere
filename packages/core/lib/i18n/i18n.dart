@@ -315,8 +315,8 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.6.1.
   aboutVersion061,
 
-  /// About page version history entry for 0.6.2.
-  aboutVersion062,
+  /// About page version history entry for 0.7.0.
+  aboutVersion070,
 
   /// About page bundled-font credit.
   aboutFontCredit,
@@ -1348,10 +1348,14 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutVersion061:
           '0.6.1 – Statistics now follow their units when a deck is edited '
           'outside the app, and the app reports any that were reset.',
-      LearnAnywhereMessage.aboutVersion062:
-          '0.6.2 – New installs grade case- and accent-sensitively by '
-          'default, Arrow Down/Up now move between answer fields, and the '
-          'practice empty state names the unit editor correctly.',
+      LearnAnywhereMessage.aboutVersion070:
+          '0.7.0 – Live session readouts now cover the whole deck in the '
+          'direction the session is set to, and come from its statistics; '
+          'Level Learning grades the letters its scaffold shows, and its '
+          'statistics follow units inserted or deleted in the editor; mask '
+          'editor rows move with their field and a category can be cloned; '
+          'new installs grade case- and accent-sensitively, and Arrow Down/Up '
+          'move between answer fields.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1863,11 +1867,15 @@ final class LearnAnywhereCatalog {
           '0.6.1 – Statistiken folgen ihren Einheiten, wenn eine Lern-Datei '
           'außerhalb der App bearbeitet wurde; zurückgesetzte Einheiten werden '
           'gemeldet.',
-      LearnAnywhereMessage.aboutVersion062:
-          '0.6.2 – Neuinstallationen werten standardmäßig Groß-/'
-          'Kleinschreibung und Akzente streng, Pfeil hoch/runter wechseln '
-          'jetzt zwischen Antwortfeldern, und der Übungs-Leerzustand nennt '
-          'den Eingabe-Maske-Befehl korrekt.',
+      LearnAnywhereMessage.aboutVersion070:
+          '0.7.0 – Die Live-Anzeigen einer Lernsitzung umfassen jetzt die '
+          'gesamte Lern-Datei in der eingestellten Richtung und stammen aus '
+          'deren Statistik; das Stufenlernen bewertet die eingeblendeten '
+          'Buchstaben, und seine Statistik folgt im Editor eingefügten oder '
+          'gelöschten Einheiten; Zeilen im Maskeneditor bewegen sich mit '
+          'ihrem Feld und eine Kategorie lässt sich klonen; '
+          'Neuinstallationen werten Groß-/Kleinschreibung und Akzente '
+          'streng, und Pfeil hoch/runter wechseln zwischen Antwortfeldern.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
