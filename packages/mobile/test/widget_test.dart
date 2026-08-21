@@ -289,7 +289,8 @@ void main() {
       await tester.tap(find.text('Show answer'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Solution'), findsOneWidget);
+      // Twice: the field-group title and the question/answer toggle segment.
+      expect(find.text('Solution'), findsNWidgets(2));
       expect(find.text('Remarks'), findsOneWidget);
       expect(find.text('use greeting', findRichText: true), findsOneWidget);
 
@@ -303,6 +304,213 @@ void main() {
       final UnitStats stats = saved.single;
       expect(stats.direction1.attempts + stats.direction2.attempts, 1);
       expect(stats.direction1.correct + stats.direction2.correct, 1);
+    },
+  );
+
+  testWidgets(
+    'the accuracy chip is a deck total that matches the statistics screen',
+    (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final LearningDeck deck = _deck(
+        extraUnits: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{
+              0: PlainFieldValue('goodbye'),
+              1: PlainFieldValue('au revoir'),
+              2: PlainFieldValue('farewell'),
+            },
+          ),
+        ],
+      );
+      final List<UnitStats> recorded = <UnitStats>[
+        UnitStats(
+          index: 1,
+          direction1: recordAttempt(
+            const DirectionStats(),
+            AttemptRating.correct,
+          ),
+        ),
+        UnitStats(
+          index: 2,
+          direction1: recordAttempt(const DirectionStats(), AttemptRating.wrong),
+        ),
+      ];
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck(
+          'mobile_sample.vok',
+          deck,
+          statistics: withUnitHashes(deck, recorded),
+        );
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mobile sample'));
+      await tester.pumpAndSettle();
+
+      // Both directions, so the deck total (not just direction 1) is on
+      // screen: 1 correct out of 2 attempts recorded above.
+      await tester.tap(find.text('Forward'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Both').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Accuracy: 1/2 (50%)'), findsOneWidget);
+
+      // Rating updates the figure immediately, because it is read from the
+      // statistics after every save rather than held in a per-sitting
+      // counter — whichever item was drawn, the deck total gains one
+      // attempt and one correct.
+      await tester.tap(find.text('Show answer'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Knew it'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Accuracy: 2/3 (67%)'), findsOneWidget);
+
+      // Leaving the session for the statistics screen shows the same figure.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Statistics'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Accuracy: 67%'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'the reveal screen can switch back to the question and stays rateable',
+    (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck('mobile_sample.vok', _deck());
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mobile sample'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Show answer'));
+      await tester.pumpAndSettle();
+      expect(_hasAnyRichText(tester, <String>['bonjour']), isTrue);
+
+      // Switch to the question — the rating buttons stay put and enabled.
+      await tester.tap(find.text('Prompt'));
+      await tester.pumpAndSettle();
+      expect(_hasAnyRichText(tester, <String>['hello']), isTrue);
+      expect(find.text('Knew it'), findsOneWidget);
+      final FilledButton knewIt = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Knew it'),
+      );
+      expect(knewIt.onPressed, isNotNull);
+
+      // Switch back to the answer, as often as wanted.
+      await tester.tap(find.text('Solution').first);
+      await tester.pumpAndSettle();
+      expect(_hasAnyRichText(tester, <String>['bonjour']), isTrue);
+
+      // Rating from the toggled-back answer view still advances normally,
+      // and the next card always starts on the question again. No count, so
+      // a single-unit deck's only item stays in the pool instead of being
+      // mastered by this tap and ending the session.
+      await tester.tap(find.text('No count'));
+      await tester.pumpAndSettle();
+      expect(find.text('Show answer'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'the question panel is top-anchored and fills the card width for a '
+    'short prompt and a long one alike',
+    (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final LearningDeck deck = LearningDeck(
+        mask: _deck().mask,
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{
+              0: PlainFieldValue('hi'),
+              1: PlainFieldValue('bonjour'),
+            },
+          ),
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{
+              0: PlainFieldValue(
+                'a noticeably longer question that still fits on the card',
+              ),
+              1: PlainFieldValue('au revoir'),
+            },
+          ),
+        ],
+      );
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck('mobile_sample.vok', deck, statistics: const <UnitStats>[]);
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mobile sample'));
+      await tester.pumpAndSettle();
+
+      // Deterministic order: Once through, shuffle off.
+      await tester.tap(find.text('Drill mode'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Once through').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Shuffle units'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      expect(_hasAnyRichText(tester, <String>['hi']), isTrue);
+      final Finder panel = find.byWidgetPredicate(
+        (Widget widget) => widget.runtimeType.toString() == '_FieldGroup',
+      );
+      final Rect shortRect = tester.getRect(panel);
+
+      await tester.tap(find.text('Show answer'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('No count'));
+      await tester.pumpAndSettle();
+
+      expect(
+        _hasAnyRichText(tester, <String>[
+          'a noticeably longer question that still fits on the card',
+        ]),
+        isTrue,
+      );
+      final Rect longRect = tester.getRect(panel);
+
+      // Anchored at the top (not vertically centred) and filling the full
+      // card width regardless of content length, so consecutive cards do
+      // not change shape.
+      expect(longRect.top, shortRect.top);
+      expect(longRect.width, shortRect.width);
     },
   );
 

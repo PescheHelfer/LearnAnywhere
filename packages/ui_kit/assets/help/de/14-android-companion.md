@@ -95,23 +95,33 @@ nicht: auf dem Telefon ist sie immer aus.
 
 Jede Karte braucht genau zwei Antippen.
 
-**Erstes Antippen.** Die Karte zeigt die **Frage** und eine Schaltfläche,
-**Antwort zeigen**.
+**Erstes Antippen.** Die Karte zeigt die **Frage**, oben am Bildschirm verankert und über
+die volle Breite, und eine Schaltfläche, **Antwort zeigen**. Eine kurze und eine lange
+Frage lassen die Karte gleich aussehen; eine Frage, die nicht auf die Karte passt,
+schrumpft zunächst und lässt sich dann scrollen, sodass nichts abgeschnitten wird.
 
 **Zweites Antippen.** Die Karte zeigt nun die **Lösung** und etwaige **Bemerkungen**, mit
-drei Schaltflächen darunter:
+einem Umschalter **Frage** / **Lösung** darüber und drei Bewertungsschaltflächen
+darunter:
 
 - **Gewusst** — zählt als korrekter Versuch.
 - **Nicht gewusst** — zählt als falscher Versuch.
 - **Nicht zählen** — zeigt Ihnen die Karte, ohne etwas aufzuzeichnen. Nützlich, wenn Sie
   gestört wurden oder etwas nachschlagen wollen, ohne die Zahlen zu verfälschen.
 
+Der Umschalter **Frage** / **Lösung** lässt Sie die Frage so oft ansehen, wie Sie
+möchten, bevor Sie die Karte bewerten — die drei Bewertungsschaltflächen bleiben dabei an
+ihrem Platz und in beiden Stellungen bedienbar.
+
 Was Sie auch antippen: es bewertet die Karte und geht zugleich zur nächsten weiter, ein
 eigener Schritt zum Weiterblättern entfällt. Das entspricht dem Desktop, wo Sie die
-Lösung anzeigen und dann eine von drei Tasten drücken.
+Lösung anzeigen und dann eine von drei Tasten drücken. Die nächste Karte beginnt immer
+wieder bei der Frage, unabhängig davon, wie der Umschalter bei der vorigen Karte stand.
 
-Über der Karte verfolgt eine Leiste die Sitzung: **Beherrscht**, **Übrig** und
-**Korrekt** für den laufenden Durchgang.
+Über der Karte verfolgt eine Leiste **Beherrscht** und **Übrig** für den laufenden
+Durchgang sowie **Korrekt** — korrekte Versuche von allen Versuchen, mit einer
+Prozentzahl — als laufende Summe für die ganze Lern-Datei, dieselbe Zahl, die auch die
+Statistik zeigt.
 
 Gehen einer Drill-Sitzung oder einem Durchgang die Karten aus, sagt die App das und
 bietet **Sitzung erweitern** an, um weiterzumachen.

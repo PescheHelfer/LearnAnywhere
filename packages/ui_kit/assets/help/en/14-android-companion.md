@@ -85,22 +85,31 @@ it is always off.
 
 Each card takes exactly two taps.
 
-**First tap.** The card shows the **Prompt** and one button, **Show answer**.
+**First tap.** The card shows the **Prompt**, anchored at the top of the screen and
+filling its width, and one button, **Show answer**. A short prompt and a long one leave
+the card the same shape; a prompt too long to fit shrinks to fit and then scrolls, so
+nothing is cut off.
 
-**Second tap.** The card now shows the **Solution** and any **Remarks**, with three
-buttons underneath:
+**Second tap.** The card now shows the **Solution** and any **Remarks**, with a
+**Prompt** / **Solution** switch above them and three rating buttons underneath:
 
 - **Knew it** — counts as a correct attempt.
 - **Didn't know** — counts as a wrong attempt.
 - **No count** — shows you the card without recording anything. Use it when you were
   interrupted, or when you want to look something up without spoiling the figures.
 
-Whichever you tap both records the card and moves on to the next one, so there is no
-separate "next" step. This mirrors the desktop, where you reveal the answer and then
-press one of three keys.
+The **Prompt** / **Solution** switch lets you look at the question again as often as
+you like before you rate the card — the three rating buttons stay in place and stay
+usable in either position.
 
-Above the card, a bar tracks the session: **Mastered**, **Remaining** and **Accuracy**
-for the run you are in.
+Whichever rating button you tap both records the card and moves on to the next one, so
+there is no separate "next" step. This mirrors the desktop, where you reveal the answer
+and then press one of three keys. The next card always starts back on the question,
+however the switch was left on the one before.
+
+Above the card, a bar tracks **Mastered** and **Remaining** for the run you are in, and
+**Accuracy** — correct attempts out of total attempts, with a percentage — as a running
+total for the whole deck, the same figure the statistics screen reports.
 
 When a Drill or Once-through session runs out of cards, the app says so and offers
 **Extend session** to keep going.

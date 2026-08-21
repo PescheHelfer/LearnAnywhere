@@ -53,8 +53,6 @@ final class _MobileSessionScreenState extends State<MobileSessionScreen> {
   late MobileDeckDocument _document;
   _MobileSessionStage _stage = _MobileSessionStage.prompt;
   SessionItem? _currentItem;
-  int _sessionAttempts = 0;
-  int _sessionCorrect = 0;
 
   @override
   void initState() {
@@ -88,8 +86,6 @@ final class _MobileSessionScreenState extends State<MobileSessionScreen> {
         _MobileSessionHeader(
           document: _document,
           parameters: widget.parameters,
-          attempts: _sessionAttempts,
-          correct: _sessionCorrect,
         ),
         Expanded(
           child: switch (_stage) {
@@ -135,12 +131,6 @@ final class _MobileSessionScreenState extends State<MobileSessionScreen> {
     );
     setState(() {
       _document = updatedDocument;
-      if (rating != AttemptRating.noCount) {
-        _sessionAttempts += 1;
-      }
-      if (rating == AttemptRating.correct) {
-        _sessionCorrect += 1;
-      }
       _selectNextItem();
     });
     await widget.fileService.saveStatistics(updatedDocument, updated);
@@ -240,14 +230,10 @@ final class _MobileSessionHeader extends StatelessWidget {
   const _MobileSessionHeader({
     required this.document,
     required this.parameters,
-    required this.attempts,
-    required this.correct,
   });
 
   final MobileDeckDocument document;
   final SessionParameters parameters;
-  final int attempts;
-  final int correct;
 
   @override
   Widget build(BuildContext context) {
@@ -264,9 +250,15 @@ final class _MobileSessionHeader extends StatelessWidget {
       parameters: parameters,
     ).length;
     final int mastered = max(0, total - remaining);
-    final int accuracy = attempts == 0
+    // Deck total, matching the statistics screen for this deck — never a
+    // per-sitting counter. See aggregateStatistics in mobile_statistics_screen.
+    final StatisticsSummary summary = aggregateStatistics(
+      unitCount: document.deck.units.length,
+      statistics: document.statistics,
+    );
+    final int accuracyPct = summary.totalAttempts == 0
         ? 0
-        : ((correct / attempts) * 100).round();
+        : ((summary.totalCorrect / summary.totalAttempts) * 100).round();
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         LearnAnywhereTokens.gapMedium,
@@ -315,7 +307,9 @@ final class _MobileSessionHeader extends StatelessWidget {
               ),
               _InfoChip(
                 label: messages.message(LearnAnywhereMessage.learnLiveAccuracy),
-                value: '$accuracy%',
+                value:
+                    '${summary.totalCorrect}/${summary.totalAttempts} '
+                    '($accuracyPct%)',
               ),
             ],
           ),
@@ -365,57 +359,12 @@ final class _PromptView extends StatelessWidget {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final LearningUnit unit = document.deck.units[item.unitIndex - 1];
-    final Map<FieldDefinition, FieldValue> fields = promptFields(
-      document.deck,
-      unit,
-      item.direction,
-    );
     return _UnitScaffold(
       document: document,
       item: item,
       child: Column(
         children: <Widget>[
-          Expanded(
-            // Shrink-then-scroll: the value style is sized down toward
-            // kMinCardFontSize until the group fits the card, and the group is
-            // scrollable so a unit that stays too big at the floor (a long
-            // prompt, or a category with many fields) still reaches the reader
-            // instead of overflowing off the bottom.
-            child: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                const EdgeInsets padding = EdgeInsets.all(
-                  LearnAnywhereTokens.gapLarge,
-                );
-                final TextStyle style = _fittedCardStyle(
-                  context: context,
-                  fields: fields,
-                  available: Size(
-                    constraints.maxWidth - padding.horizontal,
-                    constraints.maxHeight - padding.vertical,
-                  ),
-                );
-                return SingleChildScrollView(
-                  padding: padding,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight - padding.vertical,
-                    ),
-                    // Centred while it fits, top-aligned once it scrolls.
-                    child: Center(
-                      child: _FieldGroup(
-                        title: messages.message(
-                          LearnAnywhereMessage.learnPrompt,
-                        ),
-                        fields: fields,
-                        valueStyle: style,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          Expanded(child: _QuestionPanel(document: document, item: item)),
           Padding(
             padding: const EdgeInsets.all(LearnAnywhereTokens.gapMedium),
             child: SizedBox(
@@ -435,7 +384,66 @@ final class _PromptView extends StatelessWidget {
   }
 }
 
-final class _RevealView extends StatelessWidget {
+/// The prompt fields, top-anchored and filling the card's width so a short
+/// question and a long one leave consecutive cards the same shape.
+///
+/// Shrink-then-scroll: the value style is sized down toward
+/// [_kCardMinFontSize] until the group fits the available height, and the
+/// group stays inside a scroll view so a unit that is still too big at the
+/// floor (a long prompt, or a category with many fields) reaches the reader
+/// instead of overflowing off the bottom.
+final class _QuestionPanel extends StatelessWidget {
+  const _QuestionPanel({required this.document, required this.item});
+
+  final MobileDeckDocument document;
+  final SessionItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final LearningUnit unit = document.deck.units[item.unitIndex - 1];
+    final Map<FieldDefinition, FieldValue> fields = promptFields(
+      document.deck,
+      unit,
+      item.direction,
+    );
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        const EdgeInsets padding = EdgeInsets.all(
+          LearnAnywhereTokens.gapLarge,
+        );
+        final TextStyle style = _fittedCardStyle(
+          context: context,
+          fields: fields,
+          available: Size(
+            constraints.maxWidth - padding.horizontal,
+            constraints.maxHeight - padding.vertical,
+          ),
+        );
+        return SingleChildScrollView(
+          padding: padding,
+          // SizedBox forces the group to the card's full width regardless of
+          // content length — a vertical SingleChildScrollView's own width
+          // constraint on its child is loose, not tight, so without this a
+          // short question would size down to its own content width instead
+          // of matching the next (possibly longer) card.
+          child: SizedBox(
+            width: constraints.maxWidth - padding.horizontal,
+            child: _FieldGroup(
+              title: messages.message(LearnAnywhereMessage.learnPrompt),
+              fields: fields,
+              valueStyle: style,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+final class _RevealView extends StatefulWidget {
   const _RevealView({
     required this.document,
     required this.item,
@@ -447,42 +455,95 @@ final class _RevealView extends StatelessWidget {
   final ValueChanged<AttemptRating> onRate;
 
   @override
+  State<_RevealView> createState() => _RevealViewState();
+}
+
+final class _RevealViewState extends State<_RevealView> {
+  // Resets to the answer (false) every time a fresh _RevealView is built for
+  // a new card — the stage machine in MobileSessionScreen always returns to
+  // _MobileSessionStage.prompt before a new reveal, so this state never
+  // survives to the next card.
+  bool _showQuestion = false;
+
+  @override
   Widget build(BuildContext context) {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final LearningUnit unit = document.deck.units[item.unitIndex - 1];
+    final LearningUnit unit =
+        widget.document.deck.units[widget.item.unitIndex - 1];
     return _UnitScaffold(
-      document: document,
-      item: item,
+      document: widget.document,
+      item: widget.item,
       child: Column(
         children: <Widget>[
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
-              children: <Widget>[
-                _FieldGroup(
-                  title: messages.message(LearnAnywhereMessage.learnSolution),
-                  fields: answerFields(document.deck, unit, item.direction),
-                  // Same size as the prompt: the two are one card the eye
-                  // compares, so the solution is set apart by the tinted
-                  // panel and its label, not by being smaller.
-                  valueStyle: _cardValueStyle(context),
-                  highlight: true,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LearnAnywhereTokens.gapMedium,
+              LearnAnywhereTokens.gapSmall,
+              LearnAnywhereTokens.gapMedium,
+              0,
+            ),
+            child: SegmentedButton<bool>(
+              segments: <ButtonSegment<bool>>[
+                ButtonSegment<bool>(
+                  value: true,
+                  label: Text(messages.message(LearnAnywhereMessage.learnPrompt)),
                 ),
-                const SizedBox(height: LearnAnywhereTokens.gapLarge),
-                _FieldGroup(
-                  title: messages.message(LearnAnywhereMessage.learnRemarks),
-                  fields: remarkFields(document.deck, unit, item.direction),
-                  // Remarks are supporting notes, not the thing being
-                  // recalled, so they stay at body size.
-                  valueStyle: LearnAnywhereTokens.monospace(
-                    Theme.of(context).textTheme.bodyLarge,
+                ButtonSegment<bool>(
+                  value: false,
+                  label: Text(
+                    messages.message(LearnAnywhereMessage.learnSolution),
                   ),
                 ),
               ],
+              selected: <bool>{_showQuestion},
+              onSelectionChanged: (Set<bool> selection) =>
+                  setState(() => _showQuestion = selection.single),
             ),
           ),
+          Expanded(
+            child: _showQuestion
+                ? _QuestionPanel(document: widget.document, item: widget.item)
+                : ListView(
+                    padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
+                    children: <Widget>[
+                      _FieldGroup(
+                        title: messages.message(
+                          LearnAnywhereMessage.learnSolution,
+                        ),
+                        fields: answerFields(
+                          widget.document.deck,
+                          unit,
+                          widget.item.direction,
+                        ),
+                        // Same size as the prompt: the two are one card the
+                        // eye compares, so the solution is set apart by the
+                        // tinted panel and its label, not by being smaller.
+                        valueStyle: _cardValueStyle(context),
+                        highlight: true,
+                      ),
+                      const SizedBox(height: LearnAnywhereTokens.gapLarge),
+                      _FieldGroup(
+                        title: messages.message(
+                          LearnAnywhereMessage.learnRemarks,
+                        ),
+                        fields: remarkFields(
+                          widget.document.deck,
+                          unit,
+                          widget.item.direction,
+                        ),
+                        // Remarks are supporting notes, not the thing being
+                        // recalled, so they stay at body size.
+                        valueStyle: LearnAnywhereTokens.monospace(
+                          Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+          // Rating stays reachable and enabled regardless of the toggle above
+          // — it rates the card the learner was shown, not the panel state.
           Padding(
             padding: const EdgeInsets.all(LearnAnywhereTokens.gapMedium),
             child: Wrap(
@@ -491,13 +552,13 @@ final class _RevealView extends StatelessWidget {
               runSpacing: LearnAnywhereTokens.gapSmall,
               children: <Widget>[
                 FilledButton(
-                  onPressed: () => onRate(AttemptRating.correct),
+                  onPressed: () => widget.onRate(AttemptRating.correct),
                   child: Text(
                     messages.message(LearnAnywhereMessage.learnRatingKnewIt),
                   ),
                 ),
                 FilledButton.tonal(
-                  onPressed: () => onRate(AttemptRating.wrong),
+                  onPressed: () => widget.onRate(AttemptRating.wrong),
                   child: Text(
                     messages.message(
                       LearnAnywhereMessage.learnRatingDidNotKnow,
@@ -505,7 +566,7 @@ final class _RevealView extends StatelessWidget {
                   ),
                 ),
                 OutlinedButton(
-                  onPressed: () => onRate(AttemptRating.noCount),
+                  onPressed: () => widget.onRate(AttemptRating.noCount),
                   child: Text(
                     messages.message(LearnAnywhereMessage.learnRatingNoCount),
                   ),
