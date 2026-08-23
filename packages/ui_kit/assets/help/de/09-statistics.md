@@ -4,11 +4,12 @@ Der Bildschirm **Statistik** (**Statistik**, `Alt+S` — eine direkte Aktion in 
 Menüleiste, kein Untermenü) liest dieselben Zähler, in die Ihre Sitzungen schreiben. Er
 hat drei Reiter: **Übersicht**, **Einheitenliste** und **Stufenlernen**.
 
-Jeder Reiter teilt sich einen Schalter **Ansicht** — **Kombiniert**,
+Jeder Reiter teilt sich einen Schalter **Richtung** — **Kombiniert**,
 **Abfragerichtung 1** oder **Abfragerichtung 2** — sowie dieselben Befehle
 **Statistik laden... / Statistik speichern / Statistik speichern unter... /
-Statistik löschen...**, die sich auch im [Menü Datei](03-managing-files.md#statistik)
-finden. Was mit diesen Zählern geschieht, wenn sich die Lern-Datei selbst ändert, steht
+Aktuelle Statistik löschen...**, die sich auch im
+[Menü Datei](03-managing-files.md#statistik) finden. Was mit diesen Zählern geschieht,
+wenn sich die Lern-Datei selbst ändert, steht
 unter [Wenn die Lern-Datei anderswo bearbeitet wurde](03-managing-files.md#wenn-die-lern-datei-anderswo-bearbeitet-wurde).
 
 ## Die sieben Bereiche

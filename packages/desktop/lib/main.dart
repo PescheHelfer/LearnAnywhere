@@ -1213,7 +1213,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           _commandItem(messages, LearnAnywhereMessage.statisticsLoad),
           _commandItem(messages, LearnAnywhereMessage.statisticsSave),
           _commandItem(messages, LearnAnywhereMessage.fileSaveStatsAs),
-          _commandItem(messages, LearnAnywhereMessage.statisticsClear),
+          _commandItem(messages, LearnAnywhereMessage.statisticsClearCurrent),
           const _MenuSeparator(),
           _commandItem(messages, LearnAnywhereMessage.fileExit),
         ],
@@ -2308,6 +2308,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         deck: _document.deck,
         statistics: _document.statistics,
         levelStatistics: _document.levelStatistics,
+        allTimeStatistics: _document.allTime.perUnit,
+        allTimeLevelStatistics: _document.allTime.perLevel,
         levelNames: widget.locale.languageCode == 'de'
             ? _settings.levelNamesDe
             : _settings.levelNamesEn,
@@ -2424,7 +2426,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         await _saveStatistics();
       case LearnAnywhereMessage.fileSaveStatsAs:
         await _saveStatistics(saveAs: true);
-      case LearnAnywhereMessage.statisticsClear:
+      case LearnAnywhereMessage.statisticsClearCurrent:
         await _clearStatistics();
       case LearnAnywhereMessage.fileExit:
         await _confirmAndExit();
@@ -2949,7 +2951,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         return AlertDialog(
           title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
           content: Text(
-            messages.message(LearnAnywhereMessage.confirmClearStatistics),
+            messages.message(
+              LearnAnywhereMessage.confirmClearCurrentStatistics,
+            ),
           ),
           actions: <Widget>[
             TextButton(

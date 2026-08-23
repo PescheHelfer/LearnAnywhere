@@ -16,6 +16,8 @@ final class StatisticsPage extends StatefulWidget {
     required this.deck,
     required this.statistics,
     required this.levelStatistics,
+    required this.allTimeStatistics,
+    required this.allTimeLevelStatistics,
     required this.levelNames,
     required this.onLoadStatistics,
     required this.onSaveStatistics,
@@ -34,6 +36,13 @@ final class StatisticsPage extends StatefulWidget {
 
   /// Current Level-Learning statistics (empty when the deck has none).
   final List<LevelUnitStats> levelStatistics;
+
+  /// The deck's all-time per-unit counters (empty when nothing was recorded).
+  final List<UnitStats> allTimeStatistics;
+
+  /// The deck's all-time Level-Learning counters, each carrying the last level
+  /// reached rather than where the ladder stands now.
+  final List<LevelUnitStats> allTimeLevelStatistics;
 
   /// Custom level names for the active locale, ordered level 3 → 0.
   final List<String> levelNames;
@@ -62,16 +71,38 @@ final class StatisticsPage extends StatefulWidget {
 
 final class _StatisticsPageState extends State<StatisticsPage> {
   StatisticsDirectionView _view = StatisticsDirectionView.direction1;
+
+  /// Which of the deck's two records the three tabs read.
+  ///
+  /// Deliberately not persisted anywhere. The current statistics are the ones
+  /// that decide what gets practised, so they are what the learner came to
+  /// read; the all-time record is for looking at deliberately. Opening on the
+  /// current statistics every visit also means a scope-specific action can
+  /// never be reached by accident from a scope left over from last time.
+  StatisticsScope _scope = StatisticsScope.session;
+
   final Set<int> _selectedUnitIndices = <int>{};
+
+  /// The per-unit record [_scope] selects.
+  List<UnitStats> get _statistics => _scope == StatisticsScope.allTime
+      ? widget.allTimeStatistics
+      : widget.statistics;
+
+  /// The Level-Learning record [_scope] selects.
+  List<LevelUnitStats> get _levelStatistics =>
+      _scope == StatisticsScope.allTime
+          ? widget.allTimeLevelStatistics
+          : widget.levelStatistics;
 
   @override
   Widget build(BuildContext context) {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
+    final bool allTime = _scope == StatisticsScope.allTime;
     final StatisticsSummary summary = aggregateStatistics(
       unitCount: widget.deck.units.length,
-      statistics: widget.statistics,
+      statistics: _statistics,
       view: _view,
     );
     return Material(
@@ -88,6 +119,7 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: LearnAnywhereTokens.gapMedium),
+              // Row one — what is on screen: which direction, which record.
               Wrap(
                 spacing: LearnAnywhereTokens.gapMedium,
                 runSpacing: LearnAnywhereTokens.gapSmall,
@@ -99,12 +131,30 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       setState(() => _view = value);
                     },
                   ),
-                  _StatsFileButtons(
-                    onLoad: widget.onLoadStatistics,
-                    onSave: widget.onSaveStatistics,
-                    onSaveAs: widget.onSaveStatisticsAs,
-                    onClear: widget.onClearStatistics,
+                  _ScopeSelector(
+                    scope: _scope,
+                    onChanged: (StatisticsScope value) {
+                      setState(() => _scope = value);
+                    },
                   ),
+                ],
+              ),
+              const SizedBox(height: LearnAnywhereTokens.gapSmall),
+              // Row two — what can be done to it. Load, save, save-as and the
+              // everyday clear all act on the working record, so none of them
+              // belongs under the all-time numbers.
+              Wrap(
+                spacing: LearnAnywhereTokens.gapMedium,
+                runSpacing: LearnAnywhereTokens.gapSmall,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  if (!allTime)
+                    _StatsFileButtons(
+                      onLoad: widget.onLoadStatistics,
+                      onSave: widget.onSaveStatistics,
+                      onSaveAs: widget.onSaveStatisticsAs,
+                      onClear: widget.onClearStatistics,
+                    ),
                   FilledButton.tonalIcon(
                     onPressed: widget.onClose,
                     icon: const Icon(Icons.close),
@@ -147,7 +197,7 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                     _DetailedStats(summary: summary),
                     _PracticeList(
                       deck: widget.deck,
-                      statistics: widget.statistics,
+                      statistics: _statistics,
                       view: _view,
                       selectedUnitIndices: _selectedUnitIndices,
                       onSelectionChanged: _replaceSelection,
@@ -157,9 +207,10 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                     ),
                     _LevelLearningStats(
                       deck: widget.deck,
-                      levelStatistics: widget.levelStatistics,
+                      levelStatistics: _levelStatistics,
                       levelNames: widget.levelNames,
                       view: _view,
+                      lastLevelColumn: allTime,
                       selectedUnitIndices: _selectedUnitIndices,
                       onSelectionChanged: _replaceSelection,
                       onSaveSelected: _saveSelected,
@@ -233,6 +284,45 @@ final class _DirectionViewMenu extends StatelessWidget {
           }
         },
       ),
+    );
+  }
+}
+
+/// The Current / All-time scope control.
+///
+/// A segmented button rather than a second dropdown: both choices show at
+/// once, so a learner who has never heard of the all-time record can see that
+/// it exists, and switching between the two is a single click.
+final class _ScopeSelector extends StatelessWidget {
+  const _ScopeSelector({required this.scope, required this.onChanged});
+
+  final StatisticsScope scope;
+  final ValueChanged<StatisticsScope> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return SegmentedButton<StatisticsScope>(
+      showSelectedIcon: false,
+      segments: <ButtonSegment<StatisticsScope>>[
+        ButtonSegment<StatisticsScope>(
+          value: StatisticsScope.session,
+          label: Text(
+            messages.message(LearnAnywhereMessage.statisticsScopeCurrent),
+          ),
+        ),
+        ButtonSegment<StatisticsScope>(
+          value: StatisticsScope.allTime,
+          label: Text(
+            messages.message(LearnAnywhereMessage.statisticsScopeAllTime),
+          ),
+        ),
+      ],
+      selected: <StatisticsScope>{scope},
+      onSelectionChanged: (Set<StatisticsScope> selection) =>
+          onChanged(selection.first),
     );
   }
 }
@@ -636,6 +726,7 @@ final class _LevelLearningStats extends StatefulWidget {
     required this.levelStatistics,
     required this.levelNames,
     required this.view,
+    required this.lastLevelColumn,
     required this.selectedUnitIndices,
     required this.onSelectionChanged,
     required this.onSaveSelected,
@@ -645,6 +736,17 @@ final class _LevelLearningStats extends StatefulWidget {
   final List<LevelUnitStats> levelStatistics;
   final List<String> levelNames;
   final StatisticsDirectionView view;
+
+  /// Whether the row-header column names the *last* level reached rather than
+  /// the level the ladder currently stands at.
+  ///
+  /// The all-time record carries the level most recently written, because a
+  /// level is a state and not a counter: after a fresh start the learner is
+  /// back at full support, and summing that with last month's free recall
+  /// would mean nothing. Labelling the column "Level" there would invite
+  /// reading it as the live ladder position.
+  final bool lastLevelColumn;
+
   final Set<int> selectedUnitIndices;
   final ValueChanged<Set<int>> onSelectionChanged;
   final VoidCallback onSaveSelected;
@@ -664,10 +766,14 @@ final class _LevelLearningStatsState extends State<_LevelLearningStats> {
   @override
   void didUpdateWidget(covariant _LevelLearningStats oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // A direction-view switch or a stats change can invalidate the open cell;
-    // drop back to the matrix rather than show a stale, mismatched list.
+    // A direction-view switch, a scope switch or a stats change can invalidate
+    // the open cell; drop back to the matrix rather than show a stale,
+    // mismatched list. The scope is checked in its own right: two empty
+    // records are the same canonical const list, so identity alone would miss
+    // the switch.
     if (_drillLevel != null &&
         (oldWidget.view != widget.view ||
+            oldWidget.lastLevelColumn != widget.lastLevelColumn ||
             !identical(oldWidget.levelStatistics, widget.levelStatistics))) {
       _drillLevel = null;
       _drillBucket = null;
@@ -708,7 +814,13 @@ final class _LevelLearningStatsState extends State<_LevelLearningStats> {
           headingRowHeight: 40,
           columns: <DataColumn>[
             DataColumn(
-              label: Text(messages.message(LearnAnywhereMessage.statisticsLevel)),
+              label: Text(
+                messages.message(
+                  widget.lastLevelColumn
+                      ? LearnAnywhereMessage.statisticsLastLevel
+                      : LearnAnywhereMessage.statisticsLevel,
+                ),
+              ),
             ),
             for (final HitRateBucket bucket in HitRateBucket.values)
               DataColumn(
@@ -1114,7 +1226,9 @@ final class _StatsFileButtons extends StatelessWidget {
         FilledButton.tonalIcon(
           onPressed: onClear,
           icon: const Icon(Icons.clear),
-          label: Text(messages.message(LearnAnywhereMessage.statisticsClear)),
+          label: Text(
+            messages.message(LearnAnywhereMessage.statisticsClearCurrent),
+          ),
         ),
       ],
     );

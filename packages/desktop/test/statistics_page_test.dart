@@ -10,37 +10,14 @@ void main() {
   ) async {
     // The practice list buttons sit below the default 600px test surface,
     // so give it room to lay out without an off-screen hit-test failure.
-    tester.view.physicalSize = const Size(1400, 1000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    widenSurface(tester);
 
     List<int> savedSelection = <int>[];
     await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates:
-            LearnAnywhereLocalizations.localizationsDelegates,
-        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
-        home: StatisticsPage(
-          deck: sampleDeck(),
-          statistics: const <UnitStats>[
-            UnitStats(
-              index: 1,
-              direction1: DirectionStats(attempts: 2, correct: 2),
-            ),
-            UnitStats(index: 2),
-          ],
-          levelStatistics: const <LevelUnitStats>[],
-          levelNames: kDefaultLevelNamesEn,
-          onLoadStatistics: () async {},
-          onSaveStatistics: () async {},
-          onClearStatistics: () async {},
-          onSaveSelectedUnits: (List<int> unitIndices) async {
-            savedSelection = unitIndices;
-          },
-          onSaveStatisticsAs: () async {},
-          onClose: () {},
-        ),
+      buildPage(
+        onSaveSelectedUnits: (List<int> unitIndices) async {
+          savedSelection = unitIndices;
+        },
       ),
     );
     await tester.pumpAndSettle();
@@ -70,10 +47,7 @@ void main() {
     'level-zero caption shows on the overall tabs, and "% of practiced" is '
     'blank for the never-practiced row',
     (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1400, 1000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      widenSurface(tester);
 
       await tester.pumpWidget(buildPage());
       await tester.pumpAndSettle();
@@ -105,10 +79,7 @@ void main() {
   testWidgets('keep practicing sorts by a tapped column header', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1400, 1000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    widenSurface(tester);
 
     await tester.pumpWidget(buildPage());
     await tester.pumpAndSettle();
@@ -136,10 +107,7 @@ void main() {
   testWidgets('the level learning drill-down omits the level-zero caption', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1400, 1000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    widenSurface(tester);
 
     const LevelDirectionStats atLevelZeroPerfect = LevelDirectionStats(
       currentLevel: 0,
@@ -175,62 +143,27 @@ void main() {
   testWidgets('level learning tab shows the matrix and drills into a cell', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1400, 1000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    widenSurface(tester);
 
     // Unit 1 sits at level 2 (2/1 → Fair) in both directions; unit 2 at level 0
     // (2/2 → Perfect). Combined view counts both directions, so each cell holds
     // two entries and reads "2 (100%)".
-    const LevelDirectionStats atLevelTwoFair = LevelDirectionStats(
-      currentLevel: 2,
-      levels: <int, DirectionStats>{2: DirectionStats(attempts: 2, correct: 1)},
-    );
-    const LevelDirectionStats atLevelZeroPerfect = LevelDirectionStats(
-      currentLevel: 0,
-      levels: <int, DirectionStats>{0: DirectionStats(attempts: 2, correct: 2)},
-    );
     await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates:
-            LearnAnywhereLocalizations.localizationsDelegates,
-        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
-        home: StatisticsPage(
-          deck: sampleDeck(),
-          statistics: const <UnitStats>[],
-          levelStatistics: const <LevelUnitStats>[
-            LevelUnitStats(
-              index: 1,
-              dir1: atLevelTwoFair,
-              dir2: atLevelTwoFair,
-            ),
-            LevelUnitStats(
-              index: 2,
-              dir1: atLevelZeroPerfect,
-              dir2: atLevelZeroPerfect,
-            ),
-          ],
-          levelNames: kDefaultLevelNamesEn,
-          onLoadStatistics: () async {},
-          onSaveStatistics: () async {},
-          onClearStatistics: () async {},
-          onSaveSelectedUnits: (List<int> unitIndices) async {},
-          onSaveStatisticsAs: () async {},
-          onClose: () {},
-        ),
+      buildPage(
+        statistics: const <UnitStats>[],
+        levelStatistics: const <LevelUnitStats>[
+          LevelUnitStats(index: 1, dir1: _levelTwoFair, dir2: _levelTwoFair),
+          LevelUnitStats(
+            index: 2,
+            dir1: _levelZeroPerfect,
+            dir2: _levelZeroPerfect,
+          ),
+        ],
       ),
     );
     await tester.pumpAndSettle();
 
-    // The view defaults to Direction 1; switch to Combined so both
-    // directions are counted together, as this test expects.
-    await tester.tap(
-      find.byType(DropdownButtonFormField<StatisticsDirectionView>),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Combined').last);
-    await tester.pumpAndSettle();
+    await selectCombined(tester);
 
     await tester.tap(find.text('Level Learning'));
     await tester.pumpAndSettle();
@@ -256,31 +189,245 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('2 (100%)'), findsNWidgets(2)); // back at the matrix
   });
+
+  testWidgets('the scope control swaps the button row', (
+    WidgetTester tester,
+  ) async {
+    widenSurface(tester);
+    await tester.pumpWidget(buildPage());
+    await tester.pumpAndSettle();
+
+    // The screen opens on the current statistics, where every file command
+    // makes sense — and the everyday clear names the record it clears.
+    expect(find.text('Current'), findsOneWidget);
+    expect(find.text('All-time'), findsOneWidget);
+    expect(find.text('Load stats...'), findsOneWidget);
+    expect(find.text('Save stats'), findsOneWidget);
+    expect(find.text('Save stats as...'), findsOneWidget);
+    expect(find.text('Clear current stats...'), findsOneWidget);
+
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+
+    // None of them acts on the record now on screen, so none of them is
+    // offered. Cancel stays — it leaves the screen, not the record.
+    expect(find.text('Load stats...'), findsNothing);
+    expect(find.text('Save stats'), findsNothing);
+    expect(find.text('Save stats as...'), findsNothing);
+    expect(find.text('Clear current stats...'), findsNothing);
+    expect(find.text('Cancel'), findsOneWidget);
+
+    // Switching back restores them.
+    await tester.tap(find.text('Current'));
+    await tester.pumpAndSettle();
+    expect(find.text('Load stats...'), findsOneWidget);
+    expect(find.text('Clear current stats...'), findsOneWidget);
+  });
+
+  testWidgets('all three tabs follow the selected scope', (
+    WidgetTester tester,
+  ) async {
+    widenSurface(tester);
+
+    // The current record holds one attempt on unit 1; the all-time record
+    // holds ten across both units, so no figure can be mistaken for the other.
+    await tester.pumpWidget(
+      buildPage(
+        statistics: const <UnitStats>[
+          UnitStats(index: 1, direction1: DirectionStats(attempts: 1)),
+          UnitStats(index: 2),
+        ],
+        levelStatistics: const <LevelUnitStats>[
+          LevelUnitStats(index: 1, dir1: _levelTwoFair, dir2: _levelTwoFair),
+        ],
+        allTimeStatistics: const <UnitStats>[
+          UnitStats(
+            index: 1,
+            direction1: DirectionStats(attempts: 6, correct: 6),
+          ),
+          UnitStats(
+            index: 2,
+            direction1: DirectionStats(attempts: 4, correct: 4),
+          ),
+        ],
+        allTimeLevelStatistics: const <LevelUnitStats>[
+          LevelUnitStats(
+            index: 1,
+            dir1: _levelZeroPerfect,
+            dir2: _levelZeroPerfect,
+          ),
+          LevelUnitStats(
+            index: 2,
+            dir1: _levelZeroPerfect,
+            dir2: _levelZeroPerfect,
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Overview — current: one attempt, one practiced unit of two.
+    expect(find.text('Total Attempts: 1'), findsOneWidget);
+    expect(find.text('Practiced units: 1 (50%)'), findsOneWidget);
+
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    expect(find.text('Total Attempts: 10'), findsOneWidget);
+    expect(find.text('Practiced units: 2 (100%)'), findsOneWidget);
+
+    // Unit list — the all-time attempts, per unit.
+    await tester.tap(find.text('Unit list'));
+    await tester.pumpAndSettle();
+    expect(_column(tester, 5), <String>['6', '4']);
+
+    await tester.tap(find.text('Current'));
+    await tester.pumpAndSettle();
+    expect(_column(tester, 5), <String>['1', '0']);
+
+    // Level Learning — the current record has unit 1 on the Learner rung and
+    // nothing at Champion; the all-time record has both units' last level at
+    // Champion and nothing at Learner. Read off the matrix rows rather than by
+    // text: the Total row repeats a lone cell's wording verbatim.
+    await tester.tap(find.text('Level Learning'));
+    await tester.pumpAndSettle();
+    expect(_matrixRowTotals(tester), <String>['0', '1', '0', '0', '1']);
+
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    expect(_matrixRowTotals(tester), <String>['0', '0', '0', '2', '2']);
+  });
+
+  testWidgets('the all-time level column reads as the last level reached', (
+    WidgetTester tester,
+  ) async {
+    widenSurface(tester);
+    await tester.pumpWidget(
+      buildPage(
+        levelStatistics: const <LevelUnitStats>[
+          LevelUnitStats(index: 1, dir1: _levelTwoFair, dir2: _levelTwoFair),
+        ],
+        allTimeLevelStatistics: const <LevelUnitStats>[
+          LevelUnitStats(
+            index: 1,
+            dir1: _levelZeroPerfect,
+            dir2: _levelZeroPerfect,
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Level Learning'));
+    await tester.pumpAndSettle();
+
+    // Current scope: the row header names where the ladder stands now.
+    expect(_matrixLevelHeader(tester), 'Level');
+
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+
+    // All-time scope: the record carries the level most recently reached, so
+    // the column must not read as a live position.
+    expect(_matrixLevelHeader(tester), 'Last level');
+  });
+
+  testWidgets('the all-time unit list exports a selection like the current '
+      'one does', (WidgetTester tester) async {
+    widenSurface(tester);
+
+    List<int>? savedSelection;
+    await tester.pumpWidget(
+      buildPage(
+        statistics: const <UnitStats>[],
+        allTimeStatistics: const <UnitStats>[
+          UnitStats(
+            index: 1,
+            direction1: DirectionStats(attempts: 3, correct: 1),
+          ),
+          UnitStats(index: 2),
+        ],
+        onSaveSelectedUnits: (List<int> unitIndices) async {
+          savedSelection = unitIndices;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit list'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Select visible'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save selected units'));
+    await tester.pumpAndSettle();
+    expect(savedSelection, <int>[1, 2]);
+  });
 }
 
-/// Pumps a statistics page over [sampleDeck] with unit 1 practiced perfectly
-/// and unit 2 never practiced.
+/// Unit at level 2 with a Fair (2 attempts, 1 correct) record on that rung.
+const LevelDirectionStats _levelTwoFair = LevelDirectionStats(
+  currentLevel: 2,
+  levels: <int, DirectionStats>{2: DirectionStats(attempts: 2, correct: 1)},
+);
+
+/// Unit at level 0 with a Perfect (2 of 2) record on that rung.
+const LevelDirectionStats _levelZeroPerfect = LevelDirectionStats(
+  currentLevel: 0,
+  levels: <int, DirectionStats>{0: DirectionStats(attempts: 2, correct: 2)},
+);
+
+/// Gives the test surface room for both control rows and the tables below.
+///
+/// The screen is laid out for a desktop window, not for the 800×600 default;
+/// widening the view is the honest fix, rather than shrinking the UI to suit
+/// the test.
+void widenSurface(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1400, 1000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+/// Switches the direction selector to Combined, which counts both directions.
+Future<void> selectCombined(WidgetTester tester) async {
+  await tester.tap(
+    find.byType(DropdownButtonFormField<StatisticsDirectionView>),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Combined').last);
+  await tester.pumpAndSettle();
+}
+
+/// Pumps a statistics page over [sampleDeck].
+///
+/// Defaults to unit 1 practiced perfectly and unit 2 never practiced in the
+/// current record, and an empty all-time record.
 Widget buildPage({
+  List<UnitStats> statistics = const <UnitStats>[
+    UnitStats(index: 1, direction1: DirectionStats(attempts: 2, correct: 2)),
+    UnitStats(index: 2),
+  ],
   List<LevelUnitStats> levelStatistics = const <LevelUnitStats>[],
+  List<UnitStats> allTimeStatistics = const <UnitStats>[],
+  List<LevelUnitStats> allTimeLevelStatistics = const <LevelUnitStats>[],
+  SaveSelectedUnitsCallback? onSaveSelectedUnits,
 }) {
   return MaterialApp(
     localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
     supportedLocales: LearnAnywhereLocalizations.supportedLocales,
     home: StatisticsPage(
       deck: sampleDeck(),
-      statistics: const <UnitStats>[
-        UnitStats(
-          index: 1,
-          direction1: DirectionStats(attempts: 2, correct: 2),
-        ),
-        UnitStats(index: 2),
-      ],
+      statistics: statistics,
       levelStatistics: levelStatistics,
+      allTimeStatistics: allTimeStatistics,
+      allTimeLevelStatistics: allTimeLevelStatistics,
       levelNames: kDefaultLevelNamesEn,
       onLoadStatistics: () async {},
       onSaveStatistics: () async {},
       onClearStatistics: () async {},
-      onSaveSelectedUnits: (List<int> unitIndices) async {},
+      onSaveSelectedUnits:
+          onSaveSelectedUnits ?? (List<int> unitIndices) async {},
       onSaveStatisticsAs: () async {},
       onClose: () {},
     ),
@@ -297,9 +444,27 @@ String _cellText(DataCell cell) {
 ///
 /// Read off the [DataTable] itself rather than via finders so the assertion is
 /// about row *order*, which finders do not preserve.
-List<String> _unitColumn(WidgetTester tester) {
+List<String> _unitColumn(WidgetTester tester) => _column(tester, 1);
+
+/// Column [index] of the visible [DataTable], top to bottom.
+List<String> _column(WidgetTester tester, int index) {
   final DataTable table = tester.widget<DataTable>(find.byType(DataTable));
-  return table.rows.map((DataRow row) => _cellText(row.cells[1])).toList();
+  return table.rows.map((DataRow row) => _cellText(row.cells[index])).toList();
+}
+
+/// The right-hand Total column of the Level-Learning matrix, top to bottom:
+/// one entry count per level (3, 2, 1, 0) and then the grand total.
+List<String> _matrixRowTotals(WidgetTester tester) {
+  final DataTable table = tester.widget<DataTable>(find.byType(DataTable));
+  return table.rows
+      .map((DataRow row) => _cellText(row.cells.last))
+      .toList();
+}
+
+/// The row-header column label of the Level-Learning matrix.
+String _matrixLevelHeader(WidgetTester tester) {
+  final DataTable table = tester.widget<DataTable>(find.byType(DataTable));
+  return (table.columns.first.label as Text).data!;
 }
 
 LearningDeck sampleDeck() {

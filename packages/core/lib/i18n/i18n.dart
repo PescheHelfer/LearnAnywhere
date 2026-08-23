@@ -707,8 +707,14 @@ enum LearnAnywhereMessage {
   /// Statistics overview tab (bucket summary).
   statisticsOverview,
 
-  /// Statistics direction view label.
+  /// Statistics direction selector label.
   statisticsDirectionView,
+
+  /// Current-statistics choice of the statistics scope control.
+  statisticsScopeCurrent,
+
+  /// All-time-statistics choice of the statistics scope control.
+  statisticsScopeAllTime,
 
   /// Combined direction view label.
   statisticsCombined,
@@ -796,8 +802,12 @@ enum LearnAnywhereMessage {
   /// Save statistics as action.
   fileSaveStatsAs,
 
-  /// Clear statistics action.
+  /// Clear statistics action, for a shell keeping one record only (Android).
   statisticsClear,
+
+  /// Clear the *current* statistics action. Desktop keeps two records, so its
+  /// everyday clear has to name the one it clears.
+  statisticsClearCurrent,
 
   /// Statistics loaded status.
   statisticsLoaded,
@@ -847,6 +857,10 @@ enum LearnAnywhereMessage {
 
   /// Level row-header column label (Level-Learning matrix).
   statisticsLevel,
+
+  /// Level row-header column label in the all-time scope, where the level is
+  /// the last one reached rather than where the ladder stands now.
+  statisticsLastLevel,
 
   /// Numeric level secondary label / breadcrumb. Placeholder: {level}.
   statisticsLevelNumber,
@@ -1112,6 +1126,10 @@ enum LearnAnywhereMessage {
 
   /// Confirm clear statistics message.
   confirmClearStatistics,
+
+  /// Confirmation for the desktop's everyday clear, which says in the same
+  /// breath that the all-time record survives it.
+  confirmClearCurrentStatistics,
 
   /// Confirm exit message.
   confirmExit,
@@ -1518,7 +1536,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsTitle: 'Statistics',
       LearnAnywhereMessage.statisticsUnitList: 'Unit list',
       LearnAnywhereMessage.statisticsOverview: 'Overview',
-      LearnAnywhereMessage.statisticsDirectionView: 'View',
+      LearnAnywhereMessage.statisticsDirectionView: 'Direction',
+      LearnAnywhereMessage.statisticsScopeCurrent: 'Current',
+      LearnAnywhereMessage.statisticsScopeAllTime: 'All-time',
       LearnAnywhereMessage.statisticsCombined: 'Combined',
       LearnAnywhereMessage.statisticsDirection1: 'Direction 1',
       LearnAnywhereMessage.statisticsDirection2: 'Direction 2',
@@ -1550,6 +1570,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsSave: 'Save stats',
       LearnAnywhereMessage.fileSaveStatsAs: 'Save stats as...',
       LearnAnywhereMessage.statisticsClear: 'Clear stats...',
+      LearnAnywhereMessage.statisticsClearCurrent: 'Clear current stats...',
       LearnAnywhereMessage.statisticsLoaded: 'Statistics loaded.',
       LearnAnywhereMessage.statisticsUnitsReset:
           'Statistics for {count} units were reset '
@@ -1568,6 +1589,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsLevelLearning: 'Level Learning',
       LearnAnywhereMessage.statisticsTotal: 'Total',
       LearnAnywhereMessage.statisticsLevel: 'Level',
+      LearnAnywhereMessage.statisticsLastLevel: 'Last level',
       LearnAnywhereMessage.statisticsLevelNumber: 'Level {level}',
       LearnAnywhereMessage.statisticsBack: 'Back',
       LearnAnywhereMessage.lexiconTitle: 'Lexicon',
@@ -1681,6 +1703,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileNotFound: 'File not found: {path}',
       LearnAnywhereMessage.confirmClearStatistics:
           'Clear all statistics for the current deck?',
+      LearnAnywhereMessage.confirmClearCurrentStatistics:
+          'Clear the current statistics for this deck? '
+          'The all-time statistics are not affected.',
       LearnAnywhereMessage.confirmExit: 'Exit Learn Anywhere?',
       LearnAnywhereMessage.fileOperationFailed: 'File operation failed',
       LearnAnywhereMessage.fileNewDeckDone: 'New deck created.',
@@ -2044,7 +2069,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsTitle: 'Statistik',
       LearnAnywhereMessage.statisticsUnitList: 'Einheitenliste',
       LearnAnywhereMessage.statisticsOverview: 'Übersicht',
-      LearnAnywhereMessage.statisticsDirectionView: 'Ansicht',
+      LearnAnywhereMessage.statisticsDirectionView: 'Richtung',
+      LearnAnywhereMessage.statisticsScopeCurrent: 'Aktuell',
+      LearnAnywhereMessage.statisticsScopeAllTime: 'Gesamt',
       LearnAnywhereMessage.statisticsCombined: 'Kombiniert',
       LearnAnywhereMessage.statisticsDirection1: 'Abfragerichtung 1',
       LearnAnywhereMessage.statisticsDirection2: 'Abfragerichtung 2',
@@ -2077,6 +2104,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsSave: 'Statistik speichern',
       LearnAnywhereMessage.fileSaveStatsAs: 'Statistik speichern unter...',
       LearnAnywhereMessage.statisticsClear: 'Statistik löschen...',
+      LearnAnywhereMessage.statisticsClearCurrent:
+          'Aktuelle Statistik löschen...',
       LearnAnywhereMessage.statisticsLoaded: 'Statistik geladen.',
       LearnAnywhereMessage.statisticsUnitsReset:
           'Die Statistik von {count} Einheiten wurde zurückgesetzt '
@@ -2098,6 +2127,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsLevelLearning: 'Stufenlernen',
       LearnAnywhereMessage.statisticsTotal: 'Gesamt',
       LearnAnywhereMessage.statisticsLevel: 'Stufe',
+      LearnAnywhereMessage.statisticsLastLevel: 'Letzte Stufe',
       LearnAnywhereMessage.statisticsLevelNumber: 'Stufe {level}',
       LearnAnywhereMessage.statisticsBack: 'Zurück',
       LearnAnywhereMessage.lexiconTitle: 'Lexikon',
@@ -2220,6 +2250,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileNotFound: 'Datei nicht gefunden: {path}',
       LearnAnywhereMessage.confirmClearStatistics:
           'Alle Statistiken für das aktuelle Vokabular löschen?',
+      LearnAnywhereMessage.confirmClearCurrentStatistics:
+          'Die aktuelle Statistik dieser Lern-Datei löschen? '
+          'Die Gesamtstatistik bleibt davon unberührt.',
       LearnAnywhereMessage.confirmExit: 'Learn Anywhere beenden?',
       LearnAnywhereMessage.fileOperationFailed: 'Dateioperation fehlgeschlagen',
       LearnAnywhereMessage.fileNewDeckDone: 'Neue Lern-Datei erstellt.',

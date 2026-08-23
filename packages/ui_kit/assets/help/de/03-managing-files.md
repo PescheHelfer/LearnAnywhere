@@ -41,10 +41,10 @@ irgendwo gespeichert werden können.
 
 - **Statistik laden...** / **Statistik speichern** / **Statistik speichern unter...**
   laden oder schreiben eine `.sta`-Datei für die aktuelle Lern-Datei.
-- **Statistik löschen...** löscht nach Bestätigung jeden verzeichneten Versuch für die
-  aktuelle Lern-Datei. Das lässt sich nicht rückgängig machen. Ist das automatische
-  Speichern eingeschaltet, wird die Sitzung, die Sie löschen, vorher in ihre Datei
-  geschrieben und bleibt so erhalten; die nächste Sitzung legt eine eigene neue
+- **Aktuelle Statistik löschen...** löscht nach Bestätigung jeden verzeichneten Versuch
+  für die aktuelle Lern-Datei. Das lässt sich nicht rückgängig machen. Ist das
+  automatische Speichern eingeschaltet, wird die Sitzung, die Sie löschen, vorher in ihre
+  Datei geschrieben und bleibt so erhalten; die nächste Sitzung legt eine eigene neue
   Sitzungsdatei an, statt sie zu überschreiben.
 
 Diese vier Befehle finden sich auch auf dem Bildschirm [Statistik](09-statistics.md)
