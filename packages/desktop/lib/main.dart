@@ -794,6 +794,21 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     });
   }
 
+  /// Clears the current statistics, draining any queued session write first.
+  ///
+  /// The drain matters because the clear's own flush goes straight to disk: a
+  /// per-answer write still sitting on [_statsSaveChain] would otherwise land
+  /// *after* it and put an older snapshot in the file the clear was preserving
+  /// — and with the target released, nothing would ever correct it.
+  ///
+  /// Throws whatever the flush throws; every caller runs it inside
+  /// [_guardedFileOperation] so a failed write reports and leaves the numbers
+  /// alone rather than losing both.
+  Future<DesktopDocument> _clearCurrentStatistics() async {
+    await _statsSaveChain;
+    return _fileService.clearCurrentStatistics(_document);
+  }
+
   /// Gate run when a session is about to start in [mode].
   ///
   /// Warns when the statistics on hand were recorded in a different kind of
@@ -847,14 +862,19 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           return false;
         }
         // Starting fresh is a clear, so it flushes and releases the auto-save
-        // target too — the session about to start mints its own file.
-        final DesktopDocument cleared = await _fileService
-            .clearCurrentStatistics(_document);
-        if (!mounted) {
+        // target too — _prepareSessionStart then mints the file of the session
+        // about to begin. Guarded because this runs inside a session start that
+        // nobody awaits: an unguarded throw here would be swallowed whole and
+        // leave the Start button looking dead.
+        DesktopDocument? cleared;
+        await _guardedFileOperation(() async {
+          cleared = await _clearCurrentStatistics();
+        });
+        if (cleared == null || !mounted) {
           return false;
         }
         setState(() {
-          _document = cleared;
+          _document = cleared!;
         });
         return true;
     }
@@ -2869,7 +2889,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     // The clear writes the sitting out to its auto-save target first, so a
     // failed write reports and leaves the numbers alone rather than losing both.
     await _guardedFileOperation(() async {
-      _document = await _fileService.clearCurrentStatistics(_document);
+      _document = await _clearCurrentStatistics();
+      // Clearing mid-session releases the target, and only a session *start*
+      // mints one — so without this the rest of the session would go
+      // unrecorded. Skipped when no session is running, so the next one gets a
+      // file stamped with its own beginning rather than with the clear.
+      if (_learnSessionActive) {
+        _ensureAutoSaveTargetForSession();
+      }
       // _showStatus does the rebuild that takes the pills back to zero.
       _showStatus(LearnAnywhereMessage.statisticsCleared);
     });
