@@ -2071,7 +2071,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsOverview: 'Übersicht',
       LearnAnywhereMessage.statisticsDirectionView: 'Richtung',
       LearnAnywhereMessage.statisticsScopeCurrent: 'Aktuell',
-      LearnAnywhereMessage.statisticsScopeAllTime: 'Gesamt',
+      LearnAnywhereMessage.statisticsScopeAllTime: 'Allzeit',
       LearnAnywhereMessage.statisticsCombined: 'Kombiniert',
       LearnAnywhereMessage.statisticsDirection1: 'Abfragerichtung 1',
       LearnAnywhereMessage.statisticsDirection2: 'Abfragerichtung 2',
@@ -2252,7 +2252,7 @@ final class LearnAnywhereCatalog {
           'Alle Statistiken für das aktuelle Vokabular löschen?',
       LearnAnywhereMessage.confirmClearCurrentStatistics:
           'Die aktuelle Statistik dieser Lern-Datei löschen? '
-          'Die Gesamtstatistik bleibt davon unberührt.',
+          'Die Allzeit-Statistik bleibt davon unberührt.',
       LearnAnywhereMessage.confirmExit: 'Learn Anywhere beenden?',
       LearnAnywhereMessage.fileOperationFailed: 'Dateioperation fehlgeschlagen',
       LearnAnywhereMessage.fileNewDeckDone: 'Neue Lern-Datei erstellt.',
