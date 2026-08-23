@@ -42,10 +42,10 @@ void main() {
         autoSaveStatistics: true,
       );
 
-      final DesktopDocument saved = await service.saveDeck(
+      final DesktopDocument saved = (await service.saveDeck(
         document,
         path: deckPath,
-      );
+      )).document;
       expect(await File(deckPath).exists(), isTrue);
       // Stats went to the timestamped target, not a derived sidecar.
       expect(await File(targetPath).exists(), isTrue);
@@ -460,18 +460,24 @@ void main() {
       final DesktopDocument document = DesktopDocument(
         deck: singleUnitDeck(),
         statistics: const <UnitStats>[UnitStats(index: 1)],
-        allTime: const AllTimeStatistics(
-          perUnit: <UnitStats>[
-            UnitStats(
-              index: 1,
-              direction1: DirectionStats(attempts: 41, correct: 26),
-            ),
-          ],
+        allTime: AllTimeRecord.loaded(
+          const AllTimeStatistics(
+            perUnit: <UnitStats>[
+              UnitStats(
+                index: 1,
+                direction1: DirectionStats(attempts: 41, correct: 26),
+              ),
+            ],
+          ),
+          deckPath,
         ),
         deckPath: deckPath,
       );
 
-      await service.writeAllTimeStatistics(document);
+      expect(
+        await service.writeAllTimeStatistics(document),
+        AllTimeWriteOutcome.written,
+      );
 
       final String allTimePath = service.allTimeStatisticsPath(deckPath);
       expect(allTimePath, '${temp.path}${Platform.pathSeparator}french_alltime.sta');
@@ -506,19 +512,22 @@ void main() {
         DesktopDocument(
           deck: original,
           statistics: const <UnitStats>[],
-          allTime: AllTimeStatistics(
-            perUnit: <UnitStats>[
-              UnitStats(
-                index: 1,
-                direction1: const DirectionStats(attempts: 10, correct: 8),
-                hash: hashes[0],
-              ),
-              UnitStats(
-                index: 2,
-                direction1: const DirectionStats(attempts: 20, correct: 11),
-                hash: hashes[1],
-              ),
-            ],
+          allTime: AllTimeRecord.loaded(
+            AllTimeStatistics(
+              perUnit: <UnitStats>[
+                UnitStats(
+                  index: 1,
+                  direction1: const DirectionStats(attempts: 10, correct: 8),
+                  hash: hashes[0],
+                ),
+                UnitStats(
+                  index: 2,
+                  direction1: const DirectionStats(attempts: 20, correct: 11),
+                  hash: hashes[1],
+                ),
+              ],
+            ),
+            deckPath,
           ),
           deckPath: deckPath,
         ),
@@ -581,13 +590,16 @@ void main() {
         statistics: const <UnitStats>[
           UnitStats(index: 1, direction1: DirectionStats(attempts: 3, correct: 2)),
         ],
-        allTime: const AllTimeStatistics(
-          perUnit: <UnitStats>[
-            UnitStats(
-              index: 1,
-              direction1: DirectionStats(attempts: 41, correct: 26),
-            ),
-          ],
+        allTime: AllTimeRecord.loaded(
+          const AllTimeStatistics(
+            perUnit: <UnitStats>[
+              UnitStats(
+                index: 1,
+                direction1: DirectionStats(attempts: 41, correct: 26),
+              ),
+            ],
+          ),
+          deckPath,
         ),
         deckPath: deckPath,
         autoSaveTargetPath: targetPath,
@@ -619,17 +631,31 @@ void main() {
       final DesktopDocument unsaved = DesktopDocument(
         deck: singleUnitDeck(),
         statistics: const <UnitStats>[UnitStats(index: 1)],
-        allTime: const AllTimeStatistics(
-          perUnit: <UnitStats>[
-            UnitStats(index: 1, direction1: DirectionStats(attempts: 7, correct: 5)),
-          ],
+        // Never read from anywhere, because there was nowhere to read from.
+        allTime: const AllTimeRecord(
+          statistics: AllTimeStatistics(
+            perUnit: <UnitStats>[
+              UnitStats(index: 1, direction1: DirectionStats(attempts: 7, correct: 5)),
+            ],
+          ),
         ),
       );
       // Writing before there is a path is a silent no-op, not a failure.
-      await service.writeAllTimeStatistics(unsaved);
+      expect(
+        await service.writeAllTimeStatistics(unsaved),
+        AllTimeWriteOutcome.noPath,
+      );
       expect(temp.listSync(), isEmpty);
 
-      await service.saveDeck(unsaved, path: deckPath);
+      final DeckSaveResult result = await service.saveDeck(
+        unsaved,
+        path: deckPath,
+      );
+      // That path held no record to protect, so the write lands...
+      expect(result.allTime, AllTimeWriteOutcome.written);
+      // ...and having written it, the record now speaks for that file, so the
+      // rest of the sitting keeps flowing into it.
+      expect(result.document.allTime.speaksFor(deckPath), isTrue);
 
       final StatisticsFile onDisk = decodeStatisticsJson(
         await File(service.allTimeStatisticsPath(deckPath)).readAsString(),
@@ -672,8 +698,8 @@ void main() {
       await temp.delete(recursive: true);
     });
 
-    test('an EMPTY lifetime record never overwrites a file that has one',
-        () async {
+    test('a record that never read the lifetime file cannot replace it, '
+        'however dense it has become', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
         'learn_anywhere_alltime_notruncate',
       );
@@ -684,10 +710,13 @@ void main() {
         DesktopDocument(
           deck: deck,
           statistics: const <UnitStats>[],
-          allTime: const AllTimeStatistics(
-            perUnit: <UnitStats>[
-              UnitStats(index: 1, direction1: DirectionStats(attempts: 900, correct: 700)),
-            ],
+          allTime: AllTimeRecord.loaded(
+            const AllTimeStatistics(
+              perUnit: <UnitStats>[
+                UnitStats(index: 1, direction1: DirectionStats(attempts: 900, correct: 700)),
+              ],
+            ),
+            deckPath,
           ),
           deckPath: deckPath,
         ),
@@ -698,19 +727,40 @@ void main() {
       // The same deck arriving through the Lexicon file search carries no
       // lifetime record; saving it back over its own file must not truncate
       // years of history to nothing.
-      await service.saveDeck(
+      final DeckSaveResult saved = await service.saveDeck(
         DesktopDocument(deck: deck, statistics: const <UnitStats>[]),
         path: deckPath,
       );
+      expect(saved.allTime, AllTimeWriteOutcome.nothingToWrite);
       expect(await File(allTimePath).readAsString(), years);
 
-      // A record genuinely reset to zero is dense, not empty, so it writes.
+      // The same record after any deck-shape change is dense — an emptiness
+      // test would now let it through — and it is still refused, because it
+      // has read nothing.
+      expect(
+        await service.writeAllTimeStatistics(
+          DesktopDocument(
+            deck: deck,
+            statistics: const <UnitStats>[],
+            allTime: AllTimeRecord.unread.resized(deck.units.length),
+            deckPath: deckPath,
+          ),
+        ),
+        AllTimeWriteOutcome.refused,
+      );
+      expect(await File(allTimePath).readAsString(), years);
+
+      // The record that DID read the file may zero it: a record genuinely
+      // reset to zero is dense, not empty, and it is entitled to that file.
       await service.writeAllTimeStatistics(
         DesktopDocument(
           deck: deck,
           statistics: const <UnitStats>[],
-          allTime: const AllTimeStatistics(
-            perUnit: <UnitStats>[UnitStats(index: 1)],
+          allTime: AllTimeRecord.loaded(
+            const AllTimeStatistics(
+              perUnit: <UnitStats>[UnitStats(index: 1)],
+            ),
+            deckPath,
           ),
           deckPath: deckPath,
         ),
@@ -721,6 +771,243 @@ void main() {
             .single
             .direction1
             .attempts,
+        0,
+      );
+
+      await temp.delete(recursive: true);
+    });
+
+    test('a lifetime file that cannot be read opens as an unreadable record, '
+        'and the answers that follow leave it byte-identical', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_alltime_unreadable',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = '${temp.path}${Platform.pathSeparator}french.vok';
+      final LearningDeck deck = multiUnitDeck(<String>['un']);
+      await service.saveDeckSnapshot(deck, deckPath);
+      // Stands in for the file a sync client, a backup or a virus scanner had
+      // open for a second: the read fails, and what it holds is unknown.
+      final String allTimePath = service.allTimeStatisticsPath(deckPath);
+      const String onDisk = 'a lifetime of counters this app cannot parse';
+      await File(allTimePath).writeAsString(onDisk);
+
+      final DesktopDocument opened = await service.openDeck(
+        DesktopDocument.empty(sampleMask()),
+        deckPath,
+      );
+      // Distinguished from an absent file, in the model: this is what the
+      // shell warns about, and what forbids the write below.
+      expect(opened.allTime.origin, AllTimeOrigin.unreadable);
+      expect(opened.allTime.isUnreadable, isTrue);
+      expect(opened.allTime.isEmpty, isTrue);
+
+      // One answer later the record is no longer empty, which is exactly where
+      // the old emptiness guard let go of the file.
+      final DesktopDocument answered = opened.copyWith(
+        allTime: opened.allTime.record(
+          const RecordedAttempt(
+            unitIndex: 1,
+            direction: QueryDirection.direction1,
+            drill: AttemptDelta(attempts: 1, correct: 1),
+          ),
+        ),
+      );
+      expect(answered.allTime.isEmpty, isFalse);
+      expect(
+        await service.writeAllTimeStatistics(answered),
+        AllTimeWriteOutcome.refused,
+      );
+      expect(await File(allTimePath).readAsString(), onDisk);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('a deck-shape change after a failed read leaves the lifetime file '
+        'byte-identical, with no answer given at all', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_alltime_unreadable_shape',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String deckPath = '${temp.path}${sep}french.vok';
+      final String incomingPath = '${temp.path}${sep}incoming.vok';
+      await service.saveDeckSnapshot(multiUnitDeck(<String>['un']), deckPath);
+      await service.saveDeckSnapshot(
+        multiUnitDeck(<String>['deux']),
+        incomingPath,
+      );
+      final String allTimePath = service.allTimeStatisticsPath(deckPath);
+      const String onDisk = 'unparseable, and none of this app\'s business';
+      await File(allTimePath).writeAsString(onDisk);
+
+      final DesktopDocument opened = await service.openDeck(
+        DesktopDocument.empty(sampleMask()),
+        deckPath,
+      );
+
+      // A merge re-indexes the record dense...
+      final DesktopDocument merged = await service.mergeDeck(
+        opened,
+        incomingPath,
+      );
+      expect(merged.allTime.isEmpty, isFalse);
+      expect(
+        await service.writeAllTimeStatistics(merged),
+        AllTimeWriteOutcome.refused,
+      );
+      expect(await File(allTimePath).readAsString(), onDisk);
+
+      // ...and so does an editor insert, the same way `_applyDeckEdit` does.
+      final DesktopDocument edited = merged.copyWith(
+        allTime: merged.allTime.afterInsert(1, 3),
+      );
+      expect(edited.allTime.perUnit, hasLength(3));
+      expect(
+        await service.writeAllTimeStatistics(edited),
+        AllTimeWriteOutcome.refused,
+      );
+      expect(await File(allTimePath).readAsString(), onDisk);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('an absent lifetime file leaves a record that writes normally: there '
+        'is nothing there to protect', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_alltime_absent_writes',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = '${temp.path}${Platform.pathSeparator}french.vok';
+      await service.saveDeckSnapshot(multiUnitDeck(<String>['un']), deckPath);
+
+      final DesktopDocument opened = await service.openDeck(
+        DesktopDocument.empty(sampleMask()),
+        deckPath,
+      );
+      expect(opened.allTime.origin, AllTimeOrigin.absent);
+      expect(opened.allTime.isUnreadable, isFalse);
+      expect(opened.allTime.isEmpty, isTrue);
+
+      final DesktopDocument answered = opened.copyWith(
+        allTime: opened.allTime.record(
+          const RecordedAttempt(
+            unitIndex: 1,
+            direction: QueryDirection.direction1,
+            drill: AttemptDelta(attempts: 1, correct: 1),
+          ),
+        ),
+      );
+      expect(
+        await service.writeAllTimeStatistics(answered),
+        AllTimeWriteOutcome.written,
+      );
+      expect(
+        decodeStatisticsJson(
+          await File(service.allTimeStatisticsPath(deckPath)).readAsString(),
+        ).perUnit.single.direction1.attempts,
+        1,
+      );
+
+      await temp.delete(recursive: true);
+    });
+
+    test('save-as onto a deck that has a lifetime record of its own leaves it '
+        'exactly where it is, and says so', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_alltime_saveas',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String sourcePath = '${temp.path}${sep}french.vok';
+      final String targetPath = '${temp.path}${sep}german.vok';
+      final LearningDeck deck = multiUnitDeck(<String>['un']);
+
+      // Each deck has a lifetime record of its own.
+      await service.writeAllTimeStatistics(
+        DesktopDocument(
+          deck: deck,
+          statistics: const <UnitStats>[],
+          allTime: AllTimeRecord.loaded(
+            const AllTimeStatistics(
+              perUnit: <UnitStats>[
+                UnitStats(index: 1, direction1: DirectionStats(attempts: 900)),
+              ],
+            ),
+            targetPath,
+          ),
+          deckPath: targetPath,
+        ),
+      );
+      final String targetAllTime = service.allTimeStatisticsPath(targetPath);
+      final String germanYears = await File(targetAllTime).readAsString();
+
+      final DesktopDocument source = DesktopDocument(
+        deck: deck,
+        statistics: const <UnitStats>[],
+        allTime: AllTimeRecord.loaded(
+          const AllTimeStatistics(
+            perUnit: <UnitStats>[
+              UnitStats(index: 1, direction1: DirectionStats(attempts: 12)),
+            ],
+          ),
+          sourcePath,
+        ),
+        deckPath: sourcePath,
+      );
+
+      final DeckSaveResult result = await service.saveDeck(
+        source,
+        path: targetPath,
+      );
+
+      // The deck itself always lands...
+      expect(await File(targetPath).exists(), isTrue);
+      expect(result.document.deckPath, targetPath);
+      // ...while the other deck's history stays untouched, and the shell is
+      // told so it can say so.
+      expect(result.allTime, AllTimeWriteOutcome.refused);
+      expect(await File(targetAllTime).readAsString(), germanYears);
+      // The record still speaks only for the deck it came from, so the writes
+      // that follow are refused too rather than drifting into the wrong file.
+      expect(result.document.allTime.speaksFor(targetPath), isFalse);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('a write may be entitled to a file it never read only by asking for '
+        'it, which is what the all-time clear will do', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_alltime_force',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = '${temp.path}${Platform.pathSeparator}french.vok';
+      final LearningDeck deck = multiUnitDeck(<String>['un']);
+      final String allTimePath = service.allTimeStatisticsPath(deckPath);
+      await File(allTimePath).writeAsString('unreadable');
+
+      final DesktopDocument document = DesktopDocument(
+        deck: deck,
+        statistics: const <UnitStats>[],
+        allTime: AllTimeRecord.unreadable(deckPath).resized(1),
+        deckPath: deckPath,
+      );
+
+      expect(
+        await service.writeAllTimeStatistics(document),
+        AllTimeWriteOutcome.refused,
+      );
+      expect(
+        await service.writeAllTimeStatistics(
+          document,
+          replaceUnreadFile: true,
+        ),
+        AllTimeWriteOutcome.written,
+      );
+      expect(
+        decodeStatisticsJson(
+          await File(allTimePath).readAsString(),
+        ).perUnit.single.direction1.attempts,
         0,
       );
 
@@ -738,10 +1025,13 @@ void main() {
       final DesktopDocument document = DesktopDocument(
         deck: deck,
         statistics: const <UnitStats>[UnitStats(index: 1)],
-        allTime: const AllTimeStatistics(
-          perUnit: <UnitStats>[
-            UnitStats(index: 1, direction1: DirectionStats(attempts: 88, correct: 60)),
-          ],
+        allTime: AllTimeRecord.loaded(
+          const AllTimeStatistics(
+            perUnit: <UnitStats>[
+              UnitStats(index: 1, direction1: DirectionStats(attempts: 88, correct: 60)),
+            ],
+          ),
+          deckPath,
         ),
         deckPath: deckPath,
       );
@@ -790,11 +1080,13 @@ void main() {
       final DesktopDocument document = DesktopDocument(
         deck: multiUnitDeck(<String>['un', 'deux']),
         statistics: const <UnitStats>[UnitStats(index: 1), UnitStats(index: 2)],
-        allTime: const AllTimeStatistics(
-          perUnit: <UnitStats>[
-            UnitStats(index: 1, direction1: DirectionStats(attempts: 10)),
-            UnitStats(index: 2, direction1: DirectionStats(attempts: 20)),
-          ],
+        allTime: const AllTimeRecord(
+          statistics: AllTimeStatistics(
+            perUnit: <UnitStats>[
+              UnitStats(index: 1, direction1: DirectionStats(attempts: 10)),
+              UnitStats(index: 2, direction1: DirectionStats(attempts: 20)),
+            ],
+          ),
         ),
       );
 

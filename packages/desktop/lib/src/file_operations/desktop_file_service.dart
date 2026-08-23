@@ -102,7 +102,12 @@ final class DesktopFileService {
   }
 
   /// Saves the current deck to [path] or its existing path.
-  Future<DesktopDocument> saveDeck(
+  ///
+  /// The deck itself always lands. Its lifetime record only follows it when the
+  /// record is entitled to the target's file (see [writeAllTimeStatistics]);
+  /// the reported [DeckSaveResult.allTime] is how the shell tells the learner
+  /// that a save-as left another deck's history where it was.
+  Future<DeckSaveResult> saveDeck(
     DesktopDocument current, {
     String? path,
   }) async {
@@ -115,8 +120,16 @@ final class DesktopFileService {
     await autoSaveStatistics(saved);
     // A deck that had never been saved accumulated its lifetime record in
     // memory; this is the moment it first has somewhere to go.
-    await writeAllTimeStatistics(saved);
-    return saved;
+    final AllTimeWriteOutcome allTime = await writeAllTimeStatistics(saved);
+    return DeckSaveResult(
+      // A write that landed makes the record the one describing that file, so
+      // the next answer keeps flowing into it — including after a save-as onto
+      // a path that held no record of its own.
+      document: allTime == AllTimeWriteOutcome.written
+          ? saved.copyWith(allTime: saved.allTime.adoptedAt(targetPath))
+          : saved,
+      allTime: allTime,
+    );
   }
 
   /// Saves [deck] to [path] without changing the current desktop document.
@@ -545,35 +558,48 @@ final class DesktopFileService {
 
   /// Reads the lifetime record beside [deckPath] and realigns it onto [deck].
   ///
-  /// Silent by design and total: a missing, unreadable or malformed file simply
-  /// means an empty record. Nothing the learner did is lost by this — the
-  /// lifetime record is written on every answer, so the worst case is that a
-  /// corrupt file stops contributing rather than that a prompt interrupts the
-  /// open.
+  /// Silent by design and total: a missing, unreadable or malformed file all
+  /// open as an empty record, and nothing interrupts the open. What the
+  /// returned [AllTimeRecord] adds is WHICH of those happened — an absent file
+  /// yields a record entitled to write there, an unreadable one a record that
+  /// is not. Without that distinction a file locked for a second by a sync
+  /// client would come back indistinguishable from a deck with no history, and
+  /// the next answer would overwrite it with zeros.
   ///
   /// Realignment KEEPS the counters of a unit whose text changed (see
   /// [realignAllTimeStatistics]) and never adds to the totals.
-  Future<AllTimeStatistics> readAllTimeStatistics(
+  Future<AllTimeRecord> readAllTimeStatistics(
     LearningDeck deck,
     String deckPath,
   ) async {
     final File file = File(allTimeStatisticsPath(deckPath));
     if (!await file.exists()) {
-      return AllTimeStatistics.empty;
+      return AllTimeRecord.absent(deckPath);
     }
     try {
-      return realignAllTimeStatistics(
-        deck: deck,
-        allTime: AllTimeStatistics.fromFile(
-          decodeStatisticsJson(await file.readAsString()),
+      return AllTimeRecord.loaded(
+        realignAllTimeStatistics(
+          deck: deck,
+          allTime: AllTimeStatistics.fromFile(
+            decodeStatisticsJson(await file.readAsString()),
+          ),
         ),
+        deckPath,
       );
     } on Object {
-      return AllTimeStatistics.empty;
+      return AllTimeRecord.unreadable(deckPath);
     }
   }
 
-  /// Writes [document]'s lifetime record to `<deck>_alltime.sta`.
+  /// Writes [document]'s lifetime record to `<deck>_alltime.sta`, unless the
+  /// record is not entitled to replace what is already there.
+  ///
+  /// The authority rule is [AllTimeRecord.speaksFor]: a record may create a
+  /// lifetime file anywhere, but may replace one only at the deck path it was
+  /// read from. That covers three ways a learner's history used to be lost
+  /// without a single answer being given — a read that failed for a moment, a
+  /// merge or editor edit re-indexing a never-read record dense, and a save-as
+  /// filing one deck's record under another deck's name.
   ///
   /// A no-op for a deck with no path yet — it keeps accumulating in memory
   /// until [saveDeck] gives it one. NOT governed by the auto-save-statistics
@@ -581,15 +607,34 @@ final class DesktopFileService {
   /// and tying the two would mean turning off resumable sessions silently
   /// stops the learner's progress record.
   ///
-  /// Also a no-op for an EMPTY record, which means "nothing loaded and nothing
-  /// answered" — not "the totals are zero". Writing it would let a deck that
-  /// arrived without its file (a Lexicon search result saved back over its own
-  /// deck) truncate a lifetime record that has years in it. A record genuinely
-  /// reset to zero is dense, not empty, so it still writes.
-  Future<void> writeAllTimeStatistics(DesktopDocument document) async {
+  /// Also a no-op for an EMPTY record: there is nothing to say yet, so no
+  /// sidecar is created for a deck nobody has answered. A record genuinely
+  /// reset to zero is dense, not empty, so it still writes — and, being a
+  /// write that zeroes a file, it still has to be entitled to it. This test
+  /// is a courtesy, not a guard: a deck-shape change re-indexes even an
+  /// untouched record dense, so a deck only ever edited can end up with a
+  /// zeroed sidecar. That costs nothing, because what protects an existing
+  /// file is the authority rule above, never this one.
+  ///
+  /// [replaceUnreadFile] is the single deliberate exception, for the
+  /// learner-confirmed clear of the lifetime record itself: that is the one
+  /// action that means "zero this file whatever it holds", and it says so here
+  /// rather than by pretending the record was read.
+  Future<AllTimeWriteOutcome> writeAllTimeStatistics(
+    DesktopDocument document, {
+    bool replaceUnreadFile = false,
+  }) async {
     final String? deckPath = document.deckPath;
-    if (deckPath == null || document.allTime.isEmpty) {
-      return;
+    if (deckPath == null) {
+      return AllTimeWriteOutcome.noPath;
+    }
+    if (document.allTime.isEmpty && !replaceUnreadFile) {
+      return AllTimeWriteOutcome.nothingToWrite;
+    }
+    if (!replaceUnreadFile &&
+        !document.allTime.speaksFor(deckPath) &&
+        await File(allTimeStatisticsPath(deckPath)).exists()) {
+      return AllTimeWriteOutcome.refused;
     }
     await File(allTimeStatisticsPath(deckPath)).writeAsString(
       encodeStatisticsJson(
@@ -609,6 +654,7 @@ final class DesktopFileService {
         ),
       ),
     );
+    return AllTimeWriteOutcome.written;
   }
 
   /// Auto-saves statistics to the active auto-save target, when auto-saving is
@@ -763,6 +809,41 @@ final class DesktopFileService {
       totalUnits: summary.totalUnits,
     );
   }
+}
+
+/// What became of a write of the deck's lifetime record.
+///
+/// Only [refused] is worth telling the learner about, and only where they
+/// asked for something that implied the write (a save); the per-answer writes
+/// are refused silently, because the learner was already told when the deck
+/// was opened.
+enum AllTimeWriteOutcome {
+  /// The record was written to `<deck>_alltime.sta`.
+  written,
+
+  /// The deck has no path yet, so the record keeps accumulating in memory.
+  noPath,
+
+  /// Nothing has been read or answered, so there is nothing to write and no
+  /// sidecar is created.
+  nothingToWrite,
+
+  /// A lifetime file is already there and this record is not entitled to
+  /// replace it — it never read that file. The file is left exactly as it was.
+  refused,
+}
+
+/// A saved deck and what became of its lifetime record.
+final class DeckSaveResult {
+  /// Creates a deck save result.
+  const DeckSaveResult({required this.document, required this.allTime});
+
+  /// The document with its deck path (and, when the record was written, its
+  /// authority over that path) applied.
+  final DesktopDocument document;
+
+  /// Whether the lifetime record followed the deck to the target path.
+  final AllTimeWriteOutcome allTime;
 }
 
 /// A loaded `.sta` and what realigning it onto the current deck cost.

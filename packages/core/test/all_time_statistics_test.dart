@@ -1,4 +1,5 @@
 import 'package:learn_anywhere_core/core.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 /// The lifetime record: its file marker, the rule that it may only ever be
@@ -510,6 +511,115 @@ void main() {
             .toList(),
         <int>[10, 30],
       );
+    });
+  });
+
+  group('AllTimeRecord write authority', () {
+    test('a record read from a file speaks for that file and for no other', () {
+      const AllTimeRecord read = AllTimeRecord.loaded(
+        AllTimeStatistics(
+          perUnit: <UnitStats>[
+            UnitStats(index: 1, direction1: DirectionStats(attempts: 900)),
+          ],
+        ),
+        '/decks/french.vok',
+      );
+      expect(read.speaksFor('/decks/french.vok', context: p.posix), isTrue);
+      expect(read.speaksFor('/decks/german.vok', context: p.posix), isFalse);
+      expect(read.isUnreadable, isFalse);
+    });
+
+    test('a missing lifetime file still speaks for its deck path: creating a '
+        'file destroys nothing', () {
+      const AllTimeRecord absent = AllTimeRecord.absent('/decks/french.vok');
+      expect(absent.isEmpty, isTrue);
+      expect(absent.isUnreadable, isFalse);
+      expect(absent.speaksFor('/decks/french.vok', context: p.posix), isTrue);
+    });
+
+    test('a file that could not be read speaks for nothing at all, and stays '
+        'that way once the learner answers', () {
+      const AllTimeRecord unreadable = AllTimeRecord.unreadable(
+        '/decks/french.vok',
+      );
+      expect(unreadable.isUnreadable, isTrue);
+      expect(
+        unreadable.speaksFor('/decks/french.vok', context: p.posix),
+        isFalse,
+      );
+
+      // One answer later the record is no longer empty -- and still not
+      // entitled to replace the file it never read.
+      final AllTimeRecord answered = unreadable.record(
+        const RecordedAttempt(
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+          drill: AttemptDelta(attempts: 1, correct: 1),
+        ),
+      );
+      expect(answered.isEmpty, isFalse);
+      expect(answered.perUnit.single.direction1.attempts, 1);
+      expect(answered.origin, AllTimeOrigin.unreadable);
+      expect(answered.speaksFor('/decks/french.vok', context: p.posix), isFalse);
+    });
+
+    test('a deck-shape change re-indexes a never-read record dense without '
+        'granting it any authority', () {
+      const AllTimeRecord unread = AllTimeRecord.unread;
+      for (final AllTimeRecord reshaped in <AllTimeRecord>[
+        unread.resized(3),
+        unread.afterInsert(1, 3),
+        unread.afterDelete(1, 3),
+      ]) {
+        // Dense, so an emptiness test would call it "something has happened"...
+        expect(reshaped.perUnit, hasLength(3));
+        expect(reshaped.isEmpty, isFalse);
+        // ...but nothing was read, so it speaks for no file.
+        expect(reshaped.origin, AllTimeOrigin.unread);
+        expect(reshaped.speaksFor('/decks/french.vok', context: p.posix),
+            isFalse);
+      }
+    });
+
+    test('re-indexing a record that WAS read keeps its authority', () {
+      const AllTimeRecord read = AllTimeRecord.loaded(
+        AllTimeStatistics(
+          perUnit: <UnitStats>[
+            UnitStats(index: 1, direction1: DirectionStats(attempts: 12)),
+          ],
+        ),
+        '/decks/french.vok',
+      );
+      final AllTimeRecord merged = read.resized(2);
+      expect(
+        merged.perUnit.map((UnitStats stats) => stats.direction1.attempts),
+        <int>[12, 0],
+      );
+      expect(merged.speaksFor('/decks/french.vok', context: p.posix), isTrue);
+    });
+
+    test('a write that landed makes the record speak for the file it wrote',
+        () {
+      final AllTimeRecord adopted = AllTimeRecord.unread.adoptedAt(
+        '/decks/french.vok',
+      );
+      expect(adopted.origin, AllTimeOrigin.loaded);
+      expect(adopted.speaksFor('/decks/french.vok', context: p.posix), isTrue);
+    });
+
+    test('paths are compared by the host rules, on either host', () {
+      const AllTimeRecord windows = AllTimeRecord.absent(r'C:\Decks\French.vok');
+      // Windows: separators and case are both immaterial.
+      expect(
+        windows.speaksFor(r'C:/Decks/french.vok', context: p.windows),
+        isTrue,
+      );
+
+      const AllTimeRecord posix = AllTimeRecord.absent('/decks/french.vok');
+      // POSIX: case is part of the name, so a different case is a different
+      // deck and its file is protected.
+      expect(posix.speaksFor('/decks/French.vok', context: p.posix), isFalse);
+      expect(posix.speaksFor('/decks/./french.vok', context: p.posix), isTrue);
     });
   });
 }

@@ -7,7 +7,7 @@ final class DesktopDocument {
     required this.deck,
     required this.statistics,
     this.levelStatistics = const <LevelUnitStats>[],
-    this.allTime = AllTimeStatistics.empty,
+    this.allTime = AllTimeRecord.unread,
     this.deckPath,
     this.statisticsPath,
     this.autoSaveTargetPath,
@@ -35,7 +35,12 @@ final class DesktopDocument {
   /// every answer for the life of the deck, survives "Clear current
   /// statistics", and is never consulted by the engine. A deck that has never
   /// been saved accumulates here in memory until it first gets a path.
-  final AllTimeStatistics allTime;
+  ///
+  /// It travels as an [AllTimeRecord] rather than bare counters because the
+  /// counters alone cannot say which file they are entitled to replace: the
+  /// record carries the path it was read from, and only that read makes it
+  /// eligible to overwrite a lifetime file.
+  final AllTimeRecord allTime;
 
   /// Current `.vok` path, if any.
   final String? deckPath;
@@ -83,7 +88,7 @@ final class DesktopDocument {
     LearningDeck? deck,
     List<UnitStats>? statistics,
     List<LevelUnitStats>? levelStatistics,
-    AllTimeStatistics? allTime,
+    AllTimeRecord? allTime,
     String? deckPath,
     String? statisticsPath,
     String? autoSaveTargetPath,

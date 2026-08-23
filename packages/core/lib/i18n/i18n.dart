@@ -1152,6 +1152,14 @@ enum LearnAnywhereMessage {
   /// Save deck success message.
   fileSaveDeckDone,
 
+  /// Save deck succeeded, but the all-time statistics already at that location
+  /// belong to another deck and were deliberately left alone.
+  fileSaveDeckAllTimeKept,
+
+  /// Warning on open: the deck's all-time statistics file is there but could
+  /// not be read, so it is left untouched and this sitting will not reach it.
+  fileAllTimeUnreadable,
+
   /// Clear units success message.
   fileClearUnitsDone,
 
@@ -1712,6 +1720,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileOpenDeckDone: 'Deck loaded.',
       LearnAnywhereMessage.fileMergeDeckDone: 'Deck merged.',
       LearnAnywhereMessage.fileSaveDeckDone: 'Deck saved.',
+      LearnAnywhereMessage.fileSaveDeckAllTimeKept:
+          'Deck saved. The all-time statistics already at that location belong '
+          'to another deck and were left untouched.',
+      LearnAnywhereMessage.fileAllTimeUnreadable:
+          'The all-time statistics could not be read. The file is left '
+          'untouched, and this sitting is not added to it.',
       LearnAnywhereMessage.fileLoadMaskDone: 'Mask loaded.',
       LearnAnywhereMessage.fileSaveMaskDone: 'Mask saved.',
       LearnAnywhereMessage.filePickerDeckType: 'Vocabulary decks (*.vok)',
@@ -2259,6 +2273,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileOpenDeckDone: 'Lern-Datei geladen.',
       LearnAnywhereMessage.fileMergeDeckDone: 'Lern-Datei hinzugefügt.',
       LearnAnywhereMessage.fileSaveDeckDone: 'Lern-Datei gespeichert.',
+      LearnAnywhereMessage.fileSaveDeckAllTimeKept:
+          'Lern-Datei gespeichert. Die dort vorhandene Allzeit-Statistik '
+          'gehört zu einer anderen Lern-Datei und wurde nicht überschrieben.',
+      LearnAnywhereMessage.fileAllTimeUnreadable:
+          'Die Allzeit-Statistik konnte nicht gelesen werden. Die Datei bleibt '
+          'unverändert; diese Sitzung wird ihr nicht hinzugefügt.',
       LearnAnywhereMessage.fileLoadMaskDone: 'Maske geladen.',
       LearnAnywhereMessage.fileSaveMaskDone: 'Maske gespeichert.',
       LearnAnywhereMessage.filePickerDeckType: 'Lern-Dateien (*.vok)',

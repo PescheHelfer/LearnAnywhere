@@ -22,7 +22,16 @@
 /// ceiling is skipped in both records, and how an [AttemptRating.noCount]
 /// rating stays a no-op in both. Re-deciding the ceiling against lifetime
 /// wrongs would silently freeze the record forever once a unit passed it.
+///
+/// **Writing is by authority, never blind.** The record a deck holds in memory
+/// travels as an [AllTimeRecord], which knows the file it was read from and so
+/// which file it may replace; a record that never read a file may create one,
+/// but never overwrite one. [AllTimeRecord] states that policy in full — it is
+/// what stops a moment's unreadable file, or a merge that re-indexed an empty
+/// record dense, from zeroing a lifetime of counters.
 library;
+
+import 'package:path/path.dart' as p;
 
 import '../engine/engine.dart';
 import '../models/models.dart';
@@ -260,6 +269,171 @@ final class AllTimeStatistics {
       entries[at] = updated;
     }
     return List<LevelUnitStats>.unmodifiable(entries);
+  }
+}
+
+/// How a lifetime record in memory came to hold what it holds.
+///
+/// This is what decides whether it may REPLACE the file at a deck path — see
+/// [AllTimeRecord.speaksFor]. Reading is total and silent, so the outcome has
+/// to survive in the model: a file that was merely absent and a file that
+/// could not be read both yield an empty record, and only the first of them
+/// may be written over.
+enum AllTimeOrigin {
+  /// Never read from anywhere: a brand-new deck, a deck arriving through the
+  /// Lexicon file search, or a record built in memory. It speaks for no path.
+  unread,
+
+  /// There was no lifetime file beside the deck when it was opened, which
+  /// simply means the deck has no history yet. The record speaks for that
+  /// path: writing there creates the file rather than replacing one.
+  ///
+  /// The observation is made once, when the deck opens, and holds for the
+  /// sitting. A lifetime file appearing beside an already-open deck — a second
+  /// instance of the app, a sync client restoring one — is therefore written
+  /// over rather than noticed. Catching that would mean re-reading before every
+  /// answer, or tracking each write back into the record, and the file this
+  /// deck is writing is by then the one it created itself.
+  absent,
+
+  /// Read and decoded from the lifetime file beside the deck. The record
+  /// speaks for that path.
+  loaded,
+
+  /// A lifetime file is there but could not be read or decoded — locked by a
+  /// sync client, a backup or a virus scanner, or malformed. The record does
+  /// NOT speak for that path: what is on disk may be a lifetime of counters
+  /// this record knows nothing about.
+  unreadable,
+}
+
+/// A lifetime record together with the file it is entitled to speak for.
+///
+/// **A record may only replace a lifetime file it was successfully read
+/// from.** That is the whole write policy, and it exists because every other
+/// guard is too weak: a record can become non-empty without a single answer
+/// being given (any deck-shape change re-indexes it dense), so "is this record
+/// empty?" cannot stand in for "is this record entitled to speak for this
+/// file?".
+///
+/// Three consequences follow, and they are the point of the type:
+///
+/// - A **failed read is a refusal to write**, not a licence to zero. A file
+///   locked for a second at the moment the deck opened stays intact, and the
+///   learner is told the session will not reach it.
+/// - **Creating a file is always allowed**; only replacing one is restricted.
+///   A deck that has never been saved accumulates in memory and writes its
+///   record the moment it first gets a path — that path holds nothing to
+///   protect. Where it does hold something (a save-as onto a deck that has a
+///   history of its own), the write is refused instead.
+/// - The authority is **carried by the record**, so re-indexing it for a
+///   merge, an editor insert or a resize cannot manufacture one. Every
+///   operation here returns a record with the same [origin] and [deckPath].
+///
+/// The single deliberate exception is the learner-confirmed clear of the
+/// lifetime record itself, which opts out explicitly at the call site.
+final class AllTimeRecord {
+  /// Creates a record with an explicit origin.
+  const AllTimeRecord({
+    this.statistics = AllTimeStatistics.empty,
+    this.origin = AllTimeOrigin.unread,
+    this.deckPath,
+  });
+
+  /// A record read from the lifetime file beside [deckPath].
+  const AllTimeRecord.loaded(AllTimeStatistics statistics, String deckPath)
+    : this(
+        statistics: statistics,
+        origin: AllTimeOrigin.loaded,
+        deckPath: deckPath,
+      );
+
+  /// The empty record of a deck that has no lifetime file beside [deckPath].
+  const AllTimeRecord.absent(String deckPath)
+    : this(origin: AllTimeOrigin.absent, deckPath: deckPath);
+
+  /// The empty record standing in for a lifetime file beside [deckPath] that
+  /// could not be read.
+  const AllTimeRecord.unreadable(String deckPath)
+    : this(origin: AllTimeOrigin.unreadable, deckPath: deckPath);
+
+  /// A record that has never been read from anywhere.
+  static const AllTimeRecord unread = AllTimeRecord();
+
+  /// The counters themselves.
+  final AllTimeStatistics statistics;
+
+  /// Where these counters came from.
+  final AllTimeOrigin origin;
+
+  /// The deck path this record was read for, if any.
+  final String? deckPath;
+
+  /// Lifetime per-unit counters.
+  List<UnitStats> get perUnit => statistics.perUnit;
+
+  /// Lifetime Level-Learning counters.
+  List<LevelUnitStats> get perLevel => statistics.perLevel;
+
+  /// Whether nothing has ever been recorded here.
+  bool get isEmpty => statistics.isEmpty;
+
+  /// Whether the lifetime file was there and could not be read, which is the
+  /// one case worth telling the learner about: everything answered from here
+  /// on stays in memory.
+  bool get isUnreadable => origin == AllTimeOrigin.unreadable;
+
+  /// Whether this record may replace an existing lifetime file for [path].
+  ///
+  /// True only for the deck path it was read for, and only when that read
+  /// actually established what the file holds — an [AllTimeOrigin.absent]
+  /// file counts, because "nothing there" is knowing what it holds.
+  bool speaksFor(String path, {p.Context? context}) {
+    final String? own = deckPath;
+    if (own == null ||
+        origin == AllTimeOrigin.unread ||
+        origin == AllTimeOrigin.unreadable) {
+      return false;
+    }
+    return (context ?? p.context).equals(own, path);
+  }
+
+  /// Returns this record with [attempt] added, keeping its authority.
+  AllTimeRecord record(RecordedAttempt attempt) {
+    return _with(statistics.record(attempt));
+  }
+
+  /// Returns this record re-indexed to a deck of [unitCount] units.
+  AllTimeRecord resized(int unitCount) => _with(statistics.resized(unitCount));
+
+  /// Returns this record shifted for a unit inserted at 1-based [position] in
+  /// a deck that now holds [unitCount] units.
+  AllTimeRecord afterInsert(int position, int unitCount) {
+    return _with(statistics.afterInsert(position, unitCount));
+  }
+
+  /// Returns this record shifted for the unit at 1-based [position] being
+  /// deleted from a deck that now holds [unitCount] units.
+  AllTimeRecord afterDelete(int position, int unitCount) {
+    return _with(statistics.afterDelete(position, unitCount));
+  }
+
+  /// Returns this record as the one now describing the lifetime file at
+  /// [path] — what a write that actually landed there earns it.
+  AllTimeRecord adoptedAt(String path) {
+    return AllTimeRecord(
+      statistics: statistics,
+      origin: AllTimeOrigin.loaded,
+      deckPath: path,
+    );
+  }
+
+  AllTimeRecord _with(AllTimeStatistics updated) {
+    return AllTimeRecord(
+      statistics: updated,
+      origin: origin,
+      deckPath: deckPath,
+    );
   }
 }
 

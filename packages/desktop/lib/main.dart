@@ -2119,7 +2119,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             // Drain first, for the reason spelled out in [_saveDeck]: this
             // save writes the lifetime record straight to disk.
             await _statsSaveChain;
-            _document = await _fileService.saveDeck(_document);
+            // Saving the deck back to its own path: the lifetime record can
+            // only be the one read from beside it, so nothing to report.
+            _document = (await _fileService.saveDeck(_document)).document;
           }
         }
       }
@@ -2351,7 +2353,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     // its counters have to stay attached to the unit that earned them.
     final List<UnitStats> statistics;
     final List<LevelUnitStats> levelStatistics;
-    final AllTimeStatistics allTime;
+    final AllTimeRecord allTime;
     if (insertedAt != null) {
       statistics = statsAfterInsert(_document.statistics, insertedAt, newCount);
       levelStatistics = levelStatsAfterInsert(
@@ -2566,7 +2568,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       final LearnAnywhereMessage? maskStatus = await _reconcileLinkedMask();
       _resetRangeForDeck();
       _selectRoute(_DesktopRoute.fileOperations);
-      _setFileStatus(maskStatus ?? LearnAnywhereMessage.fileOpenDeckDone);
+      // A lifetime file that is there but unreadable outranks the mask note:
+      // it is the one that says this whole sitting will not reach the record,
+      // and the record refuses to be written over a file it never read.
+      _setFileStatus(
+        _document.allTime.isUnreadable
+            ? LearnAnywhereMessage.fileAllTimeUnreadable
+            : maskStatus ?? LearnAnywhereMessage.fileOpenDeckDone,
+      );
       _setLastDir('vok', path);
       // The last-opened deck path is persisted by _saveSettings via
       // _settings.lastDeckPath (single source of truth).
@@ -2804,9 +2813,28 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // afterwards and put an older snapshot in the file (the same race the
       // statistics clear drains for).
       await _statsSaveChain;
-      _document = await _fileService.saveDeck(_document, path: resolvedPath);
+      final DeckSaveResult result = await _fileService.saveDeck(
+        _document,
+        path: resolvedPath,
+      );
+      _document = result.document;
       _selectRoute(_DesktopRoute.fileOperations);
-      _setFileStatus(LearnAnywhereMessage.fileSaveDeckDone);
+      // A refused lifetime write has two quite different causes and must not be
+      // reported with one sentence: a save-as onto a deck that has a record of
+      // its own leaves that record where it is (this deck's history is not that
+      // deck's), while a plain save of a deck whose OWN record could not be read
+      // at open is refused for the opposite reason. Naming the wrong one would
+      // tell the learner their file belongs to a deck it does not.
+      _setFileStatus(
+        switch (result.allTime) {
+          AllTimeWriteOutcome.refused
+              when result.document.allTime.isUnreadable =>
+            LearnAnywhereMessage.fileAllTimeUnreadable,
+          AllTimeWriteOutcome.refused =>
+            LearnAnywhereMessage.fileSaveDeckAllTimeKept,
+          _ => LearnAnywhereMessage.fileSaveDeckDone,
+        },
+      );
       _setLastDir('vok', resolvedPath);
       unawaited(_saveSettings());
     });
@@ -3049,7 +3077,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _document = _document.copyWith(
         deck: deck,
         statistics: clearStatistics(deck),
-        allTime: AllTimeStatistics.empty,
+        allTime: AllTimeRecord.unread,
         clearDeckPath: true,
         clearStatisticsPath: true,
         clearAutoSaveTarget: true,
