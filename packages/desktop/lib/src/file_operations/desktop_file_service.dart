@@ -480,13 +480,35 @@ final class DesktopFileService {
     );
   }
 
-  /// Clears all current statistics.
-  DesktopDocument clearStatisticsInMemory(DesktopDocument current) {
+  /// Clears all current statistics, writing the sitting being cleared out to
+  /// its auto-save target first and then letting go of that target.
+  ///
+  /// Both halves matter. Without the flush the target still points at the
+  /// finished sitting's timestamped file and the very next answer overwrites it
+  /// with counters starting from zero — the one action for starting fresh would
+  /// also be the action that destroys the history. Releasing the target is what
+  /// sends the next session down the "no target yet" path in
+  /// `_ensureAutoSaveTargetForSession`, which mints a file stamped with the time
+  /// that session started rather than reusing the old stamp. The statistics path
+  /// goes with it: the cleared numbers live in no file, so a plain "Save stats"
+  /// must ask rather than silently overwrite the sitting just preserved.
+  ///
+  /// Nothing is written when auto-saving is off, when no target is set, or when
+  /// no deck is open — the option governs whether a session file exists at all,
+  /// and an empty deck has no numbers worth putting over a file that has some.
+  Future<DesktopDocument> clearCurrentStatistics(
+    DesktopDocument current,
+  ) async {
+    if (current.deck.units.isNotEmpty) {
+      await autoSaveStatistics(current);
+    }
     return current.copyWith(
       statistics: clearStatistics(current.deck),
       levelStatistics: const <LevelUnitStats>[],
       // Nothing recorded means no mode to have recorded it in.
       clearLastSessionMode: true,
+      clearStatisticsPath: true,
+      clearAutoSaveTarget: true,
     );
   }
 

@@ -283,7 +283,9 @@ void main() {
       expect(await File(statsPath).exists(), isTrue);
       expect(saved.statisticsPath, statsPath);
 
-      final DesktopDocument cleared = service.clearStatisticsInMemory(saved);
+      final DesktopDocument cleared = await service.clearCurrentStatistics(
+        saved,
+      );
       expect(cleared.statistics.single.direction1.attempts, 0);
 
       final StatisticsLoadResult loaded = await service.loadStatistics(
@@ -298,6 +300,150 @@ void main() {
         decodeDeckJson(await File(selectedPath).readAsString()).units,
         hasLength(1),
       );
+
+      await temp.delete(recursive: true);
+    });
+    test('clearing flushes the sitting to its file, then releases it', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_clear_flush',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = '${temp.path}${Platform.pathSeparator}sample.vok';
+      final DateTime startedAt = DateTime(2026, 8, 23, 9, 15, 0);
+      final String targetPath = service.timestampedStatisticsPath(
+        deckPath,
+        startedAt,
+      );
+      final DesktopDocument document = DesktopDocument(
+        deck: singleUnitDeck(),
+        statistics: const <UnitStats>[
+          UnitStats(
+            index: 1,
+            direction1: DirectionStats(attempts: 3, correct: 2),
+          ),
+        ],
+        deckPath: deckPath,
+        statisticsPath: targetPath,
+        autoSaveTargetPath: targetPath,
+        autoSaveStatistics: true,
+      );
+
+      final DesktopDocument cleared = await service.clearCurrentStatistics(
+        document,
+      );
+
+      // The sitting the student just finished survives on disk, holding the
+      // numbers as they stood at the moment of the clear.
+      final StatisticsFile onDisk = decodeStatisticsJson(
+        await File(targetPath).readAsString(),
+      );
+      expect(onDisk.perUnit.single.direction1.attempts, 3);
+      expect(onDisk.perUnit.single.direction1.correct, 2);
+
+      // ...and the target is let go, so the next session mints its own file.
+      expect(cleared.autoSaveTargetPath, isNull);
+      expect(cleared.statisticsPath, isNull);
+      expect(cleared.statistics.single.direction1.attempts, 0);
+
+      // The next answer lands in a new file stamped with the new session's
+      // start time, leaving the previous sitting's file byte for byte intact.
+      final String nextTarget = service.timestampedStatisticsPath(
+        deckPath,
+        startedAt.add(const Duration(minutes: 20)),
+      );
+      expect(nextTarget, isNot(targetPath));
+      final String before = await File(targetPath).readAsString();
+      await service.writeStatistics(
+        cleared.copyWith(
+          statistics: const <UnitStats>[
+            UnitStats(
+              index: 1,
+              direction1: DirectionStats(attempts: 1, correct: 1),
+            ),
+          ],
+        ),
+        nextTarget,
+      );
+      expect(await File(targetPath).readAsString(), before);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('clearing writes nothing when auto-saving is off', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_clear_nosave',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = '${temp.path}${Platform.pathSeparator}sample.vok';
+      final String targetPath = service.timestampedStatisticsPath(
+        deckPath,
+        DateTime(2026, 8, 23, 9, 15, 0),
+      );
+      // A file left over from an earlier sitting, with auto-saving since
+      // switched off: clearing must not touch it.
+      await File(targetPath).writeAsString('earlier sitting');
+      final DesktopDocument document = DesktopDocument(
+        deck: singleUnitDeck(),
+        statistics: const <UnitStats>[
+          UnitStats(
+            index: 1,
+            direction1: DirectionStats(attempts: 3, correct: 2),
+          ),
+        ],
+        deckPath: deckPath,
+        autoSaveTargetPath: targetPath,
+      );
+
+      final DesktopDocument cleared = await service.clearCurrentStatistics(
+        document,
+      );
+
+      expect(await File(targetPath).readAsString(), 'earlier sitting');
+      expect(temp.listSync(), hasLength(1));
+      expect(cleared.statistics.single.direction1.attempts, 0);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('clearing an empty or never-saved deck writes nothing and raises '
+        'nothing', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_clear_empty',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = '${temp.path}${Platform.pathSeparator}sample.vok';
+      final String targetPath = service.timestampedStatisticsPath(
+        deckPath,
+        DateTime(2026, 8, 23, 9, 15, 0),
+      );
+
+      // No deck open. A stale target must not be filled with an empty record.
+      final DesktopDocument noDeck = await service.clearCurrentStatistics(
+        DesktopDocument(
+          deck: LearningDeck(mask: sampleMask(), units: const <LearningUnit>[]),
+          statistics: const <UnitStats>[],
+          autoSaveTargetPath: targetPath,
+          autoSaveStatistics: true,
+        ),
+      );
+      expect(noDeck.statistics, isEmpty);
+      expect(await File(targetPath).exists(), isFalse);
+
+      // A deck that has never been saved has no target to flush to.
+      final DesktopDocument unsaved = await service.clearCurrentStatistics(
+        DesktopDocument(
+          deck: singleUnitDeck(),
+          statistics: const <UnitStats>[
+            UnitStats(
+              index: 1,
+              direction1: DirectionStats(attempts: 3, correct: 2),
+            ),
+          ],
+          autoSaveStatistics: true,
+        ),
+      );
+      expect(unsaved.statistics.single.direction1.attempts, 0);
+      expect(temp.listSync(), isEmpty);
 
       await temp.delete(recursive: true);
     });
@@ -352,7 +498,9 @@ void main() {
       expect(reloaded.levelStatistics, hasLength(1));
 
       // "Start fresh" wipes both stores, so there is no recording mode left.
-      final DesktopDocument cleared = service.clearStatisticsInMemory(reloaded);
+      final DesktopDocument cleared = await service.clearCurrentStatistics(
+        reloaded,
+      );
       expect(cleared.lastSessionMode, isNull);
       expect(cleared.levelStatistics, isEmpty);
       expect(cleared.statistics.single.direction1.attempts, 0);
@@ -855,6 +1003,20 @@ LearningMask _withFirstFieldLength(LearningMask mask, int length) {
             role2: field.role2,
           ),
         ],
+      ),
+    ],
+  );
+}
+
+/// A one-unit deck over [sampleMask], the smallest deck the statistics rules
+/// can be observed on.
+LearningDeck singleUnitDeck() {
+  return LearningDeck(
+    mask: sampleMask(),
+    units: const <LearningUnit>[
+      LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{0: FieldValue.plain('Q')}, // Question
       ),
     ],
   );

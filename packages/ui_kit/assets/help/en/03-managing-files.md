@@ -35,7 +35,9 @@ embedded copy, so future edits have somewhere to be saved.
 - **Load stats...** / **Save stats** / **Save stats as...** load or write a `.sta` file
   for the current deck.
 - **Clear stats...** erases every recorded attempt for the current deck, after
-  confirming. This cannot be undone.
+  confirming. This cannot be undone. If auto-save is on, the session you are clearing is
+  written to its file first, so it survives on disk; the next session you start creates a
+  new session file of its own rather than overwriting it.
 
 These four are duplicated on the [Statistics](09-statistics.md) screen itself, so you
 never have to leave it to save your results.

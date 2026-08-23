@@ -846,8 +846,15 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         if (!mounted) {
           return false;
         }
+        // Starting fresh is a clear, so it flushes and releases the auto-save
+        // target too — the session about to start mints its own file.
+        final DesktopDocument cleared = await _fileService
+            .clearCurrentStatistics(_document);
+        if (!mounted) {
+          return false;
+        }
         setState(() {
-          _document = _fileService.clearStatisticsInMemory(_document);
+          _document = cleared;
         });
         return true;
     }
@@ -2859,10 +2866,13 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     }
     // The live Attempts/Accuracy readouts are derived from these statistics,
     // so clearing them takes the pills back to zero with no counter to reset.
-    setState(() {
-      _document = _fileService.clearStatisticsInMemory(_document);
+    // The clear writes the sitting out to its auto-save target first, so a
+    // failed write reports and leaves the numbers alone rather than losing both.
+    await _guardedFileOperation(() async {
+      _document = await _fileService.clearCurrentStatistics(_document);
+      // _showStatus does the rebuild that takes the pills back to zero.
+      _showStatus(LearnAnywhereMessage.statisticsCleared);
     });
-    _showStatus(LearnAnywhereMessage.statisticsCleared);
   }
 
   Future<void> _saveSelectedUnits(List<int> unitIndices) async {
