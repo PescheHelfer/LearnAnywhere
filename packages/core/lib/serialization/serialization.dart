@@ -137,6 +137,17 @@ StatisticsFile decodeStatistics(Object? value) {
   final Map<String, Object?> json = _asMap(value, r'$');
   _expectFormat(json, statisticsFormat, r'$');
   _expectStatisticsVersion(json, r'$');
+  // Additive at version 2, exactly like the per-unit identity hash: a file
+  // with no `scope` key is the working record, which is every `.sta` written
+  // before all-time statistics existed, and an unrecognised value means the
+  // same rather than failing the load.
+  final Object? rawScope = json['scope'];
+  final StatisticsScope scope = rawScope is String
+      ? StatisticsScope.values
+                .where((StatisticsScope value) => value.name == rawScope)
+                .firstOrNull ??
+            StatisticsScope.session
+      : StatisticsScope.session;
   final String deckRef = _asString(json['deckRef'], r'$.deckRef');
   final List<Object?> unitValues = _asList(json['perUnit'], r'$.perUnit');
   final List<UnitStats> perUnit = <UnitStats>[];
@@ -159,6 +170,7 @@ StatisticsFile decodeStatistics(Object? value) {
       : null;
   return StatisticsFile(
     deckRef: deckRef,
+    scope: scope,
     perUnit: List<UnitStats>.unmodifiable(perUnit),
     levelLearning: levelLearning,
     lastSessionMode: lastSessionMode,
@@ -170,6 +182,10 @@ Map<String, Object?> encodeStatistics(StatisticsFile statistics) {
   return <String, Object?>{
     'format': statisticsFormat,
     'version': currentStatisticsVersion,
+    // Written only for the lifetime record, so a working `.sta` stays exactly
+    // the document every earlier build wrote and reads.
+    if (statistics.scope != StatisticsScope.session)
+      'scope': statistics.scope.name,
     'deckRef': statistics.deckRef,
     'perUnit': statistics.perUnit.map(_encodeUnitStats).toList(growable: false),
     if (statistics.levelLearning != null)

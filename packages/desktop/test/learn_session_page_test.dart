@@ -418,6 +418,51 @@ void main() {
   );
 
   testWidgets(
+    'level learning: the lifetime record accumulates the rung answered at and '
+    'keeps the level last reached',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final _LevelLearningHarnessState Function() harnessState =
+          () => tester.state(find.byType(_LevelLearningHarness));
+      await tester.pumpWidget(_LevelLearningHarness(deck: deck));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // One correct answer at level 3 (Beginner) promotes the unit to level 2.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'one');
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      final LevelDirectionStats lifetime = harnessState()
+          .allTime
+          .perLevel
+          .singleWhere((LevelUnitStats s) => s.index == 1)
+          .dir1;
+      // The attempt lands on the rung it was answered at, not the one the
+      // promotion moved to.
+      expect(
+        lifetime.levels[kMaxSupportLevel],
+        const DirectionStats(attempts: 1, correct: 1),
+      );
+      expect(lifetime.levels[2], const DirectionStats());
+      // A level is a state, not a counter: the record keeps the one most
+      // recently reached, which the all-time view reads as "Last level".
+      expect(lifetime.currentLevel, 2);
+      // Nothing reached the mode-agnostic section — this was not free recall.
+      expect(harnessState().allTime.perUnit, isEmpty);
+    },
+  );
+
+  testWidgets(
     'level learning: Enter on an earlier answer field advances instead of '
     'checking; only the last field submits',
     (WidgetTester tester) async {
@@ -603,6 +648,128 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Attempts: 7'), findsOneWidget);
       expect(find.text('Accuracy: 5/7 (71%)'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'every answer reaches BOTH records: the working counters and the deck '
+    'lifetime record, each by the same amount',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final _DrillHarnessState Function() harness =
+          () => tester.state(find.byType(_DrillHarness));
+      await tester.pumpWidget(
+        _DrillHarness(
+          deck: drillDeck,
+          // The working record was cleared for a fresh start; the lifetime
+          // record kept everything the learner has ever answered.
+          statistics: const <UnitStats>[
+            UnitStats(index: 1),
+            UnitStats(index: 2),
+          ],
+          allTime: const AllTimeStatistics(
+            perUnit: <UnitStats>[
+              UnitStats(
+                index: 1,
+                direction1: DirectionStats(attempts: 40, correct: 25),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Knew it'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      // The fresh start reads 1/1 while the lifetime record carries on from 40.
+      expect(find.text('Attempts: 1'), findsOneWidget);
+      expect(
+        harness().allTimeDir1(1),
+        const DirectionStats(attempts: 41, correct: 26),
+      );
+
+      // "No count" is a no-op in both records.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('No count'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Attempts: 1'), findsOneWidget);
+      expect(
+        harness().allTimeDir1(2),
+        const DirectionStats(),
+        reason: 'nothing was counted, so no lifetime entry was minted either',
+      );
+      expect(
+        harness().allTimeDir1(1),
+        const DirectionStats(attempts: 41, correct: 26),
+      );
+    },
+  );
+
+  testWidgets(
+    'an attempt the wrong-answer ceiling suppresses is skipped in the '
+    'lifetime record too',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final _DrillHarnessState Function() harness =
+          () => tester.state(find.byType(_DrillHarness));
+      await tester.pumpWidget(
+        _DrillHarness(
+          deck: drillDeck,
+          options: const DesktopQueryOptions(
+            wrongAnswerCeilingEnabled: true,
+            wrongAnswerCeiling: 2,
+          ),
+          // Unit 1 is already at the ceiling: two wrong out of two.
+          statistics: const <UnitStats>[
+            UnitStats(index: 1, direction1: DirectionStats(attempts: 2)),
+          ],
+          allTime: const AllTimeStatistics(
+            perUnit: <UnitStats>[
+              UnitStats(
+                index: 1,
+                direction1: DirectionStats(attempts: 30, correct: 12),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text("Didn't know"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      // Neither record moved. The lifetime wrongs are well past two, and that
+      // is the point: the ceiling is evaluated once, against the working
+      // record, or a unit would silently stop recording forever.
+      expect(find.text('Attempts: 2'), findsOneWidget);
+      expect(
+        harness().allTimeDir1(1),
+        const DirectionStats(attempts: 30, correct: 12),
+      );
     },
   );
 
@@ -1085,6 +1252,9 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
   List<LevelUnitStats> _levelStats = const <LevelUnitStats>[];
   int _resetSignal = 0;
 
+  /// The lifetime record, accumulated exactly as the shell accumulates it.
+  AllTimeStatistics allTime = AllTimeStatistics.empty;
+
   /// Every drill-mode statistics push the page made, in order.
   ///
   /// In Level Learning only attempts answered *at* level 0 push here — level 0
@@ -1121,6 +1291,9 @@ class _LevelLearningHarnessState extends State<_LevelLearningHarness> {
           onLevelStatisticsChanged: (List<LevelUnitStats> value) {
             setState(() => _levelStats = value);
           },
+          onAttemptRecorded: (RecordedAttempt attempt) {
+            setState(() => allTime = allTime.record(attempt));
+          },
           onOpenEditor: () {},
           onExit: () {},
         ),
@@ -1136,6 +1309,8 @@ class _DrillHarness extends StatefulWidget {
   const _DrillHarness({
     required this.deck,
     required this.statistics,
+    this.allTime = AllTimeStatistics.empty,
+    this.options = const DesktopQueryOptions(),
     this.parameters = const SessionParameters(
       withInput: false,
       mode: SessionMode.onceThrough,
@@ -1146,6 +1321,12 @@ class _DrillHarness extends StatefulWidget {
 
   final LearningDeck deck;
   final List<UnitStats> statistics;
+
+  /// The deck's lifetime record as the shell holds it.
+  final AllTimeStatistics allTime;
+
+  /// Query options, so a test can switch the wrong-answer ceiling on.
+  final DesktopQueryOptions options;
 
   /// The session's own scope — what it serves. The live readouts widen it to
   /// the whole deck themselves.
@@ -1158,9 +1339,21 @@ class _DrillHarness extends StatefulWidget {
 class _DrillHarnessState extends State<_DrillHarness> {
   late List<UnitStats> _statistics = widget.statistics;
 
+  /// The lifetime record, accumulated exactly as the shell accumulates it.
+  late AllTimeStatistics allTime = widget.allTime;
+
   /// Mimics the shell opening another deck: statistics are replaced wholesale.
   void openDeck(List<UnitStats> statistics) {
     setState(() => _statistics = statistics);
+  }
+
+  /// The lifetime counters recorded for [unitIndex] in direction 1.
+  DirectionStats allTimeDir1(int unitIndex) {
+    return allTime.perUnit
+            .where((UnitStats stats) => stats.index == unitIndex)
+            .firstOrNull
+            ?.direction1 ??
+        const DirectionStats();
   }
 
   @override
@@ -1172,11 +1365,14 @@ class _DrillHarnessState extends State<_DrillHarness> {
         body: LearnSessionPage(
           deck: widget.deck,
           statistics: _statistics,
-          options: const DesktopQueryOptions(),
+          options: widget.options,
           parameters: widget.parameters,
           onParametersChanged: (SessionParameters _) {},
           onStatisticsChanged: (List<UnitStats> value) {
             setState(() => _statistics = value);
+          },
+          onAttemptRecorded: (RecordedAttempt attempt) {
+            setState(() => allTime = allTime.record(attempt));
           },
           onOpenEditor: () {},
           onExit: () {},

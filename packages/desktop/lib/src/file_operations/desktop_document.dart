@@ -7,6 +7,7 @@ final class DesktopDocument {
     required this.deck,
     required this.statistics,
     this.levelStatistics = const <LevelUnitStats>[],
+    this.allTime = AllTimeStatistics.empty,
     this.deckPath,
     this.statisticsPath,
     this.autoSaveTargetPath,
@@ -27,6 +28,14 @@ final class DesktopDocument {
   /// on demand by the engine (`activeLevelLearningPool`) and materialized here
   /// as the student answers Level-Learning units.
   final List<LevelUnitStats> levelStatistics;
+
+  /// The deck's lifetime record, written beside it as `<deck>_alltime.sta`.
+  ///
+  /// Kept alongside [statistics] rather than derived from it: it accumulates
+  /// every answer for the life of the deck, survives "Clear current
+  /// statistics", and is never consulted by the engine. A deck that has never
+  /// been saved accumulates here in memory until it first gets a path.
+  final AllTimeStatistics allTime;
 
   /// Current `.vok` path, if any.
   final String? deckPath;
@@ -74,6 +83,7 @@ final class DesktopDocument {
     LearningDeck? deck,
     List<UnitStats>? statistics,
     List<LevelUnitStats>? levelStatistics,
+    AllTimeStatistics? allTime,
     String? deckPath,
     String? statisticsPath,
     String? autoSaveTargetPath,
@@ -89,6 +99,7 @@ final class DesktopDocument {
       deck: deck ?? this.deck,
       statistics: statistics ?? this.statistics,
       levelStatistics: levelStatistics ?? this.levelStatistics,
+      allTime: allTime ?? this.allTime,
       deckPath: clearDeckPath ? null : deckPath ?? this.deckPath,
       statisticsPath: clearStatisticsPath
           ? null

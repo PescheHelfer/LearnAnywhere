@@ -24,6 +24,13 @@ const String maskExtension = 'inf';
 /// Extension (without dot) of a statistics file.
 const String statisticsExtension = 'sta';
 
+/// Base-name suffix that marks the all-time statistics file of a deck.
+///
+/// Deliberately not a bare `<deck>.sta`: that name is the Android companion's
+/// live statistics sidecar, so a deck carried between the two shells would
+/// otherwise have one file meaning two different things.
+const String allTimeStatisticsSuffix = 'alltime';
+
 /// Separator-safe derivation of the paths that live beside a deck.
 final class DeckPaths {
   const DeckPaths._();
@@ -71,6 +78,19 @@ final class DeckPaths {
   }) {
     final p.Context ctx = context ?? p.context;
     return '${ctx.withoutExtension(deckPath)}_${formatStamp(when)}'
+        '.$statisticsExtension';
+  }
+
+  /// Returns the all-time statistics path for [deckPath], named
+  /// `<deckname>_alltime.sta` in the deck's own folder.
+  ///
+  /// The lifetime record of a deck: written on every answer, never consulted by
+  /// the learning engine. Its name cannot match
+  /// [timestampedStatisticsPattern] (which requires digits after the
+  /// underscore), so it is never picked up as a session file to auto-load.
+  static String allTimeStatistics(String deckPath, {p.Context? context}) {
+    final p.Context ctx = context ?? p.context;
+    return '${ctx.withoutExtension(deckPath)}_$allTimeStatisticsSuffix'
         '.$statisticsExtension';
   }
 

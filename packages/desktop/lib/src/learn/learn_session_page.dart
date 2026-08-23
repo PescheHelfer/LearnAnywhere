@@ -22,6 +22,7 @@ final class LearnSessionPage extends StatefulWidget {
     required this.onOpenEditor,
     this.onSessionStarted,
     this.onPersistStatistics,
+    this.onAttemptRecorded,
     this.levelStatistics = const <LevelUnitStats>[],
     this.levelNames = kDefaultLevelNamesEn,
     this.entryLevelCap = kMaxSupportLevel,
@@ -92,6 +93,15 @@ final class LearnSessionPage extends StatefulWidget {
   /// Called after each check→continue cycle, so the shell can auto-save the
   /// updated statistics to the active target (§3.7).
   final VoidCallback? onPersistStatistics;
+
+  /// Called with each attempt exactly as the working record took it, so the
+  /// shell can add the same amount to the deck's lifetime record.
+  ///
+  /// Fires for every rating, including one the wrong-answer ceiling suppressed
+  /// and a "no count" — both arrive carrying an empty delta, which the lifetime
+  /// record ignores. Fires BEFORE [onPersistStatistics], so the shell's
+  /// document already holds the attempt when the writes are queued.
+  final ValueChanged<RecordedAttempt>? onAttemptRecorded;
 
   /// Called when the user wants to interrupt and edit the deck.
   final VoidCallback onOpenEditor;
@@ -1070,6 +1080,15 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     if (item == null || _evaluation == null) {
       return;
     }
+    // What the WORKING record actually took, measured before and after. The
+    // lifetime record is then incremented by exactly this and no more, which
+    // is how a ceiling-suppressed attempt and a "no count" rating stay no-ops
+    // in both records.
+    final DirectionStats drillBefore = _statsFor(item);
+    AttemptDelta drillDelta = AttemptDelta.none;
+    int? level;
+    AttemptDelta levelDelta = AttemptDelta.none;
+    int? reachedLevel;
     if (_isLevelLearning) {
       // Level Learning records into the level ladder. Level 0 is free recall —
       // the same thing the drill modes test — so an attempt answered *at*
@@ -1078,25 +1097,56 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       // the current level and only then promotes, so the attempt that promotes
       // a unit from level 1 to level 0 was answered at level 1 and must not
       // count here.
-      final int levelBefore = _levelStatsFor(item).currentLevel;
+      final LevelDirectionStats before = _levelStatsFor(item);
+      final int levelBefore = before.currentLevel;
       final LevelDirectionStats after = recordLevelLearningAttempt(
-        _levelStatsFor(item),
+        before,
         _selectedRating,
         parameters: _draftParameters,
       );
       _pushLevelStats(item, after);
+      level = levelBefore;
+      levelDelta = AttemptDelta.between(
+        before.currentLevelStats,
+        after.levels[levelBefore] ?? const DirectionStats(),
+      );
+      reachedLevel = after.currentLevel;
       if (levelBefore == kFreeRecallLevel) {
-        widget.onStatisticsChanged(_recordRating(item, _selectedRating));
+        final List<UnitStats> updated = _recordRating(item, _selectedRating);
+        drillDelta = AttemptDelta.between(
+          drillBefore,
+          updated[item.unitIndex - 1].statsFor(item.direction),
+        );
+        widget.onStatisticsChanged(updated);
       }
     } else {
       final List<UnitStats> updated = _recordRating(item, _selectedRating);
+      drillDelta = AttemptDelta.between(
+        drillBefore,
+        updated[item.unitIndex - 1].statsFor(item.direction),
+      );
       widget.onStatisticsChanged(updated);
     }
+    widget.onAttemptRecorded?.call(
+      RecordedAttempt(
+        unitIndex: item.unitIndex,
+        direction: item.direction,
+        drill: drillDelta,
+        level: level,
+        levelDelta: levelDelta,
+        reachedLevel: reachedLevel,
+      ),
+    );
     // Persist the just-recorded attempt to the auto-save target. Runs after the
     // stats callbacks above so the shell's document already holds this attempt;
     // the shell queues the write asynchronously so it never stalls the cycle.
     widget.onPersistStatistics?.call();
     _selectNextItem();
+  }
+
+  /// The mode-agnostic counters [item] currently stands at.
+  DirectionStats _statsFor(SessionItem item) {
+    return _normalizedStats()[item.unitIndex - 1].statsFor(item.direction);
   }
 
   List<UnitStats> _recordRating(SessionItem item, AttemptRating rating) {

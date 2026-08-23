@@ -770,6 +770,39 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     });
   }
 
+  /// Queues a write of [snapshot]'s lifetime record to `<deck>_alltime.sta`
+  /// behind any pending session save.
+  ///
+  /// Deliberately on the same serialised chain as [_queueStatsSave] and with
+  /// the same silence: two records are written per answer and neither may
+  /// stall or interrupt a live session. Unlike the session save this is NOT
+  /// gated on the auto-save-statistics option — that option decides whether a
+  /// resumable session file exists, and letting it govern the lifetime record
+  /// would mean turning off resumable sessions silently stops the learner's
+  /// progress record.
+  void _queueAllTimeSave(DesktopDocument snapshot) {
+    if (snapshot.deckPath == null) {
+      return;
+    }
+    _statsSaveChain = _statsSaveChain.then((_) async {
+      try {
+        await _fileService.writeAllTimeStatistics(snapshot);
+      } on Object {
+        // Silent during a session; see doc comment.
+      }
+    });
+  }
+
+  /// Writes the lifetime record out and waits for the whole save chain to
+  /// drain, so nothing is still queued when the deck leaves memory.
+  ///
+  /// Run before new, open, merge, close and exit — every action that drops the
+  /// current units — because the per-answer writes are queued, not awaited.
+  Future<void> _flushAllTimeStatistics() async {
+    _queueAllTimeSave(_document);
+    await _statsSaveChain;
+  }
+
   /// Queues a prune of old timestamped session `.sta` files behind any
   /// pending save, so it runs after [target]'s own write lands and never
   /// races it. A no-op when retention is off (`keepStatisticsVersions == 0`)
@@ -975,6 +1008,22 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     _queuePruneOldStatistics(target);
   }
 
+  /// Adds one attempt to the deck's lifetime record and queues the write.
+  ///
+  /// [attempt] carries exactly what the working record took, so a suppressed
+  /// or uncounted attempt changes nothing and writes nothing. The write is
+  /// queued here rather than in [_persistSessionStatistics] because that one
+  /// stops when auto-saving is off, and the lifetime record must not.
+  void _recordAllTimeAttempt(RecordedAttempt attempt) {
+    if (attempt.isEmpty) {
+      return;
+    }
+    setState(() {
+      _document = _document.copyWith(allTime: _document.allTime.record(attempt));
+    });
+    _queueAllTimeSave(_document);
+  }
+
   /// Persists statistics to the auto-save target after each check→continue
   /// cycle (§3.7). A no-op when auto-saving is suspended or off.
   void _persistSessionStatistics() {
@@ -995,6 +1044,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// `Future<bool>` return is kept so callers can still abort on failure; it
   /// only reports `false` if a caller-visible cancellation is ever reintroduced.
   Future<bool> _confirmAndAutoSaveStats() async {
+    // The lifetime record goes first and unconditionally: it is not governed
+    // by the auto-save option, and this is the last moment before the deck it
+    // belongs to leaves memory.
+    await _flushAllTimeStatistics();
     final DesktopDocument doc = _document;
     final String? target = doc.autoSaveTargetPath;
     if (!doc.autoSaveStatistics || target == null || doc.deck.units.isEmpty) {
@@ -2063,6 +2116,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             );
           });
           if (_document.deckPath != null) {
+            // Drain first, for the reason spelled out in [_saveDeck]: this
+            // save writes the lifetime record straight to disk.
+            await _statsSaveChain;
             _document = await _fileService.saveDeck(_document);
           }
         }
@@ -2224,6 +2280,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         },
         onSessionStarted: _prepareSessionStart,
         onPersistStatistics: _persistSessionStatistics,
+        onAttemptRecorded: _recordAllTimeAttempt,
         onOpenEditor: () => _selectRoute(_DesktopRoute.editor),
         onExit: () => _selectRoute(_DesktopRoute.home),
       ),
@@ -2288,14 +2345,18 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     // or delete shifts later indices; an append (or any other count change with
     // no position) keeps existing indices and pads/truncates; a field edit
     // leaves them untouched.
+    // The lifetime record is shifted the same way and for the same reason:
+    // its counters have to stay attached to the unit that earned them.
     final List<UnitStats> statistics;
     final List<LevelUnitStats> levelStatistics;
+    final AllTimeStatistics allTime;
     if (insertedAt != null) {
       statistics = statsAfterInsert(_document.statistics, insertedAt, newCount);
       levelStatistics = levelStatsAfterInsert(
         _document.levelStatistics,
         insertedAt,
       );
+      allTime = _document.allTime.afterInsert(insertedAt, newCount);
     } else if (deletedAt != null) {
       statistics = statsAfterDelete(_document.statistics, deletedAt, newCount);
       // The deleted unit's ladder entry is dropped, not reported: the delete
@@ -2305,18 +2366,24 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         _document.levelStatistics,
         deletedAt,
       );
+      allTime = _document.allTime.afterDelete(deletedAt, newCount);
     } else if (newCount != previousCount) {
       statistics = resizeUnitStats(_document.statistics, newCount);
       levelStatistics = resizeLevelStats(_document.levelStatistics, newCount);
+      allTime = _document.allTime.resized(newCount);
     } else {
       statistics = _document.statistics;
       levelStatistics = _document.levelStatistics;
+      // A field edit leaves the lifetime counters alone: a typo fix must not
+      // cost a term its history, which is also what realignment does on load.
+      allTime = _document.allTime;
     }
     setState(() {
       _document = _document.copyWith(
         deck: deck,
         statistics: statistics,
         levelStatistics: levelStatistics,
+        allTime: allTime,
       );
       _range = _clampRange(
         autoExpandEndUnit(
@@ -2730,6 +2797,11 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     }
     final String resolvedPath = path;
     await _guardedFileOperation(() async {
+      // Saving the deck writes the lifetime record straight to disk, so drain
+      // the queue first: a per-answer write still pending would otherwise land
+      // afterwards and put an older snapshot in the file (the same race the
+      // statistics clear drains for).
+      await _statsSaveChain;
       _document = await _fileService.saveDeck(_document, path: resolvedPath);
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileSaveDeckDone);
@@ -2799,12 +2871,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       return;
     }
     bool loaded = false;
+    bool isAllTime = false;
     await _guardedFileOperation(() async {
       final StatisticsLoadResult result = await _fileService.loadStatistics(
         _document,
         path,
       );
       _document = result.document;
+      isAllTime = result.scope == StatisticsScope.allTime;
       _setLastDir('sta', path);
       _reportStatisticsLoad(result);
       loaded = true;
@@ -2812,6 +2886,16 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     // A manual load asks whether to adopt the file for auto-saving; declining
     // suspends auto-saving until another `.sta` is loaded or created (§3.7).
     if (!loaded || !mounted) {
+      return;
+    }
+    // ...except for a deck's lifetime record, which is never offered: a stray
+    // keypress must not start writing a sitting's counters over the record.
+    // Auto-saving is suspended instead, so the next session mints a fresh
+    // timestamped file and the record stays a record.
+    if (isAllTime) {
+      setState(() {
+        _document = _document.copyWith(clearAutoSaveTarget: true);
+      });
       return;
     }
     final bool adopt = await _confirmYesNo(
@@ -2952,10 +3036,16 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   }
 
   void _loadFoundLexiconDeck(LearningDeck deck) {
+    // This replaces the open deck exactly as File > Open would, so the
+    // outgoing lifetime record is written out and then let go: it belongs to
+    // the deck that earned it, and carrying it into a deck arriving with no
+    // path of its own would file another deck's history under this one.
+    _queueAllTimeSave(_document);
     setState(() {
       _document = _document.copyWith(
         deck: deck,
         statistics: clearStatistics(deck),
+        allTime: AllTimeStatistics.empty,
         clearDeckPath: true,
         clearStatisticsPath: true,
         clearAutoSaveTarget: true,

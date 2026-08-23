@@ -772,6 +772,24 @@ final class LevelLearningStats {
   final List<LevelUnitStats> perUnit;
 }
 
+/// What a `.sta` file records: the working numbers, or a deck's lifetime tally.
+enum StatisticsScope {
+  /// The working record — decides the super-query pool, mastery and the
+  /// Level-Learning ladder, and is what "Clear current statistics" resets.
+  ///
+  /// The default for every file that carries no `scope` key, which is every
+  /// `.sta` written before all-time statistics existed.
+  session,
+
+  /// The lifetime record of a deck (`<deck>_alltime.sta`).
+  ///
+  /// Written on every answer, never consulted by the engine. The marker exists
+  /// so the shells can tell the two kinds apart: an all-time file must never be
+  /// adopted as an auto-save target, and loading one as the working record is a
+  /// deliberate act that warrants a warning.
+  allTime,
+}
+
 /// A `.sta` sidecar file model.
 final class StatisticsFile {
   /// Creates a statistics sidecar model.
@@ -780,10 +798,18 @@ final class StatisticsFile {
     required this.perUnit,
     this.levelLearning,
     this.lastSessionMode,
+    this.scope = StatisticsScope.session,
   });
 
   /// Deck path or file name referenced by this statistics file.
   final String deckRef;
+
+  /// Which record this file holds.
+  ///
+  /// Additive at format version 2, exactly like [UnitStats.hash]: a file
+  /// without the key decodes as [StatisticsScope.session], and a build that
+  /// predates the key ignores it.
+  final StatisticsScope scope;
 
   /// Per-unit statistics.
   final List<UnitStats> perUnit;

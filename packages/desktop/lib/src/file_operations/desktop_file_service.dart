@@ -30,11 +30,16 @@ final class DesktopFileService {
   /// driven by the app layer after this runs, since it needs the UI; see
   /// `_maybeAutoLoadStatistics` in main.dart. Outgoing statistics are
   /// auto-saved by the app layer before this runs.
+  ///
+  /// The deck's lifetime record comes along silently — no prompt: it is not a
+  /// choice the learner makes, and a missing file simply means an empty
+  /// record.
   Future<DesktopDocument> openDeck(DesktopDocument current, String path) async {
     final LearningDeck deck = decodeDeckJson(await File(path).readAsString());
     return DesktopDocument(
       deck: deck,
       statistics: clearStatistics(deck),
+      allTime: await readAllTimeStatistics(deck, path),
       deckPath: path,
       autoLoadStatistics: current.autoLoadStatistics,
       autoSaveStatistics: current.autoSaveStatistics,
@@ -90,6 +95,9 @@ final class DesktopFileService {
     return current.copyWith(
       deck: merged,
       statistics: resizeUnitStats(current.statistics, merged.units.length),
+      // Re-indexed, never summed: merging adds units, and adding units must
+      // not add attempts to a record that counts by live delta.
+      allTime: current.allTime.resized(merged.units.length),
     );
   }
 
@@ -105,6 +113,9 @@ final class DesktopFileService {
     await File(targetPath).writeAsString(encodeDeckJson(current.deck));
     final DesktopDocument saved = current.copyWith(deckPath: targetPath);
     await autoSaveStatistics(saved);
+    // A deck that had never been saved accumulated its lifetime record in
+    // memory; this is the moment it first has somewhere to go.
+    await writeAllTimeStatistics(saved);
     return saved;
   }
 
@@ -435,11 +446,17 @@ final class DesktopFileService {
       levelStatistics:
           statistics.levelLearning?.perUnit ?? const <LevelUnitStats>[],
     );
+    // A lifetime file loaded by hand becomes the working numbers, but never a
+    // file this app writes back to: the statistics path is what a plain "Save
+    // stats" overwrites, and no ordinary save may land on the record.
+    final bool isAllTime = statistics.scope == StatisticsScope.allTime;
     return StatisticsLoadResult(
+      scope: statistics.scope,
       document: current.copyWith(
         statistics: realigned.statistics,
         levelStatistics: realigned.levelStatistics,
         statisticsPath: path,
+        clearStatisticsPath: isAllTime,
         lastSessionMode: statistics.lastSessionMode,
         clearLastSessionMode: statistics.lastSessionMode == null,
       ),
@@ -496,6 +513,10 @@ final class DesktopFileService {
   /// Nothing is written when auto-saving is off, when no target is set, or when
   /// no deck is open — the option governs whether a session file exists at all,
   /// and an empty deck has no numbers worth putting over a file that has some.
+  ///
+  /// The deck's lifetime record is deliberately left alone, in memory and on
+  /// disk. Keeping the two genuinely independent is the whole point: starting
+  /// over should not cost the learner the history.
   Future<DesktopDocument> clearCurrentStatistics(
     DesktopDocument current,
   ) async {
@@ -509,6 +530,84 @@ final class DesktopFileService {
       clearLastSessionMode: true,
       clearStatisticsPath: true,
       clearAutoSaveTarget: true,
+    );
+  }
+
+  /// Returns the lifetime statistics path `<deck>_alltime.sta` for [deckPath].
+  ///
+  /// Deliberately neither the bare `<deck>.sta` sidecar (which is the Android
+  /// companion's live statistics file) nor anything
+  /// [DeckPaths.timestampedStatisticsPattern] can match, so the lifetime record
+  /// is never picked up as a session file to auto-load.
+  String allTimeStatisticsPath(String deckPath) {
+    return DeckPaths.allTimeStatistics(deckPath);
+  }
+
+  /// Reads the lifetime record beside [deckPath] and realigns it onto [deck].
+  ///
+  /// Silent by design and total: a missing, unreadable or malformed file simply
+  /// means an empty record. Nothing the learner did is lost by this — the
+  /// lifetime record is written on every answer, so the worst case is that a
+  /// corrupt file stops contributing rather than that a prompt interrupts the
+  /// open.
+  ///
+  /// Realignment KEEPS the counters of a unit whose text changed (see
+  /// [realignAllTimeStatistics]) and never adds to the totals.
+  Future<AllTimeStatistics> readAllTimeStatistics(
+    LearningDeck deck,
+    String deckPath,
+  ) async {
+    final File file = File(allTimeStatisticsPath(deckPath));
+    if (!await file.exists()) {
+      return AllTimeStatistics.empty;
+    }
+    try {
+      return realignAllTimeStatistics(
+        deck: deck,
+        allTime: AllTimeStatistics.fromFile(
+          decodeStatisticsJson(await file.readAsString()),
+        ),
+      );
+    } on Object {
+      return AllTimeStatistics.empty;
+    }
+  }
+
+  /// Writes [document]'s lifetime record to `<deck>_alltime.sta`.
+  ///
+  /// A no-op for a deck with no path yet — it keeps accumulating in memory
+  /// until [saveDeck] gives it one. NOT governed by the auto-save-statistics
+  /// option: that option decides whether a *resumable* session file exists,
+  /// and tying the two would mean turning off resumable sessions silently
+  /// stops the learner's progress record.
+  ///
+  /// Also a no-op for an EMPTY record, which means "nothing loaded and nothing
+  /// answered" — not "the totals are zero". Writing it would let a deck that
+  /// arrived without its file (a Lexicon search result saved back over its own
+  /// deck) truncate a lifetime record that has years in it. A record genuinely
+  /// reset to zero is dense, not empty, so it still writes.
+  Future<void> writeAllTimeStatistics(DesktopDocument document) async {
+    final String? deckPath = document.deckPath;
+    if (deckPath == null || document.allTime.isEmpty) {
+      return;
+    }
+    await File(allTimeStatisticsPath(deckPath)).writeAsString(
+      encodeStatisticsJson(
+        StatisticsFile(
+          deckRef: DeckPaths.fileName(deckPath),
+          scope: StatisticsScope.allTime,
+          // Written dense and fully hashed, one row per deck unit, so the file
+          // always describes the deck as it stands. A unit answered only above
+          // free recall has ladder counters and no drill counters; without a
+          // row of its own it would carry no identity, and the next open could
+          // only realign it positionally.
+          perUnit: withUnitHashes(
+            document.deck,
+            resizeUnitStats(document.allTime.perUnit, document.deck.units.length),
+          ),
+          levelLearning: _levelSection(document.allTime.perLevel),
+        ),
+      ),
     );
   }
 
@@ -672,10 +771,19 @@ final class StatisticsLoadResult {
   const StatisticsLoadResult({
     required this.document,
     required this.resetUnits,
+    this.scope = StatisticsScope.session,
   });
 
   /// The document with the loaded statistics applied.
   final DesktopDocument document;
+
+  /// Which record the loaded file held.
+  ///
+  /// [StatisticsScope.allTime] means the learner picked a deck's lifetime
+  /// record by hand — a supported way to drive a practice run from
+  /// lifetime-worst units, but one the shell must never turn into a write
+  /// target.
+  final StatisticsScope scope;
 
   /// How many units' recorded statistics could not be carried over.
   ///

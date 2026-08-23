@@ -128,6 +128,70 @@ void main() {
     });
   });
 
+  group('DeckPaths.allTimeStatistics', () {
+    test('names the lifetime file <deck>_alltime.sta beside the deck', () {
+      expect(
+        DeckPaths.allTimeStatistics(r'C:\decks\french.vok', context: p.windows),
+        r'C:\decks\french_alltime.sta',
+      );
+      expect(
+        DeckPaths.allTimeStatistics(
+          '/home/pesche/decks/french.vok',
+          context: p.posix,
+        ),
+        '/home/pesche/decks/french_alltime.sta',
+      );
+    });
+
+    test('keeps a bare deck name in the working directory', () {
+      for (final p.Context ctx in <p.Context>[p.windows, p.posix]) {
+        expect(
+          DeckPaths.allTimeStatistics('french.vok', context: ctx),
+          'french_alltime.sta',
+        );
+      }
+    });
+
+    test('is distinct from the bare sidecar name', () {
+      for (final p.Context ctx in <p.Context>[p.windows, p.posix]) {
+        expect(
+          DeckPaths.allTimeStatistics('french.vok', context: ctx),
+          isNot(DeckPaths.statisticsSidecar('french.vok', context: ctx)),
+        );
+      }
+    });
+
+    test('can NEVER be matched by the pattern that auto-loads the most recent '
+        'session file', () {
+      for (final p.Context ctx in <p.Context>[p.windows, p.posix]) {
+        final String deckPath = ctx == p.windows
+            ? r'C:\decks\french.vok'
+            : '/decks/french.vok';
+        final RegExp pattern = DeckPaths.timestampedStatisticsPattern(
+          deckPath,
+          context: ctx,
+        );
+        expect(
+          pattern.hasMatch(
+            DeckPaths.fileName(
+              DeckPaths.allTimeStatistics(deckPath, context: ctx),
+              context: ctx,
+            ),
+          ),
+          isFalse,
+        );
+      }
+    });
+
+    test('a deck literally named <name>_alltime still gets its own lifetime '
+        'file, never the same path twice', () {
+      expect(
+        DeckPaths.allTimeStatistics('french_alltime.vok', context: p.posix),
+        'french_alltime_alltime.sta',
+      );
+    });
+  });
+
   group('DeckPaths.timestampedStatisticsPattern', () {
     test('matches this deck\'s session files and captures the stamp', () {
       final RegExp pattern = DeckPaths.timestampedStatisticsPattern(
