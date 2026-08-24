@@ -1189,30 +1189,47 @@ void main() {
       );
       await service.writeAllTimeStatistics(document);
       final String allTimePath = service.allTimeStatisticsPath(deckPath);
+      final String sessionPath = service.timestampedStatisticsPath(
+        deckPath,
+        DateTime(2026, 8, 23, 9, 15, 0),
+      );
+      await service.writeStatistics(document, sessionPath);
+
+      // The scope is readable before anything is loaded, which is what lets
+      // the shell warn about a lifetime file while declining still leaves the
+      // document exactly as it was.
+      expect(
+        await service.readStatisticsScope(allTimePath),
+        StatisticsScope.allTime,
+      );
+      expect(
+        await service.readStatisticsScope(sessionPath),
+        StatisticsScope.session,
+      );
 
       final StatisticsLoadResult result = await service.loadStatistics(
-        document,
+        document.copyWith(autoSaveTargetPath: sessionPath),
         allTimePath,
       );
 
       // The numbers arrive and will drive the next practice run...
       expect(result.scope, StatisticsScope.allTime);
       expect(result.document.statistics.single.direction1.attempts, 88);
-      // ...but no ordinary save can land on the record.
+      // ...but neither of the two paths a save can land on survives: the
+      // record is neither what "Save stats" writes nor what each answer
+      // auto-saves to, so the next session mints a file of its own.
       expect(result.document.statisticsPath, isNull);
+      expect(result.document.autoSaveTargetPath, isNull);
 
-      // An ordinary working `.sta` still becomes the statistics path.
-      final String sessionPath = service.timestampedStatisticsPath(
-        deckPath,
-        DateTime(2026, 8, 23, 9, 15, 0),
-      );
-      await service.writeStatistics(document, sessionPath);
+      // An ordinary working `.sta` still becomes the statistics path, and
+      // still leaves an established auto-save target alone.
       final StatisticsLoadResult session = await service.loadStatistics(
-        document,
+        document.copyWith(autoSaveTargetPath: sessionPath),
         sessionPath,
       );
       expect(session.scope, StatisticsScope.session);
       expect(session.document.statisticsPath, sessionPath);
+      expect(session.document.autoSaveTargetPath, sessionPath);
 
       await temp.delete(recursive: true);
     });

@@ -2934,6 +2934,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     if (path == null) {
       return;
     }
+    // A deck's lifetime record may be loaded deliberately — practising the
+    // units missed most over the deck's whole life is the point of it — but
+    // never by surprise. Which record the file holds is read BEFORE anything
+    // is loaded, so declining the warning leaves the document exactly as it
+    // was.
+    if (!await _confirmLoadAllTimeStatistics(path)) {
+      return;
+    }
     bool loaded = false;
     bool isAllTime = false;
     await _guardedFileOperation(() async {
@@ -2954,12 +2962,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     }
     // ...except for a deck's lifetime record, which is never offered: a stray
     // keypress must not start writing a sitting's counters over the record.
-    // Auto-saving is suspended instead, so the next session mints a fresh
-    // timestamped file and the record stays a record.
+    // The load has already let go of the auto-save target, so answers from
+    // here on go to a fresh timestamped file and the record stays a record.
     if (isAllTime) {
-      setState(() {
-        _document = _document.copyWith(clearAutoSaveTarget: true);
-      });
       return;
     }
     final bool adopt = await _confirmYesNo(
@@ -2976,6 +2981,34 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           ? _document.copyWith(autoSaveTargetPath: path)
           : _document.copyWith(clearAutoSaveTarget: true);
     });
+  }
+
+  /// Warns before the `.sta` at [path] is loaded, when it turns out to hold a
+  /// deck's all-time record rather than an ordinary sitting.
+  ///
+  /// Returns whether loading should go ahead: true for any ordinary file, and
+  /// for a lifetime file the learner accepted; false when they declined, or
+  /// when the file could not even be read — the error is reported by
+  /// [_guardedFileOperation] and there is nothing left to load.
+  Future<bool> _confirmLoadAllTimeStatistics(String path) async {
+    StatisticsScope scope = StatisticsScope.session;
+    bool read = false;
+    await _guardedFileOperation(() async {
+      scope = await _fileService.readStatisticsScope(path);
+      read = true;
+    });
+    if (!read || !mounted) {
+      return false;
+    }
+    if (scope != StatisticsScope.allTime) {
+      return true;
+    }
+    return _confirmYesNo(
+      messages: LearnAnywhereLocalizations.of(context),
+      body: LearnAnywhereLocalizations.of(
+        context,
+      ).message(LearnAnywhereMessage.confirmLoadAllTimeStatistics),
+    );
   }
 
   Future<void> _saveStatistics({bool saveAs = false}) async {

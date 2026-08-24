@@ -455,6 +455,17 @@ final class DesktopFileService {
     return MaskSyncStatus.willUpdate;
   }
 
+  /// Reads only the scope marker of the `.sta` at [path].
+  ///
+  /// The shell has to know WHICH record a file holds before it loads it: a
+  /// deck's lifetime record may be loaded by hand, but only after the learner
+  /// has been warned, and declining that warning has to leave the document
+  /// untouched. Asking first — rather than loading and unwinding — is what
+  /// keeps [loadStatistics] free of a decision it cannot make.
+  Future<StatisticsScope> readStatisticsScope(String path) async {
+    return decodeStatisticsJson(await File(path).readAsString()).scope;
+  }
+
   /// Loads a `.sta` statistics file into the current document.
   ///
   /// The stored counters are realigned onto the deck by their per-unit hashes,
@@ -475,8 +486,11 @@ final class DesktopFileService {
           statistics.levelLearning?.perUnit ?? const <LevelUnitStats>[],
     );
     // A lifetime file loaded by hand becomes the working numbers, but never a
-    // file this app writes back to: the statistics path is what a plain "Save
-    // stats" overwrites, and no ordinary save may land on the record.
+    // file this app writes back to. Both paths a save can land on are dropped
+    // here, at the one place that knows the file's scope: the statistics path
+    // is what a plain "Save stats" overwrites, and the auto-save target is
+    // what every single answer overwrites. Letting go of the latter is also
+    // what makes the next session mint a fresh timestamped file.
     final bool isAllTime = statistics.scope == StatisticsScope.allTime;
     return StatisticsLoadResult(
       scope: statistics.scope,
@@ -485,6 +499,7 @@ final class DesktopFileService {
         levelStatistics: realigned.levelStatistics,
         statisticsPath: path,
         clearStatisticsPath: isAllTime,
+        clearAutoSaveTarget: isAllTime,
         lastSessionMode: statistics.lastSessionMode,
         clearLastSessionMode: statistics.lastSessionMode == null,
       ),

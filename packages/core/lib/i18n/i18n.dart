@@ -1130,6 +1130,10 @@ enum LearnAnywhereMessage {
   /// Ask whether a manually-loaded `.sta` should become the auto-save target.
   confirmAdoptAutoSaveTarget,
 
+  /// Warn before a deck's all-time record is loaded as the working
+  /// statistics.
+  confirmLoadAllTimeStatistics,
+
   /// Auto-load prompt for a discovered session `.sta`. Placeholders:
   /// {datetime}, {queried}, {total}.
   confirmLoadAvailableStats,
@@ -1738,6 +1742,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionNo: 'No',
       LearnAnywhereMessage.confirmAdoptAutoSaveTarget:
           'Use this file for auto-saving from now on?',
+      LearnAnywhereMessage.confirmLoadAllTimeStatistics:
+          'This file holds the all-time statistics of a deck. Loading them '
+          'replaces the current statistics and decides which units are '
+          'asked next. Further answers go to a new session file; the '
+          'all-time statistics themselves stay untouched. Load them?',
       LearnAnywhereMessage.confirmLoadAvailableStats:
           'Statistics are available from {datetime}, with {queried} out of '
           '{total} units already queried. Load these?',
@@ -2308,6 +2317,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.actionNo: 'Nein',
       LearnAnywhereMessage.confirmAdoptAutoSaveTarget:
           'Diese Datei von jetzt an zum automatischen Speichern verwenden?',
+      LearnAnywhereMessage.confirmLoadAllTimeStatistics:
+          'Diese Datei enthält die Allzeit-Statistik einer Lern-Datei. '
+          'Beim Laden ersetzt sie die aktuelle Statistik und bestimmt, '
+          'welche Einheiten als Nächstes abgefragt werden. Weitere '
+          'Antworten kommen in eine neue Sitzungsdatei; die '
+          'Allzeit-Statistik selbst bleibt unverändert. Laden?',
       LearnAnywhereMessage.confirmLoadAvailableStats:
           'Statistik von {datetime} verfügbar, mit {queried} von {total} '
           'bereits abgefragten Einheiten. Diese laden?',
