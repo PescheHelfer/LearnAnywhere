@@ -48,6 +48,9 @@ derselbe sein — und dieses Handbuch selbst folgt derselben Einstellung.
 **Optionen ▸ Statistiken** enthält automatisches Laden, automatisches Speichern und
 die Anzahl der aufbewahrten Sitzungsdateien, alle beschrieben in
 [Arbeiten mit Dateien](03-managing-files.md#automatisch-laden-und-automatisch-speichern).
+Alle drei betreffen allein die Sitzungsdateien. Die Allzeit-Statistik einer Lern-Datei
+wird unabhängig von diesen Einstellungen geführt — siehe
+[Die zwei Statistiken](09-statistics.md#die-zwei-statistiken).
 
 ## Wo Einstellungen liegen
 

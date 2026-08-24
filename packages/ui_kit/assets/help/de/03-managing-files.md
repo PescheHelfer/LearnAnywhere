@@ -48,7 +48,10 @@ irgendwo gespeichert werden können.
   Sitzungsdatei an, statt sie zu überschreiben.
 
 Diese vier Befehle finden sich auch auf dem Bildschirm [Statistik](09-statistics.md)
-selbst wieder, sodass Sie ihn zum Sichern Ihrer Ergebnisse nie verlassen müssen.
+selbst wieder, sodass Sie ihn zum Sichern Ihrer Ergebnisse nie verlassen müssen. Sie
+alle wirken auf die Arbeitsstatistik; die Allzeit-Statistik der Lern-Datei ist eine
+zweite Datei, die automatisch daneben geführt wird — siehe
+[Die zwei Statistiken](09-statistics.md#die-zwei-statistiken).
 
 ## Wenn die Lern-Datei anderswo bearbeitet wurde
 
@@ -76,6 +79,20 @@ verloren, meldet die Statuszeile, wie viele Einheiten es betrifft, zum Beispiel 
 Statistik von 3 Einheiten wurde zurückgesetzt — diese Einheiten haben sich geändert.**
 Eine `.sta`, die vor Einführung der Fingerabdrücke geschrieben wurde, hat keine und wird
 wie eh und je nach Position geladen.
+
+Die **Lern-Datei selbst** außerhalb des Programms umzubenennen oder zu verschieben, ist
+eine andere Sache. Jede Statistikdatei wird über den Namen der Lern-Datei gefunden —
+`meinedatei_alltime.sta` und `meinedatei_20250114_183000.sta` gehören zu
+`meinedatei.vok` und zu nichts sonst. Benennen Sie die Lern-Datei im Dateimanager um
+oder verschieben Sie sie und lassen die Statistikdateien zurück, sind diese verwaist:
+Das Programm findet keine davon, es gibt also nichts automatisch zu laden, und die
+Allzeit-Statistik beginnt wieder bei null. Gelöscht wird nichts, und endgültig verloren
+ist auch nichts — benennen Sie die Statistikdateien passend zum neuen Namen der
+Lern-Datei um und lassen Sie sie in deren Ordner, ist die Verbindung wiederhergestellt.
+Die Lern-Datei aus dem Programm heraus unter neuem Namen zu speichern ist nicht
+dasselbe: Die Allzeit-Statistik folgt der Lern-Datei an ihren neuen Ort — es sei denn,
+dort liegt bereits eine. Diese gehört zu einer anderen Lern-Datei und wird nie
+überschrieben; die Statuszeile sagt es.
 
 ## Automatisch laden und automatisch speichern
 

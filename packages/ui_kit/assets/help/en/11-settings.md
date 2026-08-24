@@ -45,6 +45,8 @@ same setting.
 
 **Options ▸ Statistics** holds auto-load, auto-save, and the session-file retention
 count, all covered in [Working with files](03-managing-files.md#auto-load-and-auto-save).
+All three concern session files only. The deck's lifetime record is kept whatever these
+are set to — see [The two records](09-statistics.md#the-two-records).
 
 ## Where settings live
 

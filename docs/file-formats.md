@@ -58,8 +58,9 @@ Only `attempts` + `correct` per unit+direction are stored (in the separate
 
 ## `.sta` (statistics sidecar) — per-unit `hash`
 
-Top-level `format` is `learn-anywhere/statistics`, `version` `2`, then `deckRef`
-and `perUnit`. Each `perUnit` entry has `index` (1-based), `dir1`, `dir2`, and
+Top-level `format` is `learn-anywhere/statistics`, `version` `2`, then an
+optional `scope`, `deckRef` and `perUnit`. Each `perUnit` entry has `index`
+(1-based), `dir1`, `dir2`, and
 **optionally `hash`** — the identity of the unit those counters were recorded
 for, so a deck edited outside the app can have its statistics realigned instead
 of silently landing on the wrong units.
@@ -82,3 +83,47 @@ of silently landing on the wrong units.
 
 `packages/core/lib/statistics/unit_identity.dart` is the implementation and the
 tie-breaker for anything this section leaves open.
+
+## `.sta` — the `scope` marker and the two file names
+
+A `.sta` is one of two kinds, and the kind is carried by the file, not by where
+it was found:
+
+- **`scope` absent, or an unrecognised value → the working record.** This is
+  every `.sta` written before all-time statistics existed, and every session
+  file written today. **Never emit `"scope": "session"`** — the working record
+  is the *unwritten* default, so a working file stays byte-identical to what
+  earlier builds produced and read.
+- **`"scope": "allTime"` → the deck's lifetime record.** The only value ever
+  written. `StatisticsScope` (`packages/core/lib/models/models.dart`) is the
+  enum; the JSON value is its Dart name, so the casing is exactly `allTime`.
+
+**The key is additive at version `2`,** on the same terms as the per-unit
+`hash`: decoders on both sides ignore keys they do not know, and an unrecognised
+`scope` value decodes as the working record rather than failing the load. So a
+build predating the marker still loads a lifetime file — as a working record,
+which is the safe reading. Do **not** bump the version to `3` for it; that would
+only make shipped builds reject the file.
+
+The two names, both derived in `DeckPaths`
+(`packages/core/lib/paths/deck_paths.dart`), never the shell:
+
+| File | Name for `mydeck.vok` | Written by |
+|---|---|---|
+| Session file | `mydeck_YYYYMMDD_HHMMSS.sta` | auto-save, save-as |
+| Lifetime record | `mydeck_alltime.sta` | every answer, always |
+
+Three constraints hold the naming together, and the Converter must respect all
+three:
+
+- **`_alltime` can never match the session pattern.**
+  `DeckPaths.timestampedStatisticsPattern` requires digits after the underscore,
+  so the lifetime file is never a candidate for the most-recent-session
+  auto-load. Any new sidecar name must keep that property.
+- **The lifetime record is deliberately not the bare `mydeck.sta`.** That name
+  is the Android companion's live sidecar; one name meaning two things would
+  break a deck carried between the shells.
+- **Name and marker must agree.** A file named `_alltime.sta` carries
+  `"scope": "allTime"`; a file that does not carry the marker must not be given
+  that name. Readers check the marker, `DeckPaths` owns the name, and a
+  disagreement between the two is a bug in whichever tool wrote the file.

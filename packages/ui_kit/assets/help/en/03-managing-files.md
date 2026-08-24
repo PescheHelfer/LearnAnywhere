@@ -40,7 +40,9 @@ embedded copy, so future edits have somewhere to be saved.
   start creates a new session file of its own rather than overwriting it.
 
 These four are duplicated on the [Statistics](09-statistics.md) screen itself, so you
-never have to leave it to save your results.
+never have to leave it to save your results. They all act on the working record; the
+deck's lifetime record is a second file kept automatically beside it, described under
+[The two records](09-statistics.md#the-two-records).
 
 ## When the deck was edited elsewhere
 
@@ -65,6 +67,18 @@ Loading says nothing when nothing was lost, which is the normal case. When resul
 lost, the status line reports how many units it happened to, for example **Statistics
 for 3 units were reset — those units changed.** A `.sta` written before fingerprints
 existed has none, and loads by position exactly as it always did.
+
+Renaming or moving the **deck file** outside the program is a different matter. Every
+statistics file is found by the deck's own name — `mydeck_alltime.sta` and
+`mydeck_20250114_183000.sta` belong to `mydeck.vok` and to nothing else. Rename the deck
+in a file manager, or move it and leave them behind, and they are orphaned: the program
+finds none of them, so there is nothing to auto-load, and the lifetime record starts
+again from zero. Nothing is deleted, and nothing is lost for good — rename the
+statistics files to match the deck's new name, and keep them in its folder, and the link
+is restored. Saving the deck under a new name from inside the program is not the same
+thing: the lifetime record follows the deck to its new location, unless a lifetime
+record already sits there — that one belongs to another deck and is never overwritten,
+and the status line says so.
 
 ## Auto-load and auto-save
 
