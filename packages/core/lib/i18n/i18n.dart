@@ -318,6 +318,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.7.0.
   aboutVersion070,
 
+  /// About page version history entry for 0.8.0.
+  aboutVersion080,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1411,6 +1414,13 @@ final class LearnAnywhereCatalog {
           'editor rows move with their field and a category can be cloned; '
           'new installs grade case- and accent-sensitively, and Arrow Down/Up '
           'move between answer fields.',
+      LearnAnywhereMessage.aboutVersion080:
+          '0.8.0 – Every deck now keeps an all-time statistics record '
+          'alongside its current one; the statistics screen can show '
+          'either, clearing the current record leaves the all-time one '
+          'intact, and the all-time record can be cleared on its own or '
+          'loaded by hand; a refused write is reported instead of being '
+          'silently dropped.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1964,6 +1974,13 @@ final class LearnAnywhereCatalog {
           'ihrem Feld und eine Kategorie lässt sich klonen; '
           'Neuinstallationen werten Groß-/Kleinschreibung und Akzente '
           'streng, und Pfeil hoch/runter wechseln zwischen Antwortfeldern.',
+      LearnAnywhereMessage.aboutVersion080:
+          '0.8.0 – Jede Lern-Datei führt jetzt zusätzlich zur aktuellen '
+          'Statistik eine Allzeit-Statistik; der Statistikbildschirm kann '
+          'beide anzeigen, das Löschen der aktuellen Statistik lässt die '
+          'Allzeit-Statistik unangetastet, und die Allzeit-Statistik lässt '
+          'sich eigenständig löschen oder von Hand laden; ein abgelehntes '
+          'Schreiben wird gemeldet statt stillschweigend übersprungen.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

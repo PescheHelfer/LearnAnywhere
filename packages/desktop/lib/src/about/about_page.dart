@@ -117,6 +117,7 @@ final class AboutPage extends StatelessWidget {
                     const SizedBox(height: LearnAnywhereTokens.gapSmall),
                     _VersionHistoryList(
                       labels: <String>[
+                        messages.message(LearnAnywhereMessage.aboutVersion080),
                         messages.message(LearnAnywhereMessage.aboutVersion070),
                         messages.message(LearnAnywhereMessage.aboutVersion061),
                         messages.message(LearnAnywhereMessage.aboutVersion060),

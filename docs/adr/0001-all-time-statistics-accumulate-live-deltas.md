@@ -123,6 +123,15 @@ read, it is reachable only from the all-time scope of the statistics screen and 
 nowhere in the menu bar, and its dialog focuses Cancel so `Enter` cannot confirm it.
 Confirming zeroes the file rather than deleting it, and accumulation restarts from zero.
 
+It is also the one place where a file the write policy goes out of its way to protect can
+still be destroyed, so it is named here rather than left for a reader to find. A deck
+stranded by a save-as sits at a path whose lifetime file belongs to *another* deck. The
+clear zeroes the file at the deck's **current** path and then adopts it, so it does end
+the refusal — and erases that other deck's history in doing so. This follows from what
+the clear is defined to mean and from the open deck now living at that path, and it is
+never silent; but reopening the deck from its new location is the cure that costs nothing,
+and is the one the wording points at.
+
 ### What this costs
 
 - **A missed write is a permanently missed write.** There is no reconciliation pass to
