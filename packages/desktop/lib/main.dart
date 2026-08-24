@@ -2319,6 +2319,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onSaveStatistics: _saveStatistics,
         onSaveStatisticsAs: () => _saveStatistics(saveAs: true),
         onClearStatistics: _clearStatistics,
+        onClearAllTimeStatistics: _clearAllTimeStatistics,
         onSaveSelectedUnits: _saveSelectedUnits,
         onClose: () => _selectRoute(_DesktopRoute.home),
       ),
@@ -3016,6 +3017,107 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // _showStatus does the rebuild that takes the pills back to zero.
       _showStatus(LearnAnywhereMessage.statisticsCleared);
     });
+  }
+
+  /// Clears the deck's all-time record, in memory and in its file.
+  ///
+  /// The one destructive action in the program, and it is deliberately harder
+  /// to reach and harder to trigger than the everyday clear: it is offered
+  /// only under the all-time numbers, it looks dangerous, and its dialog
+  /// focuses Cancel, so the Enter that confirms every other prompt dismisses
+  /// this one.
+  ///
+  /// The lifetime file is **zeroed, not deleted**. A deck whose history was
+  /// cleared still has a history — it starts today — and the record left
+  /// behind is what the answers given from here on accumulate into. Deleting
+  /// the file would leave the in-memory record speaking for a path that holds
+  /// nothing, which the next write would recreate anyway.
+  ///
+  /// This is the single call site allowed to replace a lifetime file the
+  /// record was never read from ([AllTimeRecord]'s write policy). It says so
+  /// here, at the one place where the learner has just been told what is about
+  /// to be erased. Nothing else is touched: the current statistics, the
+  /// session files and the deck itself are exactly as they were.
+  Future<void> _clearAllTimeStatistics() async {
+    if (!await _confirmClearAllTime()) {
+      return;
+    }
+    await _guardedFileOperation(() async {
+      // Any per-answer write still queued would otherwise land after the
+      // clear and put the counters back.
+      await _statsSaveChain;
+      DesktopDocument cleared = _document.copyWith(
+        allTime: _document.allTime.cleared(),
+      );
+      final AllTimeWriteOutcome outcome = await _fileService
+          .writeAllTimeStatistics(cleared, replaceUnreadFile: true);
+      final String? deckPath = cleared.deckPath;
+      if (outcome == AllTimeWriteOutcome.written && deckPath != null) {
+        // The zeroed file is now this record's own, whatever it was before —
+        // so the next answer may write to it rather than being refused.
+        cleared = cleared.copyWith(allTime: cleared.allTime.adoptedAt(deckPath));
+      }
+      _document = cleared;
+      _showStatus(LearnAnywhereMessage.statisticsAllTimeCleared);
+    });
+  }
+
+  /// Asks whether the all-time record may really be erased.
+  ///
+  /// Three things separate this from [_confirm]: a warning symbol, the word
+  /// *really* in the destructive colour inside the sentence, and Cancel
+  /// holding the focus. The last is the one that matters most — a learner who
+  /// answers prompts with Enter dismisses this one instead of destroying a
+  /// year of history.
+  Future<bool> _confirmClearAllTime() async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        final ColorScheme colors = Theme.of(context).colorScheme;
+        final List<String> parts = messages
+            .message(LearnAnywhereMessage.confirmClearAllTimeStatistics)
+            .split('{really}');
+        return AlertDialog(
+          icon: Icon(Icons.warning_amber_rounded, color: colors.error),
+          title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),
+          content: Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                TextSpan(text: parts.first),
+                if (parts.length > 1) ...<InlineSpan>[
+                  TextSpan(
+                    text: messages.message(
+                      LearnAnywhereMessage.confirmReallyWord,
+                    ),
+                    style: TextStyle(
+                      color: colors.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(text: parts.sublist(1).join()),
+                ],
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            FilledButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: colors.error),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(messages.message(LearnAnywhereMessage.actionClear)),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
   }
 
   Future<void> _saveSelectedUnits(List<int> unitIndices) async {

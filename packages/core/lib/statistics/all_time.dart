@@ -418,6 +418,19 @@ final class AllTimeRecord {
     return _with(statistics.afterDelete(position, unitCount));
   }
 
+  /// Returns this record emptied, keeping its origin and its path.
+  ///
+  /// This is the learner-confirmed clear of the lifetime record: the counters
+  /// go, the identity stays. Keeping the identity is what lets the answers
+  /// given after the clear accumulate into the same file again — a record that
+  /// forgot which file it came from would speak for none, and everything
+  /// answered from here on would stay in memory.
+  ///
+  /// Nothing is decided here about whether the file may be replaced. The clear
+  /// is the one write entitled to zero a file it never read, and it says so at
+  /// its call site rather than by forging an origin here.
+  AllTimeRecord cleared() => _with(AllTimeStatistics.empty);
+
   /// Returns this record as the one now describing the lifetime file at
   /// [path] — what a write that actually landed there earns it.
   AllTimeRecord adoptedAt(String path) {

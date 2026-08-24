@@ -607,6 +607,48 @@ void main() {
       expect(adopted.speaksFor('/decks/french.vok', context: p.posix), isTrue);
     });
 
+    test('clearing empties the counters and keeps the authority', () {
+      final AllTimeRecord read = AllTimeRecord.loaded(
+        AllTimeStatistics(
+          perUnit: const <UnitStats>[
+            UnitStats(index: 1, direction1: DirectionStats(attempts: 12)),
+          ],
+          perLevel: <LevelUnitStats>[
+            LevelUnitStats(
+              index: 1,
+              dir1: LevelDirectionStats.fresh(kFreeRecallLevel),
+              dir2: LevelDirectionStats.fresh(kFreeRecallLevel),
+            ),
+          ],
+        ),
+        '/decks/french.vok',
+      );
+
+      final AllTimeRecord cleared = read.cleared();
+      expect(cleared.isEmpty, isTrue);
+      expect(cleared.perUnit, isEmpty);
+      expect(cleared.perLevel, isEmpty);
+      // The identity survives, so the answers given after the clear reach the
+      // same file rather than piling up in memory.
+      expect(cleared.speaksFor('/decks/french.vok', context: p.posix), isTrue);
+
+      final AllTimeRecord again = cleared.record(
+        const RecordedAttempt(
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+          drill: AttemptDelta(attempts: 1, correct: 1),
+        ),
+      );
+      expect(again.perUnit.single.direction1.attempts, 1);
+      expect(again.speaksFor('/decks/french.vok', context: p.posix), isTrue);
+    });
+
+    test('clearing a record that read nothing gains it no authority', () {
+      final AllTimeRecord cleared = AllTimeRecord.unread.cleared();
+      expect(cleared.origin, AllTimeOrigin.unread);
+      expect(cleared.speaksFor('/decks/french.vok', context: p.posix), isFalse);
+    });
+
     test('paths are compared by the host rules, on either host', () {
       const AllTimeRecord windows = AllTimeRecord.absent(r'C:\Decks\French.vok');
       // Windows: separators and case are both immaterial.

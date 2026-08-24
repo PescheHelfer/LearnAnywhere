@@ -23,6 +23,7 @@ final class StatisticsPage extends StatefulWidget {
     required this.onSaveStatistics,
     required this.onSaveStatisticsAs,
     required this.onClearStatistics,
+    required this.onClearAllTimeStatistics,
     required this.onSaveSelectedUnits,
     required this.onClose,
     super.key,
@@ -58,6 +59,12 @@ final class StatisticsPage extends StatefulWidget {
 
   /// Clears in-memory statistics.
   final Future<void> Function() onClearStatistics;
+
+  /// Clears the deck's all-time record, in memory and in its file.
+  ///
+  /// The one destructive action on this screen: it is offered only under the
+  /// all-time numbers, and the shell confirms it before anything is erased.
+  final Future<void> Function() onClearAllTimeStatistics;
 
   /// Saves selected unit indices as a new deck.
   final SaveSelectedUnitsCallback onSaveSelectedUnits;
@@ -155,6 +162,12 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       onSaveAs: widget.onSaveStatisticsAs,
                       onClear: widget.onClearStatistics,
                     ),
+                  // The all-time row holds exactly one action, and it is the
+                  // destructive one. It exists nowhere else — not in the menu
+                  // bar, not in the current scope — so it cannot be reached
+                  // without the lifetime numbers being on screen.
+                  if (allTime)
+                    _AllTimeClearButton(onClear: widget.onClearAllTimeStatistics),
                   FilledButton.tonalIcon(
                     onPressed: widget.onClose,
                     icon: const Icon(Icons.close),
@@ -1231,6 +1244,38 @@ final class _StatsFileButtons extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The all-time scope's single action: clear the deck's lifetime record.
+///
+/// Deliberately unlike the everyday clear beside it in the other scope. That
+/// one is a tonal button with a neutral cross; this one carries a warning
+/// triangle and the theme's error colour, so the two can never be told apart
+/// only by their wording — the learner sees which of them is dangerous before
+/// reading either label.
+final class _AllTimeClearButton extends StatelessWidget {
+  const _AllTimeClearButton({required this.onClear});
+
+  final Future<void> Function() onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return FilledButton.icon(
+      onPressed: onClear,
+      style: FilledButton.styleFrom(
+        backgroundColor: colors.error,
+        foregroundColor: colors.onError,
+      ),
+      icon: const Icon(Icons.warning_amber_rounded),
+      label: Text(
+        messages.message(LearnAnywhereMessage.statisticsClearAllTime),
+      ),
     );
   }
 }

@@ -306,64 +306,58 @@ void main() {
 
     await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Unit editor').last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Insert unit'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Category 1'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      editorInput('Question'),
-      'hello',
-    );
-    await tester.enterText(
-      editorInput('Answer'),
-      'bonjour',
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Learn'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Practice setup').last);
-    await tester.pumpAndSettle();
-    expect(find.text('Practice setup'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -500));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Start session'));
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('Unit 1/1 - Category 1'), findsOneWidget);
-    // Before Check, the prompt is read-only rich text and the single answer
-    // cell is the only editable field, so target it by type.
-    if (tester.any(find.text('hello', findRichText: true))) {
-      await tester.enterText(find.byType(TextField).first, 'bonjour');
-    } else {
-      expect(find.text('bonjour', findRichText: true), findsOneWidget);
-      await tester.enterText(find.byType(TextField).first, 'hello');
-    }
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Check'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Check'));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('Your answer is correct. Congratulations!'),
-      findsOneWidget,
-    );
-    expect(find.text('Correct'), findsOneWidget);
-    await tester.ensureVisible(find.text('Continue'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
+    await answerOneQuestion(tester);
 
     expect(find.text('Accuracy: 1/1 (100%)'), findsOneWidget);
     expect(find.text('Attempts: 1'), findsOneWidget);
+  });
+
+  testWidgets('clearing the all-time record asks first and spares the rest', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await answerOneQuestion(tester);
+
+    // The one answer is in both records: the working one the engine reads,
+    // and the lifetime one this test is about to clear.
+    await tester.tap(find.text('Statistics'));
+    await tester.pumpAndSettle();
+    expect(find.text('Total Attempts: 1'), findsOneWidget);
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    expect(find.text('Total Attempts: 1'), findsOneWidget);
+
+    // Enter is the key that confirms every other prompt in the program. Here
+    // it must dismiss, because Cancel holds the focus.
+    await tester.tap(find.text('Clear all-time stats...'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('cannot be undone', findRichText: true),
+        findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('cannot be undone', findRichText: true),
+        findsNothing);
+    expect(find.text('Total Attempts: 1'), findsOneWidget);
+
+    // Confirming deliberately: the lifetime numbers go back to zero.
+    await tester.tap(find.text('Clear all-time stats...'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Clear'));
+    await tester.pumpAndSettle();
+    expect(find.text('All-time statistics cleared.'), findsWidgets);
+    expect(find.text('Total Attempts: 0'), findsOneWidget);
+
+    // And the current statistics — the record that decides what is practised
+    // — are exactly as they were.
+    await tester.tap(find.text('Current'));
+    await tester.pumpAndSettle();
+    expect(find.text('Total Attempts: 1'), findsOneWidget);
   });
 
   testWidgets('mask editor edits mask metadata and adds schema items', (
@@ -446,6 +440,65 @@ void main() {
     expect(find.text('Arbeitsbereich'), findsOneWidget);
     expect(find.text('Keine Datei geladen'), findsOneWidget);
   });
+}
+
+/// Builds a one-unit deck, runs a session over it and answers its single
+/// question correctly, leaving the app on the finished session page.
+///
+/// The shortest route to a deck with something in BOTH statistics records,
+/// which is what a test about either of them needs to start from. Expects a
+/// freshly pumped app on the home screen and a surface at least 1400 wide —
+/// the practice grid overflows the default 800.
+Future<void> answerOneQuestion(WidgetTester tester) async {
+  await tester.tap(find.text('Edit'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Unit editor').last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Insert unit'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Category 1'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Continue'));
+  await tester.pumpAndSettle();
+  await tester.enterText(editorInput('Question'), 'hello');
+  await tester.enterText(editorInput('Answer'), 'bonjour');
+  await tester.pumpAndSettle();
+
+  await tester.tap(find.text('Learn'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Practice setup').last);
+  await tester.pumpAndSettle();
+  expect(find.text('Practice setup'), findsOneWidget);
+  await tester.drag(find.byType(ListView), const Offset(0, -500));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Start session'));
+  await tester.pumpAndSettle();
+
+  expect(find.textContaining('Unit 1/1 - Category 1'), findsOneWidget);
+  // Before Check, the prompt is read-only rich text and the single answer
+  // cell is the only editable field, so target it by type. Which direction
+  // was drawn decides which of the two words is the prompt.
+  if (tester.any(find.text('hello', findRichText: true))) {
+    await tester.enterText(find.byType(TextField).first, 'bonjour');
+  } else {
+    expect(find.text('bonjour', findRichText: true), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'hello');
+  }
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.text('Check'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Check'));
+  await tester.pumpAndSettle();
+
+  expect(
+    find.text('Your answer is correct. Congratulations!'),
+    findsOneWidget,
+  );
+  expect(find.text('Correct'), findsOneWidget);
+  await tester.ensureVisible(find.text('Continue'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Continue'));
+  await tester.pumpAndSettle();
 }
 
 /// Finds the editable [TextField] for the grid-editor field named [fieldName].
