@@ -406,6 +406,46 @@ void main() {
     await tester.pumpAndSettle();
     expect(savedSelection, <int>[1, 2]);
   });
+
+  testWidgets('a refused lifetime write is said out loud under the all-time '
+      'numbers, and nowhere else', (WidgetTester tester) async {
+    widenSurface(tester);
+    await tester.pumpWidget(
+      buildPage(
+        allTimeIsRefused: true,
+        allTimeStatistics: const <UnitStats>[
+          UnitStats(
+            index: 1,
+            direction1: DirectionStats(attempts: 3, correct: 1),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The current record still saves exactly as it always did, so the warning
+    // has no business in its scope.
+    expect(find.textContaining('no longer being saved'), findsNothing);
+
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('no longer being saved'), findsOneWidget);
+    // ...and it stays put while the learner moves between the three views:
+    // this is a state, not a status line that scrolls away.
+    await tester.tap(find.text('Unit list'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('no longer being saved'), findsOneWidget);
+  });
+
+  testWidgets('a lifetime record that is reaching its file says nothing at all',
+      (WidgetTester tester) async {
+    widenSurface(tester);
+    await tester.pumpWidget(buildPage());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('no longer being saved'), findsNothing);
+  });
 }
 
 /// Unit at level 2 with a Fair (2 attempts, 1 correct) record on that rung.
@@ -454,6 +494,7 @@ Widget buildPage({
   List<LevelUnitStats> levelStatistics = const <LevelUnitStats>[],
   List<UnitStats> allTimeStatistics = const <UnitStats>[],
   List<LevelUnitStats> allTimeLevelStatistics = const <LevelUnitStats>[],
+  bool allTimeIsRefused = false,
   SaveSelectedUnitsCallback? onSaveSelectedUnits,
   Future<void> Function()? onClearAllTimeStatistics,
 }) {
@@ -466,6 +507,7 @@ Widget buildPage({
       levelStatistics: levelStatistics,
       allTimeStatistics: allTimeStatistics,
       allTimeLevelStatistics: allTimeLevelStatistics,
+      allTimeIsRefused: allTimeIsRefused,
       levelNames: kDefaultLevelNamesEn,
       onLoadStatistics: () async {},
       onSaveStatistics: () async {},

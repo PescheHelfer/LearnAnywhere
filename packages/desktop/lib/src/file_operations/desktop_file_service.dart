@@ -107,6 +107,11 @@ final class DesktopFileService {
   /// record is entitled to the target's file (see [writeAllTimeStatistics]);
   /// the reported [DeckSaveResult.allTime] is how the shell tells the learner
   /// that a save-as left another deck's history where it was.
+  ///
+  /// The returned document carries what became of the record, both ways: a
+  /// write that landed earns it authority over the target, and one that was
+  /// refused is remembered on it, so the sitting that carries on afterwards is
+  /// not silently accumulating into nothing.
   Future<DeckSaveResult> saveDeck(
     DesktopDocument current, {
     String? path,
@@ -122,12 +127,22 @@ final class DesktopFileService {
     // memory; this is the moment it first has somewhere to go.
     final AllTimeWriteOutcome allTime = await writeAllTimeStatistics(saved);
     return DeckSaveResult(
-      // A write that landed makes the record the one describing that file, so
-      // the next answer keeps flowing into it — including after a save-as onto
-      // a path that held no record of its own.
-      document: allTime == AllTimeWriteOutcome.written
-          ? saved.copyWith(allTime: saved.allTime.adoptedAt(targetPath))
-          : saved,
+      document: switch (allTime) {
+        // A write that landed makes the record the one describing that file, so
+        // the next answer keeps flowing into it — including after a save-as
+        // onto a path that held no record of its own.
+        AllTimeWriteOutcome.written => saved.copyWith(
+            allTime: saved.allTime.adoptedAt(targetPath),
+          ),
+        // A refused write earns no authority — that is the whole policy — but
+        // it is remembered, because every write after it is refused too and
+        // the learner has to be able to see that the record has stopped.
+        AllTimeWriteOutcome.refused => saved.copyWith(
+            allTime: saved.allTime.refusedAt(targetPath),
+          ),
+        AllTimeWriteOutcome.noPath ||
+        AllTimeWriteOutcome.nothingToWrite => saved,
+      },
       allTime: allTime,
     );
   }
@@ -813,10 +828,13 @@ final class DesktopFileService {
 
 /// What became of a write of the deck's lifetime record.
 ///
-/// Only [refused] is worth telling the learner about, and only where they
-/// asked for something that implied the write (a save); the per-answer writes
-/// are refused silently, because the learner was already told when the deck
-/// was opened.
+/// Only [refused] is worth telling the learner about, and no caller may drop
+/// it on the floor. A save reports it in the status line at the moment it
+/// happens; a per-answer write cannot interrupt a live session, so it marks
+/// the record instead ([AllTimeRecord.refusedAt]) and the all-time statistics
+/// say so for as long as the state lasts. What must never happen again is the
+/// third option: nobody reading it, and the rest of the sitting accumulating
+/// into a record that will never be written.
 enum AllTimeWriteOutcome {
   /// The record was written to `<deck>_alltime.sta`.
   written,

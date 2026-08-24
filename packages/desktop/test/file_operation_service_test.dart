@@ -799,7 +799,7 @@ void main() {
       // Distinguished from an absent file, in the model: this is what the
       // shell warns about, and what forbids the write below.
       expect(opened.allTime.origin, AllTimeOrigin.unreadable);
-      expect(opened.allTime.isUnreadable, isTrue);
+      expect(opened.allTime.isUnreadableAt(deckPath), isTrue);
       expect(opened.allTime.isEmpty, isTrue);
 
       // One answer later the record is no longer empty, which is exactly where
@@ -886,7 +886,7 @@ void main() {
         deckPath,
       );
       expect(opened.allTime.origin, AllTimeOrigin.absent);
-      expect(opened.allTime.isUnreadable, isFalse);
+      expect(opened.allTime.isUnreadableAt(deckPath), isFalse);
       expect(opened.allTime.isEmpty, isTrue);
 
       final DesktopDocument answered = opened.copyWith(
@@ -971,6 +971,158 @@ void main() {
       // The record still speaks only for the deck it came from, so the writes
       // that follow are refused too rather than drifting into the wrong file.
       expect(result.document.allTime.speaksFor(targetPath), isFalse);
+      // ...and the refusal is remembered, so the rest of the sitting is not
+      // counted into nothing without the learner ever being told.
+      expect(result.document.allTime.isRefused, isTrue);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('the answers given after a refused save-as reach no file, and the '
+        'record says so rather than pretending otherwise', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_alltime_stranded',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String sourcePath = '${temp.path}${sep}french.vok';
+      final String targetPath = '${temp.path}${sep}german.vok';
+      final LearningDeck deck = multiUnitDeck(<String>['un']);
+
+      // The target deck already has a lifetime record of its own.
+      await service.writeAllTimeStatistics(
+        DesktopDocument(
+          deck: deck,
+          statistics: const <UnitStats>[],
+          allTime: AllTimeRecord.loaded(
+            const AllTimeStatistics(
+              perUnit: <UnitStats>[
+                UnitStats(index: 1, direction1: DirectionStats(attempts: 900)),
+              ],
+            ),
+            targetPath,
+          ),
+          deckPath: targetPath,
+        ),
+      );
+      final String targetAllTime = service.allTimeStatisticsPath(targetPath);
+      final String germanYears = await File(targetAllTime).readAsString();
+
+      final DeckSaveResult result = await service.saveDeck(
+        DesktopDocument(
+          deck: deck,
+          statistics: const <UnitStats>[],
+          allTime: AllTimeRecord.loaded(
+            const AllTimeStatistics(
+              perUnit: <UnitStats>[
+                UnitStats(index: 1, direction1: DirectionStats(attempts: 12)),
+              ],
+            ),
+            sourcePath,
+          ),
+          deckPath: sourcePath,
+        ),
+        path: targetPath,
+      );
+      expect(result.allTime, AllTimeWriteOutcome.refused);
+
+      // The learner answers one more question. It lands in the lifetime record
+      // in memory...
+      final DesktopDocument answered = result.document.copyWith(
+        allTime: result.document.allTime.record(
+          const RecordedAttempt(
+            unitIndex: 1,
+            direction: QueryDirection.direction1,
+            drill: AttemptDelta(attempts: 1, correct: 1),
+          ),
+        ),
+      );
+      expect(answered.allTime.perUnit.single.direction1.attempts, 13);
+      // ...and reaches no file at all: the other deck's history is still its
+      // own, byte for byte.
+      expect(
+        await service.writeAllTimeStatistics(answered),
+        AllTimeWriteOutcome.refused,
+      );
+      expect(await File(targetAllTime).readAsString(), germanYears);
+      // Closing or exiting flushes the very same write, so neither can report
+      // success for a record that was never written.
+      expect(
+        await service.writeAllTimeStatistics(answered),
+        AllTimeWriteOutcome.refused,
+      );
+      // What the sitting is entitled to instead is being told, and the refusal
+      // survives everything the session goes on doing to the record.
+      expect(answered.allTime.isRefused, isTrue);
+      expect(answered.allTime.resized(deck.units.length).isRefused, isTrue);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('the two causes of a refusal are told apart by whether the record '
+        'speaks for the target, not by its origin alone', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_alltime_two_causes',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String sep = Platform.pathSeparator;
+      final String ownPath = '${temp.path}${sep}french.vok';
+      final String otherPath = '${temp.path}${sep}german.vok';
+      final LearningDeck deck = multiUnitDeck(<String>['un']);
+
+      // This deck's OWN lifetime file is there but cannot be decoded...
+      await File(
+        service.allTimeStatisticsPath(ownPath),
+      ).writeAsString('not json');
+      // ...and the other deck has a perfectly good record of its own.
+      await service.writeAllTimeStatistics(
+        DesktopDocument(
+          deck: deck,
+          statistics: const <UnitStats>[],
+          allTime: AllTimeRecord.loaded(
+            const AllTimeStatistics(
+              perUnit: <UnitStats>[
+                UnitStats(index: 1, direction1: DirectionStats(attempts: 900)),
+              ],
+            ),
+            otherPath,
+          ),
+          deckPath: otherPath,
+        ),
+      );
+      await service.saveDeckSnapshot(deck, ownPath);
+
+      final DesktopDocument opened = await service.openDeck(
+        DesktopDocument.empty(sampleMask()),
+        ownPath,
+      );
+      expect(opened.allTime.origin, AllTimeOrigin.unreadable);
+      final DesktopDocument answered = opened.copyWith(
+        allTime: opened.allTime.record(
+          const RecordedAttempt(
+            unitIndex: 1,
+            direction: QueryDirection.direction1,
+            drill: AttemptDelta(attempts: 1, correct: 1),
+          ),
+        ),
+      );
+
+      // Saving it where it is: refused because THIS deck's own file could not
+      // be read, so "could not be read" is the honest sentence.
+      final DeckSaveResult inPlace = await service.saveDeck(answered);
+      expect(inPlace.allTime, AllTimeWriteOutcome.refused);
+      expect(inPlace.document.allTime.isUnreadableAt(ownPath), isTrue);
+
+      // Saving that very same record as the other deck: refused for the
+      // opposite reason. The origin alone cannot tell the two apart — it is
+      // still `unreadable` — but the file being spared is not this deck's.
+      final DeckSaveResult saveAs = await service.saveDeck(
+        answered,
+        path: otherPath,
+      );
+      expect(saveAs.allTime, AllTimeWriteOutcome.refused);
+      expect(saveAs.document.allTime.origin, AllTimeOrigin.unreadable);
+      expect(saveAs.document.allTime.isUnreadableAt(otherPath), isFalse);
 
       await temp.delete(recursive: true);
     });

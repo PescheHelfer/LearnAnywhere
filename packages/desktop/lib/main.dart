@@ -780,16 +780,44 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// resumable session file exists, and letting it govern the lifetime record
   /// would mean turning off resumable sessions silently stops the learner's
   /// progress record.
+  ///
+  /// Silent is not the same as unnoticed. A REFUSED write is not a failure —
+  /// it is the record saying it may not touch that file, and every write after
+  /// it says the same — so the outcome is carried back to the document
+  /// ([_noteAllTimeRefusal]) and the all-time statistics report it on screen.
+  /// A genuine failure stays swallowed: it may well succeed next answer.
   void _queueAllTimeSave(DesktopDocument snapshot) {
-    if (snapshot.deckPath == null) {
+    final String? deckPath = snapshot.deckPath;
+    if (deckPath == null) {
       return;
     }
     _statsSaveChain = _statsSaveChain.then((_) async {
       try {
-        await _fileService.writeAllTimeStatistics(snapshot);
+        final AllTimeWriteOutcome outcome = await _fileService
+            .writeAllTimeStatistics(snapshot);
+        if (outcome == AllTimeWriteOutcome.refused) {
+          _noteAllTimeRefusal(deckPath);
+        }
       } on Object {
         // Silent during a session; see doc comment.
       }
+    });
+  }
+
+  /// Marks the live document's lifetime record as refused a write at [path].
+  ///
+  /// The refusal turns up on a queued write, which by then holds a snapshot,
+  /// so it is only applied while the live document is still the same deck at
+  /// the same path: a refusal belonging to the deck that has just been
+  /// replaced must not warn about the one that replaced it.
+  void _noteAllTimeRefusal(String path) {
+    if (!mounted || _document.deckPath != path || _document.allTime.isRefused) {
+      return;
+    }
+    setState(() {
+      _document = _document.copyWith(
+        allTime: _document.allTime.refusedAt(path),
+      );
     });
   }
 
@@ -2312,6 +2340,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         levelStatistics: _document.levelStatistics,
         allTimeStatistics: _document.allTime.perUnit,
         allTimeLevelStatistics: _document.allTime.perLevel,
+        allTimeIsRefused: _document.allTime.isRefused,
         levelNames: widget.locale.languageCode == 'de'
             ? _settings.levelNamesDe
             : _settings.levelNamesEn,
@@ -2573,7 +2602,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // it is the one that says this whole sitting will not reach the record,
       // and the record refuses to be written over a file it never read.
       _setFileStatus(
-        _document.allTime.isUnreadable
+        _document.allTime.isUnreadableAt(path)
             ? LearnAnywhereMessage.fileAllTimeUnreadable
             : maskStatus ?? LearnAnywhereMessage.fileOpenDeckDone,
       );
@@ -2824,12 +2853,16 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // reported with one sentence: a save-as onto a deck that has a record of
       // its own leaves that record where it is (this deck's history is not that
       // deck's), while a plain save of a deck whose OWN record could not be read
-      // at open is refused for the opposite reason. Naming the wrong one would
-      // tell the learner their file belongs to a deck it does not.
+      // at open is refused for the opposite reason. Which one it is turns on
+      // whether the unreadable file is the one beside THIS target — the
+      // record's origin alone cannot tell them apart, since a deck whose own
+      // file was unreadable can still be saved as another deck. Naming the
+      // wrong one would tell the learner their file belongs to a deck it does
+      // not.
       _setFileStatus(
         switch (result.allTime) {
           AllTimeWriteOutcome.refused
-              when result.document.allTime.isUnreadable =>
+              when result.document.allTime.isUnreadableAt(resolvedPath) =>
             LearnAnywhereMessage.fileAllTimeUnreadable,
           AllTimeWriteOutcome.refused =>
             LearnAnywhereMessage.fileSaveDeckAllTimeKept,

@@ -18,6 +18,7 @@ final class StatisticsPage extends StatefulWidget {
     required this.levelStatistics,
     required this.allTimeStatistics,
     required this.allTimeLevelStatistics,
+    required this.allTimeIsRefused,
     required this.levelNames,
     required this.onLoadStatistics,
     required this.onSaveStatistics,
@@ -44,6 +45,14 @@ final class StatisticsPage extends StatefulWidget {
   /// The deck's all-time Level-Learning counters, each carrying the last level
   /// reached rather than where the ladder stands now.
   final List<LevelUnitStats> allTimeLevelStatistics;
+
+  /// Whether the deck's all-time record has been refused a write, so the
+  /// numbers under the all-time scope are counting into memory only.
+  ///
+  /// The refusal itself is silent by design — it happens on a queued write
+  /// that must not interrupt a live session — which is exactly why the state
+  /// has to be visible where the record is looked at.
+  final bool allTimeIsRefused;
 
   /// Custom level names for the active locale, ordered level 3 → 0.
   final List<String> levelNames;
@@ -181,6 +190,14 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                   ),
                 ],
               ),
+              // The one thing the numbers themselves cannot say: that they are
+              // not reaching the file. It sits above the tabs so it is on
+              // screen whichever view is open, and only under the all-time
+              // scope, because the current record saves as it always did.
+              if (allTime && widget.allTimeIsRefused) ...<Widget>[
+                const SizedBox(height: LearnAnywhereTokens.gapMedium),
+                const _AllTimeNotRecordedNotice(),
+              ],
               const SizedBox(height: LearnAnywhereTokens.gapMedium),
               TabBar(
                 isScrollable: true,
@@ -1275,6 +1292,48 @@ final class _AllTimeClearButton extends StatelessWidget {
       icon: const Icon(Icons.warning_amber_rounded),
       label: Text(
         messages.message(LearnAnywhereMessage.statisticsClearAllTime),
+      ),
+    );
+  }
+}
+
+/// Standing notice that the all-time record has stopped reaching its file.
+///
+/// Not a status line: the refusal lasts until the deck is reopened, and a
+/// message that scrolls away would leave the learner answering into nothing
+/// again a minute later. It carries the error colour but not the clear
+/// button's filled weight — it warns about a state, it offers no action.
+final class _AllTimeNotRecordedNotice extends StatelessWidget {
+  const _AllTimeNotRecordedNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(LearnAnywhereTokens.gapSmall),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(LearnAnywhereTokens.gapSmall),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer),
+            const SizedBox(width: LearnAnywhereTokens.gapSmall),
+            Expanded(
+              child: Text(
+                messages.message(
+                  LearnAnywhereMessage.statisticsAllTimeNotRecorded,
+                ),
+                style: TextStyle(color: colors.onErrorContainer),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

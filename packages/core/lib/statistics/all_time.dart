@@ -332,12 +332,20 @@ enum AllTimeOrigin {
 ///
 /// The single deliberate exception is the learner-confirmed clear of the
 /// lifetime record itself, which opts out explicitly at the call site.
+///
+/// A refusal is not the end of the matter, because the learner keeps answering
+/// afterwards and those answers now reach nothing. So a refusal is remembered
+/// ([refusedPath], [isRefused]) rather than merely returned: the policy is
+/// unchanged, but the state it puts the sitting in is visible, and
+/// [isUnreadableAt] separates its two causes so neither is reported as the
+/// other.
 final class AllTimeRecord {
   /// Creates a record with an explicit origin.
   const AllTimeRecord({
     this.statistics = AllTimeStatistics.empty,
     this.origin = AllTimeOrigin.unread,
     this.deckPath,
+    this.refusedPath,
   });
 
   /// A record read from the lifetime file beside [deckPath].
@@ -369,6 +377,17 @@ final class AllTimeRecord {
   /// The deck path this record was read for, if any.
   final String? deckPath;
 
+  /// The deck path a write of this record was last REFUSED at, if any.
+  ///
+  /// Set by whoever attempted the write, because a refusal is a fact about the
+  /// disk — a file exists at that path and this record never read it — that
+  /// cannot be re-derived from the record alone. Carrying it is what turns the
+  /// refusal from a silent one-way door into a state the learner can be shown:
+  /// from here on every answer accumulates in memory only.
+  ///
+  /// Cleared by [adoptedAt], because a write that lands is exactly the cure.
+  final String? refusedPath;
+
   /// Lifetime per-unit counters.
   List<UnitStats> get perUnit => statistics.perUnit;
 
@@ -378,10 +397,32 @@ final class AllTimeRecord {
   /// Whether nothing has ever been recorded here.
   bool get isEmpty => statistics.isEmpty;
 
-  /// Whether the lifetime file was there and could not be read, which is the
-  /// one case worth telling the learner about: everything answered from here
-  /// on stays in memory.
-  bool get isUnreadable => origin == AllTimeOrigin.unreadable;
+  /// Whether THIS record's own lifetime file — the one beside [path] — was
+  /// there and could not be read.
+  ///
+  /// Both halves of the question matter, and asking only about [origin] is the
+  /// mix-up this exists to prevent. A record whose own file was unreadable at
+  /// open is refused a write at its OWN path for that reason; the same record
+  /// is refused a write at a DIFFERENT path (a save-as onto a deck with a
+  /// history of its own) for the opposite one — there the file being spared is
+  /// not this deck's at all. Reporting the second as "could not be read" tells
+  /// the learner their history belongs to a deck it does not.
+  bool isUnreadableAt(String path, {p.Context? context}) {
+    final String? own = deckPath;
+    return origin == AllTimeOrigin.unreadable &&
+        own != null &&
+        (context ?? p.context).equals(own, path);
+  }
+
+  /// Whether the last write of this record was refused, so the answers being
+  /// given now reach no file at all.
+  ///
+  /// A state the learner is entitled to know they are in: the deck still
+  /// saves, the current statistics still save, and the lifetime record alone
+  /// has quietly stopped. Reopening the deck where it now lives is what ends
+  /// it — that read hands the deck a record which legitimately speaks for the
+  /// file beside it.
+  bool get isRefused => refusedPath != null;
 
   /// Whether this record may replace an existing lifetime file for [path].
   ///
@@ -433,6 +474,9 @@ final class AllTimeRecord {
 
   /// Returns this record as the one now describing the lifetime file at
   /// [path] — what a write that actually landed there earns it.
+  ///
+  /// Any earlier refusal is dropped with it: a record that has just written
+  /// the file is no longer being refused anything.
   AllTimeRecord adoptedAt(String path) {
     return AllTimeRecord(
       statistics: statistics,
@@ -441,11 +485,26 @@ final class AllTimeRecord {
     );
   }
 
+  /// Returns this record marked as having been refused a write at [path].
+  ///
+  /// Changes nothing about what the record may do — [speaksFor] is untouched
+  /// and the write policy stays exactly as it was. All this carries is that
+  /// the refusal happened, so the shell can stop being silent about it.
+  AllTimeRecord refusedAt(String path) {
+    return AllTimeRecord(
+      statistics: statistics,
+      origin: origin,
+      deckPath: deckPath,
+      refusedPath: path,
+    );
+  }
+
   AllTimeRecord _with(AllTimeStatistics updated) {
     return AllTimeRecord(
       statistics: updated,
       origin: origin,
       deckPath: deckPath,
+      refusedPath: refusedPath,
     );
   }
 }

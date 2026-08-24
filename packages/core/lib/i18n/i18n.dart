@@ -816,6 +816,12 @@ enum LearnAnywhereMessage {
   /// All-time statistics cleared status.
   statisticsAllTimeCleared,
 
+  /// Standing warning above the all-time statistics: this record has stopped
+  /// reaching its file, so the numbers on screen are counting into memory
+  /// only. Shown for as long as that lasts, because the refusal is silent
+  /// afterwards and the learner keeps answering.
+  statisticsAllTimeNotRecorded,
+
   /// Statistics loaded status.
   statisticsLoaded,
 
@@ -1171,7 +1177,8 @@ enum LearnAnywhereMessage {
   fileSaveDeckDone,
 
   /// Save deck succeeded, but the all-time statistics already at that location
-  /// belong to another deck and were deliberately left alone.
+  /// belong to another deck and were deliberately left alone — so this deck's
+  /// all-time statistics have stopped being recorded until it is reopened.
   fileSaveDeckAllTimeKept,
 
   /// Warning on open: the deck's all-time statistics file is there but could
@@ -1600,6 +1607,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsClearAllTime: 'Clear all-time stats...',
       LearnAnywhereMessage.statisticsAllTimeCleared:
           'All-time statistics cleared.',
+      LearnAnywhereMessage.statisticsAllTimeNotRecorded:
+          'These all-time statistics are no longer being saved: the file '
+          'beside the deck belongs to another deck, or could not be read. '
+          'Everything answered since then is counted here only, until you open '
+          'the deck again from where it is now.',
       LearnAnywhereMessage.statisticsLoaded: 'Statistics loaded.',
       LearnAnywhereMessage.statisticsUnitsReset:
           'Statistics for {count} units were reset '
@@ -1748,7 +1760,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSaveDeckDone: 'Deck saved.',
       LearnAnywhereMessage.fileSaveDeckAllTimeKept:
           'Deck saved. The all-time statistics already at that location belong '
-          'to another deck and were left untouched.',
+          'to another deck and were left untouched — so this deck\'s all-time '
+          'statistics are no longer being saved. Open the deck again from its '
+          'new location to carry on recording them.',
       LearnAnywhereMessage.fileAllTimeUnreadable:
           'The all-time statistics could not be read. The file is left '
           'untouched, and this sitting is not added to it.',
@@ -2150,6 +2164,12 @@ final class LearnAnywhereCatalog {
           'Allzeit-Statistik löschen...',
       LearnAnywhereMessage.statisticsAllTimeCleared:
           'Allzeit-Statistik gelöscht.',
+      LearnAnywhereMessage.statisticsAllTimeNotRecorded:
+          'Diese Allzeit-Statistik wird nicht mehr gespeichert: Die Datei '
+          'neben der Lern-Datei gehört zu einer anderen Lern-Datei oder konnte '
+          'nicht gelesen werden. Alles seither Beantwortete wird nur hier '
+          'gezählt, bis Sie die Lern-Datei an ihrem jetzigen Ort erneut '
+          'öffnen.',
       LearnAnywhereMessage.statisticsLoaded: 'Statistik geladen.',
       LearnAnywhereMessage.statisticsUnitsReset:
           'Die Statistik von {count} Einheiten wurde zurückgesetzt '
@@ -2310,7 +2330,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileSaveDeckDone: 'Lern-Datei gespeichert.',
       LearnAnywhereMessage.fileSaveDeckAllTimeKept:
           'Lern-Datei gespeichert. Die dort vorhandene Allzeit-Statistik '
-          'gehört zu einer anderen Lern-Datei und wurde nicht überschrieben.',
+          'gehört zu einer anderen Lern-Datei und wurde nicht überschrieben — '
+          'die Allzeit-Statistik dieser Lern-Datei wird daher nicht mehr '
+          'gespeichert. Öffnen Sie die Lern-Datei an ihrem neuen Ort erneut, '
+          'um sie weiter aufzuzeichnen.',
       LearnAnywhereMessage.fileAllTimeUnreadable:
           'Die Allzeit-Statistik konnte nicht gelesen werden. Die Datei bleibt '
           'unverändert; diese Sitzung wird ihr nicht hinzugefügt.',

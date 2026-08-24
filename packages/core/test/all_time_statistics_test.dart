@@ -526,14 +526,20 @@ void main() {
       );
       expect(read.speaksFor('/decks/french.vok', context: p.posix), isTrue);
       expect(read.speaksFor('/decks/german.vok', context: p.posix), isFalse);
-      expect(read.isUnreadable, isFalse);
+      expect(
+        read.isUnreadableAt('/decks/french.vok', context: p.posix),
+        isFalse,
+      );
     });
 
     test('a missing lifetime file still speaks for its deck path: creating a '
         'file destroys nothing', () {
       const AllTimeRecord absent = AllTimeRecord.absent('/decks/french.vok');
       expect(absent.isEmpty, isTrue);
-      expect(absent.isUnreadable, isFalse);
+      expect(
+        absent.isUnreadableAt('/decks/french.vok', context: p.posix),
+        isFalse,
+      );
       expect(absent.speaksFor('/decks/french.vok', context: p.posix), isTrue);
     });
 
@@ -542,7 +548,10 @@ void main() {
       const AllTimeRecord unreadable = AllTimeRecord.unreadable(
         '/decks/french.vok',
       );
-      expect(unreadable.isUnreadable, isTrue);
+      expect(
+        unreadable.isUnreadableAt('/decks/french.vok', context: p.posix),
+        isTrue,
+      );
       expect(
         unreadable.speaksFor('/decks/french.vok', context: p.posix),
         isFalse,
