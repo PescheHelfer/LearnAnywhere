@@ -2213,64 +2213,88 @@ final class _SessionView extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: LearnAnywhereTokens.gapSmall),
-              Row(
+              // Two _PillGroups nested in a Wrap: the whole group drops to
+              // its own line (with a bigger gap than the pills within a
+              // group) once the window is too narrow for both to sit side
+              // by side.
+              Wrap(
+                spacing: LearnAnywhereTokens.gapLarge,
+                runSpacing: LearnAnywhereTokens.gapMedium,
                 children: <Widget>[
-                  FilledButton.icon(
-                    onPressed: onContinue,
-                    icon: const Icon(Icons.arrow_forward),
-                    label: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          messages.message(LearnAnywhereMessage.learnContinue),
+                  _PillGroup(
+                    key: const Key('learnActionPillsGroup'),
+                    children: <Widget>[
+                      FilledButton.icon(
+                        onPressed: onContinue,
+                        icon: const Icon(Icons.arrow_forward),
+                        label: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              messages.message(
+                                LearnAnywhereMessage.learnContinue,
+                              ),
+                            ),
+                            const Text('F3', style: TextStyle(fontSize: 10)),
+                          ],
                         ),
-                        const Text('F3', style: TextStyle(fontSize: 10)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                  FilledButton.tonalIcon(
-                    onPressed: onCancel,
-                    icon: const Icon(Icons.close),
-                    label: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          messages.message(LearnAnywhereMessage.actionCancel),
-                        ),
-                        const Text('Esc', style: TextStyle(fontSize: 10)),
-                      ],
-                    ),
-                  ),
-                  if (parameters.withInput) ...<Widget>[
-                    const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                    _ToggleViewButton(
-                      label: messages.message(
-                        _answerViewModeMessage(viewMode),
                       ),
-                      hint:
-                          '${messages.message(LearnAnywhereMessage.learnSwitchHint)}: F9',
-                      onPressed: onToggleView,
-                      onRestoreFocus: onRestoreFocus,
-                    ),
-                  ],
-                  const Spacer(),
-                  Text(
-                    messages.message(LearnAnywhereMessage.learnEvaluateAs),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                  for (int i = 0; i < ratingEntries.length; i++) ...<Widget>[
-                    if (i > 0)
                       const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                    _EvalButton(
-                      label: ratingEntries[i].value,
-                      hint: 'F${i + 5}',
-                      filled: ratingEntries[i].key == selectedRating,
-                      onPressed: () => onRatingChanged(ratingEntries[i].key),
-                      onRestoreFocus: onRestoreFocus,
-                    ),
-                  ],
+                      FilledButton.tonalIcon(
+                        onPressed: onCancel,
+                        icon: const Icon(Icons.close),
+                        label: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              messages.message(
+                                LearnAnywhereMessage.actionCancel,
+                              ),
+                            ),
+                            const Text('Esc', style: TextStyle(fontSize: 10)),
+                          ],
+                        ),
+                      ),
+                      if (parameters.withInput) ...<Widget>[
+                        const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                        _ToggleViewButton(
+                          label: messages.message(
+                            _answerViewModeMessage(viewMode),
+                          ),
+                          hint:
+                              '${messages.message(LearnAnywhereMessage.learnSwitchHint)}: F9',
+                          onPressed: onToggleView,
+                          onRestoreFocus: onRestoreFocus,
+                        ),
+                      ],
+                    ],
+                  ),
+                  _PillGroup(
+                    key: const Key('learnEvaluationPillsGroup'),
+                    children: <Widget>[
+                      Text(
+                        messages.message(LearnAnywhereMessage.learnEvaluateAs),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                      for (
+                        int i = 0;
+                        i < ratingEntries.length;
+                        i++
+                      ) ...<Widget>[
+                        if (i > 0)
+                          const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                        _EvalButton(
+                          label: ratingEntries[i].value,
+                          hint: 'F${i + 5}',
+                          filled: ratingEntries[i].key == selectedRating,
+                          onPressed: () =>
+                              onRatingChanged(ratingEntries[i].key),
+                          onRestoreFocus: onRestoreFocus,
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ] else ...<Widget>[
@@ -2281,6 +2305,24 @@ final class _SessionView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// An atomic pill group for a [Wrap]: its [Row] can never split across
+/// lines, and [FittedBox] shrinks it as a last resort instead of
+/// overflowing, on a window narrower than the group itself.
+final class _PillGroup extends StatelessWidget {
+  const _PillGroup({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 }

@@ -55,7 +55,10 @@ Mit `F3` oder `Enter` **prüfen**. Was dann passiert, hängt davon ab, ob Ihre A
 gestimmt hat — vollständig erklärt in
 [Wie Antworten bewertet werden](08-answer-evaluation.md) — aber in jedem Fall geht es
 danach entweder automatisch weiter, oder Sie wählen über eine Reihe von Schaltflächen
-(`F5`/`F6`/`F7`), wie der Versuch bewertet werden soll.
+(`F5`/`F6`/`F7`), wie der Versuch bewertet werden soll. Diese Reihe steht direkt neben
+**Weiter** und **Abbruch**, sodass beide Gruppen in Reichweite bleiben. Bei einem
+schmalen Fenster rutschen die Bewertungsschaltflächen in eine eigene Zeile, statt
+abgeschnitten zu werden.
 
 `F10` **zeigt** die Karte, ohne dass Sie antworten, falls Sie lieber nachsehen als raten
 wollen. `F9` wechselt durch, was der Antwortbereich zeigt: **Korrektur** (Ihre Antwort

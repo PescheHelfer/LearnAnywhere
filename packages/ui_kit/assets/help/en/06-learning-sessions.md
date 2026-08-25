@@ -52,7 +52,9 @@ The header reads **"Unit {index}/{total}"**. Below it:
 Press `F3` or `Enter` to **Check**. What happens next depends on whether your answer
 matched — covered in full in [How answers are judged](08-answer-evaluation.md) — but in
 every case you then either continue automatically or choose how to rate the attempt
-from a row of buttons (`F5`/`F6`/`F7`).
+from a row of buttons (`F5`/`F6`/`F7`) shown right after **Continue** and **Cancel**, so
+both groups stay within reach of each other. On a narrow window the rating buttons drop
+to a line of their own rather than being cut off.
 
 `F10` **Reveals** the card without you answering, if you would rather see it than guess.
 `F9` cycles what the answer area shows: **Correction** (your answer with differences

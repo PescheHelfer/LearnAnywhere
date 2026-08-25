@@ -1230,6 +1230,83 @@ void main() {
     },
   );
 
+  testWidgets(
+    'the evaluation pills sit just after the action pills with a bigger '
+    'gap between the groups than within a group, and drop to their own '
+    'line — without splitting either group — once the window narrows',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(buildPage(onExit: () {}));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+
+      final Finder actionGroup = find.byKey(const Key('learnActionPillsGroup'));
+      final Finder evalGroup = find.byKey(
+        const Key('learnEvaluationPillsGroup'),
+      );
+      final Rect actionGroupRect = tester.getRect(actionGroup);
+      final Rect evalGroupRect = tester.getRect(evalGroup);
+
+      // Wide window: one line, action pills first, evaluation group after,
+      // with a bigger gap between the groups than between pills within one.
+      expect(actionGroupRect.top, evalGroupRect.top);
+      expect(actionGroupRect.right, lessThan(evalGroupRect.left));
+
+      // Compare whole-button edges (not text edges) so button padding/icons
+      // don't skew the "gap within a group" measurement.
+      final Rect continueButtonRect = tester.getRect(
+        find.ancestor(
+          of: find.text('Continue'),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      final Rect cancelButtonRect = tester.getRect(
+        find.ancestor(
+          of: find.text('Cancel'),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      final double withinGroupGap =
+          cancelButtonRect.left - continueButtonRect.right;
+      final double betweenGroupGap = evalGroupRect.left - actionGroupRect.right;
+      expect(betweenGroupGap, greaterThan(withinGroupGap));
+
+      // Narrow the window: the evaluation group must drop to its own line
+      // without either group splitting, and no overflow may be raised
+      // (pumpAndSettle throws on the classic overflow-stripes assertion).
+      tester.view.physicalSize = const Size(750, 1000);
+      await tester.pumpAndSettle();
+
+      final Rect narrowActionGroupRect = tester.getRect(actionGroup);
+      final Rect narrowEvalGroupRect = tester.getRect(evalGroup);
+      // The evaluation group dropped below the action group entirely.
+      expect(
+        narrowEvalGroupRect.top,
+        greaterThan(narrowActionGroupRect.bottom - 1),
+      );
+      // Each group still renders as a single, unsplit unit: its same-sized
+      // pills share one line (a Row, unlike a Wrap, cannot itself break a
+      // line mid-group).
+      final Rect narrowContinueRect = tester.getRect(find.text('Continue'));
+      final Rect narrowCancelRect = tester.getRect(find.text('Cancel'));
+      expect(narrowContinueRect.top, narrowCancelRect.top);
+
+      final Rect narrowF5Rect = tester.getRect(find.text('F5'));
+      final Rect narrowF6Rect = tester.getRect(find.text('F6'));
+      final Rect narrowF7Rect = tester.getRect(find.text('F7'));
+      expect(narrowF5Rect.top, narrowF6Rect.top);
+      expect(narrowF5Rect.top, narrowF7Rect.top);
+      // The rating label lives in the same, single-line group as the pills.
+      expect(find.text('Evaluate as:'), findsOneWidget);
+    },
+  );
 }
 
 /// Minimal shell that holds the mutable Level-Learning state the page pushes
