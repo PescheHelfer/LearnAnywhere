@@ -23,6 +23,7 @@ import 'src/lexicon/lexicon_page.dart';
 import 'src/mask_editor/mask_editor_page.dart';
 import 'src/mask_editor/mask_sync_dialog.dart';
 import 'src/preferences/desktop_prefs.dart';
+import 'src/settings/settings_save.dart';
 import 'src/statistics/statistics_page.dart';
 
 Future<void> main() async {
@@ -610,32 +611,12 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   }
 
   Future<void> _saveSettings() async {
-    final LearnAnywhereSettings next = LearnAnywhereSettings(
-      wrongInputCorrectable: _queryOptions.wrongInputCorrectable,
-      completeInputRequired: _queryOptions.completeInputRequired,
-      caseSensitive: _queryOptions.caseSensitive,
-      accentSensitive: _queryOptions.accentSensitive,
-      almostEnabled: _queryOptions.almostEnabled,
-      almostThreshold: _queryOptions.almostThreshold,
-      showClock: _queryOptions.showClock,
-      timeLimitSeconds: _queryOptions.timeLimitSeconds,
-      minimumAttemptsGuardEnabled: _queryOptions.minimumAttemptsGuardEnabled,
-      minAttempts: _queryOptions.minAttempts,
-      wrongAnswerCeilingEnabled: _queryOptions.wrongAnswerCeilingEnabled,
-      wrongAnswerCeiling: _queryOptions.wrongAnswerCeiling,
-      mode: _learnParameters.mode,
-      direction: _learnParameters.directionSelection,
-      shuffle: _learnParameters.shuffle,
-      requireTypedAnswers: _learnParameters.withInput,
-      masteryThreshold: _learnParameters.masteryThreshold,
-      // Level-Learning settings are edited elsewhere (setup entry-level control
-      // and the level-name panel) and live only on _settings, so carry them
-      // forward here rather than resetting them to defaults on every save.
-      entryLevelCap: _settings.entryLevelCap,
-      levelNamesEn: _settings.levelNamesEn,
-      levelNamesDe: _settings.levelNamesDe,
-      lastDeckPath: _document.deckPath ?? _settings.lastDeckPath,
-      lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
+    final LearnAnywhereSettings next = nextSettingsForSave(
+      previous: _settings,
+      queryOptions: _queryOptions,
+      learnParameters: _learnParameters,
+      deckPath: _document.deckPath,
+      maskPath: _lastMaskPath,
     );
     _settings = next;
     await writeSettingsFile(_settingsPath, next);
