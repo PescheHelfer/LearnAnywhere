@@ -216,53 +216,60 @@ void main() {
     expect(find.text('Save stats as...'), findsNothing);
     expect(find.text('Clear current stats...'), findsNothing);
     expect(find.text('Cancel'), findsOneWidget);
-    // What the all-time row does offer is the clear of the record on screen.
-    expect(find.text('Clear all-time stats...'), findsOneWidget);
+    // The all-time scope offers no button that changes anything: its one
+    // command lives behind the overflow control beside the scope selector.
+    expect(find.text('Clear all-time stats...'), findsNothing);
+    expect(find.byTooltip('All-time actions'), findsOneWidget);
 
     // Switching back restores them.
     await tester.tap(find.text('Current'));
     await tester.pumpAndSettle();
     expect(find.text('Load stats...'), findsOneWidget);
     expect(find.text('Clear current stats...'), findsOneWidget);
-    expect(find.text('Clear all-time stats...'), findsNothing);
+    expect(find.byTooltip('All-time actions'), findsNothing);
   });
 
-  testWidgets('the all-time clear is warning-marked and danger-coloured', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('the all-time clear is reachable only through the overflow '
+      'menu', (WidgetTester tester) async {
     widenSurface(tester);
     var cleared = 0;
     await tester.pumpWidget(
       buildPage(onClearAllTimeStatistics: () async => cleared += 1),
     );
     await tester.pumpAndSettle();
+
+    // Not in the current scope at all — neither the command nor its control.
+    expect(find.byTooltip('All-time actions'), findsNothing);
+
     await tester.tap(find.text('All-time'));
     await tester.pumpAndSettle();
 
-    // A warning triangle rather than the everyday clear's neutral cross, so
-    // the two are told apart before either label is read.
-    final Finder button = find.widgetWithText(
-      FilledButton,
+    // In the all-time scope the control is there but the command is not: the
+    // learner has to open for it, so nothing destructive can be pressed by
+    // mistake on the way past.
+    expect(find.text('Clear all-time stats...'), findsNothing);
+    await tester.tap(find.byTooltip('All-time actions'));
+    await tester.pumpAndSettle();
+
+    // Opened, it shows the single command, marked as the destructive one.
+    final Finder item = find.widgetWithText(
+      MenuItemButton,
       'Clear all-time stats...',
     );
-    expect(
-      find.descendant(
-        of: button,
-        matching: find.byIcon(Icons.warning_amber_rounded),
-      ),
-      findsOneWidget,
-    );
-
-    final BuildContext context = tester.element(button);
+    expect(item, findsOneWidget);
+    final BuildContext context = tester.element(item);
     final Color error = Theme.of(context).colorScheme.error;
-    final ButtonStyle? style = tester.widget<FilledButton>(button).style;
     expect(
-      style?.backgroundColor?.resolve(<WidgetState>{}),
+      tester
+          .widget<MenuItemButton>(item)
+          .style
+          ?.foregroundColor
+          ?.resolve(<WidgetState>{}),
       error,
     );
 
     // The screen only asks; confirming is the shell's business.
-    await tester.tap(button);
+    await tester.tap(item);
     await tester.pumpAndSettle();
     expect(cleared, 1);
   });

@@ -812,9 +812,15 @@ enum LearnAnywhereMessage {
   /// everyday clear has to name the one it clears.
   statisticsClearCurrent,
 
-  /// Clear the *all-time* statistics action, reachable only from the all-time
-  /// scope of the statistics screen and styled as the destructive action it is.
+  /// Clear the *all-time* statistics action, reachable only through the
+  /// overflow menu of the statistics screen's all-time scope and rendered
+  /// there in the destructive colour.
   statisticsClearAllTime,
+
+  /// Tooltip of the overflow control beside the all-time scope selector, which
+  /// holds [LearnAnywhereMessage.statisticsClearAllTime]. The command is kept
+  /// behind it so nothing destructive is visible on the screen itself.
+  statisticsAllTimeMenu,
 
   /// All-time statistics cleared status.
   statisticsAllTimeCleared,
@@ -1155,6 +1161,10 @@ enum LearnAnywhereMessage {
   /// `{really}` placeholder, which the shell replaces with
   /// [LearnAnywhereMessage.confirmReallyWord] shown in the destructive colour —
   /// the sentence has to read as a warning, not as one more prompt.
+  ///
+  /// Also carries `{deck}`, the file name of the deck whose lifetime record is
+  /// about to go. This dialog is the whole deterrent, so it has to say which
+  /// history it is about to erase, not merely that it is erasing one.
   confirmClearAllTimeStatistics,
 
   /// The single word emphasised inside
@@ -1619,6 +1629,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsClear: 'Clear stats...',
       LearnAnywhereMessage.statisticsClearCurrent: 'Clear current stats...',
       LearnAnywhereMessage.statisticsClearAllTime: 'Clear all-time stats...',
+      LearnAnywhereMessage.statisticsAllTimeMenu: 'All-time actions',
       LearnAnywhereMessage.statisticsAllTimeCleared:
           'All-time statistics cleared.',
       LearnAnywhereMessage.statisticsAllTimeNotRecorded:
@@ -1767,9 +1778,9 @@ final class LearnAnywhereCatalog {
           'Clear the current statistics for this deck? '
           'The all-time statistics are not affected.',
       LearnAnywhereMessage.confirmClearAllTimeStatistics:
-          'Do you {really} want to clear the all-time statistics for this '
-          'deck? The complete learning history of this deck is erased. '
-          'This cannot be undone.',
+          "Do you {really} want to clear the all-time statistics for "
+          "'{deck}'? The complete learning history of this deck is erased. "
+          "This cannot be undone.",
       LearnAnywhereMessage.confirmReallyWord: 'really',
       LearnAnywhereMessage.confirmExit: 'Exit Learn Anywhere?',
       LearnAnywhereMessage.fileOperationFailed: 'File operation failed',
@@ -2188,6 +2199,7 @@ final class LearnAnywhereCatalog {
           'Aktuelle Statistik löschen...',
       LearnAnywhereMessage.statisticsClearAllTime:
           'Allzeit-Statistik löschen...',
+      LearnAnywhereMessage.statisticsAllTimeMenu: 'Allzeit-Aktionen',
       LearnAnywhereMessage.statisticsAllTimeCleared:
           'Allzeit-Statistik gelöscht.',
       LearnAnywhereMessage.statisticsAllTimeNotRecorded:
@@ -2350,9 +2362,9 @@ final class LearnAnywhereCatalog {
           'Die aktuelle Statistik dieser Lern-Datei löschen? '
           'Die Allzeit-Statistik bleibt davon unberührt.',
       LearnAnywhereMessage.confirmClearAllTimeStatistics:
-          'Möchten Sie die Allzeit-Statistik dieser Lern-Datei {really} '
-          'löschen? Der gesamte bisherige Lernverlauf dieser Lern-Datei wird '
-          'gelöscht. Das lässt sich nicht rückgängig machen.',
+          'Möchten Sie die Allzeit-Statistik von „{deck}“ {really} löschen? '
+          'Der gesamte bisherige Lernverlauf dieser Lern-Datei wird gelöscht. '
+          'Das lässt sich nicht rückgängig machen.',
       LearnAnywhereMessage.confirmReallyWord: 'wirklich',
       LearnAnywhereMessage.confirmExit: 'Learn Anywhere beenden?',
       LearnAnywhereMessage.fileOperationFailed: 'Dateioperation fehlgeschlagen',

@@ -72,7 +72,9 @@ final class StatisticsPage extends StatefulWidget {
   /// Clears the deck's all-time record, in memory and in its file.
   ///
   /// The one destructive action on this screen: it is offered only under the
-  /// all-time numbers, and the shell confirms it before anything is erased.
+  /// all-time numbers, and only inside the overflow menu there, so nothing on
+  /// the screen itself can be pressed by accident. The shell confirms it
+  /// before anything is erased.
   final Future<void> Function() onClearAllTimeStatistics;
 
   /// Saves selected unit indices as a new deck.
@@ -153,12 +155,24 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       setState(() => _scope = value);
                     },
                   ),
+                  // The one destructive command in the program, kept out of
+                  // sight rather than made to look frightening: prominence is
+                  // not deterrence, and a filled red button beside the scope
+                  // reads as *the* action of the screen and invites the press.
+                  // The deterrent is the shell's confirmation, which names the
+                  // deck and focuses Cancel.
+                  if (allTime)
+                    _AllTimeOverflowMenu(
+                      onClear: widget.onClearAllTimeStatistics,
+                    ),
                 ],
               ),
               const SizedBox(height: LearnAnywhereTokens.gapSmall),
               // Row two — what can be done to it. Load, save, save-as and the
               // everyday clear all act on the working record, so none of them
-              // belongs under the all-time numbers.
+              // belongs under the all-time numbers, which leaves Cancel alone
+              // there: the all-time scope offers no button that changes
+              // anything.
               Wrap(
                 spacing: LearnAnywhereTokens.gapMedium,
                 runSpacing: LearnAnywhereTokens.gapSmall,
@@ -171,12 +185,6 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       onSaveAs: widget.onSaveStatisticsAs,
                       onClear: widget.onClearStatistics,
                     ),
-                  // The all-time row holds exactly one action, and it is the
-                  // destructive one. It exists nowhere else — not in the menu
-                  // bar, not in the current scope — so it cannot be reached
-                  // without the lifetime numbers being on screen.
-                  if (allTime)
-                    _AllTimeClearButton(onClear: widget.onClearAllTimeStatistics),
                   FilledButton.tonalIcon(
                     onPressed: widget.onClose,
                     icon: const Icon(Icons.close),
@@ -1265,17 +1273,42 @@ final class _StatsFileButtons extends StatelessWidget {
   }
 }
 
-/// The all-time scope's single action: clear the deck's lifetime record.
+/// The overflow control beside the all-time scope selector, holding that
+/// scope's single action: clear the deck's lifetime record.
 ///
-/// Deliberately unlike the everyday clear beside it in the other scope. That
-/// one is a tonal button with a neutral cross; this one carries a warning
-/// triangle and the theme's error colour, so the two can never be told apart
-/// only by their wording — the learner sees which of them is dangerous before
-/// reading either label.
-final class _AllTimeClearButton extends StatelessWidget {
-  const _AllTimeClearButton({required this.onClear});
+/// Nothing destructive is visible on the screen; the command has to be opened
+/// for. The trigger is a neutral icon precisely because the command behind it
+/// is not — a filled, error-coloured button reads as *the* action of the
+/// screen and invites the press it was meant to warn about. What actually
+/// deters is the shell's confirmation: it names the deck, spells out that the
+/// history goes, and holds the focus on Cancel.
+///
+/// Deliberately without an ALT mnemonic. The menu-bar accelerators are scoped
+/// by hand in `main.dart` and gated on the *menu bar's* open count only (see
+/// `docs/menu-alt-mnemonics.md`); a `MenuAcceleratorLabel` here would register
+/// its letter into the app-wide registry from a menu that gating cannot see,
+/// and collide with the top bar. Keyboard operation comes from ordinary
+/// traversal instead: Tab reaches the trigger, Enter or Space opens it, the
+/// single item takes the focus, Enter runs it and Escape closes.
+final class _AllTimeOverflowMenu extends StatefulWidget {
+  const _AllTimeOverflowMenu({required this.onClear});
 
   final Future<void> Function() onClear;
+
+  @override
+  State<_AllTimeOverflowMenu> createState() => _AllTimeOverflowMenuState();
+}
+
+final class _AllTimeOverflowMenuState extends State<_AllTimeOverflowMenu> {
+  /// The trigger's own node, handed to [MenuAnchor.childFocusNode] so closing
+  /// the menu puts the focus back where the learner opened it.
+  final FocusNode _triggerFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _triggerFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1283,16 +1316,33 @@ final class _AllTimeClearButton extends StatelessWidget {
       context,
     );
     final ColorScheme colors = Theme.of(context).colorScheme;
-    return FilledButton.icon(
-      onPressed: onClear,
-      style: FilledButton.styleFrom(
-        backgroundColor: colors.error,
-        foregroundColor: colors.onError,
-      ),
-      icon: const Icon(Icons.warning_amber_rounded),
-      label: Text(
-        messages.message(LearnAnywhereMessage.statisticsClearAllTime),
-      ),
+    return MenuAnchor(
+      childFocusNode: _triggerFocusNode,
+      menuChildren: <Widget>[
+        MenuItemButton(
+          // The menu opens for this one command, so it takes the focus: a
+          // learner who opened it from the keyboard is already on it.
+          autofocus: true,
+          leadingIcon: Icon(Icons.warning_amber_rounded, color: colors.error),
+          style: MenuItemButton.styleFrom(foregroundColor: colors.error),
+          onPressed: widget.onClear,
+          child: Text(
+            messages.message(LearnAnywhereMessage.statisticsClearAllTime),
+          ),
+        ),
+      ],
+      builder:
+          (BuildContext context, MenuController controller, Widget? child) {
+            return IconButton(
+              focusNode: _triggerFocusNode,
+              tooltip: messages.message(
+                LearnAnywhereMessage.statisticsAllTimeMenu,
+              ),
+              onPressed: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
+              icon: const Icon(Icons.more_vert),
+            );
+          },
     );
   }
 }

@@ -7,11 +7,14 @@ hat drei Reiter: **Übersicht**, **Einheitenliste** und **Stufenlernen**.
 Über den Reitern liegen zwei Zeilen. In der ersten steht der Schalter **Richtung** —
 **Kombiniert**, **Abfragerichtung 1** oder **Abfragerichtung 2** — sowie die Umschaltung
 **Aktuell** / **Allzeit**, beschrieben unter
-[Die zwei Statistiken](#die-zwei-statistiken). In der zweiten stehen die Dateibefehle,
-die dem gewählten Bereich folgen: unter **Aktuell** sind das **Statistik laden... /
-Statistik speichern / Statistik speichern unter... / Aktuelle Statistik löschen...**,
-dieselben Befehle wie im [Menü Datei](03-managing-files.md#statistik); unter **Allzeit**
-gibt es als einzige Aktion **Allzeit-Statistik löschen...**. Was mit diesen Zählern
+[Die zwei Statistiken](#die-zwei-statistiken); im Bereich **Allzeit** kommt eine
+Überlauf-Schaltfläche mit drei Punkten dazu, **Allzeit-Aktionen**. In der zweiten stehen
+die Dateibefehle, die dem gewählten Bereich folgen: unter **Aktuell** sind das
+**Statistik laden... / Statistik speichern / Statistik speichern unter... / Aktuelle
+Statistik löschen...**, dieselben Befehle wie im
+[Menü Datei](03-managing-files.md#statistik); unter **Allzeit** steht dort nichts als
+**Abbruch**, denn keiner dieser Befehle wirkt auf die Statistik, die Sie gerade
+ansehen. Was mit diesen Zählern
 geschieht, wenn sich die Lern-Datei selbst ändert, steht unter
 [Wenn die Lern-Datei anderswo bearbeitet wurde](03-managing-files.md#wenn-die-lern-datei-anderswo-bearbeitet-wurde).
 
@@ -60,11 +63,19 @@ heraus, und keines der beiden Löschen berührt das andere.
   unberührt — der Dialog sagt es. Das ist der alltägliche Neuanfang: die Lern-Datei von
   vorn beginnen, ohne ihre Vorgeschichte zu verlieren.
 - **Allzeit-Statistik löschen...** im Bereich **Allzeit** löscht den gesamten bisherigen
-  Lernverlauf dieser Lern-Datei. Der Befehl ist mit Absicht schwerer zu erreichen und
-  schwerer versehentlich auszulösen: in der Menüleiste kommt er nirgends vor, seine
-  Schaltfläche trägt ein Warnzeichen und die Warnfarbe, und sein Dialog fragt, ob Sie
-  das **wirklich** wollen. Der Fokus liegt auf Abbrechen, `Enter` schließt den Dialog
-  also, statt zu bestätigen.
+  Lernverlauf dieser Lern-Datei. Der Befehl liegt mit Absicht außer Sichtweite, denn er
+  ist der einzige im Programm, der etwas zerstört, was sich nicht durch Üben
+  wiederherstellen lässt. In der Menüleiste kommt er nirgends vor, und auf dem Bildschirm
+  steht er auch nicht: Öffnen Sie die Schaltfläche **Allzeit-Aktionen** mit den drei
+  Punkten neben der Bereichsumschaltung, dann ist er der einzige Eintrag darin, mit
+  Warnzeichen und in der Warnfarbe. Über die Tastatur erreicht `Tab` diese Schaltfläche,
+  `Enter` oder `Leertaste` öffnet sie — der Befehl erhält sofort den Fokus —, und `Esc`
+  schließt sie ungenutzt wieder.
+- Der Befehl fragt zuerst nach. Der Dialog **nennt die Lern-Datei**, deren Verlauf gleich
+  verschwindet, damit Sie sicher sein können, welche Aufzeichnung Sie zerstören, und
+  fragt, ob Sie das **wirklich** wollen. Der Fokus liegt auf **Abbruch**, `Enter`
+  schließt den Dialog also, statt zu bestätigen; nur ein Klick auf **Löschen** führt ihn
+  aus.
 
 **Das Löschen der Allzeit-Statistik lässt sich nicht rückgängig machen.** Es gibt keine
 Kopie, aus der sie zurückzuholen wäre: die Zahlen stehen in

@@ -3111,22 +3111,36 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
 
   /// Asks whether the all-time record may really be erased.
   ///
-  /// Three things separate this from [_confirm]: a warning symbol, the word
-  /// *really* in the destructive colour inside the sentence, and Cancel
-  /// holding the focus. The last is the one that matters most — a learner who
-  /// answers prompts with Enter dismisses this one instead of destroying a
-  /// year of history.
+  /// Four things separate this from [_confirm]: a warning symbol, the word
+  /// *really* in the destructive colour inside the sentence, the name of the
+  /// deck whose history is about to go, and Cancel holding the focus. The last
+  /// is the one that matters most — a learner who answers prompts with Enter
+  /// dismisses this one instead of destroying a year of history. Since the
+  /// command moved behind the statistics screen's overflow menu, this dialog
+  /// is the *only* thing standing in front of the erase, so it says which
+  /// record it is about to erase rather than merely that it is erasing one.
   Future<bool> _confirmClearAllTime() async {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
+    // The deck's file name, or the "Unsaved" stand-in used wherever else the
+    // program has to name a deck that has never been written.
+    final String? deckPath = _document.deckPath;
+    final String deckName = deckPath == null
+        ? messages.message(LearnAnywhereMessage.fileStatusUnsaved)
+        : _filePicker.fileNameOf(deckPath);
     final bool? result = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         final ColorScheme colors = Theme.of(context).colorScheme;
+        // Split on {really} first, then fill {deck} into the pieces: a deck
+        // whose file name happened to contain the placeholder must not get
+        // half of itself emphasised.
         final List<String> parts = messages
             .message(LearnAnywhereMessage.confirmClearAllTimeStatistics)
-            .split('{really}');
+            .split('{really}')
+            .map((String part) => part.replaceAll('{deck}', deckName))
+            .toList(growable: false);
         return AlertDialog(
           icon: Icon(Icons.warning_amber_rounded, color: colors.error),
           title: Text(messages.message(LearnAnywhereMessage.confirmTitle)),

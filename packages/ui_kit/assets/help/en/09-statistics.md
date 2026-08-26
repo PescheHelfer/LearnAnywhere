@@ -6,11 +6,13 @@ not a submenu) reads the same counters your sessions write to. It has three tabs
 
 Two rows sit above the tabs. The first holds the **Direction** switch — **Combined**,
 **Direction 1** or **Direction 2** — and the **Current** / **All-time** scope control
-described in [The two records](#the-two-records). The second holds the file commands,
-which follow the scope: in **Current** they are **Load stats... / Save stats /
+described in [The two records](#the-two-records); in the **All-time** scope a
+three-dot overflow button, **All-time actions**, joins them. The second holds the file
+commands, which follow the scope: in **Current** they are **Load stats... / Save stats /
 Save stats as... / Clear current stats...**, the same commands found on the
-[File menu](03-managing-files.md#statistics); in **All-time** the only action is
-**Clear all-time stats...**. What happens to these counters when the deck itself
+[File menu](03-managing-files.md#statistics); in **All-time** it holds nothing but
+**Cancel**, because none of those commands acts on the record you are looking at. What
+happens to these counters when the deck itself
 changes is covered under
 [When the deck was edited elsewhere](03-managing-files.md#when-the-deck-was-edited-elsewhere).
 
@@ -55,10 +57,17 @@ other.
   dialog says so. This is the everyday reset: start the deck over without losing its
   history.
 - **Clear all-time stats...**, in the **All-time** scope, erases the deck's complete
-  learning history. It is deliberately harder to reach and harder to trigger by
-  accident: it exists nowhere in the menu bar, its button carries a warning symbol and
-  the warning colour, and its dialog asks whether you **really** want to do this. Cancel
-  holds the focus, so pressing `Enter` dismisses the dialog rather than confirming it.
+  learning history. It is deliberately kept out of sight, because it is the one command
+  in the program that destroys something you cannot rebuild by practising. It exists
+  nowhere in the menu bar, and it is not on the screen either: open the three-dot
+  **All-time actions** button beside the scope control and it is the single entry
+  inside, marked with a warning symbol in the warning colour. From the keyboard, `Tab`
+  reaches that button, `Enter` or `Space` opens it — the command takes the focus at once
+  — and `Esc` closes it again unused.
+- Choosing it asks first. The dialog **names the deck** whose history is about to go, so
+  you can be certain which record you are destroying, and asks whether you **really**
+  want this. Cancel holds the focus, so pressing `Enter` dismisses the dialog rather
+  than confirming it; only clicking **Clear** goes through with it.
 
 **Clearing the all-time record cannot be undone.** There is no copy to restore it from:
 the numbers live in `<deck name>_alltime.sta` beside the deck, and confirming zeroes

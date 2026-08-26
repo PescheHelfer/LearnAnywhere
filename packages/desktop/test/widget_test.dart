@@ -333,12 +333,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Total Attempts: 1'), findsOneWidget);
 
+    // Nothing destructive is on the screen: the clear has to be opened for.
+    expect(find.text('Clear all-time stats...'), findsNothing);
+
     // Enter is the key that confirms every other prompt in the program. Here
     // it must dismiss, because Cancel holds the focus.
-    await tester.tap(find.text('Clear all-time stats...'));
-    await tester.pumpAndSettle();
+    await openAllTimeClear(tester);
     expect(find.textContaining('cannot be undone', findRichText: true),
         findsOneWidget);
+    // And it names the record at stake. This deck was built in the editor and
+    // never written, so it is named by the same "Unsaved" stand-in the file
+    // status uses — the placeholder is filled either way.
+    expect(
+      find.textContaining("'Unsaved'", findRichText: true),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('{deck}', findRichText: true),
+      findsNothing,
+    );
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
     expect(find.textContaining('cannot be undone', findRichText: true),
@@ -346,8 +359,7 @@ void main() {
     expect(find.text('Total Attempts: 1'), findsOneWidget);
 
     // Confirming deliberately: the lifetime numbers go back to zero.
-    await tester.tap(find.text('Clear all-time stats...'));
-    await tester.pumpAndSettle();
+    await openAllTimeClear(tester);
     await tester.tap(find.widgetWithText(TextButton, 'Clear'));
     await tester.pumpAndSettle();
     expect(find.text('All-time statistics cleared.'), findsWidgets);
@@ -440,6 +452,19 @@ void main() {
     expect(find.text('Arbeitsbereich'), findsOneWidget);
     expect(find.text('Keine Datei geladen'), findsOneWidget);
   });
+}
+
+/// Opens the all-time overflow menu and picks the clear command, leaving the
+/// confirmation dialog on screen.
+///
+/// The command sits behind that menu on purpose — nothing destructive is
+/// visible on the statistics screen — so every route to the dialog goes
+/// through two taps. Expects the statistics screen in the all-time scope.
+Future<void> openAllTimeClear(WidgetTester tester) async {
+  await tester.tap(find.byTooltip('All-time actions'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Clear all-time stats...'));
+  await tester.pumpAndSettle();
 }
 
 /// Builds a one-unit deck, runs a session over it and answers its single
