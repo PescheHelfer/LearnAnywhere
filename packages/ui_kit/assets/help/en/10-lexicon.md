@@ -9,6 +9,11 @@ Searches the units currently loaded, filtered by **Search text** and, optionally
 single **Category** (or **Any category**). Matches show which fields the text was
 found in.
 
+Leaving **Search text** empty (or typing nothing but spaces) means "everything": every
+unit is listed. Combined with a **Category**, that is how you review one category of a
+deck — pick the category, leave the box empty, search. Such results name no matched
+fields, because no text was searched for.
+
 ## Search files
 
 Searches every `.vok` file under a folder you choose, recursively — not just the deck
@@ -27,6 +32,12 @@ what you find:
 
 Once results are loaded, use **Load results** to bring them into memory the same way
 loading a deck would.
+
+Both search modes stop at 2000 hits, so that a broad search over a large folder cannot
+leave the program building a table for minutes. When that happens the line above the
+table reads **Results: showing the first 2000 — there are more. Narrow the search.**
+instead of the usual count — a capped search is never reported as if nothing was found.
+Narrow it with a **Category**, or with search text.
 
 Both search modes respect the **Case sensitive** and **Accent sensitive** options from
 [Advanced Learning Options](11-settings.md#learning-options) — the same settings that

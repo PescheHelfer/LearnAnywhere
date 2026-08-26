@@ -135,7 +135,15 @@ final class UnitEditorPage extends StatefulWidget {
     );
     if (query == null || query.isEmpty) return null;
 
-    final List<SearchResult> results = searchDeck(deck: deck, query: query);
+    // Every hit, deliberately: the result list below is lazily built, so there
+    // is nothing here for the engine's default cap to protect, and a jump-to-
+    // unit dialog that quietly omitted matches would be worse than a long list.
+    // A deck cannot yield more hits than it has units.
+    final List<SearchResult> results = searchDeck(
+      deck: deck,
+      query: query,
+      maxResults: deck.units.length,
+    ).results;
     if (results.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

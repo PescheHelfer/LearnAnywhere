@@ -710,23 +710,122 @@ void main() {
     test('searches named fields with case and accent options', () {
       final LearningDeck deck = sampleDeck();
 
-      expect(searchDeck(deck: deck, query: 'LAPIN'), hasLength(1));
-      expect(searchDeck(deck: deck, query: 'tres'), hasLength(1));
+      expect(searchDeck(deck: deck, query: 'LAPIN').results, hasLength(1));
+      expect(searchDeck(deck: deck, query: 'tres').results, hasLength(1));
       expect(
         searchDeck(
           deck: deck,
           query: 'tres',
           options: const TextMatchOptions(accentSensitive: true),
-        ),
+        ).results,
         isEmpty,
       );
       expect(
         searchDeckFiles(
           decksBySource: <String, LearningDeck>{'sample.vok': deck},
           query: 'lapin',
-        ).single.sourceFile,
+        ).results.single.sourceFile,
         'sample.vok',
       );
+    });
+
+    test('an empty or whitespace-only query lists every unit', () {
+      final LearningDeck deck = sampleDeck();
+
+      final SearchOutcome empty = searchDeck(deck: deck, query: '');
+      expect(empty.results, hasLength(deck.units.length));
+      expect(empty.isTruncated, isFalse);
+      expect(
+        empty.results.map((SearchResult result) => result.unitIndex),
+        <int>[1, 2],
+      );
+      // There is no text to have matched a field, so none is named.
+      expect(empty.results.first.matchedFieldNames, isEmpty);
+
+      expect(
+        searchDeck(deck: deck, query: '   ').results,
+        hasLength(deck.units.length),
+      );
+      // Normalization strips the query, so a match-all is match-all under any
+      // case or accent setting.
+      expect(
+        searchDeck(
+          deck: deck,
+          query: '\t ',
+          options: const TextMatchOptions(
+            caseSensitive: true,
+            accentSensitive: true,
+          ),
+        ).results,
+        hasLength(deck.units.length),
+      );
+    });
+
+    test('an empty query still honours the category filter', () {
+      final LearningDeck deck = twoCategoryDeck();
+
+      expect(searchDeck(deck: deck, query: '').results, hasLength(3));
+      expect(
+        searchDeck(
+          deck: deck,
+          query: '',
+          categoryId: 2,
+        ).results.map((SearchResult result) => result.unitIndex),
+        <int>[2],
+      );
+      expect(
+        searchDeck(deck: deck, query: '', categoryId: 3).results,
+        isEmpty,
+      );
+    });
+
+    test('the in-memory search stops at the result cap', () {
+      expect(maxSearchResults, 2000);
+      final LearningDeck deck = twoCategoryDeck();
+
+      final SearchOutcome capped = searchDeck(
+        deck: deck,
+        query: '',
+        maxResults: 2,
+      );
+      expect(capped.results, hasLength(2));
+      expect(capped.isTruncated, isTrue);
+
+      // An exact fit is not a truncation: no further hit existed.
+      final SearchOutcome exact = searchDeck(
+        deck: deck,
+        query: '',
+        maxResults: 3,
+      );
+      expect(exact.results, hasLength(3));
+      expect(exact.isTruncated, isFalse);
+    });
+
+    test('the file search caps across files, not per file', () {
+      final Map<String, LearningDeck> decks = <String, LearningDeck>{
+        'a.vok': twoCategoryDeck(),
+        'b.vok': twoCategoryDeck(),
+      };
+
+      final SearchOutcome capped = searchDeckFiles(
+        decksBySource: decks,
+        query: '',
+        maxResults: 4,
+      );
+      expect(capped.results, hasLength(4));
+      expect(capped.isTruncated, isTrue);
+      expect(
+        capped.results.map((SearchResult result) => result.sourceFile),
+        <String>['a.vok', 'a.vok', 'a.vok', 'b.vok'],
+      );
+
+      final SearchOutcome exact = searchDeckFiles(
+        decksBySource: decks,
+        query: '',
+        maxResults: 6,
+      );
+      expect(exact.results, hasLength(6));
+      expect(exact.isTruncated, isFalse);
     });
   });
 
@@ -2826,6 +2925,91 @@ LearningDeck sampleDeck() {
           ]), // FR1
           2: const FieldValue.plain(''), // FR2
           3: const FieldValue.plain('adjective'), // Note
+        },
+      ),
+    ],
+  );
+}
+
+/// Three units across two categories, for search filtering and cap tests.
+///
+/// Category 2's single unit sits in the middle, so a per-category hit's
+/// `unitIndex` cannot accidentally agree with its position within its category.
+LearningDeck twoCategoryDeck() {
+  const CategoryDefinition word = CategoryDefinition(
+    id: 1,
+    name: 'Word',
+    fields: <FieldDefinition>[
+      FieldDefinition(
+        id: 0,
+        name: 'DE',
+        length: 40,
+        equalGroup: 0,
+        role1: FieldRole.question,
+        role2: FieldRole.answer,
+      ),
+      FieldDefinition(
+        id: 1,
+        name: 'FR',
+        length: 40,
+        equalGroup: 0,
+        role1: FieldRole.answer,
+        role2: FieldRole.question,
+      ),
+    ],
+  );
+  return const LearningDeck(
+    mask: LearningMask(
+      maskId: 'm_new_two-category-fixture',
+      name: 'Two categories',
+      direction1Label: 'DE-FR',
+      direction2Label: 'FR-DE',
+      categories: <CategoryDefinition>[
+        word,
+        CategoryDefinition(
+          id: 2,
+          name: 'Remark',
+          fields: <FieldDefinition>[
+            FieldDefinition(
+              id: 0,
+              name: 'DE',
+              length: 40,
+              equalGroup: 0,
+              role1: FieldRole.question,
+              role2: FieldRole.answer,
+            ),
+            FieldDefinition(
+              id: 1,
+              name: 'FR',
+              length: 40,
+              equalGroup: 0,
+              role1: FieldRole.answer,
+              role2: FieldRole.question,
+            ),
+          ],
+        ),
+      ],
+    ),
+    units: <LearningUnit>[
+      LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('Hund'),
+          1: FieldValue.plain('chien'),
+        },
+      ),
+      LearningUnit(
+        categoryId: 2,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('Anmerkung'),
+          1: FieldValue.plain('remarque'),
+        },
+      ),
+      LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('Katze'),
+          1: FieldValue.plain('chat'),
         },
       ),
     ],

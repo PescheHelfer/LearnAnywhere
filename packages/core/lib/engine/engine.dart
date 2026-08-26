@@ -157,6 +157,27 @@ final class StatisticsSummary {
       totalAttempts == 0 ? null : totalCorrect / totalAttempts;
 }
 
+/// Largest number of hits either search entry point returns by default.
+///
+/// A search walks every unit of every deck it is handed, and its caller renders
+/// a row per hit. An unbounded result set is therefore what turns a broad query
+/// — an empty one above all — over a large folder tree into an apparent freeze.
+const int maxSearchResults = 2000;
+
+/// A capped set of search hits, plus whether the cap cut the set short.
+final class SearchOutcome {
+  /// Creates a search outcome.
+  const SearchOutcome({required this.results, required this.isTruncated});
+
+  /// The hits, in deck order, never more than the search's `maxResults`.
+  final List<SearchResult> results;
+
+  /// Whether at least one further hit existed beyond the cap.
+  ///
+  /// False for a set that exactly fills the cap: nothing was left out.
+  final bool isTruncated;
+}
+
 /// A memory or file-oriented search result.
 final class SearchResult {
   /// Creates a search result.
@@ -1352,71 +1373,105 @@ List<LevelUnitStats> levelStatsAfterDelete(
 }
 
 /// Searches the in-memory deck.
-List<SearchResult> searchDeck({
+///
+/// A [query] that normalizes to nothing — empty, or only whitespace — matches
+/// every unit, so [categoryId] on its own lists one category. Such a hit names
+/// no matched fields: there was no text to match one with. A query with text
+/// matches the plain text of the named (non-hidden) fields of the unit's own
+/// category, under [options].
+///
+/// Stops after [maxResults] hits and reports that in [SearchOutcome.isTruncated].
+SearchOutcome searchDeck({
   required LearningDeck deck,
   required String query,
   TextMatchOptions options = const TextMatchOptions(),
   int? categoryId,
   String? sourceFile,
+  int maxResults = maxSearchResults,
 }) {
   final String normalizedQuery = normalizeText(query, options);
-  if (normalizedQuery.isEmpty) {
-    return const <SearchResult>[];
-  }
+  final bool matchesEveryUnit = normalizedQuery.isEmpty;
   final List<SearchResult> results = <SearchResult>[];
+  var isTruncated = false;
   for (var unitOffset = 0; unitOffset < deck.units.length; unitOffset += 1) {
     final LearningUnit unit = deck.units[unitOffset];
     if (categoryId != null && unit.categoryId != categoryId) {
       continue;
     }
-    final CategoryDefinition category = deck.categoryForUnit(unit);
-    final List<String> matchedFields = <String>[];
-    for (final FieldDefinition field in category.fields) {
-      if (field.isHidden) {
+    var matchedFields = const <String>[];
+    if (!matchesEveryUnit) {
+      final CategoryDefinition category = deck.categoryForUnit(unit);
+      final List<String> matches = <String>[];
+      for (final FieldDefinition field in category.fields) {
+        if (field.isHidden) {
+          continue;
+        }
+        final String text = normalizeText(
+          unit.valueForFieldId(field.id).plainText,
+          options,
+        );
+        if (text.contains(normalizedQuery)) {
+          matches.add(field.name);
+        }
+      }
+      if (matches.isEmpty) {
         continue;
       }
-      final String text = normalizeText(
-        unit.valueForFieldId(field.id).plainText,
-        options,
-      );
-      if (text.contains(normalizedQuery)) {
-        matchedFields.add(field.name);
-      }
+      matchedFields = List<String>.unmodifiable(matches);
     }
-    if (matchedFields.isNotEmpty) {
-      results.add(
-        SearchResult(
-          unitIndex: unitOffset + 1,
-          categoryId: unit.categoryId,
-          matchedFieldNames: List<String>.unmodifiable(matchedFields),
-          sourceFile: sourceFile,
-        ),
-      );
+    // The cap is tested only once a hit is in hand, so a set that exactly
+    // fills it is reported as complete rather than as truncated.
+    if (results.length >= maxResults) {
+      isTruncated = true;
+      break;
     }
+    results.add(
+      SearchResult(
+        unitIndex: unitOffset + 1,
+        categoryId: unit.categoryId,
+        matchedFieldNames: matchedFields,
+        sourceFile: sourceFile,
+      ),
+    );
   }
-  return List<SearchResult>.unmodifiable(results);
+  return SearchOutcome(
+    results: List<SearchResult>.unmodifiable(results),
+    isTruncated: isTruncated,
+  );
 }
 
 /// Searches already-loaded file decks with source labels.
-List<SearchResult> searchDeckFiles({
+///
+/// [maxResults] caps the whole set, not each file: the walk stops at the first
+/// hit past the cap, wherever in the map it falls.
+SearchOutcome searchDeckFiles({
   required Map<String, LearningDeck> decksBySource,
   required String query,
   TextMatchOptions options = const TextMatchOptions(),
   int? categoryId,
+  int maxResults = maxSearchResults,
 }) {
   final List<SearchResult> results = <SearchResult>[];
+  var isTruncated = false;
   for (final MapEntry<String, LearningDeck> entry in decksBySource.entries) {
-    results.addAll(
-      searchDeck(
-        deck: entry.value,
-        query: query,
-        options: options,
-        categoryId: categoryId,
-        sourceFile: entry.key,
-      ),
+    final SearchOutcome outcome = searchDeck(
+      deck: entry.value,
+      query: query,
+      options: options,
+      categoryId: categoryId,
+      sourceFile: entry.key,
+      maxResults: maxResults - results.length,
     );
+    results.addAll(outcome.results);
+    if (outcome.isTruncated) {
+      isTruncated = true;
+      break;
+    }
   }
-  return List<SearchResult>.unmodifiable(results);
+  return SearchOutcome(
+    results: List<SearchResult>.unmodifiable(results),
+    isTruncated: isTruncated,
+  );
 }
 
 Map<FieldDefinition, FieldValue> _fieldsForRole(

@@ -923,6 +923,9 @@ enum LearnAnywhereMessage {
   /// Lexicon no results message.
   lexiconNoResults,
 
+  /// Lexicon result count line for a capped result set. Placeholder: {count}.
+  lexiconResultsTruncated,
+
   /// Lexicon source file label.
   lexiconSourceFile,
 
@@ -1670,6 +1673,9 @@ final class LearnAnywhereCatalog {
           'Load found units? Current in-memory units will be discarded.',
       LearnAnywhereMessage.lexiconResults: 'Results',
       LearnAnywhereMessage.lexiconNoResults: 'No matches found.',
+      LearnAnywhereMessage.lexiconResultsTruncated:
+          'Results: showing the first {count} — there are more. '
+          'Narrow the search.',
       LearnAnywhereMessage.lexiconSourceFile: 'Source file',
       LearnAnywhereMessage.lexiconMatchedFields: 'Matched fields',
       LearnAnywhereMessage.lexiconLoadResults: 'Load results',
@@ -2244,6 +2250,9 @@ final class LearnAnywhereCatalog {
           'Gefundene Einheiten laden? Aktuelle Lerneinheiten im Speicher werden verworfen.',
       LearnAnywhereMessage.lexiconResults: 'Ergebnisse',
       LearnAnywhereMessage.lexiconNoResults: 'Keine Treffer gefunden.',
+      LearnAnywhereMessage.lexiconResultsTruncated:
+          'Ergebnisse: die ersten {count} werden angezeigt — es gibt weitere. '
+          'Bitte Suche eingrenzen.',
       LearnAnywhereMessage.lexiconSourceFile: 'Quelldatei',
       LearnAnywhereMessage.lexiconMatchedFields: 'Trefferfelder',
       LearnAnywhereMessage.lexiconLoadResults: 'Treffer laden',

@@ -60,6 +60,64 @@ void main() {
     expect(loadedDeck, isNotNull);
     expect(loadedDeck!.units, hasLength(1));
   });
+
+  testWidgets('an empty search box lists every unit of the deck', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(lexiconApp(deck: sampleDeck()));
+    await tester.pumpAndSettle();
+
+    // No text entered at all: the whole deck, not the no-matches message.
+    await tester.tap(find.text('Search memory'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Results: 2'), findsOneWidget);
+    expect(find.text('No matches found.'), findsNothing);
+    expect(find.text('hello'), findsOneWidget);
+    expect(find.text('bye'), findsOneWidget);
+
+    // Whitespace is not a search either.
+    await tester.enterText(find.byType(TextField).first, '   ');
+    await tester.tap(find.text('Search memory'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Results: 2'), findsOneWidget);
+  });
+
+  testWidgets('a capped result set says so instead of counting', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(lexiconApp(deck: sampleDeck(), maxResults: 1));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Search memory'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Results: showing the first 1 — there are more. '
+          'Narrow the search.'),
+      findsOneWidget,
+    );
+    expect(find.text('Results: 1'), findsNothing);
+    expect(find.text('No matches found.'), findsNothing);
+  });
+}
+
+Widget lexiconApp({required LearningDeck deck, int? maxResults}) {
+  return MaterialApp(
+    localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
+    supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+    home: Scaffold(
+      body: LexiconPage(
+        deck: deck,
+        textOptions: const TextMatchOptions(),
+        onPickFolderDecks: () async => <String, LearningDeck>{'a.vok': deck},
+        onLoadFoundDeck: (LearningDeck deck) {},
+        onClose: () {},
+        maxResults: maxResults ?? maxSearchResults,
+      ),
+    ),
+  );
 }
 
 LearningDeck sampleDeck() {

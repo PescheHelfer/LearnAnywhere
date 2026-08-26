@@ -9,6 +9,12 @@ Durchsucht die aktuell geladenen Lerneinheiten, gefiltert nach **Suchtext** und
 optional einer einzelnen **Kategorie** (oder **Alle Kategorien**). Treffer zeigen, in
 welchen Feldern der Text gefunden wurde.
 
+Ein leerer **Suchtext** (oder einer, der nur aus Leerzeichen besteht) bedeutet „alles“:
+Es werden sämtliche Lerneinheiten aufgelistet. Zusammen mit einer **Kategorie** ist das
+der Weg, eine einzelne Kategorie einer Lern-Datei durchzusehen — Kategorie wählen, Feld
+leer lassen, suchen. Solche Treffer nennen keine Trefferfelder, denn es wurde nach
+keinem Text gesucht.
+
 ## Dateien durchsuchen
 
 Durchsucht jede `.vok`-Datei unterhalb eines gewählten Ordners, rekursiv — nicht nur die
@@ -30,6 +36,13 @@ Modi bestimmen, was mit dem Gefundenen geschieht:
 
 Sind Treffer geladen, bringt **Treffer laden** sie genauso in den Speicher, wie es das
 Laden einer Lern-Datei tun würde.
+
+Beide Suchmodi hören bei 2000 Treffern auf, damit eine sehr weite Suche über einen
+großen Ordner das Programm nicht minutenlang eine Tabelle aufbauen lässt. In diesem Fall
+steht über der Tabelle statt der gewohnten Anzahl **Ergebnisse: die ersten 2000 werden
+angezeigt — es gibt weitere. Bitte Suche eingrenzen.** — eine gekappte Suche wird also
+nie so gemeldet, als wäre nichts gefunden worden. Grenzen Sie sie mit einer
+**Kategorie** oder mit Suchtext ein.
 
 Beide Suchmodi beachten die Optionen **Groß-/Kleinschreibung beachten** und
 **Akzente beachten** aus den

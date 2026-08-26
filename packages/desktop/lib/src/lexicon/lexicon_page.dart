@@ -16,6 +16,7 @@ final class LexiconPage extends StatefulWidget {
     required this.onPickFolderDecks,
     required this.onLoadFoundDeck,
     required this.onClose,
+    this.maxResults = maxSearchResults,
     super.key,
   });
 
@@ -34,6 +35,13 @@ final class LexiconPage extends StatefulWidget {
   /// Called when the user closes this page.
   final VoidCallback onClose;
 
+  /// How many hits this screen is willing to show.
+  ///
+  /// The result table builds every row eagerly, so the cap is the screen's
+  /// policy rather than the engine's; the engine enforces whatever it is told.
+  /// Tests lower it to reach the truncated result line without 2000 units.
+  final int maxResults;
+
   @override
   State<LexiconPage> createState() => _LexiconPageState();
 }
@@ -43,6 +51,9 @@ final class _LexiconPageState extends State<LexiconPage> {
   int? _categoryId;
   bool _loadFoundUnits = false;
   List<SearchResult> _results = const <SearchResult>[];
+
+  /// Whether the last search had more hits than [LexiconPage.maxResults].
+  bool _isTruncated = false;
 
   /// Decks loaded during the last file search, keyed by source path. Empty for
   /// a memory search (results then resolve against the in-memory deck).
@@ -145,7 +156,7 @@ final class _LexiconPageState extends State<LexiconPage> {
             ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
             Text(
-              '${messages.message(LearnAnywhereMessage.lexiconResults)}: ${_results.length}',
+              _resultCountLine(messages),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),
@@ -209,14 +220,30 @@ final class _LexiconPageState extends State<LexiconPage> {
     );
   }
 
+  /// The line above the result table: the hit count, or — when the cap cut the
+  /// set short — a wording that says hits were left out, which a plain count
+  /// could not distinguish from a complete set of exactly the cap's size.
+  String _resultCountLine(LearnAnywhereLocalizations messages) {
+    if (_isTruncated) {
+      return messages
+          .message(LearnAnywhereMessage.lexiconResultsTruncated)
+          .replaceAll('{count}', '${_results.length}');
+    }
+    return '${messages.message(LearnAnywhereMessage.lexiconResults)}: '
+        '${_results.length}';
+  }
+
   void _searchMemory() {
+    final SearchOutcome outcome = searchDeck(
+      deck: widget.deck,
+      query: _queryController.text,
+      options: widget.textOptions,
+      categoryId: _categoryId,
+      maxResults: widget.maxResults,
+    );
     setState(() {
-      _results = searchDeck(
-        deck: widget.deck,
-        query: _queryController.text,
-        options: widget.textOptions,
-        categoryId: _categoryId,
-      );
+      _results = outcome.results;
+      _isTruncated = outcome.isTruncated;
       _fileDecks = const <String, LearningDeck>{};
     });
   }
@@ -227,14 +254,17 @@ final class _LexiconPageState extends State<LexiconPage> {
       if (decks == null || !mounted) {
         return;
       }
+      final SearchOutcome outcome = searchDeckFiles(
+        decksBySource: decks,
+        query: _queryController.text,
+        options: widget.textOptions,
+        categoryId: _categoryId,
+        maxResults: widget.maxResults,
+      );
       setState(() {
         _fileDecks = decks;
-        _results = searchDeckFiles(
-          decksBySource: decks,
-          query: _queryController.text,
-          options: widget.textOptions,
-          categoryId: _categoryId,
-        );
+        _results = outcome.results;
+        _isTruncated = outcome.isTruncated;
       });
     } on Object catch (error) {
       if (!mounted) {
