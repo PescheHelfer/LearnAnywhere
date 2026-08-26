@@ -69,8 +69,19 @@ archivieren, ohne Ihr Material anzufassen.
 Wählen Sie **Datei ▸ Lerneinheiten laden...** und wählen Sie eine `.vok`-Datei aus. Der
 Arbeitsbereich füllt sich mit den Angaben zur Datei.
 
-Beim nächsten Programmstart zeigt der Arbeitsbereich die zuletzt geöffnete Lern-Datei
-als anklickbare Zeile — ein Klick öffnet sie erneut, ohne Umweg über den Dateidialog.
+Der Arbeitsbereich merkt sich die drei zuletzt geöffneten Lern-Dateien unter **Zuletzt
+verwendete Lern-Dateien**, die neueste zuoberst. Jeder Eintrag ist eine anklickbare
+Zeile; ein Klick öffnet die Datei, ohne Umweg über den Dateidialog. Die Liste steht
+beim nächsten Programmstart bereit — und auch dann, wenn bereits eine Lern-Datei
+geladen ist, denn genau dann ist der Wechsel zu einer anderen Sprache am nützlichsten.
+Die gerade geöffnete Datei wird ausgelassen; die Liste bietet also immer nur ein
+anderes Ziel an.
+
+Wenn Sie mit der Maus über einen Eintrag fahren, wird der vollständige Pfad angezeigt.
+Verschieben oder löschen Sie eine Lern-Datei, bleibt sie in der Liste stehen — grau
+dargestellt, statt stillschweigend zu verschwinden. So sehen Sie einen ganzen
+verschobenen Ordner, statt ihn unbemerkt zu verlieren. Ein solcher Eintrag öffnet
+nichts mehr; ein Klick darauf meldet **Datei nicht gefunden** samt dem gesuchten Pfad.
 
 Wenn Sie zu der Datei eine Statistik führen, schalten Sie **Optionen ▸ Statistiken ▸
 Statistiken automatisch laden** ein; dann wird die passende `.sta`-Datei beim Öffnen

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:learn_anywhere_core/core.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
@@ -1919,7 +1920,7 @@ void main() {
         requireTypedAnswers: false,
         masteryThreshold: 0.6,
         keepStatisticsVersions: 5,
-        lastDeckPath: '/decks/french1.vok',
+        recentDeckPaths: <String>['/decks/french1.vok'],
         lastMaskPath: '/masks/french.inf',
       );
 
@@ -2033,6 +2034,137 @@ void main() {
       expect(broken.entryLevelCap, defaults.entryLevelCap);
       expect(broken.levelNamesEn, kDefaultLevelNamesEn);
       expect(broken.levelNamesDe, kDefaultLevelNamesDe);
+    });
+  });
+
+  group('recent deck paths', () {
+    test('promotes the newest path and caps the list at three', () {
+      List<String> recent = const <String>[];
+      for (final String path in <String>[
+        '/decks/a.vok',
+        '/decks/b.vok',
+        '/decks/c.vok',
+        '/decks/d.vok',
+      ]) {
+        recent = withRecentDeckPath(recent, path, context: p.posix);
+      }
+      expect(recent, <String>['/decks/d.vok', '/decks/c.vok', '/decks/b.vok']);
+      expect(recent.length, maxRecentDeckPaths);
+    });
+
+    test('reopening a listed deck moves it to the front, once', () {
+      const List<String> recent = <String>[
+        '/decks/c.vok',
+        '/decks/b.vok',
+        '/decks/a.vok',
+      ];
+      expect(
+        withRecentDeckPath(recent, '/decks/a.vok', context: p.posix),
+        <String>['/decks/a.vok', '/decks/c.vok', '/decks/b.vok'],
+      );
+    });
+
+    test('Windows paths differing only in case occupy one slot', () {
+      const List<String> recent = <String>[r'C:\Decks\French.vok'];
+      expect(
+        withRecentDeckPath(recent, r'c:\decks\french.vok', context: p.windows),
+        <String>[r'c:\decks\french.vok'],
+      );
+      // POSIX keeps both: there the two names are different files.
+      expect(
+        withRecentDeckPath(
+          const <String>['/decks/French.vok'],
+          '/decks/french.vok',
+          context: p.posix,
+        ),
+        <String>['/decks/french.vok', '/decks/French.vok'],
+      );
+    });
+
+    test('the open deck is left out of the offered list', () {
+      const List<String> recent = <String>[
+        '/decks/c.vok',
+        '/decks/b.vok',
+        '/decks/a.vok',
+      ];
+      expect(
+        recentDecksExcluding(recent, '/decks/c.vok', context: p.posix),
+        <String>['/decks/b.vok', '/decks/a.vok'],
+      );
+      // Nothing open: the whole list is offered.
+      expect(recentDecksExcluding(recent, null, context: p.posix), recent);
+      // On Windows the open deck is matched case-insensitively.
+      expect(
+        recentDecksExcluding(
+          const <String>[r'C:\Decks\French.vok', r'C:\Decks\Latin.vok'],
+          r'c:\decks\FRENCH.vok',
+          context: p.windows,
+        ),
+        <String>[r'C:\Decks\Latin.vok'],
+      );
+    });
+
+    test('round-trips the recent list and keeps lastDeckPath as its head', () {
+      const LearnAnywhereSettings settings = LearnAnywhereSettings(
+        recentDeckPaths: <String>['/decks/c.vok', '/decks/b.vok'],
+      );
+      expect(settings.lastDeckPath, '/decks/c.vok');
+      expect(const LearnAnywhereSettings().lastDeckPath, isNull);
+
+      final LearnAnywhereSettings restored = decodeSettingsJson(
+        encodeSettingsJson(settings),
+      );
+      expect(restored, settings);
+      expect(restored.recentDeckPaths, <String>['/decks/c.vok', '/decks/b.vok']);
+    });
+
+    test('a settings file written before the list seeds it from lastDeckPath',
+        () {
+      final LearnAnywhereSettings legacy = decodeSettings(<String, Object?>{
+        'lastDeckPath': '/decks/a.vok',
+      });
+      expect(legacy.recentDeckPaths, <String>['/decks/a.vok']);
+      expect(legacy.lastDeckPath, '/decks/a.vok');
+    });
+
+    test('a stored list of the wrong shape falls back to an empty list', () {
+      expect(
+        decodeSettings(<String, Object?>{'recentDeckPaths': 'not-a-list'})
+            .recentDeckPaths,
+        isEmpty,
+      );
+      expect(
+        decodeSettings(<String, Object?>{
+          'recentDeckPaths': <Object?>['/decks/a.vok', 7],
+        }).recentDeckPaths,
+        isEmpty,
+      );
+      // A corrupt list does not stop the rest of the file decoding.
+      final LearnAnywhereSettings mixed = decodeSettings(<String, Object?>{
+        'recentDeckPaths': <Object?>[1, 2],
+        'minAttempts': 5,
+      });
+      expect(mixed.recentDeckPaths, isEmpty);
+      expect(mixed.minAttempts, 5);
+    });
+
+    test('a stored list is normalized on decode', () {
+      // Over-long and duplicated lists are trimmed, and a lastDeckPath the
+      // list does not lead with (an older build wrote it last) is promoted.
+      final LearnAnywhereSettings decoded = decodeSettings(<String, Object?>{
+        'recentDeckPaths': <Object?>[
+          '/decks/a.vok',
+          '/decks/a.vok',
+          '/decks/b.vok',
+          '/decks/c.vok',
+          '/decks/d.vok',
+        ],
+        'lastDeckPath': '/decks/c.vok',
+      });
+      expect(
+        decoded.recentDeckPaths,
+        <String>['/decks/c.vok', '/decks/a.vok', '/decks/b.vok'],
+      );
     });
   });
 

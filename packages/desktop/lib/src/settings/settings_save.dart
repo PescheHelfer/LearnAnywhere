@@ -8,6 +8,10 @@ import '../learn/desktop_query_options.dart';
 /// [learnParameters], [deckPath], and [maskPath] actually represent, so any
 /// other field — including one nobody has added UI for yet — is carried
 /// forward unchanged instead of reverting to its constructor default.
+///
+/// A non-null [deckPath] is promoted to the head of the recent-deck list; a
+/// null one (nothing loaded, or an unsaved deck) leaves the list alone, so
+/// starting a new deck does not forget where the learner has been.
 LearnAnywhereSettings nextSettingsForSave({
   required LearnAnywhereSettings previous,
   required DesktopQueryOptions queryOptions,
@@ -33,7 +37,9 @@ LearnAnywhereSettings nextSettingsForSave({
     shuffle: learnParameters.shuffle,
     requireTypedAnswers: learnParameters.withInput,
     masteryThreshold: learnParameters.masteryThreshold,
-    lastDeckPath: deckPath,
+    recentDeckPaths: deckPath == null
+        ? null
+        : withRecentDeckPath(previous.recentDeckPaths, deckPath),
     lastMaskPath: maskPath,
   );
 }

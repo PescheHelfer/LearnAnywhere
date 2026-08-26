@@ -106,8 +106,8 @@ enum LearnAnywhereMessage {
   /// Home screen: mask name label.
   homeMaskName,
 
-  /// Home screen: last loaded deck path label.
-  homeLastDeck,
+  /// Home screen: heading above the recently opened deck links.
+  homeRecentDecks,
 
   /// Home screen: last loaded mask path label.
   homeLastMask,
@@ -1331,7 +1331,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.desktopHomeTitle: 'Workspace',
       LearnAnywhereMessage.homeNoFileLoaded: 'No file loaded',
       LearnAnywhereMessage.homeMaskName: 'Mask',
-      LearnAnywhereMessage.homeLastDeck: 'Last deck',
+      LearnAnywhereMessage.homeRecentDecks: 'Recent decks',
       LearnAnywhereMessage.homeLastMask: 'Last mask',
       LearnAnywhereMessage.menuFile: '&File', // top-bar F
       LearnAnywhereMessage.fileNewDeck: '&Clear units from memory...', // C
@@ -1889,7 +1889,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.desktopHomeTitle: 'Arbeitsbereich',
       LearnAnywhereMessage.homeNoFileLoaded: 'Keine Datei geladen',
       LearnAnywhereMessage.homeMaskName: 'Maske',
-      LearnAnywhereMessage.homeLastDeck: 'Letzte Lerneinheiten',
+      LearnAnywhereMessage.homeRecentDecks: 'Zuletzt verwendete Lern-Dateien',
       LearnAnywhereMessage.homeLastMask: 'Letzte Masken-Datei',
       LearnAnywhereMessage.menuFile: '&Datei', // top-bar D
       LearnAnywhereMessage.fileNewDeck:

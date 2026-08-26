@@ -4,6 +4,8 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import '../engine/engine.dart';
 import '../models/models.dart';
 
@@ -18,6 +20,54 @@ const String settingsFileName = 'learn_anywhere.settings.json';
 
 /// Number of Level-Learning levels (support level 3 down to free recall 0).
 const int levelNameCount = 4;
+
+/// Number of recently opened decks remembered for the workspace's quick list.
+const int maxRecentDeckPaths = 3;
+
+/// Returns [current] with [path] promoted to the front, capped at
+/// [maxRecentDeckPaths] and holding each deck only once.
+///
+/// Paths are compared with [context] — the host's rules by default — so on
+/// Windows two spellings of one deck that differ only in capitalisation take a
+/// single slot, while on POSIX, where they name two different files, they take
+/// one each.
+List<String> withRecentDeckPath(
+  List<String> current,
+  String path, {
+  p.Context? context,
+}) {
+  final p.Context ctx = context ?? p.context;
+  final List<String> next = <String>[path];
+  for (final String entry in current) {
+    if (next.length >= maxRecentDeckPaths) {
+      break;
+    }
+    if (!ctx.equals(entry, path)) {
+      next.add(entry);
+    }
+  }
+  return List<String>.unmodifiable(next);
+}
+
+/// Returns the entries of [recent] that are not the deck open at [currentPath].
+///
+/// The quick list only ever offers somewhere else to go, so the deck already
+/// loaded is dropped from it. [context] compares paths as in
+/// [withRecentDeckPath]; a null [currentPath] (nothing loaded) offers the whole
+/// list.
+List<String> recentDecksExcluding(
+  List<String> recent,
+  String? currentPath, {
+  p.Context? context,
+}) {
+  if (currentPath == null) {
+    return recent;
+  }
+  final p.Context ctx = context ?? p.context;
+  return List<String>.unmodifiable(
+    recent.where((String entry) => !ctx.equals(entry, currentPath)),
+  );
+}
 
 /// Default English Level-Learning level names, ordered engine level 3 → 0.
 const List<String> kDefaultLevelNamesEn = <String>[
@@ -67,10 +117,10 @@ String levelNameFor(List<String> names, int level) {
 
 /// Persisted, framework-independent user settings.
 ///
-/// Holds the advanced practice options, the practice-setup choices, and the
-/// last loaded deck and mask paths. Start unit and end unit are intentionally
-/// not part of this model: they are per-file and reset when a deck is loaded
-/// (see [resetUnitRange] and [autoExpandEndUnit]).
+/// Holds the advanced practice options, the practice-setup choices, the
+/// recently opened decks, and the last loaded mask path. Start unit and end
+/// unit are intentionally not part of this model: they are per-file and reset
+/// when a deck is loaded (see [resetUnitRange] and [autoExpandEndUnit]).
 final class LearnAnywhereSettings {
   /// Creates user settings.
   const LearnAnywhereSettings({
@@ -95,7 +145,7 @@ final class LearnAnywhereSettings {
     this.levelNamesEn = kDefaultLevelNamesEn,
     this.levelNamesDe = kDefaultLevelNamesDe,
     this.keepStatisticsVersions = 3,
-    this.lastDeckPath,
+    this.recentDeckPaths = const <String>[],
     this.lastMaskPath,
   });
 
@@ -168,8 +218,19 @@ final class LearnAnywhereSettings {
   /// pruned first after each new one is written; `0` keeps every file.
   final int keepStatisticsVersions;
 
+  /// Recently opened `.vok` deck paths, newest first, at most
+  /// [maxRecentDeckPaths] and each deck only once.
+  ///
+  /// Maintained with [withRecentDeckPath]; the workspace offers it minus the
+  /// deck currently open (see [recentDecksExcluding]).
+  final List<String> recentDeckPaths;
+
   /// Last loaded `.vok` deck path, if any.
-  final String? lastDeckPath;
+  ///
+  /// Derived from [recentDeckPaths] rather than stored beside it, so the two
+  /// can never disagree about which deck was opened last.
+  String? get lastDeckPath =>
+      recentDeckPaths.isEmpty ? null : recentDeckPaths.first;
 
   /// Last loaded `.inf` mask path, if any.
   final String? lastMaskPath;
@@ -197,9 +258,8 @@ final class LearnAnywhereSettings {
     List<String>? levelNamesEn,
     List<String>? levelNamesDe,
     int? keepStatisticsVersions,
-    String? lastDeckPath,
+    List<String>? recentDeckPaths,
     String? lastMaskPath,
-    bool clearLastDeckPath = false,
     bool clearLastMaskPath = false,
   }) {
     return LearnAnywhereSettings(
@@ -229,7 +289,7 @@ final class LearnAnywhereSettings {
       levelNamesDe: levelNamesDe ?? this.levelNamesDe,
       keepStatisticsVersions:
           keepStatisticsVersions ?? this.keepStatisticsVersions,
-      lastDeckPath: clearLastDeckPath ? null : lastDeckPath ?? this.lastDeckPath,
+      recentDeckPaths: recentDeckPaths ?? this.recentDeckPaths,
       lastMaskPath: clearLastMaskPath ? null : lastMaskPath ?? this.lastMaskPath,
     );
   }
@@ -258,7 +318,7 @@ final class LearnAnywhereSettings {
         _stringListEquals(other.levelNamesEn, levelNamesEn) &&
         _stringListEquals(other.levelNamesDe, levelNamesDe) &&
         other.keepStatisticsVersions == keepStatisticsVersions &&
-        other.lastDeckPath == lastDeckPath &&
+        _stringListEquals(other.recentDeckPaths, recentDeckPaths) &&
         other.lastMaskPath == lastMaskPath;
   }
 
@@ -285,7 +345,7 @@ final class LearnAnywhereSettings {
     Object.hashAll(levelNamesEn),
     Object.hashAll(levelNamesDe),
     keepStatisticsVersions,
-    lastDeckPath,
+    Object.hashAll(recentDeckPaths),
     lastMaskPath,
   ]);
 }
@@ -331,6 +391,10 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
     'levelNamesEn': settings.levelNamesEn,
     'levelNamesDe': settings.levelNamesDe,
     'keepStatisticsVersions': settings.keepStatisticsVersions,
+    'recentDeckPaths': settings.recentDeckPaths,
+    // Written alongside the list, though it is derived from it: a build that
+    // predates the list — the Android companion until it catches up — reads
+    // only this key, and would otherwise forget the deck on its next save.
     if (settings.lastDeckPath != null) 'lastDeckPath': settings.lastDeckPath,
     if (settings.lastMaskPath != null) 'lastMaskPath': settings.lastMaskPath,
   };
@@ -399,7 +463,10 @@ LearnAnywhereSettings decodeSettings(Object? value) {
       json['keepStatisticsVersions'],
       defaults.keepStatisticsVersions,
     ),
-    lastDeckPath: _nullableString(json['lastDeckPath']),
+    recentDeckPaths: _recentDeckPaths(
+      json['recentDeckPaths'],
+      _nullableString(json['lastDeckPath']),
+    ),
     lastMaskPath: _nullableString(json['lastMaskPath']),
   );
 }
@@ -547,6 +614,34 @@ List<String> _levelNames(Object? value, List<String> fallback) {
     names.add(entry);
   }
   return List<String>.unmodifiable(names);
+}
+
+/// Decodes the recent-deck list, seeding it from [lastDeckPath] when needed.
+///
+/// Anything that is not a list of strings yields an empty list rather than
+/// failing the load, matching the rest of this decoder's tolerance. The stored
+/// entries are re-normalized (deduplicated, capped, and led by [lastDeckPath]),
+/// so a hand-edited file — or one last written by a build that only knows the
+/// single last-deck key — still produces a well-formed list.
+List<String> _recentDeckPaths(Object? value, String? lastDeckPath) {
+  final List<String> stored = <String>[];
+  if (value is List) {
+    for (final Object? entry in value) {
+      if (entry is! String) {
+        stored.clear();
+        break;
+      }
+      stored.add(entry);
+    }
+  }
+  List<String> recent = <String>[];
+  for (final String path in stored.reversed) {
+    recent = withRecentDeckPath(recent, path);
+  }
+  if (lastDeckPath != null) {
+    recent = withRecentDeckPath(recent, lastDeckPath);
+  }
+  return List<String>.unmodifiable(recent);
 }
 
 T _enumByName<T extends Enum>(List<T> values, Object? value, T fallback) {

@@ -43,4 +43,61 @@ void main() {
     expect(next.levelNamesEn, <String>['A', 'B', 'C', 'D']);
     expect(next.levelNamesDe, <String>['E', 'F', 'G', 'H']);
   });
+
+  test('opening a deck puts it at the head of the recent list', () {
+    const LearnAnywhereSettings previous = LearnAnywhereSettings(
+      recentDeckPaths: <String>['/decks/latin.vok'],
+    );
+
+    final LearnAnywhereSettings next = _save(
+      previous,
+      deckPath: '/decks/french.vok',
+    );
+
+    expect(next.recentDeckPaths, <String>[
+      '/decks/french.vok',
+      '/decks/latin.vok',
+    ]);
+    expect(next.lastDeckPath, '/decks/french.vok');
+  });
+
+  test('reopening a listed deck moves it up instead of duplicating it', () {
+    const LearnAnywhereSettings previous = LearnAnywhereSettings(
+      recentDeckPaths: <String>['/decks/latin.vok', '/decks/french.vok'],
+    );
+
+    final LearnAnywhereSettings next = _save(
+      previous,
+      deckPath: '/decks/french.vok',
+    );
+
+    expect(next.recentDeckPaths, <String>[
+      '/decks/french.vok',
+      '/decks/latin.vok',
+    ]);
+  });
+
+  test('a save with no deck loaded leaves the recent list alone', () {
+    const LearnAnywhereSettings previous = LearnAnywhereSettings(
+      recentDeckPaths: <String>['/decks/latin.vok'],
+    );
+
+    final LearnAnywhereSettings next = _save(previous, deckPath: null);
+
+    expect(next.recentDeckPaths, <String>['/decks/latin.vok']);
+  });
+}
+
+/// Runs one auto-save cycle over [previous] with nothing but the deck changed.
+LearnAnywhereSettings _save(
+  LearnAnywhereSettings previous, {
+  required String? deckPath,
+}) {
+  return nextSettingsForSave(
+    previous: previous,
+    queryOptions: const DesktopQueryOptions(),
+    learnParameters: const SessionParameters(),
+    deckPath: deckPath,
+    maskPath: previous.lastMaskPath,
+  );
 }

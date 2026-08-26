@@ -65,8 +65,17 @@ touching your material.
 Choose **File ▸ Load deck...** and pick a `.vok` file. The Workspace screen fills in
 with the deck's details.
 
-The next time you start the program, the Workspace screen shows the last deck you had
-open as a clickable line — one click reopens it without going through the file dialog.
+The Workspace screen keeps the three decks you opened most recently under **Recent
+decks**, newest first. Each one is a clickable line, and one click opens it without
+going through the file dialog. The list is there on the next start of the program, and
+also while a deck is loaded — that is when switching to another language is most
+useful. The deck you already have open is left out, so the list only ever offers
+somewhere else to go.
+
+Hovering over an entry shows the deck's full path. If you move or delete a deck it stays
+in the list, greyed out, rather than quietly disappearing — that way a whole folder you
+have moved is visible instead of silently gone. Such an entry no longer opens anything:
+clicking it reports **File not found** with the path it looked in.
 
 If you keep statistics for the deck, turn on **Options ▸ Statistics ▸ Auto-load
 statistics** and the matching `.sta` file is picked up automatically whenever you open

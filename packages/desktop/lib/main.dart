@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
-import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -16,6 +15,7 @@ import 'src/editor/unit_editor_page.dart';
 import 'src/file_operations/desktop_document.dart';
 import 'src/file_operations/desktop_file_picker.dart';
 import 'src/file_operations/desktop_file_service.dart';
+import 'src/home/recent_decks.dart';
 import 'src/learn/desktop_query_options.dart';
 import 'src/learn/learn_session_page.dart';
 import 'src/learn/query_options_page.dart';
@@ -2209,9 +2209,12 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     return switch (_route) {
       _DesktopRoute.home => _HomeScreen(
         document: _document,
-        lastDeckPath: _settings.lastDeckPath,
+        recentDeckPaths: recentDecksExcluding(
+          _settings.recentDeckPaths,
+          _document.deckPath,
+        ),
         lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
-        onOpenLastDeck: _openDeckPath,
+        onOpenRecentDeck: _openDeckPath,
       ),
       _DesktopRoute.fileOperations => _FileOperationsStatus(
         document: _document,
@@ -2568,8 +2571,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
 
   /// Opens the deck at [path] directly (no file dialog).
   ///
-  /// Shared by File > Open and the clickable last-deck link on the workspace
-  /// (N1). Persists [path] as the last-opened deck for that link.
+  /// Shared by File > Open and the clickable recent-deck links on the
+  /// workspace (N1). Persists [path] at the head of the recent-deck list.
   Future<void> _openDeckPath(String path) async {
     if (!await _confirmAndAutoSaveStats()) {
       return;
@@ -2588,8 +2591,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             : maskStatus ?? LearnAnywhereMessage.fileOpenDeckDone,
       );
       _setLastDir('vok', path);
-      // The last-opened deck path is persisted by _saveSettings via
-      // _settings.lastDeckPath (single source of truth).
+      // The recent-deck list is maintained by _saveSettings, which promotes
+      // the open deck to its head (single source of truth).
       unawaited(_saveSettings());
     });
     await _maybeAutoLoadStatistics(path);
@@ -3535,17 +3538,20 @@ LearningMask _defaultMask(String localeCode) {
 final class _HomeScreen extends StatelessWidget {
   const _HomeScreen({
     required this.document,
-    required this.onOpenLastDeck,
-    this.lastDeckPath,
+    required this.onOpenRecentDeck,
+    this.recentDeckPaths = const <String>[],
     this.lastMaskPath,
   });
 
   final DesktopDocument document;
-  final String? lastDeckPath;
+
+  /// Decks to offer as one-click links, newest first and already stripped of
+  /// the deck currently open.
+  final List<String> recentDeckPaths;
   final String? lastMaskPath;
 
   /// Loads the given deck path directly (no file dialog).
-  final Future<void> Function(String path) onOpenLastDeck;
+  final Future<void> Function(String path) onOpenRecentDeck;
 
   @override
   Widget build(BuildContext context) {
@@ -3567,12 +3573,13 @@ final class _HomeScreen extends StatelessWidget {
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
             if (!hasContent) ...<Widget>[
               Text(messages.message(LearnAnywhereMessage.homeNoFileLoaded)),
-              if (lastDeckPath != null)
-                _LastDeckLink(
-                  label: messages.message(LearnAnywhereMessage.homeLastDeck),
-                  path: lastDeckPath!,
-                  onOpen: onOpenLastDeck,
+              if (recentDeckPaths.isNotEmpty) ...<Widget>[
+                const SizedBox(height: LearnAnywhereTokens.gapSmall),
+                RecentDecksList(
+                  paths: recentDeckPaths,
+                  onOpen: onOpenRecentDeck,
                 ),
+              ],
               if (lastMaskPath != null)
                 _StatusLine(
                   label: messages.message(LearnAnywhereMessage.homeLastMask),
@@ -3596,6 +3603,16 @@ final class _HomeScreen extends StatelessWidget {
                 unitCount: document.deck.units.length,
                 statistics: document.statistics,
               ),
+              // Deliberately shown while a deck is loaded: switching decks is
+              // the situation the list exists for, and the open deck is
+              // already filtered out, so it only offers somewhere else to go.
+              if (recentDeckPaths.isNotEmpty) ...<Widget>[
+                const SizedBox(height: LearnAnywhereTokens.gapMedium),
+                RecentDecksList(
+                  paths: recentDeckPaths,
+                  onOpen: onOpenRecentDeck,
+                ),
+              ],
             ],
           ],
         ),
@@ -3709,70 +3726,6 @@ final class _FileOperationsStatus extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Clickable "Last deck: <name>" link on the workspace (N1).
-///
-/// Loads the stored deck directly on tap. When the file no longer exists the
-/// link is muted and a tap shows a "File not found" snackbar instead.
-final class _LastDeckLink extends StatelessWidget {
-  const _LastDeckLink({
-    required this.label,
-    required this.path,
-    required this.onOpen,
-  });
-
-  final String label;
-  final String path;
-  final Future<void> Function(String path) onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    final bool exists = File(path).existsSync();
-    final String fileName = _fileNameOf(path);
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    final TextStyle linkStyle = TextStyle(
-      color: exists ? colors.primary : colors.onSurfaceVariant,
-      decoration: exists ? TextDecoration.underline : TextDecoration.none,
-    );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapSmall),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text('$label: '),
-          Tooltip(
-            message: path,
-            child: InkWell(
-              onTap: () {
-                if (exists) {
-                  unawaited(onOpen(path));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        messages
-                            .message(LearnAnywhereMessage.fileNotFound)
-                            .replaceAll('{path}', path),
-                      ),
-                    ),
-                  );
-                }
-              },
-              child: Text(fileName, style: linkStyle),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The displayed file name of a live path, parsed with the host's path rules
-  /// (so a Linux file name containing a backslash is not split on it).
-  String _fileNameOf(String value) => p.basename(value);
 }
 
 final class _StatusLine extends StatelessWidget {

@@ -256,6 +256,32 @@ void main() {
     expect(reloaded.wrongAnswerCeilingEnabled, isTrue);
     expect(reloaded.wrongAnswerCeiling, 5);
   });
+
+  test('a settings file carrying desktop recent decks still loads', () async {
+    // The desktop shell remembers recently opened decks in the shared settings
+    // file; the companion has no such screen, so it must read the field
+    // without complaint and hand it back untouched on its own next save.
+    File(await service.settingsFilePath()).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(
+          minAttempts: 4,
+          recentDeckPaths: <String>['/decks/french.vok', '/decks/latin.vok'],
+        ),
+      ),
+    );
+
+    final LearnAnywhereSettings loaded = await service.loadSettings();
+    expect(loaded.minAttempts, 4);
+    expect(loaded.recentDeckPaths, <String>[
+      '/decks/french.vok',
+      '/decks/latin.vok',
+    ]);
+
+    await service.saveSettings(loaded.copyWith(minAttempts: 6));
+    final LearnAnywhereSettings resaved = await service.loadSettings();
+    expect(resaved.minAttempts, 6);
+    expect(resaved.recentDeckPaths, loaded.recentDeckPaths);
+  });
 }
 
 LearningDeck _deck({List<LearningUnit> extraUnits = const <LearningUnit>[]}) {
