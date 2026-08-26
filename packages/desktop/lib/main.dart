@@ -55,10 +55,18 @@ Future<void> main() async {
 /// Desktop shell for Learn Anywhere.
 final class LearnAnywhereDesktopApp extends StatefulWidget {
   /// Creates the desktop shell.
-  const LearnAnywhereDesktopApp({super.key, required this.prefs});
+  const LearnAnywhereDesktopApp({
+    super.key,
+    required this.prefs,
+    this.filePicker = const DesktopFilePicker(),
+  });
 
   /// Desktop-specific preferences (theme, locale, dialog dirs, window bounds).
   final DesktopPrefs prefs;
+
+  /// Bridge to the native file dialogs. Defaults to the real one; a test passes
+  /// a recording subclass to observe the directory each dialog opens at.
+  final DesktopFilePicker filePicker;
 
   @override
   State<LearnAnywhereDesktopApp> createState() =>
@@ -140,6 +148,7 @@ final class _LearnAnywhereDesktopAppState
       localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
       home: _DesktopHome(
         prefs: widget.prefs,
+        filePicker: widget.filePicker,
         appTheme: _appTheme,
         locale: _locale,
         onAppThemeChanged: _onAppThemeChanged,
@@ -195,6 +204,16 @@ enum _PropagationChoice {
   force,
 }
 
+/// The user's choice in the start-folder prompt (N2). Cancelling returns null
+/// and leaves the setting untouched.
+enum _StartFolderChoice {
+  /// Open a directory picker and adopt whatever folder is chosen.
+  choose,
+
+  /// Clear the setting, restoring the remembered-directory behaviour.
+  clear,
+}
+
 /// Answer to the prompt shown when a session starts in a mode other than the
 /// one the current statistics were recorded in.
 enum _ModeSwitchChoice {
@@ -211,6 +230,7 @@ enum _ModeSwitchChoice {
 final class _DesktopHome extends StatefulWidget {
   const _DesktopHome({
     required this.prefs,
+    required this.filePicker,
     required this.appTheme,
     required this.locale,
     required this.onAppThemeChanged,
@@ -218,6 +238,7 @@ final class _DesktopHome extends StatefulWidget {
   });
 
   final DesktopPrefs prefs;
+  final DesktopFilePicker filePicker;
   final _AppTheme appTheme;
   final Locale locale;
   final ValueChanged<_AppTheme> onAppThemeChanged;
@@ -229,7 +250,7 @@ final class _DesktopHome extends StatefulWidget {
 
 final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   final DesktopFileService _fileService = const DesktopFileService();
-  final DesktopFilePicker _filePicker = const DesktopFilePicker();
+  DesktopFilePicker get _filePicker => widget.filePicker;
   final ScrollController _menuScrollController = ScrollController();
   // The main content area lives in its own FocusScope so that keyboard focus
   // can be re-asserted into it after interactions that park focus on AppBar
@@ -266,6 +287,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   String? _lastInfDir;
   // Last folder chosen for a Lexicon file search (Batch 8, §4.2).
   String? _lastFileSearchDir;
+  // The learner's start folder (N2): when set it outranks every remembered
+  // directory above, which keep being tracked so clearing it restores them.
+  String? _startFolder;
   // Bumped by Learn ▸ Practice setup; makes an already-open learn page drop
   // back to its practice setup.
   int _learnResetSignal = 0;
@@ -493,6 +517,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     _lastStaDir = widget.prefs.lastDirSta;
     _lastInfDir = widget.prefs.lastDirInf;
     _lastFileSearchDir = widget.prefs.lastDirFileSearch;
+    _startFolder = widget.prefs.startFolder;
     // Re-seed the default deck's mask in the active UI language, and apply the
     // persisted auto-load/auto-save statistics toggles (C11; both default OFF).
     _document =
@@ -728,6 +753,100 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _cachedMenuChildren = null;
     });
     unawaited(_saveSettings());
+  }
+
+  // --- Start folder (N2) ----------------------------------------------------
+
+  /// Shows the start-folder prompt: pick a folder, clear the setting, or leave
+  /// it as it is.
+  ///
+  /// The setting is stored in the desktop preference store, not the settings
+  /// file, and takes effect on the very next dialog — no restart.
+  Future<void> _promptStartFolder() async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final _StartFolderChoice? choice = await showDialog<_StartFolderChoice>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: Text(messages.message(LearnAnywhereMessage.startFolderTitle)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                _startFolder ??
+                    messages.message(LearnAnywhereMessage.startFolderNotSet),
+                style: Theme.of(ctx).textTheme.bodyLarge,
+              ),
+              // A folder that is set but currently unreachable says so: the
+              // dialogs are quietly opening elsewhere, and the setting alone
+              // would not explain why.
+              if (_startFolder != null && _usableStartFolder == null) ...<Widget>[
+                const SizedBox(height: 8),
+                Text(
+                  messages.message(LearnAnywhereMessage.startFolderUnreachable),
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(ctx).colorScheme.error,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                messages.message(LearnAnywhereMessage.startFolderHint),
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            TextButton(
+              // Only offered once there is something to clear.
+              onPressed: _startFolder == null
+                  ? null
+                  : () => Navigator.of(ctx).pop(_StartFolderChoice.clear),
+              child: Text(
+                messages.message(LearnAnywhereMessage.startFolderClear),
+              ),
+            ),
+            FilledButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(ctx).pop(_StartFolderChoice.choose),
+              child: Text(
+                messages.message(LearnAnywhereMessage.startFolderChoose),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (choice == null || !mounted) {
+      return;
+    }
+    switch (choice) {
+      case _StartFolderChoice.clear:
+        _setStartFolder(null);
+      case _StartFolderChoice.choose:
+        final String? picked = await _filePicker.pickDirectory(
+          initialDirectory:
+              _usableStartFolder ?? _filePicker.initialDirectory(null),
+        );
+        if (picked == null || !mounted) {
+          return;
+        }
+        _setStartFolder(picked);
+    }
+    _restoreContentFocus();
+  }
+
+  /// Applies [folder] as the start folder and persists it; null clears it.
+  void _setStartFolder(String? folder) {
+    setState(() => _startFolder = folder);
+    widget.prefs.setStartFolder(folder);
   }
 
   // --- Session statistics auto-save target (§3.7) ---------------------------
@@ -1470,6 +1589,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
               builder: menuAcceleratorBuilder,
             ),
           ),
+          const _MenuSeparator(),
+          MenuItemButton(
+            onPressed: _promptStartFolder,
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuOptionsStartFolder),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
         ],
         child: MenuAcceleratorDisplayLabel(
           messages.message(LearnAnywhereMessage.menuOptions),
@@ -2028,6 +2155,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// break, are shown but never auto-merged.
   Future<void> _updateMaskCopies() async {
     final LearningMask reference = _document.mask;
+    // Deliberately ignores the start folder (N2): the open deck's own folder is
+    // a more specific and more useful root for a copy scan than any global
+    // setting, and overriding it would make the common case worse.
     final String? defaultDir = _document.deckPath == null
         ? _lastInfDir
         : _filePicker.directoryOf(_document.deckPath!);
@@ -3216,12 +3346,17 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// Prompts for a folder and recursively loads its `.vok` decks for a Lexicon
   /// file search (Batch 8, §4.2).
   ///
-  /// The picker opens in the last folder used for a file search, falling back
-  /// to the last folder a deck was opened from. The chosen folder is persisted
-  /// so the next search starts there. Returns null when the user cancels.
+  /// The picker opens in the start folder when one is set — this screen must
+  /// not contradict that setting — otherwise in the last folder used for a file
+  /// search, falling back to the last folder a deck was opened from. The chosen
+  /// folder is persisted so the next search starts there. Returns null when the
+  /// user cancels.
   Future<Map<String, LearningDeck>?> _pickLexiconFolderDecks() async {
     final String? initialDir =
-        _lastFileSearchDir ?? _lastVokDir ?? _filePicker.initialDirectory(null);
+        _usableStartFolder ??
+        _lastFileSearchDir ??
+        _lastVokDir ??
+        _filePicker.initialDirectory(null);
     final String? folder = await _filePicker.pickDirectory(
       initialDirectory: initialDir,
     );
@@ -3346,11 +3481,30 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
 
   // --- File dialog helpers (C1) ---------------------------------------------
 
+  /// The configured start folder, or null when none is set or it is unusable.
+  ///
+  /// A folder that has since been deleted, been renamed, or sits on a
+  /// disconnected drive is treated as if none were set: a stale setting must
+  /// never keep a dialog from opening.
+  String? get _usableStartFolder {
+    final String? folder = _startFolder;
+    if (folder == null || folder.isEmpty) {
+      return null;
+    }
+    return _filePicker.directoryExists(folder) ? folder : null;
+  }
+
   /// Returns the initial directory for a dialog of the given [extension] type.
   ///
-  /// Uses the last directory saved for that type; falls back to the
-  /// user's Documents folder (or home on Linux) on first run.
+  /// The start folder wins outright when one is set — that predictability is
+  /// the point of the setting. Without one, the last directory saved for that
+  /// type is used, falling back to the user's Documents folder (or home on
+  /// Linux) on first run.
   String? _initialDirectoryFor(String extension) {
+    final String? startFolder = _usableStartFolder;
+    if (startFolder != null) {
+      return startFolder;
+    }
     final String? saved = switch (extension) {
       'vok' => _lastVokDir,
       'sta' => _lastStaDir,

@@ -240,6 +240,28 @@ enum LearnAnywhereMessage {
   /// Explanation shown under the retention-count field: 0 keeps every file.
   keepStatisticsHint,
 
+  /// Options menu: opens the start-folder prompt.
+  menuOptionsStartFolder,
+
+  /// Title of the start-folder prompt dialog.
+  startFolderTitle,
+
+  /// Explanation shown in the start-folder prompt.
+  startFolderHint,
+
+  /// Shown in the start-folder prompt in place of a path when none is set.
+  startFolderNotSet,
+
+  /// Shown in the start-folder prompt under a set folder that cannot be
+  /// reached, explaining why dialogs are opening elsewhere.
+  startFolderUnreachable,
+
+  /// Start-folder prompt: opens the directory picker.
+  startFolderChoose,
+
+  /// Start-folder prompt: clears the setting.
+  startFolderClear,
+
   /// Theme control label.
   themeLabel,
 
@@ -1372,6 +1394,18 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.keepStatisticsHint:
           'The oldest timestamped session files beyond this count are '
           'deleted after each new one is written. 0 keeps every file.',
+      LearnAnywhereMessage.menuOptionsStartFolder: 'Start &folder...', // F
+      LearnAnywhereMessage.startFolderTitle: 'Start folder',
+      LearnAnywhereMessage.startFolderHint:
+          'Every file dialog opens in this folder, whatever folder you last '
+          'saved in. With none set, each dialog opens where you last used that '
+          'kind of file.',
+      LearnAnywhereMessage.startFolderNotSet: 'No start folder set',
+      LearnAnywhereMessage.startFolderUnreachable:
+          'This folder cannot be reached right now, so dialogs open in the '
+          'folder you last used instead.',
+      LearnAnywhereMessage.startFolderChoose: 'Choose folder...',
+      LearnAnywhereMessage.startFolderClear: 'Clear start folder',
       LearnAnywhereMessage.themeLabel: '&Theme', // T
       LearnAnywhereMessage.themeSystem: '&System', // S
       LearnAnywhereMessage.themeLight: 'Lig&ht', // H
@@ -1938,6 +1972,18 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.keepStatisticsHint:
           'Die ältesten Sitzungsdateien über diese Anzahl hinaus werden nach '
           'jeder neu geschriebenen Datei gelöscht. 0 behält alle Dateien.',
+      LearnAnywhereMessage.menuOptionsStartFolder: 'Start&ordner...', // O
+      LearnAnywhereMessage.startFolderTitle: 'Startordner',
+      LearnAnywhereMessage.startFolderHint:
+          'Jeder Dateidialog öffnet sich in diesem Ordner, unabhängig davon, wo '
+          'zuletzt gespeichert wurde. Ohne Startordner öffnet sich jeder Dialog '
+          'dort, wo diese Art von Datei zuletzt verwendet wurde.',
+      LearnAnywhereMessage.startFolderNotSet: 'Kein Startordner gesetzt',
+      LearnAnywhereMessage.startFolderUnreachable:
+          'Dieser Ordner ist derzeit nicht erreichbar; die Dialoge öffnen sich '
+          'stattdessen im zuletzt verwendeten Ordner.',
+      LearnAnywhereMessage.startFolderChoose: 'Ordner wählen...',
+      LearnAnywhereMessage.startFolderClear: 'Startordner zurücksetzen',
       LearnAnywhereMessage.themeLabel: '&Darstellung', // D
       LearnAnywhereMessage.themeSystem: 'S&ystem', // Y (avoids S = Sprache label)
       LearnAnywhereMessage.themeLight: '&Hell', // H

@@ -48,6 +48,28 @@ count, all covered in [Working with files](03-managing-files.md#auto-load-and-au
 All three concern session files only. The deck's lifetime record is kept whatever these
 are set to — see [The two records](09-statistics.md#the-two-records).
 
+## Start folder
+
+**Options ▸ Start folder...** points every file dialog at one folder of your choosing:
+decks, statistics files and masks alike. The prompt shows the folder currently set, if
+any; **Choose folder...** opens a folder picker, **Clear start folder** removes the
+setting again.
+
+With a start folder set, every Load and Save dialog opens there — whatever folder you
+last saved in. That is the point of it: the folder your decks live in stays one click
+away no matter where the last file went. Clearing the setting restores the normal
+behaviour at once, with no restart: each dialog opens again where you last used that
+kind of file, because those folders are remembered underneath the whole time.
+
+If the start folder is gone — deleted, renamed, or on a drive that is not connected —
+the dialog still opens, at the remembered folder instead. A folder that has vanished
+never blocks a dialog. The setting itself is kept, and the prompt says the folder cannot
+be reached, so a drive that comes back puts it in force again with nothing to redo.
+
+One dialog deliberately ignores the setting: **Edit ▸ Update other copies of this
+mask...** keeps starting at the open deck's own folder, which is a better place to scan
+for copies of that deck's mask than any fixed folder.
+
 ## Where settings live
 
 Two separate stores, both entirely local — nothing here is ever sent anywhere:
@@ -56,9 +78,9 @@ Two separate stores, both entirely local — nothing here is ever sent anywhere:
   `learn_anywhere.settings.json` in a `LearnAnywhere` folder under your operating
   system's standard per-user configuration location (`%APPDATA%` on Windows;
   `$XDG_CONFIG_HOME` or `~/.config` on Linux).
-- **Theme, language, recent-folder memory, auto-load/auto-save toggles, and the
-  window's size and position** are kept in the operating system's own application
-  preferences store, separately from the file above.
+- **Theme, language, the start folder, recent-folder memory, auto-load/auto-save
+  toggles, and the window's size and position** are kept in the operating system's own
+  application preferences store, separately from the file above.
 
 Neither file needs to be touched by hand — everything in it is reachable from the menus
 described in this chapter — but both are plain, readable text if you ever want to look.

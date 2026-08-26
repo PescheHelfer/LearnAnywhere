@@ -102,6 +102,10 @@ final class _LexiconPageState extends State<LexiconPage> {
                 SizedBox(
                   width: 240,
                   child: DropdownButtonFormField<int?>(
+                    // Without this the selected entry keeps its natural width
+                    // and overflows the fixed-width box — a long category name,
+                    // or simply this shell's larger type, is enough.
+                    isExpanded: true,
                     decoration: InputDecoration(
                       labelText: messages.message(
                         LearnAnywhereMessage.lexiconCategoryScope,

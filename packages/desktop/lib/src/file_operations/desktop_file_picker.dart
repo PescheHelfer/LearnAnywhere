@@ -9,7 +9,11 @@ import 'package:path/path.dart' as p;
 /// the user (the type-group caption in the filter dropdown) is passed in by the
 /// caller so it can be sourced from the i18n catalog. The class only resolves
 /// a path and never touches serialization, keeping all business logic in core.
-final class DesktopFilePicker {
+///
+/// Deliberately not `final`: the shell takes its picker as a constructor
+/// argument so a test can substitute a recording subclass and observe which
+/// starting directory each dialog was opened with.
+class DesktopFilePicker {
   /// Creates a desktop file picker.
   const DesktopFilePicker();
 
@@ -72,6 +76,13 @@ final class DesktopFilePicker {
     }
     return _documentsOrHome();
   }
+
+  /// Whether [path] names a directory that exists right now.
+  ///
+  /// Lets a configured start folder that has since been deleted, renamed or
+  /// left on a disconnected drive be ignored, so a stale setting can never keep
+  /// a dialog from opening.
+  bool directoryExists(String path) => Directory(path).existsSync();
 
   /// Returns the file name portion of [path] (without its directory).
   ///
