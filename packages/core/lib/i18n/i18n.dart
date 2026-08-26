@@ -321,6 +321,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.8.0.
   aboutVersion080,
 
+  /// About page version history entry for 0.8.1.
+  aboutVersion081,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1434,6 +1437,14 @@ final class LearnAnywhereCatalog {
           'intact, and the all-time record can be cleared on its own or '
           'loaded by hand; a refused write is reported instead of being '
           'silently dropped.',
+      LearnAnywhereMessage.aboutVersion081:
+          '0.8.1 – A changed option now survives the next save instead of '
+          'falling back to its default; the evaluation choices sit beside the '
+          'action buttons and wrap onto their own line on a narrow window; '
+          'clearing the all-time statistics has moved into the All-time '
+          'actions menu beside the Current/All-time selector, and its '
+          'confirmation names the deck; an empty lexicon search now lists '
+          'every unit of the chosen category.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1998,6 +2009,15 @@ final class LearnAnywhereCatalog {
           'Allzeit-Statistik unangetastet, und die Allzeit-Statistik lässt '
           'sich eigenständig löschen oder von Hand laden; ein abgelehntes '
           'Schreiben wird gemeldet statt stillschweigend übersprungen.',
+      LearnAnywhereMessage.aboutVersion081:
+          '0.8.1 – Eine geänderte Einstellung bleibt beim nächsten Speichern '
+          'erhalten, statt auf ihren Standardwert zurückzufallen; die '
+          'Bewertungsschaltflächen stehen neben den Aktionsschaltflächen und '
+          'brechen bei schmalem Fenster in eine eigene Zeile um; das Löschen '
+          'der Allzeit-Statistik liegt jetzt im Menü Allzeit-Aktionen neben '
+          'der Umschaltung Aktuell/Allzeit, und die Rückfrage nennt die '
+          'Lern-Datei; eine leere Suche im Lexikon listet jetzt alle '
+          'Einheiten der gewählten Kategorie.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
