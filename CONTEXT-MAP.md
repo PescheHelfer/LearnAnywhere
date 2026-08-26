@@ -31,6 +31,7 @@ counter moves.
 |---|---|
 | [`packages/core/CONTEXT.md`](packages/core/CONTEXT.md) | Statistics vocabulary — the two records, session files, learning sessions. |
 | [`docs/adr/0001-all-time-statistics-accumulate-live-deltas.md`](docs/adr/0001-all-time-statistics-accumulate-live-deltas.md) | Why the lifetime record is accumulated live and never derived. |
+| [`packages/desktop/CONTEXT.md`](packages/desktop/CONTEXT.md) | Desktop shell vocabulary — start folder, content frame, zoom level, recent decks. |
 
 The other contexts have no `CONTEXT.md` or `docs/adr/` yet. That is not a gap to fill
 upfront — they get written when a term or a decision actually needs pinning down.
