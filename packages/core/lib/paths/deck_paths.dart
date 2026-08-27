@@ -126,6 +126,29 @@ final class DeckPaths {
     return (context ?? p.context).basename(path);
   }
 
+  /// Returns [path] shortened to the folder holding it and its file name,
+  /// e.g. `...\Franz\LCI2_LC1.vok`.
+  ///
+  /// A deck's file name alone rarely says which language it belongs to, while
+  /// its folder usually does; the whole path is too long for a link. The
+  /// leading `...` stands in for what was dropped, so it appears only when
+  /// something actually was: a deck whose folder sits at a root, or which has
+  /// no folder part at all, is returned unchanged rather than pretending to be
+  /// abbreviated.
+  static String folderAndFileName(String path, {p.Context? context}) {
+    final p.Context ctx = context ?? p.context;
+    final String dir = ctx.dirname(path);
+    final String folder = ctx.basename(dir);
+    if (folder.isEmpty || folder == '.') {
+      return path;
+    }
+    final String above = ctx.dirname(dir);
+    if (above == ctx.rootPrefix(dir) || above == '.') {
+      return path;
+    }
+    return '...${ctx.separator}$folder${ctx.separator}${ctx.basename(path)}';
+  }
+
   /// Returns the directory containing [path], or `.` when [path] has no
   /// directory part (which `Directory` resolves to the working directory).
   static String directory(String path, {p.Context? context}) {

@@ -7,7 +7,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
-import 'package:path/path.dart' as p;
+
+/// Trailing mark that says an entry is a link rather than a status line
+/// (U+29C9 TWO JOINED SQUARES).
+const String _linkGlyph = '⧉';
 
 /// "Recent decks" heading with one [RecentDeckLink] per entry.
 ///
@@ -112,10 +115,19 @@ final class RecentDeckLink extends StatelessWidget {
                   );
                 }
               },
-              // The deck's own name, parsed with the host's path rules (so a
-              // Linux file name containing a backslash is not split on it);
-              // the full path is on the tooltip.
-              child: Text(p.basename(path), style: linkStyle),
+              // The folder and the file name, parsed with the host's path
+              // rules (so a Linux file name containing a backslash is not
+              // split on it). The name alone rarely says which language a
+              // deck is; its folder usually does. The full path is on the
+              // tooltip.
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(DeckPaths.folderAndFileName(path), style: linkStyle),
+                  const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                  Text(_linkGlyph, style: TextStyle(color: linkStyle.color)),
+                ],
+              ),
             ),
           ),
         ],

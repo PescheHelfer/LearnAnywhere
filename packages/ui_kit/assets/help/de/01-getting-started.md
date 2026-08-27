@@ -77,7 +77,12 @@ geladen ist, denn genau dann ist der Wechsel zu einer anderen Sprache am nützli
 Die gerade geöffnete Datei wird ausgelassen; die Liste bietet also immer nur ein
 anderes Ziel an.
 
-Wenn Sie mit der Maus über einen Eintrag fahren, wird der vollständige Pfad angezeigt.
+Jeder Eintrag nennt neben der Datei auch den Ordner, in dem sie liegt, zum Beispiel
+`...\Franz\LCI2_LC1.vok`: Ein Dateiname allein verrät selten, zu welcher Sprache er
+gehört, der Ordner darüber meist schon. Die `...` stehen für den übrigen Pfad, und das
+⧉ am Ende kennzeichnet die Zeile als Link. Wenn Sie mit der Maus über einen Eintrag
+fahren, wird der vollständige Pfad angezeigt.
+
 Verschieben oder löschen Sie eine Lern-Datei, bleibt sie in der Liste stehen — grau
 dargestellt, statt stillschweigend zu verschwinden. So sehen Sie einen ganzen
 verschobenen Ordner, statt ihn unbemerkt zu verlieren. Ein solcher Eintrag öffnet

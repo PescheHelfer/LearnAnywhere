@@ -72,7 +72,13 @@ also while a deck is loaded — that is when switching to another language is mo
 useful. The deck you already have open is left out, so the list only ever offers
 somewhere else to go.
 
-Hovering over an entry shows the deck's full path. If you move or delete a deck it stays
+Each entry names the folder the deck sits in as well as the deck itself, for example
+`...\Franz\LCI2_LC1.vok`: a file name on its own rarely says which language it belongs
+to, while the folder above it usually does. The `...` stands for the rest of the path,
+and the ⧉ at the end marks the line as a link. Hovering over an entry shows the full
+path.
+
+If you move or delete a deck it stays
 in the list, greyed out, rather than quietly disappearing — that way a whole folder you
 have moved is visible instead of silently gone. Such an entry no longer opens anything:
 clicking it reports **File not found** with the path it looked in.

@@ -8,10 +8,14 @@ import 'package:path/path.dart' as p;
 
 void main() {
   late Directory temp;
+  late Directory language;
   late List<String> opened;
 
   setUp(() {
     temp = Directory.systemTemp.createTempSync('la_recent_decks');
+    // Decks sit one folder deep, as they do in practice: the folder carries
+    // the language, and the link shows it.
+    language = Directory(p.join(temp.path, 'Franz'))..createSync();
     opened = <String>[];
   });
 
@@ -21,9 +25,12 @@ void main() {
 
   /// Creates a real `.vok` file so the link sees it as existing.
   String deckFile(String name) {
-    final File file = File(p.join(temp.path, name))..writeAsStringSync('{}');
+    final File file = File(p.join(language.path, name))..writeAsStringSync('{}');
     return file.path;
   }
+
+  /// The text a link shows for [name]: its folder, its own name, nothing else.
+  String labelOf(String name) => p.join('...', 'Franz', name);
 
   Future<void> pumpList(WidgetTester tester, List<String> paths) {
     return tester.pumpWidget(
@@ -49,12 +56,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Recent decks:'), findsOneWidget);
-    // Each entry shows the deck's own name, not its whole path.
-    expect(find.text('french.vok'), findsOneWidget);
-    expect(find.text('latin.vok'), findsOneWidget);
+    // Each entry names the folder it sits in and the deck, not the whole path.
+    expect(find.text(labelOf('french.vok')), findsOneWidget);
+    expect(find.text(labelOf('latin.vok')), findsOneWidget);
     expect(find.textContaining(temp.path), findsNothing);
+    // Each carries the mark that says it is a link.
+    expect(find.text('⧉'), findsNWidgets(2));
 
-    await tester.tap(find.text('latin.vok'));
+    await tester.tap(find.text(labelOf('latin.vok')));
     await tester.pumpAndSettle();
     expect(opened, <String>[latin]);
   });
@@ -73,29 +82,30 @@ void main() {
   testWidgets('a deck whose file is gone stays listed, muted and unclickable', (
     WidgetTester tester,
   ) async {
-    final String missing = p.join(temp.path, 'moved.vok');
+    final String missing = p.join(language.path, 'moved.vok');
     final String french = deckFile('french.vok');
     await pumpList(tester, <String>[missing, french]);
     await tester.pumpAndSettle();
 
     // Still listed rather than silently pruned — a missing entry would hide a
     // moved folder instead of showing it.
-    expect(find.text('moved.vok'), findsOneWidget);
+    expect(find.text(labelOf('moved.vok')), findsOneWidget);
 
     final TextStyle missingStyle = tester
-        .widget<Text>(find.text('moved.vok'))
+        .widget<Text>(find.text(labelOf('moved.vok')))
         .style!;
     final TextStyle liveStyle = tester
-        .widget<Text>(find.text('french.vok'))
+        .widget<Text>(find.text(labelOf('french.vok')))
         .style!;
     expect(missingStyle.decoration, TextDecoration.none);
     expect(liveStyle.decoration, TextDecoration.underline);
     expect(missingStyle.color, isNot(liveStyle.color));
 
-    await tester.tap(find.text('moved.vok'));
+    await tester.tap(find.text(labelOf('moved.vok')));
     await tester.pumpAndSettle();
 
-    // Nothing was loaded, and the message names the path that is gone.
+    // Nothing was loaded, and the message names the path that is gone — the
+    // whole one, not the shortened label.
     expect(opened, isEmpty);
     expect(find.text('File not found: $missing'), findsOneWidget);
   });

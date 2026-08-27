@@ -360,6 +360,68 @@ void main() {
     });
   });
 
+  group('DeckPaths.folderAndFileName', () {
+    test('keeps the containing folder, eliding what is above it', () {
+      expect(
+        DeckPaths.folderAndFileName(
+          r'D:\Sprachen\Kurse\Franz\LCI2_LC1.vok',
+          context: p.windows,
+        ),
+        r'...\Franz\LCI2_LC1.vok',
+      );
+      expect(
+        DeckPaths.folderAndFileName(
+          '/home/pesche/decks/Franz/LCI2_LC1.vok',
+          context: p.posix,
+        ),
+        '.../Franz/LCI2_LC1.vok',
+      );
+    });
+
+    test('does not claim an elision when the folder is all there is', () {
+      // Nothing sits above the folder, so there is nothing to stand in for.
+      expect(
+        DeckPaths.folderAndFileName(r'D:\Franz\french.vok', context: p.windows),
+        r'D:\Franz\french.vok',
+      );
+      expect(
+        DeckPaths.folderAndFileName('/Franz/french.vok', context: p.posix),
+        '/Franz/french.vok',
+      );
+      expect(
+        DeckPaths.folderAndFileName('Franz/french.vok', context: p.posix),
+        'Franz/french.vok',
+      );
+    });
+
+    test('falls back to the bare name when there is no folder at all', () {
+      expect(
+        DeckPaths.folderAndFileName('french.vok', context: p.posix),
+        'french.vok',
+      );
+      expect(
+        DeckPaths.folderAndFileName(r'C:\french.vok', context: p.windows),
+        r'C:\french.vok',
+      );
+      expect(
+        DeckPaths.folderAndFileName('/french.vok', context: p.posix),
+        '/french.vok',
+      );
+    });
+
+    test('a POSIX backslash stays part of the name it belongs to', () {
+      // On Linux a backslash is an ordinary file-name character, so neither
+      // the folder nor the file name may be split on it.
+      expect(
+        DeckPaths.folderAndFileName(
+          '/home/pesche/back\\slash/deck\\one.vok',
+          context: p.posix,
+        ),
+        '.../back\\slash/deck\\one.vok',
+      );
+    });
+  });
+
   group('host-context default', () {
     test('the no-context overload agrees with the host style', () {
       final p.Context host = p.context;
