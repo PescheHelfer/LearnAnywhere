@@ -77,15 +77,21 @@ final class _LearnAnywhereDesktopAppState
     extends State<LearnAnywhereDesktopApp> with WindowListener {
   late _AppTheme _appTheme;
   late Locale _locale;
+  // The learner's zoom level in per cent (N3). It is applied by building the
+  // themes below at that size — every screen and the menu bar scale because
+  // they all read the theme — and NEVER as a text-scaler override, which the
+  // mask's field-box measurement cannot see. See
+  // `docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md`.
+  late int _zoomPercent;
   final WindowGeometryService _geometryService = WindowGeometryService();
 
   ThemeData get _lightTheme => _appTheme == _AppTheme.lightBlue
-      ? LearnAnywhereTheme.lightBlue()
-      : LearnAnywhereTheme.light();
+      ? LearnAnywhereTheme.lightBlue(zoomPercent: _zoomPercent)
+      : LearnAnywhereTheme.light(zoomPercent: _zoomPercent);
 
   ThemeData get _darkTheme => _appTheme == _AppTheme.darkBlue
-      ? LearnAnywhereTheme.darkBlue()
-      : LearnAnywhereTheme.dark();
+      ? LearnAnywhereTheme.darkBlue(zoomPercent: _zoomPercent)
+      : LearnAnywhereTheme.dark(zoomPercent: _zoomPercent);
 
   ThemeMode get _themeMode => switch (_appTheme) {
         _AppTheme.system => ThemeMode.system,
@@ -99,6 +105,7 @@ final class _LearnAnywhereDesktopAppState
     super.initState();
     _appTheme = _appThemeFromPrefs(widget.prefs);
     _locale = _localeFromPrefs(widget.prefs);
+    _zoomPercent = widget.prefs.zoomPercent;
     windowManager.addListener(this);
   }
 
@@ -135,6 +142,21 @@ final class _LearnAnywhereDesktopAppState
     widget.prefs.setLocale(value.languageCode);
   }
 
+  // --- Zoom (N3) ------------------------------------------------------------
+
+  /// Adopts [value] as the zoom level and remembers it for the next run.
+  ///
+  /// Snapped to an offered level so the menu, the keys and the store can never
+  /// disagree about which level is current.
+  void _onZoomChanged(int value) {
+    final int level = LearnAnywhereZoom.nearest(value);
+    if (level == _zoomPercent) {
+      return;
+    }
+    setState(() => _zoomPercent = level);
+    widget.prefs.setZoomPercent(level);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -151,8 +173,10 @@ final class _LearnAnywhereDesktopAppState
         filePicker: widget.filePicker,
         appTheme: _appTheme,
         locale: _locale,
+        zoomPercent: _zoomPercent,
         onAppThemeChanged: _onAppThemeChanged,
         onLocaleChanged: _onLocaleChanged,
+        onZoomChanged: _onZoomChanged,
       ),
     );
   }
@@ -179,6 +203,21 @@ Locale _localeFromPrefs(DesktopPrefs prefs) {
   }
   return const Locale('en');
 }
+
+/// Each offered zoom level with the catalog entry that names it in the menu.
+///
+/// The levels themselves — and the stepping the Ctrl keys do — belong to
+/// [LearnAnywhereZoom]; this list only adds their labels, and must stay in step
+/// with it — the shell test asserts the menu offers exactly the levels
+/// [LearnAnywhereZoom] defines.
+const List<(int, LearnAnywhereMessage)> _zoomMenuEntries =
+    <(int, LearnAnywhereMessage)>[
+      (100, LearnAnywhereMessage.zoom100),
+      (125, LearnAnywhereMessage.zoom125),
+      (150, LearnAnywhereMessage.zoom150),
+      (175, LearnAnywhereMessage.zoom175),
+      (200, LearnAnywhereMessage.zoom200),
+    ];
 
 enum _DesktopRoute {
   home,
@@ -233,16 +272,20 @@ final class _DesktopHome extends StatefulWidget {
     required this.filePicker,
     required this.appTheme,
     required this.locale,
+    required this.zoomPercent,
     required this.onAppThemeChanged,
     required this.onLocaleChanged,
+    required this.onZoomChanged,
   });
 
   final DesktopPrefs prefs;
   final DesktopFilePicker filePicker;
   final _AppTheme appTheme;
   final Locale locale;
+  final int zoomPercent;
   final ValueChanged<_AppTheme> onAppThemeChanged;
   final ValueChanged<Locale> onLocaleChanged;
+  final ValueChanged<int> onZoomChanged;
 
   @override
   State<_DesktopHome> createState() => _DesktopHomeState();
@@ -309,6 +352,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   List<Widget>? _cachedMenuChildren;
   String? _cachedMenuLocale;
   _AppTheme? _cachedMenuTheme;
+  int? _cachedMenuZoom;
 
   // --- ALT-mnemonic scoping (see docs/menu-alt-mnemonics.md) ----------------
   //
@@ -437,6 +481,52 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     return true;
   }
 
+  /// Steps the zoom level on Ctrl+plus / Ctrl+minus, and resets it on Ctrl+0.
+  ///
+  /// These are the only Ctrl bindings in a program otherwise driven by function
+  /// keys and Alt mnemonics. The exception is deliberate: they are what every
+  /// learner tries first, and nothing else in the program claims them.
+  ///
+  /// A [HardwareKeyboard] handler for the same reason as [_handleHelpKey] —
+  /// a `Shortcuts` entry would be dead until something inside the content scope
+  /// had focus — and because returning true is what stops the keystroke from
+  /// reaching the text field the learner may be typing in.
+  ///
+  /// Both faces of each key are accepted: the main row and the numeric keypad,
+  /// and the un-shifted `=` that carries `+` on many layouts.
+  bool _handleZoomKey(KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return false;
+    }
+    final HardwareKeyboard keyboard = HardwareKeyboard.instance;
+    // Require Ctrl, but reject AltGr (reported as Control+AltRight) so German
+    // keyboards keep typing the characters those combinations produce.
+    if (!keyboard.isControlPressed ||
+        keyboard.isAltPressed ||
+        keyboard.isMetaPressed ||
+        _menuActive) {
+      return false;
+    }
+    final int current = widget.zoomPercent;
+    final int? next = switch (event.logicalKey) {
+      LogicalKeyboardKey.equal ||
+      LogicalKeyboardKey.add ||
+      LogicalKeyboardKey.numpadAdd => LearnAnywhereZoom.stepUp(current),
+      LogicalKeyboardKey.minus ||
+      LogicalKeyboardKey.numpadSubtract => LearnAnywhereZoom.stepDown(current),
+      LogicalKeyboardKey.digit0 ||
+      LogicalKeyboardKey.numpad0 => LearnAnywhereZoom.normal,
+      _ => null,
+    };
+    if (next == null) {
+      return false;
+    }
+    // Already at the end of the ladder: still consumed, so the keystroke never
+    // reaches a text field, but nothing changes.
+    widget.onZoomChanged(next);
+    return true;
+  }
+
   /// Shows the bundled user guide over whatever is currently on screen.
   ///
   /// A dialog rather than a route on purpose. The guide is most wanted in the
@@ -508,6 +598,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     windowManager.addListener(this);
     HardwareKeyboard.instance.addHandler(_handleMenuAccelerator);
     HardwareKeyboard.instance.addHandler(_handleHelpKey);
+    HardwareKeyboard.instance.addHandler(_handleZoomKey);
     _settingsPath = _fileService.settingsFilePath();
     _range = resetUnitRange(_document.deck.units.length);
     _queryOptions = _optionsFromSettings(_settings);
@@ -533,7 +624,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   @override
   void didUpdateWidget(_DesktopHome oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // A locale or theme change is triggered from the Options submenu in the
+    // A locale, theme or zoom change is triggered from the Options submenu in the
     // MenuBar, which lives OUTSIDE the content FocusScope. Selecting an item
     // leaves keyboard focus parked on the menu, so the active page's
     // Shortcuts/Actions (F-keys, Esc) stop receiving key events until the user
@@ -541,7 +632,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     // cache so radio checkmarks reflect the new state, and pull focus back into
     // the content scope to re-activate page shortcuts immediately.
     if (widget.locale != oldWidget.locale ||
-        widget.appTheme != oldWidget.appTheme) {
+        widget.appTheme != oldWidget.appTheme ||
+        widget.zoomPercent != oldWidget.zoomPercent) {
       _cachedMenuChildren = null;
       _restoreContentFocus();
     }
@@ -552,6 +644,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     windowManager.removeListener(this);
     HardwareKeyboard.instance.removeHandler(_handleMenuAccelerator);
     HardwareKeyboard.instance.removeHandler(_handleHelpKey);
+    HardwareKeyboard.instance.removeHandler(_handleZoomKey);
     _menuScrollController.dispose();
     _contentFocusScope.dispose();
     _statisticsMenuFocusNode.dispose();
@@ -1311,10 +1404,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   List<Widget> _menuChildren(LearnAnywhereLocalizations messages) {
     final String locale = messages.locale.languageCode;
     final _AppTheme theme = widget.appTheme;
-    if (locale != _cachedMenuLocale || theme != _cachedMenuTheme) {
+    final int zoom = widget.zoomPercent;
+    if (locale != _cachedMenuLocale ||
+        theme != _cachedMenuTheme ||
+        zoom != _cachedMenuZoom) {
       _cachedMenuChildren = null;
       _cachedMenuLocale = locale;
       _cachedMenuTheme = theme;
+      _cachedMenuZoom = zoom;
     }
     return _cachedMenuChildren ??= _buildMenuChildren(messages);
   }
@@ -1515,6 +1612,30 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             ],
             child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.themeLabel),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+          // Zoom: a radio submenu of discrete levels, mirroring Theme above.
+          // Ctrl+plus / Ctrl+minus / Ctrl+zero reach the same levels without
+          // opening the menu; see [_handleZoomKey].
+          SubmenuButton(
+            menuChildren: <Widget>[
+              for (final (int level, LearnAnywhereMessage label)
+                  in _zoomMenuEntries)
+                RadioMenuButton<int>(
+                  value: level,
+                  groupValue: widget.zoomPercent,
+                  onChanged: (int? v) {
+                    if (v != null) widget.onZoomChanged(v);
+                  },
+                  child: MenuAcceleratorLabel(
+                    messages.message(label),
+                    builder: menuAcceleratorBuilder,
+                  ),
+                ),
+            ],
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.zoomLabel),
               builder: menuAcceleratorBuilder,
             ),
           ),
@@ -3715,7 +3836,11 @@ final class _HomeScreen extends StatelessWidget {
         document.deckPath != null || document.deck.units.isNotEmpty;
     return ColoredBox(
       color: Theme.of(context).colorScheme.surface,
-      child: Padding(
+      child: SingleChildScrollView(
+        // The workspace grows in two directions at once: with the deck (status
+        // lines, the statistics summary, up to three recent decks) and with the
+        // zoom level. A bare Column would overflow at the far corner of both
+        // rather than let the learner reach the end of it.
         padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

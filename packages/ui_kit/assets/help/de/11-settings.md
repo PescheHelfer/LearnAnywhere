@@ -43,6 +43,32 @@ schaltet jede Beschriftung im Programm um, einschließlich der ALT-Tastenkürzel
 Menüs — der Buchstabe, der ein Menü auf Englisch öffnet, muss auf Deutsch nicht
 derselbe sein — und dieses Handbuch selbst folgt derselben Einstellung.
 
+## Zoomstufe
+
+**Optionen ▸ Zoomstufe** vergrößert das ganze Programm auf einem großen Bildschirm:
+**100 %** (die Voreinstellung), **125 %**, **150 %**, **175 %** oder **200 %**. Die
+aktuelle Stufe ist im Menü angehakt. Sie gilt für jeden Bildschirm und für die Menüleiste
+und wird gemerkt, Sie stellen sie also einmal ein.
+
+`Strg` und `+` geht eine Stufe hinauf, `Strg` und `-` eine Stufe hinunter, und `Strg+0`
+kehrt zu 100 % zurück — dieselben Tasten wie in den meisten anderen Programmen. Sie
+springen zwischen den fünf angebotenen Stufen, statt die Schrift stufenlos wachsen zu
+lassen; so landen Sie immer auf einer Größe, die geprüft wurde. Das sind die einzigen
+`Strg`-Tastenkürzel im Programm; alles andere ist eine Funktionstaste oder ein
+`Alt`-Tastenkürzel.
+
+Der Zoom wird Ihnen nie abgenommen. Er richtet sich nicht nach der Lern-Datei und auch
+nicht nach der Anzeigeskalierung Ihres Betriebssystems — haben Sie den Desktop bereits
+skaliert, multipliziert sich beides, was in aller Regel gewünscht ist.
+
+Das Kästchen eines Feldes wächst mit dem Text darin, ein längeres Feld bleibt also ein
+längeres Kästchen, und auf keiner Stufe wird etwas abgeschnitten. Nicht mit wächst die
+feste Umgebung des Textes: Symbole, die Abstände in Schaltflächen und die kleinen
+`F3`/`Esc`-Hinweise unter den Schaltflächen einer Sitzung. Bei 200 % sitzt die Oberfläche
+daher etwas enger um ihren Text als bei 100 %. Wird es einem Bildschirm mit zwei
+nebeneinanderliegenden Spalten zu eng — das betrifft den Mask Editor —, stellt er sie
+untereinander, genau wie in einem schmalen Fenster.
+
 ## Statistik-Optionen
 
 **Optionen ▸ Statistiken** enthält automatisches Laden, automatisches Speichern und
@@ -85,9 +111,9 @@ irgendwohin gesendet:
   werden in `learn_anywhere.settings.json` geschrieben, in einem Ordner `LearnAnywhere`
   am üblichen Speicherort für benutzerbezogene Konfiguration Ihres Betriebssystems
   (`%APPDATA%` unter Windows; `$XDG_CONFIG_HOME` oder `~/.config` unter Linux).
-- **Darstellung, Sprache, der Startordner, zuletzt verwendete Ordner, die Schalter für
-  automatisches Laden/Speichern sowie Größe und Position des Fensters** werden getrennt
-  davon im eigenen Einstellungsspeicher des Betriebssystems abgelegt.
+- **Darstellung, Sprache, die Zoomstufe, der Startordner, zuletzt verwendete Ordner, die
+  Schalter für automatisches Laden/Speichern sowie Größe und Position des Fensters**
+  werden getrennt davon im eigenen Einstellungsspeicher des Betriebssystems abgelegt.
 
 Keine der beiden Dateien muss von Hand angefasst werden — alles darin ist über die in
 diesem Kapitel beschriebenen Menüs erreichbar —, aber beide sind reiner, lesbarer Text,

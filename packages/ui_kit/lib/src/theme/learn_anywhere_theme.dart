@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'learn_anywhere_tokens.dart';
+import 'learn_anywhere_zoom.dart';
 
 /// Theme-specific chrome that doesn't fit [ColorScheme] roles.
 ///
@@ -45,25 +46,25 @@ final class LearnAnywhereTheme {
   const LearnAnywhereTheme._();
 
   /// Light theme used by desktop and mobile until user preferences are wired.
-  static ThemeData light() {
+  static ThemeData light({int zoomPercent = LearnAnywhereZoom.normal}) {
     final ColorScheme colors = ColorScheme.fromSeed(
       seedColor: const Color(0xFF29615C),
       brightness: Brightness.light,
     );
-    return _base(colors);
+    return _base(colors, zoomPercent);
   }
 
   /// Dark theme used by desktop and mobile until user preferences are wired.
-  static ThemeData dark() {
+  static ThemeData dark({int zoomPercent = LearnAnywhereZoom.normal}) {
     final ColorScheme colors = ColorScheme.fromSeed(
       seedColor: const Color(0xFF5DB3A9),
       brightness: Brightness.dark,
     );
-    return _base(colors);
+    return _base(colors, zoomPercent);
   }
 
   /// Dark Blue theme — inspired by VS Code "Tomorrow Night Blue".
-  static ThemeData darkBlue() {
+  static ThemeData darkBlue({int zoomPercent = LearnAnywhereZoom.normal}) {
     final ColorScheme base = ColorScheme.fromSeed(
       seedColor: const Color(0xFF002451),
       brightness: Brightness.dark,
@@ -84,7 +85,7 @@ final class LearnAnywhereTheme {
       outline: const Color(0xFF1D3B6E),
       outlineVariant: const Color(0xFF1D3B6E),
     );
-    return _base(colors).copyWith(
+    return _base(colors, zoomPercent).copyWith(
       extensions: const <ThemeExtension<dynamic>>[
         LearnAnywhereMenuTheme(separatorColor: Color(0xFFFFC600)),
       ],
@@ -92,7 +93,7 @@ final class LearnAnywhereTheme {
   }
 
   /// Light Blue theme — clean, high-contrast, vivid blue.
-  static ThemeData lightBlue() {
+  static ThemeData lightBlue({int zoomPercent = LearnAnywhereZoom.normal}) {
     final ColorScheme base = ColorScheme.fromSeed(
       seedColor: const Color(0xFF0057E7),
       brightness: Brightness.light,
@@ -112,15 +113,35 @@ final class LearnAnywhereTheme {
       outline: const Color(0xFFB3CFFF),
       outlineVariant: const Color(0xFFB3CFFF),
     );
-    return _base(colors);
+    return _base(colors, zoomPercent);
   }
 
-  static ThemeData _base(ColorScheme colors) {
-    final TextTheme textTheme = Typography.material2021().black.apply(
-      fontFamily: 'Atkinson Hyperlegible',
-      bodyColor: colors.onSurface,
-      displayColor: colors.onSurface,
-    );
+  /// Builds a theme whose every text size is multiplied by the zoom factor.
+  ///
+  /// The zoom level is applied HERE, to the theme's own font sizes, and never
+  /// as a text-scaler override. The mask's fixed-width field boxes are sized by
+  /// measuring one character in the very style they will be painted with; a
+  /// text scaler is applied after that measurement, at paint time, so it would
+  /// render text larger than the box measured for it and clip every field.
+  /// Scaling the theme keeps measurement and rendering in agreement. See
+  /// `docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md`.
+  static ThemeData _base(ColorScheme colors, int zoomPercent) {
+    final Typography typography = Typography.material2021();
+    // The colour theme (`black`) carries no font sizes at all — those live in
+    // the geometry (`englishLike`), which Flutter normally merges in later,
+    // during localization. Merging it in HERE is what gives the factor
+    // something to multiply, and an explicit size survives that later merge
+    // (`ThemeData.localize` puts the app's own theme on top of the geometry).
+    // Both languages this program ships are englishLike, so pinning that
+    // geometry costs nothing.
+    final TextTheme textTheme = typography.englishLike
+        .merge(typography.black)
+        .apply(
+          fontFamily: 'Atkinson Hyperlegible',
+          fontSizeFactor: LearnAnywhereZoom.factor(zoomPercent),
+          bodyColor: colors.onSurface,
+          displayColor: colors.onSurface,
+        );
     return ThemeData(
       colorScheme: colors,
       useMaterial3: true,

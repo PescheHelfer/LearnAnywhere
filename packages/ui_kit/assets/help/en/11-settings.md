@@ -41,6 +41,31 @@ label in the program, including menu ALT-mnemonics — a letter that opens a men
 English may not be the same letter in German — and this guide itself, which follows the
 same setting.
 
+## Zoom level
+
+**Options ▸ Zoom level** makes the whole program bigger on a large monitor: **100%** (the
+default), **125%**, **150%**, **175%** or **200%**. The current level is ticked in the
+menu. It applies to every screen and to the menu bar, and it is remembered, so you set it
+once.
+
+`Ctrl` and `+` steps up a level, `Ctrl` and `-` steps down one, and `Ctrl+0` returns to
+100% — the same keys as in most other programs. They step between the five offered levels
+rather than growing the text a little at a time, so you always land on a size that has
+been laid out and tested. These are the only `Ctrl` shortcuts in the program; everything
+else is a function key or an `Alt` mnemonic.
+
+Zoom is never applied for you. It does not follow the deck, and it does not follow your
+operating system's own display scaling — if you have already scaled your desktop, the two
+add up, which is usually what you want.
+
+A field's box grows with the text inside it, so a longer field stays a longer box and
+nothing is cut off at any level. What does *not* grow is the fixed chrome around the
+text: icons, the spacing inside buttons, and the small `F3`/`Esc` captions under the
+session buttons. At 200% the interface is therefore a little tighter around its text than
+at 100%. If a screen that used two side-by-side columns runs out of room — the Mask
+Editor is the one that does — it stacks them instead, exactly as it does in a narrow
+window.
+
 ## Statistics options
 
 **Options ▸ Statistics** holds auto-load, auto-save, and the session-file retention
@@ -78,9 +103,9 @@ Two separate stores, both entirely local — nothing here is ever sent anywhere:
   `learn_anywhere.settings.json` in a `LearnAnywhere` folder under your operating
   system's standard per-user configuration location (`%APPDATA%` on Windows;
   `$XDG_CONFIG_HOME` or `~/.config` on Linux).
-- **Theme, language, the start folder, recent-folder memory, auto-load/auto-save
-  toggles, and the window's size and position** are kept in the operating system's own
-  application preferences store, separately from the file above.
+- **Theme, language, the zoom level, the start folder, recent-folder memory,
+  auto-load/auto-save toggles, and the window's size and position** are kept in the
+  operating system's own application preferences store, separately from the file above.
 
 Neither file needs to be touched by hand — everything in it is reachable from the menus
 described in this chapter — but both are plain, readable text if you ever want to look.

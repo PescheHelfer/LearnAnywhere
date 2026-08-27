@@ -31,6 +31,7 @@ counter moves.
 |---|---|
 | [`packages/core/CONTEXT.md`](packages/core/CONTEXT.md) | Statistics vocabulary — the two records, session files, learning sessions. |
 | [`docs/adr/0001-all-time-statistics-accumulate-live-deltas.md`](docs/adr/0001-all-time-statistics-accumulate-live-deltas.md) | Why the lifetime record is accumulated live and never derived. |
+| [`docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md`](docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md) | Why zoom scales the theme's font sizes and never the text scaler. |
 | [`packages/desktop/CONTEXT.md`](packages/desktop/CONTEXT.md) | Desktop shell vocabulary — start folder, content frame, zoom level, recent decks. |
 
 The other contexts have no `CONTEXT.md` or `docs/adr/` yet. That is not a gap to fill

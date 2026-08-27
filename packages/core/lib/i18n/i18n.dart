@@ -262,6 +262,24 @@ enum LearnAnywhereMessage {
   /// Start-folder prompt: clears the setting.
   startFolderClear,
 
+  /// Zoom-level submenu label.
+  zoomLabel,
+
+  /// Zoom level: 100 per cent.
+  zoom100,
+
+  /// Zoom level: 125 per cent.
+  zoom125,
+
+  /// Zoom level: 150 per cent.
+  zoom150,
+
+  /// Zoom level: 175 per cent.
+  zoom175,
+
+  /// Zoom level: 200 per cent.
+  zoom200,
+
   /// Theme control label.
   themeLabel,
 
@@ -1406,6 +1424,15 @@ final class LearnAnywhereCatalog {
           'folder you last used instead.',
       LearnAnywhereMessage.startFolderChoose: 'Choose folder...',
       LearnAnywhereMessage.startFolderClear: 'Clear start folder',
+      // The five zoom levels take DIGIT accelerators: a percentage has no
+      // letter to mark, and digits cannot collide with the Options subtree's
+      // letters at any nesting depth.
+      LearnAnywhereMessage.zoomLabel: '&Zoom level', // Z
+      LearnAnywhereMessage.zoom100: '&100%', // 1
+      LearnAnywhereMessage.zoom125: '1&25%', // 2
+      LearnAnywhereMessage.zoom150: '1&50%', // 5
+      LearnAnywhereMessage.zoom175: '1&75%', // 7
+      LearnAnywhereMessage.zoom200: '20&0%', // 0
       LearnAnywhereMessage.themeLabel: '&Theme', // T
       LearnAnywhereMessage.themeSystem: '&System', // S
       LearnAnywhereMessage.themeLight: 'Lig&ht', // H
@@ -1984,6 +2011,12 @@ final class LearnAnywhereCatalog {
           'stattdessen im zuletzt verwendeten Ordner.',
       LearnAnywhereMessage.startFolderChoose: 'Ordner wählen...',
       LearnAnywhereMessage.startFolderClear: 'Startordner zurücksetzen',
+      LearnAnywhereMessage.zoomLabel: '&Zoomstufe', // Z
+      LearnAnywhereMessage.zoom100: '&100 %', // 1
+      LearnAnywhereMessage.zoom125: '1&25 %', // 2
+      LearnAnywhereMessage.zoom150: '1&50 %', // 5
+      LearnAnywhereMessage.zoom175: '1&75 %', // 7
+      LearnAnywhereMessage.zoom200: '20&0 %', // 0
       LearnAnywhereMessage.themeLabel: '&Darstellung', // D
       LearnAnywhereMessage.themeSystem: 'S&ystem', // Y (avoids S = Sprache label)
       LearnAnywhereMessage.themeLight: '&Hell', // H

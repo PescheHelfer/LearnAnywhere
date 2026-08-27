@@ -9,6 +9,13 @@ reference; each shortcut is also explained in context in its own chapter.
 |---|---|
 | `F1` | Open this user guide, as a dialog over whatever you are doing. Works from any screen, including mid-session or mid-edit — the only exceptions are while a menu is open or another dialog is already showing |
 | `Esc` | On any screen without its own `Esc` handling (Statistics, Lexicon, About, Options, Mask Editor), return to the workspace |
+| `Ctrl` and `+` | Next zoom level up |
+| `Ctrl` and `-` | Next zoom level down |
+| `Ctrl+0` | Back to 100% |
+
+The three zoom keys are the only `Ctrl` shortcuts in the program — everything else is a
+function key or an `Alt` mnemonic. They step between the five offered levels rather than
+scaling freely; see [Settings](11-settings.md#zoom-level).
 
 ## Menu bar
 

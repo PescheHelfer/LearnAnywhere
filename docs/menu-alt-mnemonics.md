@@ -94,6 +94,9 @@ crashes.
 3. The letter only needs to be **unique within that one submenu** — it may freely
    reuse a top-bar letter (that is the whole point of the scoping; the top bar is
    suppressed while the submenu is open). Keep existing assignments stable.
+   An item whose label has no letter to mark can take a **digit** instead — the five
+   Options ▸ Zoom level percentages do (`&100%`, `1&25%`, …), which also sidesteps the
+   nesting rule below, since a digit cannot collide with any letter.
 4. **Nested-submenu caveat (e.g. the Options → Theme/Language/Statistics
    subtree):** Flutter keeps a parent menu's *leaf* items and its *closed
    sibling submenu labels* registered while a deeper submenu is open. So a
@@ -141,7 +144,7 @@ menu-tracking loop (see the `WM_SYSCOMMAND`/`SC_KEYMENU` case in the same
 file).
 
 **`kMenuAcceleratorChars` must be kept in sync by hand** with the `&`-prefixed
-accelerator letters in
+accelerator characters (letters *and* the zoom levels' digits) in
 [`packages/core/lib/i18n/i18n.dart`](../packages/core/lib/i18n/i18n.dart) —
 update it whenever a menu label's accelerator letter changes there. Alt+letter
 combinations that aren't one of these registered accelerators still beep,

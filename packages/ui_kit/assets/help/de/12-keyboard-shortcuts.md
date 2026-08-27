@@ -10,6 +10,14 @@ Zusammenhang erklärt.
 |---|---|
 | `F1` | Öffnet dieses Benutzerhandbuch als Dialog über dem, was Sie gerade tun. Funktioniert auf jedem Bildschirm, auch mitten in einer Sitzung oder Bearbeitung — die einzigen Ausnahmen sind ein geöffnetes Menü oder ein bereits geöffneter anderer Dialog |
 | `Esc` | Kehrt auf jedem Bildschirm ohne eigene `Esc`-Behandlung (Statistik, Lexikon, Programminfo, Optionen, Mask Editor) zum Arbeitsbereich zurück |
+| `Strg` und `+` | Eine Zoomstufe hinauf |
+| `Strg` und `-` | Eine Zoomstufe hinunter |
+| `Strg+0` | Zurück auf 100 % |
+
+Die drei Zoomtasten sind die einzigen `Strg`-Tastenkürzel im Programm — alles andere ist
+eine Funktionstaste oder ein `Alt`-Tastenkürzel. Sie springen zwischen den fünf
+angebotenen Stufen, statt stufenlos zu vergrößern; siehe
+[Einstellungen](11-settings.md#zoomstufe).
 
 ## Menüleiste
 

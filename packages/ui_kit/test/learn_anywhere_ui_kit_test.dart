@@ -69,6 +69,133 @@ void main() {
     });
   });
 
+  group('zoom levels', () {
+    test('the offered levels are the five discrete ones, ascending', () {
+      expect(LearnAnywhereZoom.levels, <int>[100, 125, 150, 175, 200]);
+      expect(LearnAnywhereZoom.normal, 100);
+      expect(LearnAnywhereZoom.maximum, 200);
+    });
+
+    test('stepping moves between offered levels and stops at the ends', () {
+      // The keys step through tested sizes; they never scale freely.
+      expect(LearnAnywhereZoom.stepUp(100), 125);
+      expect(LearnAnywhereZoom.stepUp(175), 200);
+      expect(LearnAnywhereZoom.stepUp(200), 200);
+      expect(LearnAnywhereZoom.stepDown(200), 175);
+      expect(LearnAnywhereZoom.stepDown(125), 100);
+      expect(LearnAnywhereZoom.stepDown(100), 100);
+    });
+
+    test('a stored value that is not a level snaps onto the nearest one', () {
+      // Anything can end up in the preferences store: a hand edit, or a level
+      // some other build offered. Every caller wants a level back.
+      expect(LearnAnywhereZoom.nearest(140), 150);
+      expect(LearnAnywhereZoom.nearest(0), 100);
+      expect(LearnAnywhereZoom.nearest(5000), 200);
+      expect(LearnAnywhereZoom.isLevel(140), isFalse);
+      expect(LearnAnywhereZoom.isLevel(150), isTrue);
+      // And stepping off a stray value lands on a level, not on a stray one.
+      expect(LearnAnywhereZoom.stepUp(140), 175);
+    });
+
+    test('the theme carries the zoom in its OWN font sizes', () {
+      // This is the whole mechanism: the level is baked into the theme's text
+      // styles, where the mask's character measurement can see it. A
+      // TextScaler override would leave these numbers untouched and the field
+      // boxes would be measured for text a size smaller than it renders.
+      final ThemeData normal = LearnAnywhereTheme.darkBlue();
+      final ThemeData zoomed = LearnAnywhereTheme.darkBlue(zoomPercent: 200);
+      final double plain = normal.textTheme.bodyMedium!.fontSize!;
+      final double large = zoomed.textTheme.bodyMedium!.fontSize!;
+      expect(large, plain * 2);
+
+      // And what the mask actually measures grows with it.
+      final double plainChar = measureMonospaceCharWidth(
+        LearnAnywhereTokens.monospace(normal.textTheme.bodyMedium),
+      );
+      final double largeChar = measureMonospaceCharWidth(
+        LearnAnywhereTokens.monospace(zoomed.textTheme.bodyMedium),
+      );
+      expect(largeChar, greaterThan(plainChar * 1.9));
+    });
+
+    testWidgets('a field label column is bounded in zoomed units', (
+      WidgetTester tester,
+    ) async {
+      // The bounds clamp a width measured in the ZOOMED style, so a fixed
+      // ceiling would ellipsize, at 200 per cent, a name that fits in full at
+      // 100 — truncation the learner would read as a bug in her mask.
+      const LearningMask mask = LearningMask(
+        maskId: 'm_zoom-label-fixture',
+        name: 'Fixture',
+        direction1Label: 'A',
+        direction2Label: 'B',
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 0,
+            name: 'Cat',
+            fields: <FieldDefinition>[
+              FieldDefinition(
+                id: 0,
+                // Long enough to reach the ceiling at either level.
+                name: 'A very long field name indeed, and then some more',
+                length: 40,
+                equalGroup: 0,
+                role1: FieldRole.question,
+                role2: FieldRole.answer,
+              ),
+            ],
+          ),
+        ],
+      );
+
+      Future<double> labelWidthAt(int zoomPercent) async {
+        late double width;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: LearnAnywhereTheme.light(zoomPercent: zoomPercent),
+            home: Builder(
+              builder: (BuildContext context) {
+                width = computeFieldLabelWidth(context, mask);
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        return width;
+      }
+
+      expect(
+        await labelWidthAt(100),
+        LearnAnywhereTokens.fieldLabelMaxWidth,
+      );
+      expect(
+        await labelWidthAt(200),
+        LearnAnywhereTokens.fieldLabelMaxWidth * 2,
+      );
+    });
+
+    test('every theme scales, and 100 per cent changes nothing', () {
+      for (final ThemeData Function({int zoomPercent}) build
+          in <ThemeData Function({int zoomPercent})>[
+            LearnAnywhereTheme.light,
+            LearnAnywhereTheme.dark,
+            LearnAnywhereTheme.darkBlue,
+            LearnAnywhereTheme.lightBlue,
+          ]) {
+        expect(
+          build(zoomPercent: 100).textTheme.titleMedium!.fontSize,
+          build().textTheme.titleMedium!.fontSize,
+        );
+        expect(
+          build(zoomPercent: 150).textTheme.titleMedium!.fontSize,
+          build().textTheme.titleMedium!.fontSize! * 1.5,
+        );
+      }
+    });
+  });
+
   group('localizations', () {
     testWidgets('resolves German messages', (WidgetTester tester) async {
       await tester.pumpWidget(

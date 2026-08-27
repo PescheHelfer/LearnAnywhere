@@ -430,6 +430,171 @@ void main() {
     },
   );
 
+  testWidgets('the zoom submenu offers every level and marks the current one', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+
+    await openZoomMenu(tester);
+    // Exactly the levels the shared model defines, no more and no fewer.
+    for (final int level in LearnAnywhereZoom.levels) {
+      expect(find.text('$level%'), findsOneWidget, reason: 'level $level');
+    }
+    expect(
+      find.byType(RadioMenuButton<int>),
+      findsNWidgets(LearnAnywhereZoom.levels.length),
+    );
+
+    // 100 % is where an untouched install starts, and the menu says so.
+    expect(selectedZoomLevel(tester), 100);
+
+    await tester.tap(find.text('150%'));
+    await tester.pumpAndSettle();
+    await openZoomMenu(tester);
+    expect(selectedZoomLevel(tester), 150);
+  });
+
+  testWidgets('the zoom level survives a relaunch', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await openZoomMenu(tester);
+    await tester.tap(find.text('175%'));
+    await tester.pumpAndSettle();
+
+    // Quit and come back: a brand-new app over the same preference store, the
+    // way the next launch sees it.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: DesktopPrefs(await SharedPreferences.getInstance()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await openZoomMenu(tester);
+    expect(selectedZoomLevel(tester), 175);
+  });
+
+  testWidgets('Ctrl+plus, Ctrl+minus and Ctrl+zero step through the levels', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+
+    // Straight from launch, with nothing clicked and nothing focused.
+    await pressZoomKey(tester, LogicalKeyboardKey.equal);
+    expect(await currentZoomLevel(tester), 125);
+    await pressZoomKey(tester, LogicalKeyboardKey.equal);
+    expect(await currentZoomLevel(tester), 150);
+
+    // The keys land on offered levels only — never a free-form size between.
+    await pressZoomKey(tester, LogicalKeyboardKey.minus);
+    expect(await currentZoomLevel(tester), 125);
+
+    // Ctrl+0 goes home from anywhere.
+    await pressZoomKey(tester, LogicalKeyboardKey.digit0);
+    expect(await currentZoomLevel(tester), 100);
+
+    // The bottom of the ladder holds; it does not wrap or go smaller.
+    await pressZoomKey(tester, LogicalKeyboardKey.minus);
+    expect(await currentZoomLevel(tester), 100);
+
+    // And the top holds too.
+    for (int i = 0; i < 6; i++) {
+      await pressZoomKey(tester, LogicalKeyboardKey.numpadAdd);
+    }
+    expect(await currentZoomLevel(tester), LearnAnywhereZoom.maximum);
+  });
+
+  testWidgets('zoom reaches the menu bar, not only the screens', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1600, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    final Size plainMenu = tester.getSize(find.text('File'));
+    final Size plainTitle = tester.getSize(find.text('Learn Anywhere'));
+
+    await setZoomFromMenu(tester, 200);
+    // The menu bar is chrome, not a screen — it would be the one thing left
+    // behind by a per-screen approach, and the interface would read as
+    // mismatched.
+    expect(tester.getSize(find.text('File')).width,
+        greaterThan(plainMenu.width * 1.5));
+    expect(tester.getSize(find.text('Learn Anywhere')).width,
+        greaterThan(plainTitle.width * 1.5));
+  });
+
+  testWidgets('a mask field box grows together with the text inside it', (
+    WidgetTester tester,
+  ) async {
+    // THE test for the zoom mechanism. The field box is sized by measuring one
+    // character in the style the text is painted with, so scaling the theme's
+    // own font sizes grows the box and the text together. Overriding the text
+    // scaler instead would grow the text at paint time, AFTER that
+    // measurement: the row would get taller (the text lays out taller) while
+    // its width stayed exactly where it was, and every field would clip. That
+    // is why this asserts the WIDTH, and asserts it against the height rather
+    // than against a fixed number.
+    tester.view.physicalSize = const Size(2200, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await openEditorWithOneUnit(tester);
+
+    final Size plain = tester.getSize(find.byType(FieldRow).first);
+
+    await setZoomFromMenu(tester, 200);
+    await openEditorWithOneUnit(tester);
+    final Size zoomed = tester.getSize(find.byType(FieldRow).first);
+
+    final double widthGrowth = zoomed.width / plain.width;
+    final double heightGrowth = zoomed.height / plain.height;
+    // The text really did get bigger: the row is taller because the line it
+    // holds is taller. (It grows by less than the full factor because the row's
+    // padding is fixed — the accepted consequence recorded in the ADR.)
+    expect(heightGrowth, greaterThan(1.2));
+    // And the box that holds the text grew with it — the assertion the whole
+    // mechanism exists for. A text-scaler override would leave this at exactly
+    // 1.0 while the height above still grew, so comparing the two is what makes
+    // this test fail against the wrong implementation.
+    expect(widthGrowth, greaterThan(heightGrowth));
+    // At 200 % the value column is sized for characters twice as wide, so the
+    // row very nearly doubles; only the fixed accent bar and divider hold it
+    // back.
+    expect(widthGrowth, greaterThan(1.8));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('maximum zoom raises no overflow on any screen', (
+    WidgetTester tester,
+  ) async {
+    // Both the window the program opens at and a large monitor: the first is
+    // where doubled text runs out of room first, and it is what the learner
+    // most likely has when she reaches for zoom in the first place.
+    for (final Size size in <Size>[
+      const Size(1280, 720),
+      const Size(2400, 1500),
+    ]) {
+      await walkEveryScreen(
+        tester,
+        zoomPercent: LearnAnywhereZoom.maximum,
+        surface: size,
+      );
+    }
+  });
+
   testWidgets('desktop shell switches language at runtime', (
     WidgetTester tester,
   ) async {
@@ -452,6 +617,187 @@ void main() {
     expect(find.text('Arbeitsbereich'), findsOneWidget);
     expect(find.text('Keine Datei geladen'), findsOneWidget);
   });
+}
+
+/// Drives every screen of the program at [zoomPercent] on a [surface]-sized
+/// window, failing on the first layout overflow any of them raises.
+///
+/// A layout overflow throws in a widget test, so visiting the screens IS the
+/// assertion; each [WidgetTester.takeException] names the screen it belongs to
+/// so a failure says where to look. The zoom comes from the preference store
+/// rather than the menu, so every screen is built at that level from the start.
+Future<void> walkEveryScreen(
+  WidgetTester tester, {
+  required int zoomPercent,
+  required Size surface,
+}) async {
+  SharedPreferences.setMockInitialValues(<String, Object>{
+    'zoom_percent': zoomPercent,
+  });
+  final DesktopPrefs zoomed = DesktopPrefs(
+    await SharedPreferences.getInstance(),
+  );
+  final String tag = '$zoomPercent% at ${surface.width.toInt()} wide';
+  tester.view.physicalSize = surface;
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  Future<void> clean(String where) async {
+    expect(tester.takeException(), isNull, reason: '$tag — $where');
+  }
+
+  Future<void> pick(String top, String item) async {
+    await tester.ensureVisible(find.text(top));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(top));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(item).last);
+    await tester.pumpAndSettle();
+  }
+
+  await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: zoomed));
+  await tester.pumpAndSettle();
+  await clean('the workspace');
+
+  await openEditorWithOneUnit(tester);
+  await clean('the unit editor');
+  await tester.tap(find.text('Done'));
+  await tester.pumpAndSettle();
+  // The workspace again, now in its loaded-deck form: status lines and the
+  // statistics summary, which the empty one above does not show.
+  await clean('the workspace with a deck loaded');
+
+  await pick('Edit', 'Mask Editor');
+  await clean('the mask editor');
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+
+  await tester.ensureVisible(find.text('Statistics'));
+  await tester.tap(find.text('Statistics'));
+  await tester.pumpAndSettle();
+  await clean('the statistics screen');
+  await tester.tap(find.text('All-time'));
+  await tester.pumpAndSettle();
+  await clean('the statistics screen in all-time scope');
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+
+  await tester.ensureVisible(find.text('Lexicon'));
+  await tester.tap(find.text('Lexicon'));
+  await tester.pumpAndSettle();
+  await clean('the lexicon');
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+
+  await pick('Options', 'Advanced Learning Options');
+  await clean('the advanced learning options');
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+
+  await pick('Learn', 'Practice setup');
+  await clean('the practice setup');
+  await tester.drag(find.byType(ListView), const Offset(0, -500));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Start session'));
+  await tester.pumpAndSettle();
+  await clean('a running session');
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+
+  await tester.sendKeyEvent(LogicalKeyboardKey.f1);
+  await tester.pumpAndSettle();
+  await clean('the user guide');
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+
+  await pick('Help', 'About');
+  await clean('the about screen');
+
+  await pick('Options', 'Start folder...');
+  await clean('the start-folder prompt');
+  await tester.tap(find.text('Cancel').last);
+  await tester.pumpAndSettle();
+}
+
+/// Opens Options ▸ Zoom level, leaving its five radio items on screen.
+Future<void> openZoomMenu(WidgetTester tester) async {
+  // The menu bar scrolls horizontally, and every level above 100 % makes it
+  // wider — so scroll the entry into view rather than assuming it is.
+  await tester.ensureVisible(find.text('Options'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Options'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Zoom level').last);
+  await tester.pumpAndSettle();
+}
+
+/// Closes whatever menu is open, so a keystroke reaches the app again.
+Future<void> closeMenus(WidgetTester tester) async {
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+}
+
+/// The level the open zoom submenu shows as selected.
+///
+/// Also asserts that exactly one level is marked, which is the whole point of
+/// a radio group: the learner can always see where she is.
+int selectedZoomLevel(WidgetTester tester) {
+  final Iterable<RadioMenuButton<int>> marked = tester
+      .widgetList<RadioMenuButton<int>>(find.byType(RadioMenuButton<int>))
+      .where((RadioMenuButton<int> button) => button.value == button.groupValue);
+  expect(marked, hasLength(1));
+  return marked.first.value;
+}
+
+/// Opens the zoom submenu, reads the selected level, and closes up again.
+Future<int> currentZoomLevel(WidgetTester tester) async {
+  await openZoomMenu(tester);
+  final int level = selectedZoomLevel(tester);
+  await closeMenus(tester);
+  return level;
+}
+
+/// Picks [level] from Options ▸ Zoom level.
+Future<void> setZoomFromMenu(WidgetTester tester, int level) async {
+  await openZoomMenu(tester);
+  await tester.tap(find.text('$level%'));
+  await tester.pumpAndSettle();
+}
+
+/// Presses [key] with the left Ctrl held down.
+Future<void> pressZoomKey(WidgetTester tester, LogicalKeyboardKey key) async {
+  await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+  await tester.sendKeyEvent(key);
+  await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+  await tester.pumpAndSettle();
+}
+
+/// Opens the unit editor on a deck that has one unit, creating it on the first
+/// call and re-entering the existing one afterwards.
+///
+/// The shortest route to a mask field box on screen, which is what the zoom
+/// geometry assertion needs to measure.
+Future<void> openEditorWithOneUnit(WidgetTester tester) async {
+  await tester.ensureVisible(find.text('Edit'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Edit'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Unit editor').last);
+  await tester.pumpAndSettle();
+  if (tester.any(find.text('No learning units'))) {
+    await tester.tap(find.text('Insert unit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Category 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+  }
+  expect(find.byType(FieldRow), findsWidgets);
 }
 
 /// Opens the all-time overflow menu and picks the clear command, leaving the

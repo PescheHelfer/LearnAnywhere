@@ -86,7 +86,12 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
           const SizedBox(height: LearnAnywhereTokens.gapLarge),
           LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
-              final bool compact = constraints.maxWidth < 900;
+              // The breakpoint is in text-sized units like the two columns it
+              // separates, so it moves with the zoom level: a window that fits
+              // both columns at 100 % does not fit them at 200 %, and the
+              // stacked layout has to take over sooner.
+              final bool compact =
+                  constraints.maxWidth < LearnAnywhereZoom.scale(context, 900);
               final Widget categories = _CategoryList(
                 mask: mask,
                 selectedIndex: _selectedCategoryIndex,
@@ -119,7 +124,10 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  SizedBox(width: 420, child: categories),
+                  SizedBox(
+                    width: LearnAnywhereZoom.scale(context, 420),
+                    child: categories,
+                  ),
                   const SizedBox(width: LearnAnywhereTokens.gapLarge),
                   Expanded(child: fields),
                 ],
@@ -428,7 +436,7 @@ final class _MaskHeader extends StatelessWidget {
       runSpacing: LearnAnywhereTokens.gapMedium,
       children: <Widget>[
         SizedBox(
-          width: 280,
+          width: LearnAnywhereZoom.scale(context, 280),
           child: TextFormField(
             key: const ValueKey<String>('mask-name-field'),
             initialValue: mask.name,
@@ -452,7 +460,7 @@ final class _MaskHeader extends StatelessWidget {
           ),
         ),
         SizedBox(
-          width: 240,
+          width: LearnAnywhereZoom.scale(context, 240),
           child: TextFormField(
             key: const ValueKey<String>('direction-1-field'),
             initialValue: mask.direction1Label,
@@ -476,7 +484,7 @@ final class _MaskHeader extends StatelessWidget {
           ),
         ),
         SizedBox(
-          width: 240,
+          width: LearnAnywhereZoom.scale(context, 240),
           child: TextFormField(
             key: const ValueKey<String>('direction-2-field'),
             initialValue: mask.direction2Label,
@@ -880,7 +888,7 @@ final class _FieldGridState extends State<_FieldGrid> {
       cells: <DataCell>[
         DataCell(
           SizedBox(
-            width: 200,
+            width: LearnAnywhereZoom.scale(context, 200),
             child: TextFormField(
               key: ValueKey<String>('field-name-$categoryId-${field.id}'),
               initialValue: field.name,
@@ -893,7 +901,7 @@ final class _FieldGridState extends State<_FieldGrid> {
         ),
         DataCell(
           SizedBox(
-            width: 72,
+            width: LearnAnywhereZoom.scale(context, 72),
             child: TextFormField(
               key: ValueKey<String>('field-length-$categoryId-${field.id}'),
               initialValue: field.length.toString(),
@@ -920,7 +928,7 @@ final class _FieldGridState extends State<_FieldGrid> {
         ),
         DataCell(
           SizedBox(
-            width: 56,
+            width: LearnAnywhereZoom.scale(context, 56),
             child: TextFormField(
               key: ValueKey<String>(
                 'field-equal-group-$categoryId-${field.id}',

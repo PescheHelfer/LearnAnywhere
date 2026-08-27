@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 
 import '../theme/learn_anywhere_tokens.dart';
+import '../theme/learn_anywhere_zoom.dart';
 
 /// Measures the rendered width of [text] using [style].
 ///
@@ -27,13 +28,16 @@ double measureMonospaceCharWidth(TextStyle style) =>
 /// aligned and stable regardless of which unit/category is on screen.
 ///
 /// Clamped to [minWidth]/[maxWidth] so one very long field name can't
-/// dominate the layout.
+/// dominate the layout. Both bounds default to the shared tokens scaled by the
+/// zoom level in force: the names they bound are measured in the zoomed style,
+/// so a fixed ceiling would start ellipsizing, at 200 per cent, names that fit
+/// in full at 100.
 double computeFieldLabelWidth(
   BuildContext context,
   LearningMask mask, {
   TextStyle? style,
-  double minWidth = LearnAnywhereTokens.fieldLabelMinWidth,
-  double maxWidth = LearnAnywhereTokens.fieldLabelMaxWidth,
+  double? minWidth,
+  double? maxWidth,
 }) {
   final TextStyle effectiveStyle =
       style ?? Theme.of(context).textTheme.bodySmall ?? const TextStyle();
@@ -45,7 +49,18 @@ double computeFieldLabelWidth(
       if (width > widest) widest = width;
     }
   }
-  return (widest + 16).clamp(minWidth, maxWidth);
+  return (widest + 16).clamp(
+    minWidth ??
+        LearnAnywhereZoom.scale(
+          context,
+          LearnAnywhereTokens.fieldLabelMinWidth,
+        ),
+    maxWidth ??
+        LearnAnywhereZoom.scale(
+          context,
+          LearnAnywhereTokens.fieldLabelMaxWidth,
+        ),
+  );
 }
 
 /// Computes a [FieldRow] value-column width sized to hold [fieldLength]

@@ -288,7 +288,7 @@ final class _DirectionViewMenu extends StatelessWidget {
       context,
     );
     return SizedBox(
-      width: 240,
+      width: LearnAnywhereZoom.scale(context, 240),
       child: DropdownButtonFormField<StatisticsDirectionView>(
         decoration: InputDecoration(
           labelText: messages.message(
@@ -716,7 +716,7 @@ final class _PracticeListState extends State<_PracticeList> {
                   },
                 ),
             SizedBox(
-              width: 90,
+              width: LearnAnywhereZoom.scale(context, 90),
               child: TextField(
                 controller: _minController,
                 keyboardType: TextInputType.number,
@@ -730,7 +730,7 @@ final class _PracticeListState extends State<_PracticeList> {
               ),
             ),
             SizedBox(
-              width: 90,
+              width: LearnAnywhereZoom.scale(context, 90),
               child: TextField(
                 controller: _maxController,
                 keyboardType: TextInputType.number,

@@ -531,7 +531,7 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
                         ),
                   },
                   child: SizedBox(
-                    width: 320,
+                    width: LearnAnywhereZoom.scale(context, 320),
                     child: ListView.builder(
                       shrinkWrap: true,
                       itemCount: categories.length,

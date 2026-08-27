@@ -1,11 +1,12 @@
 import 'dart:async';
 
+import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Typed wrapper around [SharedPreferences] for desktop-specific settings.
 ///
-/// Covers UI theme, UI language, the start folder, and last-used file-dialog
-/// directories.
+/// Covers UI theme, UI language, the zoom level, the start folder, and
+/// last-used file-dialog directories.
 /// Window geometry is handled separately by `WindowGeometryService`.
 /// Pure learning-engine settings are stored in the JSON settings file
 /// managed by the core package.
@@ -22,6 +23,7 @@ final class DesktopPrefs {
   static const String _keyLastDirInf = 'last_dir_inf';
   static const String _keyLastDirFileSearch = 'last_dir_file_search';
   static const String _keyStartFolder = 'start_folder';
+  static const String _keyZoomPercent = 'zoom_percent';
   static const String _keyAutoLoadStats = 'auto_load_stats';
   static const String _keyAutoSaveStats = 'auto_save_stats';
 
@@ -40,6 +42,25 @@ final class DesktopPrefs {
   /// Persists [value] as the active locale language code.
   void setLocale(String value) =>
       unawaited(_prefs.setString(_keyLocale, value));
+
+  // --- Zoom level -----------------------------------------------------------
+
+  /// The stored zoom level in per cent, always one of the offered levels.
+  ///
+  /// Anything else — nothing stored, or a value hand-edited into the store —
+  /// reads back as the nearest offered level, so the rest of the program never
+  /// has to cope with a size that was never laid out.
+  int get zoomPercent {
+    final int? stored = _prefs.getInt(_keyZoomPercent);
+    return stored == null
+        ? LearnAnywhereZoom.normal
+        : LearnAnywhereZoom.nearest(stored);
+  }
+
+  /// Persists [value] as the zoom level, snapped to an offered level.
+  void setZoomPercent(int value) => unawaited(
+    _prefs.setInt(_keyZoomPercent, LearnAnywhereZoom.nearest(value)),
+  );
 
   // --- Start folder ---------------------------------------------------------
 

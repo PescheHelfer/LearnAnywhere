@@ -372,7 +372,7 @@ final class _LevelNameColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 260,
+      width: LearnAnywhereZoom.scale(context, 260),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -475,7 +475,7 @@ final class _NumberOptionState extends State<_NumberOption> {
         vertical: LearnAnywhereTokens.gapSmall,
       ),
       child: SizedBox(
-        width: 320,
+        width: LearnAnywhereZoom.scale(context, 320),
         child: TextField(
           controller: _controller,
           keyboardType: TextInputType.number,

@@ -2965,7 +2965,7 @@ final class _ToggleRow extends StatelessWidget {
         child: Row(
           children: <Widget>[
             SizedBox(
-              width: 280,
+              width: LearnAnywhereZoom.scale(context, 280),
               child: Text(label, style: Theme.of(context).textTheme.bodyLarge),
             ),
             Switch(value: value, onChanged: onChanged),
