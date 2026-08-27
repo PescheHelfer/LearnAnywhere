@@ -58,7 +58,10 @@ which wrote the code.
   exactly the items you keep getting wrong.
 - **A lexicon.** Search the units in memory, or sweep a whole folder tree of decks on disk.
 - **Rich text in fields.** Bold, italic, underline, colour and highlight, stored portably.
-- **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, and full keyboard operation including ALT menu mnemonics.
+- **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, content centred in the window on a wide screen, and full keyboard operation including ALT menu mnemonics.
+- **Finds your decks.** Up to three recently opened decks are one click away from the
+  welcome screen, and a start folder can be set so every file dialog opens where your
+  decks live.
 - **An Android companion.** Import your decks onto a phone and keep practising them
   away from the computer: think-only, two taps per card, with its own statistics.
   Read-only by design, so nothing is edited or synced back.
@@ -221,7 +224,7 @@ One pub workspace, four packages:
 ## Status
 
 The two applications ship separately, on independent version tracks and with different
-feature sets. The desktop application is at 0.8.1; the Android companion is at 0.4.0 and
+feature sets. The desktop application is at 0.9.0; the Android companion is at 0.4.0 and
 is distributed as a sideloaded APK.
 
 ## Credits

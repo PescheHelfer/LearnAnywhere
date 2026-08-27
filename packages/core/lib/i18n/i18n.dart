@@ -370,6 +370,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.8.1.
   aboutVersion081,
 
+  /// About page version history entry for 0.9.0.
+  aboutVersion090,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1517,6 +1520,15 @@ final class LearnAnywhereCatalog {
           'actions menu beside the Current/All-time selector, and its '
           'confirmation names the deck; an empty lexicon search now lists '
           'every unit of the chosen category.',
+      LearnAnywhereMessage.aboutVersion090:
+          '0.9.0 – The welcome screen lists up to three recently opened '
+          'decks and switches between them in one click, even while a deck '
+          'is already loaded; a start folder can be set from the Options '
+          'menu so every file dialog opens there; the zoom level scales '
+          'the whole program from 75 to 200 per cent, with Ctrl+plus, '
+          'Ctrl+minus and Ctrl+zero to step through it; and each screen\'s '
+          'content now sits centred in the window on a wide monitor, an '
+          'option that can be turned off.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2113,6 +2125,16 @@ final class LearnAnywhereCatalog {
           'der Umschaltung Aktuell/Allzeit, und die Rückfrage nennt die '
           'Lern-Datei; eine leere Suche im Lexikon listet jetzt alle '
           'Einheiten der gewählten Kategorie.',
+      LearnAnywhereMessage.aboutVersion090:
+          '0.9.0 – Der Startbildschirm listet bis zu drei zuletzt '
+          'verwendete Lern-Dateien und wechselt mit einem Klick zwischen '
+          'ihnen, auch während bereits eine Lern-Datei geöffnet ist; ein '
+          'Startordner lässt sich im Menü Optionen festlegen, sodass jeder '
+          'Dateidialog dort öffnet; die Zoomstufe skaliert das gesamte '
+          'Programm von 75 auf 200 Prozent, mit Strg+Plus, Strg+Minus und '
+          'Strg+Null zum Durchschalten; und der Inhalt jedes Bildschirms '
+          'sitzt jetzt bei einem breiten Bildschirm zentriert im Fenster, '
+          'eine Option, die sich abschalten lässt.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
