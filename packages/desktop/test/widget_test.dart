@@ -666,7 +666,7 @@ void main() {
     },
   );
 
-  testWidgets('the lexicon and About keep the whole window; the rest is framed',
+  testWidgets('About keeps the whole window; every other screen is framed',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(2400, 1500);
     tester.view.devicePixelRatio = 1.0;
@@ -681,9 +681,9 @@ void main() {
     await tester.ensureVisible(find.text('Lexicon'));
     await tester.tap(find.text('Lexicon'));
     await tester.pumpAndSettle();
-    // Exempt: the results table is the widest surface in the program and
-    // genuinely needs every pixel.
-    expect(find.byType(ContentFrame), findsNothing);
+    // Framed like the rest: its results table already scrolls sideways inside
+    // its own container, so the frame only makes it start a little sooner.
+    expect(find.byType(ContentFrame), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
@@ -692,7 +692,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('About'));
     await tester.pumpAndSettle();
-    // Exempt too, but for the opposite reason: it already constrains itself.
+    // The one exemption left: it already centres and constrains itself.
     expect(find.byType(ContentFrame), findsNothing);
   });
 

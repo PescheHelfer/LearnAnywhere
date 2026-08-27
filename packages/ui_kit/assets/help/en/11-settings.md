@@ -86,15 +86,22 @@ Centring is sideways only. The content still starts at the top of the window, de
 the line telling you whether an answer was right appears and disappears as you work, and a
 frame centred top-to-bottom as well would make the whole mask jump on every answer.
 
-The frame is as wide as the deck you have open needs. It is sized from the widest field your
-mask can show, so a mask that would have fitted never has to be scrolled sideways — and
-never narrower than the rows of buttons underneath, so centring cannot push those onto extra
-lines. It is the same width while learning and while editing the same deck, so nothing moves
-when you switch between the two.
+The frame is as wide as the deck you have open needs, and no wider. It is sized from the
+widest field your mask can show, so a mask that would have fitted never has to be scrolled
+sideways. It is the same width while learning and while editing the same deck, so nothing
+moves when you switch between the two.
 
-Two screens keep the whole window. The **lexicon** does, because its results table is the
-widest thing in the program and uses every pixel it is given; so does the **About** box,
-which is already narrow by itself.
+A deck of short fields therefore gets a narrow frame, and the rows of buttons underneath
+simply wrap onto a second line inside it — which is what they do in a narrow window too. The
+one thing the frame will not do is squeeze a button, or either group of the evaluation pills,
+to make it fit: it never goes narrower than the widest single one of those.
+
+The **About** box is the one screen with no frame. It is already narrow and centred by
+itself, so there is nothing for a frame to do.
+
+The **lexicon** is framed like everything else. Its results table is the widest thing in the
+program, but it already scrolls sideways inside its own box, so the frame only means it starts
+doing that a little sooner.
 
 Make the window narrower than the frame and the frame simply becomes the window: the margins
 disappear and everything behaves exactly as it did before, with the mask scrolling sideways

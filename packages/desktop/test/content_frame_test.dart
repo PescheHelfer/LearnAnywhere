@@ -106,11 +106,15 @@ void main() {
         ),
       );
 
-  // `learnControlRowWidth` composes measured labels with constant chrome, and
-  // the frame is computed from it before any of these rows exist. These tests
-  // are what keep that composition honest: they lay the real rows out, in both
+  // The floor composes measured labels with constant chrome, and the frame is
+  // computed from it before any of these controls exist. These tests are what
+  // keep that composition honest: they lay the real controls out, in both
   // languages, and fail if the model has drifted from the widgets — a new
   // pill, a changed padding, a longer label.
+  //
+  // What the floor guards is that nothing is *squeezed*. The rows themselves
+  // are meant to wrap to the deck's width, so it is each unbreakable cluster
+  // that is checked here, never the width of a whole row.
   //
   // Both sides of the comparison use whatever font the test host provides, so
   // an inequality that holds here holds in the shipping font too.
@@ -134,39 +138,33 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final double floor = learnControlRowWidth(
+      final double floor = learnControlGroupWidth(
         context,
         LearnAnywhereLocalizations.of(context),
-      );
-
-      final double statisticRow = tester
-          .getSize(find.byKey(const Key('learnStatPills')))
-          .width;
-      expect(
-        floor,
-        greaterThanOrEqualTo(statisticRow),
-        reason: 'the $language statistic pills lay out $statisticRow wide',
       );
 
       // Reveal, so the action and evaluation pills exist.
       await tester.sendKeyEvent(LogicalKeyboardKey.f10);
       await tester.pumpAndSettle();
 
-      final double actionRow =
-          tester.getSize(find.byKey(const Key('learnActionPillsGroup'))).width +
-          LearnAnywhereTokens.gapLarge +
-          tester
-              .getSize(find.byKey(const Key('learnEvaluationPillsGroup')))
-              .width;
-      expect(
-        floor,
-        greaterThanOrEqualTo(actionRow),
-        reason:
-            'the $language action and evaluation pills lay out $actionRow wide',
-      );
+      // Each group is a FittedBox: a frame narrower than one of them shrinks
+      // its text rather than moving it, which is the one thing the floor is
+      // there to prevent. Their combined width is deliberately NOT checked —
+      // the evaluation group dropping to its own line is a supported layout.
+      for (final String group in <String>[
+        'learnActionPillsGroup',
+        'learnEvaluationPillsGroup',
+      ]) {
+        final double width = tester.getSize(find.byKey(Key(group))).width;
+        expect(
+          floor,
+          greaterThanOrEqualTo(width),
+          reason: 'the $language $group lays out $width wide',
+        );
+      }
     });
 
-    testWidgets('the frame floor covers the $language editor action row', (
+    testWidgets('the frame floor covers the widest $language editor button', (
       WidgetTester tester,
     ) async {
       tester.view.physicalSize = const Size(3000, 1000);
@@ -180,22 +178,98 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The editor's eight icon buttons are the widest control row in either
-      // screen, and the frame is sized for both screens at once — so this is
-      // the row that actually decides the floor for a short-field deck.
-      final double row = tester
-          .getSize(find.byKey(const Key('editorActionRow')))
-          .width;
+      // The row is free to wrap to the deck's width; what the frame owes it is
+      // that its widest single button is never squeezed. Measured against the
+      // real buttons, so a longer label or a new one fails here.
+      double widest = 0;
+      for (final Element button in find
+          .descendant(
+            of: find.byKey(const Key('editorActionRow')),
+            matching: find.byType(FilledButton),
+          )
+          .evaluate()) {
+        widest = widest > button.size!.width ? widest : button.size!.width;
+      }
+      expect(widest, greaterThan(0));
       expect(
-        editorControlRowWidth(
+        editorControlButtonWidth(
           context,
           LearnAnywhereLocalizations.of(context),
         ),
-        greaterThanOrEqualTo(row),
-        reason: 'the $language editor action row lays out $row wide',
+        greaterThanOrEqualTo(widest),
+        reason: 'the widest $language editor button lays out $widest wide',
       );
     });
   }
+
+  testWidgets('a short deck wraps the editor row rather than widening the frame',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(3000, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    late BuildContext context;
+    await tester.pumpWidget(
+      buildEditor(const Locale('en'), report: (BuildContext c) => context = c),
+    );
+    await tester.pumpAndSettle();
+
+    final LearnAnywhereLocalizations messages =
+        LearnAnywhereLocalizations.of(context);
+    final double frame = deckContentFrameWidth(
+      context,
+      mask,
+      minimumWidth: editorControlButtonWidth(context, messages),
+    );
+
+    // The frame follows the deck, and this deck is narrower than its own
+    // action row. The row is expected to wrap into it — the alternative,
+    // holding the frame open at the row's full width, is what made a
+    // short-field deck sit in a frame far wider than anything in it.
+    final double row = tester
+        .getSize(find.byKey(const Key('editorActionRow')))
+        .width;
+    expect(frame, lessThan(row));
+    // But never so narrow that a single button has to be squeezed.
+    expect(
+      frame,
+      greaterThanOrEqualTo(editorControlButtonWidth(context, messages)),
+    );
+
+    // And it really does wrap rather than overflow: laid out at the frame's
+    // own inner width, the row takes more than one line and raises nothing.
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: Scaffold(
+          body: SizedBox(
+            width: frame,
+            child: UnitEditorPage(
+              deck: deck,
+              onChanged: (LearningDeck _, {int? insertedAt, int? deletedAt}) {},
+              onDone: () {},
+              onCancel: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Size wrapped = tester.getSize(
+      find.byKey(const Key('editorActionRow')),
+    );
+    final Size button = tester.getSize(
+      find.descendant(
+        of: find.byKey(const Key('editorActionRow')),
+        matching: find.byType(FilledButton),
+      ).first,
+    );
+    expect(wrapped.height, greaterThan(button.height));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('a mask too wide for the frame scrolls inside its own container',
       (WidgetTester tester) async {

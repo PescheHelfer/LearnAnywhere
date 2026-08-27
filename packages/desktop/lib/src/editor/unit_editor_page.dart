@@ -1231,26 +1231,26 @@ const List<(LearnAnywhereMessage, String)> _actionRow =
       (LearnAnywhereMessage.editorCancel, 'Esc'),
     ];
 
-/// The width the editor's action row needs to stay on one line.
+/// The width of the widest single button in the editor's action row.
 ///
 /// The other half of the floor the content frame may never fall below — see
-/// `learnControlRowWidth` for the session's, and for why these are measured
-/// rather than written down. This row is the wider of the two: eight buttons,
-/// every one of them carrying an icon.
+/// `learnControlGroupWidth` for the session's, and for why these are measured
+/// rather than written down.
 ///
-/// It bears on the frame even though the frame is a shell concern, because the
-/// editor is one of the two screens sized from the open deck. A deck of short
-/// fields derives a narrow mask, and without this the frame would settle below
-/// this row and wrap it at every window size.
-double editorControlRowWidth(
+/// The widest *button*, not the width of the row: the row is a [Wrap] and is
+/// meant to run onto a second line when the open deck is narrower than it.
+/// What the frame must still guarantee is that no single button is squeezed.
+double editorControlButtonWidth(
   BuildContext context,
   LearnAnywhereLocalizations messages,
 ) {
-  double width = LearnAnywhereTokens.gapSmall * (_actionRow.length - 1);
+  double width = 0;
   for (final (LearnAnywhereMessage label, String key) in _actionRow) {
-    width +=
-        iconPillChrome +
-        measurePillLabelWidth(context, messages.message(label), key);
+    width = math.max(
+      width,
+      iconPillChrome +
+          measurePillLabelWidth(context, messages.message(label), key),
+    );
   }
   return width;
 }

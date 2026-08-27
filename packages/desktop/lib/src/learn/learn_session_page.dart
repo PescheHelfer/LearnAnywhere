@@ -157,6 +157,9 @@ _AnswerViewMode _nextAnswerViewMode(
 /// Sampled rather than measured, because the real figures do not exist when
 /// the content frame is computed — and because a frame that changed width as
 /// the counters ticked would move the mask under the learner mid-sitting.
+///
+/// Only the widest single entry matters: the pills sit in a [Wrap] and are
+/// free to run onto a second line.
 const List<(LearnAnywhereMessage, String)> _widestStatPills =
     <(LearnAnywhereMessage, String)>[
       (LearnAnywhereMessage.learnLiveAttempts, '99999'),
@@ -166,24 +169,26 @@ const List<(LearnAnywhereMessage, String)> _widestStatPills =
       (LearnAnywhereMessage.learnLiveTime, '999:99'),
     ];
 
-/// The width the session's own control rows need to stay on one line.
+/// The widest thing on the session screen that cannot be broken across lines.
 ///
 /// One of the two halves of the floor [deckContentFrameWidth] may never put
-/// the content frame below; the editor's row is the other.
+/// the content frame below; the editor's widest button is the other.
+///
+/// The frame is sized from the deck, and a control row wider than the deck is
+/// expected to **wrap** — it is laid out in a [Wrap] for exactly that. What it
+/// must never do is get *squeezed*: the two pill groups are each a
+/// [FittedBox], so a frame narrower than one of them shrinks its text instead
+/// of moving it. This is therefore the widest single unbreakable cluster, not
+/// the sum of a row: the action group, the evaluation group, or one statistic
+/// pill, whichever is widest.
 ///
 /// Measured, not estimated: every label is measured in the very style it is
 /// painted in, so the figure follows the language, the zoom level and the
 /// host's font by itself, and only each control's fixed chrome is a constant.
 ///
-/// Two rows are covered, and the wider wins. The **action row** is taken in
-/// its widest state — typed input, so the view-toggle pill is there — with the
-/// evaluation group beside it, because that pairing is the whole point of how
-/// the row is arranged and a frame that broke it would undo that. The
-/// **statistic row** is taken for the drill modes, where its pills are a fixed
-/// set. Level Learning adds one pill per level under a name the learner
-/// chooses, so no width could promise that row a single line; it wraps by
-/// design, and is deliberately left out of this floor.
-double learnControlRowWidth(
+/// The pre-check row needs no term of its own — it is a plain [Wrap] of single
+/// buttons, every one of them narrower than the action group above.
+double learnControlGroupWidth(
   BuildContext context,
   LearnAnywhereLocalizations messages,
 ) {
@@ -203,7 +208,8 @@ double learnControlRowWidth(
           measureTextWidth(say(key), pillLabelStyle))
       .reduce(max);
 
-  // ── Action pills, then the evaluation group, on one line ──────────────────
+  // ── The action group: it may wrap away from the evaluation group, but its
+  // own three pills are one atom.
   final double actionGroup =
       iconPillChrome +
       labelColumn(say(LearnAnywhereMessage.learnContinue), 'F3') +
@@ -247,19 +253,17 @@ double learnControlRowWidth(
       3 * ratingPill +
       2 * LearnAnywhereTokens.gapSmall;
 
-  final double actionRow =
-      actionGroup + LearnAnywhereTokens.gapLarge + evaluationGroup;
-
-  // ── The drill modes' live-statistics pills ───────────────────────────────
-  double statisticRow =
-      LearnAnywhereTokens.gapSmall * (_widestStatPills.length - 1);
+  // ── The widest single live-statistics pill ───────────────────────────────
+  double statisticPill = 0;
   for (final (LearnAnywhereMessage label, String value) in _widestStatPills) {
-    statisticRow +=
-        measureTextWidth('${say(label)}: $value', bodyStyle) +
-        2 * LearnAnywhereTokens.gapMedium;
+    statisticPill = max(
+      statisticPill,
+      measureTextWidth('${say(label)}: $value', bodyStyle) +
+          2 * LearnAnywhereTokens.gapMedium,
+    );
   }
 
-  return max(actionRow, statisticRow);
+  return max(actionGroup, max(evaluationGroup, statisticPill));
 }
 
 /// The message naming [mode], used for the toggle button label (which names

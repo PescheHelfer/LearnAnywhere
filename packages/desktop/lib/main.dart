@@ -2508,23 +2508,21 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// The current screen inside its content frame (N4).
   ///
   /// The one place a width is imposed: every screen below is built exactly as
-  /// it always was, and the frame is what centres it. Four policies, by route
+  /// it always was, and the frame is what centres it. Three policies, by route
   /// — and the catch-all is deliberate, so a route added later is framed rather
   /// than silently left in the corner:
   ///
   /// - the **session and editor** are sized from the open deck, so a mask never
   ///   scrolls sideways when it would have fitted;
-  /// - the **lexicon** is exempt and keeps the whole window — its results table
-  ///   is the widest surface in the program and genuinely needs the room;
-  /// - **About** is exempt because it already constrains itself;
-  /// - everything else takes the fixed width.
+  /// - **About** is exempt because it already centres and constrains itself;
+  /// - everything else, the lexicon included, takes the fixed width.
   Widget _framedContentForRoute(
     BuildContext context,
     LearnAnywhereLocalizations messages,
   ) {
     final Widget content = _contentForRoute();
     final double? width = switch (_route) {
-      _DesktopRoute.lexicon || _DesktopRoute.about => null,
+      _DesktopRoute.about => null,
       _DesktopRoute.learn ||
       _DesktopRoute.editor => _deckContentFrameWidth(context, messages),
       _ => fixedContentFrameWidth(context),
@@ -2559,13 +2557,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _frameWidth = deckContentFrameWidth(
         context,
         mask,
-        // Both screens' control rows, not just the one on show: the two share
-        // a width so the mask does not shift when the learner moves between
-        // them, and a floor taken from one alone would wrap the other's row at
-        // every window size.
+        // Both screens' controls, not just the one on show, so the two share
+        // a width and the mask does not shift when the learner moves between
+        // them. Each contributes the widest thing on it that cannot be broken
+        // across lines — the rows themselves are free to wrap to the deck's
+        // width, which is the point of deriving the frame from the deck.
         minimumWidth: math.max(
-          learnControlRowWidth(context, messages),
-          editorControlRowWidth(context, messages),
+          learnControlGroupWidth(context, messages),
+          editorControlButtonWidth(context, messages),
         ),
       );
     }

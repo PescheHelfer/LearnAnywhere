@@ -92,16 +92,24 @@ Absicht: Die Zeile, die Ihnen sagt, ob eine Antwort richtig war, erscheint und v
 während der Arbeit, und ein auch senkrecht zentrierter Rahmen ließe die ganze Maske bei
 jeder Antwort springen.
 
-Der Rahmen ist so breit, wie es die geöffnete Lern-Datei braucht. Er wird aus dem breitesten
-Feld bemessen, das Ihre Maske zeigen kann, damit eine Maske, die gepasst hätte, nie seitlich
-gescrollt werden muss — und nie schmaler als die Schaltflächenreihen darunter, damit die
-Zentrierung diese nicht auf zusätzliche Zeilen drängt. Beim Lernen und beim Bearbeiten
-derselben Lern-Datei ist er gleich breit, es verschiebt sich also nichts, wenn Sie zwischen
-beidem wechseln.
+Der Rahmen ist so breit, wie es die geöffnete Lern-Datei braucht, und nicht breiter. Er wird
+aus dem breitesten Feld bemessen, das Ihre Maske zeigen kann, damit eine Maske, die gepasst
+hätte, nie seitlich gescrollt werden muss. Beim Lernen und beim Bearbeiten derselben
+Lern-Datei ist er gleich breit, es verschiebt sich also nichts, wenn Sie zwischen beidem
+wechseln.
 
-Zwei Bildschirme behalten das ganze Fenster. Das **Lexikon**, weil seine Ergebnistabelle das
-Breiteste im Programm ist und jeden Bildpunkt nutzt, den sie bekommt; und die
-**Programminfo**, die schon von sich aus schmal ist.
+Eine Lern-Datei mit kurzen Feldern bekommt somit einen schmalen Rahmen, und die
+Schaltflächenreihen darunter rücken darin einfach auf eine zweite Zeile — genau wie in einem
+schmalen Fenster. Was der Rahmen nicht tut: eine Schaltfläche oder eine der beiden Gruppen der
+Bewertungsknöpfe zusammenquetschen, damit sie passt. Schmaler als die breiteste einzelne
+davon wird er nie.
+
+Die **Programminfo** ist der einzige Bildschirm ohne Rahmen. Sie ist schon von sich aus
+schmal und zentriert; für einen Rahmen bleibt da nichts zu tun.
+
+Das **Lexikon** ist gerahmt wie alles andere. Seine Ergebnistabelle ist zwar das Breiteste im
+Programm, scrollt aber ohnehin seitlich in ihrem eigenen Kästchen — der Rahmen führt nur dazu,
+dass sie damit etwas früher anfängt.
 
 Machen Sie das Fenster schmaler als den Rahmen, wird der Rahmen einfach zum Fenster: Die
 Ränder verschwinden, und alles verhält sich genau wie zuvor — die Maske scrollt seitlich in
