@@ -74,6 +74,34 @@ size, because the arrows and icons inside them do not shrink and would otherwise
 squeezed out. So 75% buys you room by making the words smaller, not by making the whole
 interface smaller.
 
+## Centred content frame
+
+**Options ▸ Centred content frame** puts each screen's content into a *content frame* — a
+box of its own, sitting in the middle of the window — instead of pinning it to the top-left
+corner. On a maximised window on a large monitor that is the difference between reading from
+the middle of the screen and holding your gaze on one corner for a whole sitting. It is on
+from the start, and unticking it gives you the old full-width layout back.
+
+Centring is sideways only. The content still starts at the top of the window, deliberately:
+the line telling you whether an answer was right appears and disappears as you work, and a
+frame centred top-to-bottom as well would make the whole mask jump on every answer.
+
+The frame is as wide as the deck you have open needs. It is sized from the widest field your
+mask can show, so a mask that would have fitted never has to be scrolled sideways — and
+never narrower than the rows of buttons underneath, so centring cannot push those onto extra
+lines. It is the same width while learning and while editing the same deck, so nothing moves
+when you switch between the two.
+
+Two screens keep the whole window. The **lexicon** does, because its results table is the
+widest thing in the program and uses every pixel it is given; so does the **About** box,
+which is already narrow by itself.
+
+Make the window narrower than the frame and the frame simply becomes the window: the margins
+disappear and everything behaves exactly as it did before, with the mask scrolling sideways
+inside its own box if it genuinely does not fit. The page itself never grows a horizontal
+scrollbar at any window size. The frame follows the zoom level too, since a zoomed mask needs
+more room.
+
 ## Statistics options
 
 **Options ▸ Statistics** holds auto-load, auto-save, and the session-file retention
@@ -111,8 +139,8 @@ Two separate stores, both entirely local — nothing here is ever sent anywhere:
   `learn_anywhere.settings.json` in a `LearnAnywhere` folder under your operating
   system's standard per-user configuration location (`%APPDATA%` on Windows;
   `$XDG_CONFIG_HOME` or `~/.config` on Linux).
-- **Theme, language, the zoom level, the start folder, recent-folder memory,
-  auto-load/auto-save toggles, and the window's size and position** are kept in the
+- **Theme, language, the zoom level, the content frame, the start folder, recent-folder
+  memory, auto-load/auto-save toggles, and the window's size and position** are kept in the
   operating system's own application preferences store, separately from the file above.
 
 Neither file needs to be touched by hand — everything in it is reachable from the menus

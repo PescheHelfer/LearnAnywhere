@@ -12,7 +12,8 @@ directory": the operating-system home is already what the file picker falls back
 its own, and the two must stay distinguishable in prose. German: **Startordner**.
 
 **Content frame** — the centred, width-limited box a screen's content sits in. Not the
-mask, which sits inside it. Not the window, which the frame sits inside in turn.
+mask, which sits inside it. Not the window, which the frame sits inside in turn. German:
+**Inhaltsrahmen**.
 
 **Zoom level** — the factor by which the program's text is scaled. Distinct from the
 window size and from the operating system's own display scaling; changing one does not

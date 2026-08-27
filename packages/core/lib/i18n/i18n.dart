@@ -283,6 +283,9 @@ enum LearnAnywhereMessage {
   /// Zoom level: 200 per cent.
   zoom200,
 
+  /// Options menu: toggles the centred content frame.
+  menuOptionsContentFrame,
+
   /// Theme control label.
   themeLabel,
 
@@ -1439,6 +1442,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.zoom150: '150%',
       LearnAnywhereMessage.zoom175: '175%',
       LearnAnywhereMessage.zoom200: '200%',
+      LearnAnywhereMessage.menuOptionsContentFrame:
+          '&Centred content frame', // C
       LearnAnywhereMessage.themeLabel: '&Theme', // T
       LearnAnywhereMessage.themeSystem: '&System', // S
       LearnAnywhereMessage.themeLight: 'Lig&ht', // H
@@ -2024,6 +2029,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.zoom150: '150 %',
       LearnAnywhereMessage.zoom175: '175 %',
       LearnAnywhereMessage.zoom200: '200 %',
+      // I, not H: "&Hell" in the Theme submenu already owns H, and Flutter
+      // keeps this level's items registered while Theme is open.
+      LearnAnywhereMessage.menuOptionsContentFrame:
+          'Zentrierter &Inhaltsrahmen', // I
       LearnAnywhereMessage.themeLabel: '&Darstellung', // D
       LearnAnywhereMessage.themeSystem: 'S&ystem', // Y (avoids S = Sprache label)
       LearnAnywhereMessage.themeLight: '&Hell', // H

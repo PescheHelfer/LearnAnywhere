@@ -151,6 +151,117 @@ _AnswerViewMode _nextAnswerViewMode(
   }
 }
 
+/// Each live-statistics pill's label paired with the widest reading it can
+/// show — a four-figure deck, counted, scored and timed.
+///
+/// Sampled rather than measured, because the real figures do not exist when
+/// the content frame is computed — and because a frame that changed width as
+/// the counters ticked would move the mask under the learner mid-sitting.
+const List<(LearnAnywhereMessage, String)> _widestStatPills =
+    <(LearnAnywhereMessage, String)>[
+      (LearnAnywhereMessage.learnLiveAttempts, '99999'),
+      (LearnAnywhereMessage.learnLiveMastered, '9999/9999'),
+      (LearnAnywhereMessage.learnLiveRemaining, '9999'),
+      (LearnAnywhereMessage.learnLiveAccuracy, '9999/9999 (100%)'),
+      (LearnAnywhereMessage.learnLiveTime, '999:99'),
+    ];
+
+/// The width the session's own control rows need to stay on one line.
+///
+/// One of the two halves of the floor [deckContentFrameWidth] may never put
+/// the content frame below; the editor's row is the other.
+///
+/// Measured, not estimated: every label is measured in the very style it is
+/// painted in, so the figure follows the language, the zoom level and the
+/// host's font by itself, and only each control's fixed chrome is a constant.
+///
+/// Two rows are covered, and the wider wins. The **action row** is taken in
+/// its widest state — typed input, so the view-toggle pill is there — with the
+/// evaluation group beside it, because that pairing is the whole point of how
+/// the row is arranged and a frame that broke it would undo that. The
+/// **statistic row** is taken for the drill modes, where its pills are a fixed
+/// set. Level Learning adds one pill per level under a name the learner
+/// chooses, so no width could promise that row a single line; it wraps by
+/// design, and is deliberately left out of this floor.
+double learnControlRowWidth(
+  BuildContext context,
+  LearnAnywhereLocalizations messages,
+) {
+  final TextTheme text = Theme.of(context).textTheme;
+  final TextStyle pillLabelStyle = text.labelLarge ?? const TextStyle();
+  final TextStyle keyHintStyle = LearnAnywhereTokens.keyHint(context);
+  final TextStyle bodyStyle = text.bodyMedium ?? const TextStyle();
+  final TextStyle captionStyle = text.bodySmall ?? const TextStyle();
+
+  String say(LearnAnywhereMessage key) => messages.message(key);
+
+  double labelColumn(String label, String keyName) =>
+      measurePillLabelWidth(context, label, keyName);
+
+  double widest(Iterable<LearnAnywhereMessage> keys) => keys
+      .map((LearnAnywhereMessage key) =>
+          measureTextWidth(say(key), pillLabelStyle))
+      .reduce(max);
+
+  // ── Action pills, then the evaluation group, on one line ──────────────────
+  final double actionGroup =
+      iconPillChrome +
+      labelColumn(say(LearnAnywhereMessage.learnContinue), 'F3') +
+      LearnAnywhereTokens.gapSmall +
+      iconPillChrome +
+      labelColumn(say(LearnAnywhereMessage.actionCancel), 'Esc') +
+      LearnAnywhereTokens.gapSmall +
+      plainPillChrome +
+      max(
+        widest(const <LearnAnywhereMessage>[
+          LearnAnywhereMessage.learnCorrection,
+          LearnAnywhereMessage.learnSolution,
+          LearnAnywhereMessage.learnYourAnswer,
+        ]),
+        measureTextWidth(
+          '${say(LearnAnywhereMessage.learnSwitchHint)}: F9',
+          keyHintStyle,
+        ),
+      );
+
+  // Always three rating pills, whichever outcome produced them; the widest
+  // label any outcome can offer sizes all three.
+  final double ratingPill =
+      plainPillChrome +
+      max(
+        widest(const <LearnAnywhereMessage>[
+          LearnAnywhereMessage.learnRatingCorrect,
+          LearnAnywhereMessage.learnRatingWrong,
+          LearnAnywhereMessage.learnRatingActuallyCorrect,
+          LearnAnywhereMessage.learnRatingCloseEnough,
+          LearnAnywhereMessage.learnRatingActuallyWrong,
+          LearnAnywhereMessage.learnRatingNoCount,
+          LearnAnywhereMessage.learnRatingKnewIt,
+          LearnAnywhereMessage.learnRatingDidNotKnow,
+        ]),
+        measureTextWidth('F5', keyHintStyle),
+      );
+  final double evaluationGroup =
+      measureTextWidth(say(LearnAnywhereMessage.learnEvaluateAs), captionStyle) +
+      LearnAnywhereTokens.gapSmall +
+      3 * ratingPill +
+      2 * LearnAnywhereTokens.gapSmall;
+
+  final double actionRow =
+      actionGroup + LearnAnywhereTokens.gapLarge + evaluationGroup;
+
+  // ── The drill modes' live-statistics pills ───────────────────────────────
+  double statisticRow =
+      LearnAnywhereTokens.gapSmall * (_widestStatPills.length - 1);
+  for (final (LearnAnywhereMessage label, String value) in _widestStatPills) {
+    statisticRow +=
+        measureTextWidth('${say(label)}: $value', bodyStyle) +
+        2 * LearnAnywhereTokens.gapMedium;
+  }
+
+  return max(actionRow, statisticRow);
+}
+
 /// The message naming [mode], used for the toggle button label (which names
 /// the mode currently displayed).
 LearnAnywhereMessage _answerViewModeMessage(_AnswerViewMode mode) {
@@ -2178,6 +2289,7 @@ final class _SessionView extends StatelessWidget {
           children: <Widget>[
             // ── Header: live (global) stats on top, then the unit line ─────
             Wrap(
+              key: const Key('learnStatPills'),
               spacing: LearnAnywhereTokens.gapSmall,
               runSpacing: LearnAnywhereTokens.gapSmall,
               children: _statPills(messages, timeWarning),

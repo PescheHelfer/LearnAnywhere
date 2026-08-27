@@ -631,6 +631,195 @@ void main() {
     }
   });
 
+  testWidgets(
+    'the content frame centres the session, and the editor keeps its place',
+    (WidgetTester tester) async {
+      // Wide enough for the frame to have margins to spare on either side —
+      // the situation the frame exists for.
+      tester.view.physicalSize = const Size(2400, 1500);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+      await tester.pumpAndSettle();
+      await openEditorWithOneUnit(tester);
+
+      final Rect editorGrid = tester.getRect(find.byType(FieldRowGrid));
+      // Content really is off the corner, with room on both sides.
+      expect(editorGrid.left, greaterThan(0));
+      expect(editorGrid.right, lessThan(2400));
+
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Learn'));
+      await tester.tap(find.text('Learn'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Learn with last settings').last);
+      await tester.pumpAndSettle();
+
+      // The frame is computed from the EDITOR's wider mask measurement on both
+      // screens, so moving between learning and editing the same deck must not
+      // shift the mask sideways under the learner.
+      final Rect sessionGrid = tester.getRect(find.byType(FieldRowGrid));
+      expect(sessionGrid.left, closeTo(editorGrid.left, 0.01));
+    },
+  );
+
+  testWidgets('the lexicon and About keep the whole window; the rest is framed',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(2400, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    // The workspace is framed like every other screen.
+    expect(find.byType(ContentFrame), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Lexicon'));
+    await tester.tap(find.text('Lexicon'));
+    await tester.pumpAndSettle();
+    // Exempt: the results table is the widest surface in the program and
+    // genuinely needs every pixel.
+    expect(find.byType(ContentFrame), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Help'));
+    await tester.tap(find.text('Help'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('About'));
+    await tester.pumpAndSettle();
+    // Exempt too, but for the opposite reason: it already constrains itself.
+    expect(find.byType(ContentFrame), findsNothing);
+  });
+
+  testWidgets('centring is on by default, can be turned off, and stays off', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(2400, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await openEditorWithOneUnit(tester);
+    // On without anyone asking: the benefit has to reach the learner without
+    // her finding a setting first.
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, greaterThan(0));
+
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    await toggleContentFrame(tester);
+    await openEditorWithOneUnit(tester);
+    // Off: the old full-width layout, flush to the left.
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
+
+    // Relaunch against the same preference store.
+    await tester.pumpWidget(Container());
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await openEditorWithOneUnit(tester);
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
+  });
+
+  testWidgets('a window narrower than the frame keeps today\'s layout', (
+    WidgetTester tester,
+  ) async {
+    // Narrower than any frame the fixture deck can derive, so the frame has to
+    // collapse to the viewport and get out of the way entirely.
+    tester.view.physicalSize = const Size(900, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await openEditorWithOneUnit(tester);
+
+    // Flush left, exactly as before the frame existed — margins collapsed to
+    // nothing rather than squeezing the mask.
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the frame is centred at every zoom level', (
+    WidgetTester tester,
+  ) async {
+    final List<double> widths = <double>[];
+    for (final int level in LearnAnywhereZoom.levels) {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'zoom_percent': level,
+      });
+      final DesktopPrefs zoomed = DesktopPrefs(
+        await SharedPreferences.getInstance(),
+      );
+      // Wide enough that even the 200 % frame has margins left over; the
+      // surface is widened to fit the interface, never the other way round.
+      const double surface = 4000;
+      tester.view.physicalSize = const Size(surface, 1500);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: zoomed));
+      await tester.pumpAndSettle();
+      await openEditorWithOneUnit(tester);
+
+      final String at = 'at $level%';
+      final Rect frame = tester.getRect(editorPage(SingleChildScrollView));
+      // Equal margins either side, so the frame really is centred and not
+      // merely inset.
+      expect(frame.left, greaterThan(0), reason: at);
+      expect(surface - frame.right, closeTo(frame.left, 0.01), reason: at);
+      // And it grew with the level rather than staying at its 100 % size: the
+      // mask inside it is measured in the zoomed style, and a frame that did
+      // not follow would start the mask scrolling sideways at 200 %.
+      expect(
+        frame.width,
+        greaterThanOrEqualTo(widths.isEmpty ? 0 : widths.last),
+        reason: at,
+      );
+      widths.add(frame.width);
+
+      final Rect grid = tester.getRect(find.byType(FieldRowGrid));
+      // The mask fits inside the frame at every level — nothing is pushed out
+      // of it and made to scroll.
+      expect(grid.right, lessThanOrEqualTo(frame.right), reason: at);
+      expect(tester.takeException(), isNull, reason: at);
+    }
+  });
+
+  testWidgets('the mask does not move when the feedback line appears', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(2400, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await startOneQuestionSession(tester);
+
+    final Rect asked = tester.getRect(find.byType(FieldRowGrid));
+    await tester.ensureVisible(find.text('Check'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Check'));
+    await tester.pumpAndSettle();
+    expect(find.text('Correct'), findsOneWidget);
+
+    // The frame is anchored to the top, and deliberately not centred
+    // vertically: the result line appears under the mask on every answer, and
+    // a vertically centred frame would make the whole mask jump each time.
+    final Rect answered = tester.getRect(find.byType(FieldRowGrid));
+    expect(answered.top, closeTo(asked.top, 0.01));
+    expect(answered.left, closeTo(asked.left, 0.01));
+  });
+
   testWidgets('desktop shell switches language at runtime', (
     WidgetTester tester,
   ) async {
@@ -805,6 +994,66 @@ Future<void> setZoomFromMenu(WidgetTester tester, int level) async {
   await tester.pumpAndSettle();
 }
 
+/// The unit editor's own widget of [type], nearest the top of its tree.
+///
+/// The editor's outermost scroll view fills the content frame exactly, which
+/// makes it the handle a test uses to measure the frame itself rather than the
+/// left-aligned mask sitting inside it.
+Finder editorPage(Type type) => find
+    .descendant(of: find.byType(UnitEditorPage), matching: find.byType(type))
+    .first;
+
+/// Builds a one-unit deck and starts a session over it, leaving the app on the
+/// first question with the answer typed in but not yet checked.
+///
+/// Splits the first half of [answerOneQuestion] out, for tests that need to
+/// look at the screen on both sides of the Check.
+Future<void> startOneQuestionSession(WidgetTester tester) async {
+  await tester.tap(find.text('Edit'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Unit editor').last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Insert unit'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Category 1'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Continue'));
+  await tester.pumpAndSettle();
+  await tester.enterText(editorInput('Question'), 'hello');
+  await tester.enterText(editorInput('Answer'), 'bonjour');
+  await tester.pumpAndSettle();
+
+  await tester.tap(find.text('Learn'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Practice setup').last);
+  await tester.pumpAndSettle();
+  await tester.drag(find.byType(ListView), const Offset(0, -500));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Start session'));
+  await tester.pumpAndSettle();
+
+  expect(find.textContaining('Unit 1/1 - Category 1'), findsOneWidget);
+  // Before Check, the prompt is read-only rich text and the single answer
+  // cell is the only editable field, so target it by type. Which direction was
+  // drawn decides which of the two words is the prompt.
+  if (tester.any(find.text('hello', findRichText: true))) {
+    await tester.enterText(find.byType(TextField).first, 'bonjour');
+  } else {
+    await tester.enterText(find.byType(TextField).first, 'hello');
+  }
+  await tester.pumpAndSettle();
+}
+
+/// Flips the Options -> Centred content frame checkbox.
+Future<void> toggleContentFrame(WidgetTester tester) async {
+  await tester.ensureVisible(find.text('Options'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Options'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Centred content frame').last);
+  await tester.pumpAndSettle();
+}
+
 /// Presses [key] with the left Ctrl held down.
 Future<void> pressZoomKey(WidgetTester tester, LogicalKeyboardKey key) async {
   await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
@@ -857,41 +1106,7 @@ Future<void> openAllTimeClear(WidgetTester tester) async {
 /// freshly pumped app on the home screen and a surface at least 1400 wide —
 /// the practice grid overflows the default 800.
 Future<void> answerOneQuestion(WidgetTester tester) async {
-  await tester.tap(find.text('Edit'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Unit editor').last);
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Insert unit'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Category 1'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Continue'));
-  await tester.pumpAndSettle();
-  await tester.enterText(editorInput('Question'), 'hello');
-  await tester.enterText(editorInput('Answer'), 'bonjour');
-  await tester.pumpAndSettle();
-
-  await tester.tap(find.text('Learn'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Practice setup').last);
-  await tester.pumpAndSettle();
-  expect(find.text('Practice setup'), findsOneWidget);
-  await tester.drag(find.byType(ListView), const Offset(0, -500));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Start session'));
-  await tester.pumpAndSettle();
-
-  expect(find.textContaining('Unit 1/1 - Category 1'), findsOneWidget);
-  // Before Check, the prompt is read-only rich text and the single answer
-  // cell is the only editable field, so target it by type. Which direction
-  // was drawn decides which of the two words is the prompt.
-  if (tester.any(find.text('hello', findRichText: true))) {
-    await tester.enterText(find.byType(TextField).first, 'bonjour');
-  } else {
-    expect(find.text('bonjour', findRichText: true), findsOneWidget);
-    await tester.enterText(find.byType(TextField).first, 'hello');
-  }
-  await tester.pumpAndSettle();
+  await startOneQuestionSession(tester);
   await tester.ensureVisible(find.text('Check'));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Check'));

@@ -83,6 +83,11 @@ final class _LearnAnywhereDesktopAppState
   // mask's field-box measurement cannot see. See
   // `docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md`.
   late int _zoomPercent;
+  // Whether each screen's content sits in a centred frame (N4). Held here
+  // beside the zoom level because the two are the same kind of setting — how
+  // the program uses the screen it is given — and both have to reach every
+  // route through [_DesktopHome].
+  late bool _contentFrameEnabled;
   final WindowGeometryService _geometryService = WindowGeometryService();
 
   ThemeData get _lightTheme => _appTheme == _AppTheme.lightBlue
@@ -106,6 +111,7 @@ final class _LearnAnywhereDesktopAppState
     _appTheme = _appThemeFromPrefs(widget.prefs);
     _locale = _localeFromPrefs(widget.prefs);
     _zoomPercent = widget.prefs.zoomPercent;
+    _contentFrameEnabled = widget.prefs.contentFrameEnabled;
     windowManager.addListener(this);
   }
 
@@ -157,6 +163,17 @@ final class _LearnAnywhereDesktopAppState
     widget.prefs.setZoomPercent(level);
   }
 
+  // --- Content frame (N4) ---------------------------------------------------
+
+  /// Adopts [value] as whether content is framed, and remembers it.
+  void _onContentFrameChanged(bool value) {
+    if (value == _contentFrameEnabled) {
+      return;
+    }
+    setState(() => _contentFrameEnabled = value);
+    widget.prefs.setContentFrameEnabled(value);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -174,9 +191,11 @@ final class _LearnAnywhereDesktopAppState
         appTheme: _appTheme,
         locale: _locale,
         zoomPercent: _zoomPercent,
+        contentFrameEnabled: _contentFrameEnabled,
         onAppThemeChanged: _onAppThemeChanged,
         onLocaleChanged: _onLocaleChanged,
         onZoomChanged: _onZoomChanged,
+        onContentFrameChanged: _onContentFrameChanged,
       ),
     );
   }
@@ -274,9 +293,11 @@ final class _DesktopHome extends StatefulWidget {
     required this.appTheme,
     required this.locale,
     required this.zoomPercent,
+    required this.contentFrameEnabled,
     required this.onAppThemeChanged,
     required this.onLocaleChanged,
     required this.onZoomChanged,
+    required this.onContentFrameChanged,
   });
 
   final DesktopPrefs prefs;
@@ -284,9 +305,13 @@ final class _DesktopHome extends StatefulWidget {
   final _AppTheme appTheme;
   final Locale locale;
   final int zoomPercent;
+
+  /// Whether content is centred in a width-limited frame.
+  final bool contentFrameEnabled;
   final ValueChanged<_AppTheme> onAppThemeChanged;
   final ValueChanged<Locale> onLocaleChanged;
   final ValueChanged<int> onZoomChanged;
+  final ValueChanged<bool> onContentFrameChanged;
 
   @override
   State<_DesktopHome> createState() => _DesktopHomeState();
@@ -294,6 +319,10 @@ final class _DesktopHome extends StatefulWidget {
 
 final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   final DesktopFileService _fileService = const DesktopFileService();
+  // Memo for [_deckContentFrameWidth]; see there for why it is cached, and
+  // for what makes up the key.
+  (LearningMask, int, String)? _frameWidthKey;
+  double? _frameWidth;
   DesktopFilePicker get _filePicker => widget.filePicker;
   final ScrollController _menuScrollController = ScrollController();
   // The main content area lives in its own FocusScope so that keyboard focus
@@ -1343,7 +1372,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
                 },
                 child: FocusScope(
                   node: _contentFocusScope,
-                  child: _contentForRoute(),
+                  child: _framedContentForRoute(context, messages),
                 ),
               ),
             ),
@@ -1637,6 +1666,18 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             ],
             child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.zoomLabel),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+          // Beside Zoom, because the two are the pair that decide how the
+          // program uses a large screen: zoom makes the content bigger, the
+          // frame stops it hugging the corner.
+          CheckboxMenuButton(
+            value: widget.contentFrameEnabled,
+            onChanged: (bool? value) =>
+                widget.onContentFrameChanged(value ?? false),
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuOptionsContentFrame),
               builder: menuAcceleratorBuilder,
             ),
           ),
@@ -2455,6 +2496,73 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       });
       _restoreContentFocus();
     }
+  }
+
+  /// The current screen inside its content frame (N4).
+  ///
+  /// The one place a width is imposed: every screen below is built exactly as
+  /// it always was, and the frame is what centres it. Four policies, by route
+  /// — and the catch-all is deliberate, so a route added later is framed rather
+  /// than silently left in the corner:
+  ///
+  /// - the **session and editor** are sized from the open deck, so a mask never
+  ///   scrolls sideways when it would have fitted;
+  /// - the **lexicon** is exempt and keeps the whole window — its results table
+  ///   is the widest surface in the program and genuinely needs the room;
+  /// - **About** is exempt because it already constrains itself;
+  /// - everything else takes the fixed width.
+  Widget _framedContentForRoute(
+    BuildContext context,
+    LearnAnywhereLocalizations messages,
+  ) {
+    final Widget content = _contentForRoute();
+    final double? width = switch (_route) {
+      _DesktopRoute.lexicon || _DesktopRoute.about => null,
+      _DesktopRoute.learn ||
+      _DesktopRoute.editor => _deckContentFrameWidth(context, messages),
+      _ => fixedContentFrameWidth(context),
+    };
+    if (width == null) return content;
+    return ContentFrame(
+      enabled: widget.contentFrameEnabled,
+      maxWidth: width,
+      child: content,
+    );
+  }
+
+  /// The deck-derived frame width, measured once per mask rather than once per
+  /// build.
+  ///
+  /// Measuring walks every field of every category with a [TextPainter], and
+  /// the session rebuilds on each answer; the cache is what keeps that off the
+  /// per-answer path. It is keyed by the zoom level and the language as well as
+  /// the mask, because both change what the measurements come back as.
+  double _deckContentFrameWidth(
+    BuildContext context,
+    LearnAnywhereLocalizations messages,
+  ) {
+    final LearningMask mask = _document.deck.mask;
+    final (LearningMask, int, String) key = (
+      mask,
+      widget.zoomPercent,
+      messages.locale.languageCode,
+    );
+    if (_frameWidth == null || _frameWidthKey != key) {
+      _frameWidthKey = key;
+      _frameWidth = deckContentFrameWidth(
+        context,
+        mask,
+        // Both screens' control rows, not just the one on show: the two share
+        // a width so the mask does not shift when the learner moves between
+        // them, and a floor taken from one alone would wrap the other's row at
+        // every window size.
+        minimumWidth: math.max(
+          learnControlRowWidth(context, messages),
+          editorControlRowWidth(context, messages),
+        ),
+      );
+    }
+    return _frameWidth!;
   }
 
   Widget _contentForRoute() {

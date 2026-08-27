@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/learn_anywhere_tokens.dart';
+
 /// A bordered, horizontally-scrollable frame around a column of field rows.
 ///
 /// Rows use fixed monospace column widths (see `FieldRow`) that can exceed the
@@ -35,7 +37,12 @@ final class _FieldRowGridState extends State<FieldRowGrid> {
     final List<Widget> children = <Widget>[];
     for (int i = 0; i < widget.rows.length; i++) {
       if (i > 0) {
-        children.add(Container(height: 1, color: colors.outlineVariant));
+        children.add(
+          Container(
+            height: LearnAnywhereTokens.fieldRowDividerThickness,
+            color: colors.outlineVariant,
+          ),
+        );
       }
       children.add(widget.rows[i]);
     }
@@ -46,7 +53,10 @@ final class _FieldRowGridState extends State<FieldRowGrid> {
         scrollDirection: Axis.horizontal,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(color: colors.outlineVariant),
+            border: Border.all(
+              color: colors.outlineVariant,
+              width: LearnAnywhereTokens.fieldRowGridBorderWidth,
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
           child: ClipRRect(

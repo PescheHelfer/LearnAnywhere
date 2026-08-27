@@ -79,4 +79,32 @@ final class LearnAnywhereTokens {
 
   /// Minimum width of a field row's value column.
   static const double fieldValueMinWidth = 48;
+
+  /// Width of the colored accent bar down the left edge of a field row.
+  static const double fieldRowAccentWidth = 4;
+
+  /// Thickness of the hairline between a field row's label and value columns,
+  /// and of the one between consecutive rows.
+  static const double fieldRowDividerThickness = 1;
+
+  /// Width of the border drawn around a whole field-row grid.
+  static const double fieldRowGridBorderWidth = 1;
+
+  /// Gap between a field row's value and the used/allowed counter beside it.
+  static const double fieldRowCounterGap = 4;
+
+  /// Unzoomed width of the content frame on every screen that is not sized
+  /// from the open deck.
+  ///
+  /// Chosen to clear the Mask Editor's own two-column breakpoint (900 in the
+  /// same units), so framing that screen never costs it its second column.
+  static const double contentFrameFixedWidth = 1000;
+
+  /// Room the content frame adds around whatever it was sized to hold.
+  ///
+  /// Covers the page padding on both sides ([gapLarge] each) plus the vertical
+  /// scrollbar, so a mask that fits the frame is not pushed into scrolling
+  /// horizontally by the frame's own chrome. Not zoomed, because none of the
+  /// paddings it accounts for are.
+  static const double contentFrameMargin = 2 * gapLarge + gapMedium;
 }

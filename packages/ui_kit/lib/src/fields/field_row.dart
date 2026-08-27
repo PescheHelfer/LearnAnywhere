@@ -64,6 +64,20 @@ double computeFieldLabelWidth(
   );
 }
 
+/// Width the Unit Editor reserves inside a value column for the used/allowed
+/// counter of a field [fieldLength] characters long.
+///
+/// The counter is the one thing the editor's rows carry and the session's do
+/// not, so it is the difference between the two screens' idea of how wide the
+/// same mask is. Shared from here so the reservation and the content frame
+/// that has to accommodate it can never drift apart.
+double measureFieldCounterWidth(BuildContext context, int fieldLength) =>
+    measureTextWidth(
+      '$fieldLength/$fieldLength',
+      Theme.of(context).textTheme.bodySmall ?? const TextStyle(),
+    ) +
+    LearnAnywhereTokens.fieldRowCounterGap;
+
 /// Computes a [FieldRow] value-column width sized to hold [fieldLength]
 /// characters of width [charWidth], plus row padding and any [extraWidth]
 /// (e.g. reserved space for a used/allowed counter).
@@ -127,7 +141,10 @@ final class FieldRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Container(width: 4, color: accentColor),
+          Container(
+            width: LearnAnywhereTokens.fieldRowAccentWidth,
+            color: accentColor,
+          ),
           Container(
             width: labelWidth,
             color: backgroundColor,
@@ -139,7 +156,10 @@ final class FieldRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Container(width: 1, color: colors.outlineVariant),
+          Container(
+            width: LearnAnywhereTokens.fieldRowDividerThickness,
+            color: colors.outlineVariant,
+          ),
           Container(
             width: valueWidth,
             color: backgroundColor,
@@ -148,7 +168,9 @@ final class FieldRow extends StatelessWidget {
               children: <Widget>[
                 Expanded(child: value),
                 if (counterText != null) ...<Widget>[
-                  const SizedBox(width: 4),
+                  const SizedBox(
+                    width: LearnAnywhereTokens.fieldRowCounterGap,
+                  ),
                   Text(
                     counterText!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(

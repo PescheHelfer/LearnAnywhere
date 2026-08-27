@@ -952,8 +952,11 @@ final class _EditorBodyState extends State<_EditorBody> {
             const SizedBox(height: LearnAnywhereTokens.gapLarge),
             // ── Action buttons (bottom) ────────────────────────────────────
             Wrap(
+              key: const Key('editorActionRow'),
               spacing: LearnAnywhereTokens.gapSmall,
               runSpacing: LearnAnywhereTokens.gapSmall,
+              // Mirrored by [_actionRow], which is what the content frame is
+              // sized from; a button added here belongs there too.
               children: <Widget>[
                 _ActionButton(
                   icon: Icons.arrow_back,
@@ -1175,16 +1178,12 @@ final class _GridRowState extends State<_GridRow> {
       Theme.of(context).textTheme.bodyMedium,
     );
     final double charWidth = measureMonospaceCharWidth(valueStyle);
-    final double counterReserve =
-        measureTextWidth(
-          '${widget.field.length}/${widget.field.length}',
-          Theme.of(context).textTheme.bodySmall ?? const TextStyle(),
-        ) +
-        4;
+    // Shared with the content frame, which has to reserve the same room for a
+    // counter it cannot see; see `measureFieldCounterWidth`.
     final double valueWidth = computeFieldValueWidth(
       fieldLength: widget.field.length,
       charWidth: charWidth,
-      extraWidth: counterReserve,
+      extraWidth: measureFieldCounterWidth(context, widget.field.length),
     );
 
     return FieldRow(
@@ -1210,6 +1209,50 @@ final class _GridRowState extends State<_GridRow> {
       ),
     );
   }
+}
+
+/// Every button of the editor's bottom action row, with the key name printed
+/// under each.
+///
+/// Kept beside the row rather than driving it: wiring eight distinct callbacks
+/// through one list would need a fallback arm that silently mis-wires the
+/// ninth button. The two are held in step by measurement instead — the
+/// content-frame test lays the real row out and fails if this list has
+/// stopped describing it.
+const List<(LearnAnywhereMessage, String)> _actionRow =
+    <(LearnAnywhereMessage, String)>[
+      (LearnAnywhereMessage.editorPrevious, 'F2'),
+      (LearnAnywhereMessage.editorNext, 'F3'),
+      (LearnAnywhereMessage.editorJump, 'F6'),
+      (LearnAnywhereMessage.editorInsertBefore, 'F8'),
+      (LearnAnywhereMessage.editorDelete, 'F7'),
+      (LearnAnywhereMessage.editorSearch, 'F5'),
+      (LearnAnywhereMessage.editorDone, 'F10'),
+      (LearnAnywhereMessage.editorCancel, 'Esc'),
+    ];
+
+/// The width the editor's action row needs to stay on one line.
+///
+/// The other half of the floor the content frame may never fall below — see
+/// `learnControlRowWidth` for the session's, and for why these are measured
+/// rather than written down. This row is the wider of the two: eight buttons,
+/// every one of them carrying an icon.
+///
+/// It bears on the frame even though the frame is a shell concern, because the
+/// editor is one of the two screens sized from the open deck. A deck of short
+/// fields derives a narrow mask, and without this the frame would settle below
+/// this row and wrap it at every window size.
+double editorControlRowWidth(
+  BuildContext context,
+  LearnAnywhereLocalizations messages,
+) {
+  double width = LearnAnywhereTokens.gapSmall * (_actionRow.length - 1);
+  for (final (LearnAnywhereMessage label, String key) in _actionRow) {
+    width +=
+        iconPillChrome +
+        measurePillLabelWidth(context, messages.message(label), key);
+  }
+  return width;
 }
 
 final class _ActionButton extends StatelessWidget {

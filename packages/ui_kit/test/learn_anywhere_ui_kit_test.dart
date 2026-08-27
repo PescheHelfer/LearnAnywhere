@@ -265,6 +265,163 @@ void main() {
     });
   });
 
+  group('content frame', () {
+    const Key childKey = Key('framedChild');
+
+    /// Pumps a frame on a [surface]-wide window.
+    ///
+    /// The surface is the window rather than an inner box, because the frames
+    /// under test are wider than the suite's 800-wide default — and the rule
+    /// is to widen the surface, never to shrink the interface to fit it.
+    Future<void> pumpFrame(
+      WidgetTester tester, {
+      required double surface,
+      required double maxWidth,
+      bool enabled = true,
+    }) async {
+      tester.view.physicalSize = Size(surface, 400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ContentFrame(
+              maxWidth: maxWidth,
+              enabled: enabled,
+              // A child that takes everything it is offered, so its rect IS
+              // the frame's rect and the margins are what is left over.
+              child: const SizedBox.expand(
+                child: ColoredBox(color: Color(0xFF000000), key: childKey),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('centres horizontally and anchors to the top on a wide surface',
+        (WidgetTester tester) async {
+      await pumpFrame(tester, surface: 1600, maxWidth: 900);
+
+      final Rect child = tester.getRect(find.byKey(childKey));
+      expect(child.width, 900);
+      // Equal margins either side of an 1600-wide surface.
+      expect(child.left, closeTo(350, 0.01));
+      expect(child.right, closeTo(1250, 0.01));
+      // Full height, starting at the top: the frame must not centre
+      // vertically, or the mask would jump every time the feedback line
+      // appears under it.
+      expect(child.top, 0);
+      expect(child.height, 400);
+    });
+
+    testWidgets('becomes the viewport once the surface is narrower than it',
+        (WidgetTester tester) async {
+      await pumpFrame(tester, surface: 700, maxWidth: 900);
+
+      final Rect child = tester.getRect(find.byKey(childKey));
+      expect(child.left, 0);
+      expect(child.width, 700);
+    });
+
+    testWidgets('never exceeds the window, at any window width',
+        (WidgetTester tester) async {
+      // The structural half of "no horizontal scrollbar on the page itself":
+      // the frame clamps rather than scrolls, so as long as it never grows
+      // past the window nothing can be pushed off the side of the page.
+      for (final double surface in <double>[320, 700, 900, 901, 1600, 3000]) {
+        await pumpFrame(tester, surface: surface, maxWidth: 900);
+        expect(
+          tester.getRect(find.byKey(childKey)).width,
+          lessThanOrEqualTo(surface),
+          reason: 'on a $surface-wide window',
+        );
+        expect(tester.takeException(), isNull, reason: 'on a $surface window');
+      }
+    });
+
+    testWidgets('takes the whole surface when switched off',
+        (WidgetTester tester) async {
+      await pumpFrame(tester, surface: 1600, maxWidth: 900, enabled: false);
+
+      final Rect child = tester.getRect(find.byKey(childKey));
+      expect(child.left, 0);
+      expect(child.width, 1600);
+    });
+  });
+
+  group('content frame width', () {
+    LearningMask maskOfFieldLength(int length) => LearningMask(
+      maskId: 'm_new_frame-width',
+      name: 'Fixture',
+      direction1Label: 'A',
+      direction2Label: 'B',
+      categories: <CategoryDefinition>[
+        CategoryDefinition(
+          id: 0,
+          name: 'Cat',
+          fields: <FieldDefinition>[
+            FieldDefinition(
+              id: 0,
+              name: 'Question',
+              length: length,
+              equalGroup: 0,
+              role1: FieldRole.question,
+              role2: FieldRole.answer,
+            ),
+          ],
+        ),
+      ],
+    );
+
+    Future<BuildContext> pumpProbe(WidgetTester tester) async {
+      late BuildContext captured;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (BuildContext context) {
+              captured = context;
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return captured;
+    }
+
+    testWidgets('follows the deck once the mask outgrows the floor',
+        (WidgetTester tester) async {
+      final BuildContext context = await pumpProbe(tester);
+
+      final double narrow = deckContentFrameWidth(
+        context,
+        maskOfFieldLength(10),
+        minimumWidth: 600,
+      );
+      final double wide = deckContentFrameWidth(
+        context,
+        maskOfFieldLength(200),
+        minimumWidth: 600,
+      );
+      expect(wide, greaterThan(narrow));
+    });
+
+    testWidgets('never falls below the floor its control rows need',
+        (WidgetTester tester) async {
+      final BuildContext context = await pumpProbe(tester);
+
+      // A deck of very short fields: the mask alone would derive a frame far
+      // narrower than any button row, which is the case the floor exists for.
+      expect(
+        deckContentFrameWidth(context, maskOfFieldLength(1), minimumWidth: 600),
+        greaterThanOrEqualTo(600),
+      );
+    });
+  });
+
   group('localizations', () {
     testWidgets('resolves German messages', (WidgetTester tester) async {
       await tester.pumpWidget(

@@ -78,6 +78,37 @@ Größe, denn die Pfeile und Symbole darin schrumpfen nicht mit und würden sons
 herausgedrängt. 75 % schafft Platz also über kleinere Wörter, nicht über eine insgesamt
 kleinere Oberfläche.
 
+## Zentrierter Inhaltsrahmen
+
+**Optionen ▸ Zentrierter Inhaltsrahmen** stellt den Inhalt jedes Bildschirms in einen
+*Inhaltsrahmen* — ein eigenes Kästchen in der Mitte des Fensters — statt ihn in die linke
+obere Ecke zu heften. Bei einem maximierten Fenster auf einem großen Bildschirm ist das der
+Unterschied zwischen dem Lesen aus der Bildschirmmitte und dem Starren in eine Ecke über
+eine ganze Sitzung hinweg. Die Einstellung ist von Anfang an aktiv; nehmen Sie den Haken
+weg, erhalten Sie die alte Darstellung über die volle Breite zurück.
+
+Zentriert wird nur seitlich. Der Inhalt beginnt weiterhin oben am Fenster, und das mit
+Absicht: Die Zeile, die Ihnen sagt, ob eine Antwort richtig war, erscheint und verschwindet
+während der Arbeit, und ein auch senkrecht zentrierter Rahmen ließe die ganze Maske bei
+jeder Antwort springen.
+
+Der Rahmen ist so breit, wie es die geöffnete Lern-Datei braucht. Er wird aus dem breitesten
+Feld bemessen, das Ihre Maske zeigen kann, damit eine Maske, die gepasst hätte, nie seitlich
+gescrollt werden muss — und nie schmaler als die Schaltflächenreihen darunter, damit die
+Zentrierung diese nicht auf zusätzliche Zeilen drängt. Beim Lernen und beim Bearbeiten
+derselben Lern-Datei ist er gleich breit, es verschiebt sich also nichts, wenn Sie zwischen
+beidem wechseln.
+
+Zwei Bildschirme behalten das ganze Fenster. Das **Lexikon**, weil seine Ergebnistabelle das
+Breiteste im Programm ist und jeden Bildpunkt nutzt, den sie bekommt; und die
+**Programminfo**, die schon von sich aus schmal ist.
+
+Machen Sie das Fenster schmaler als den Rahmen, wird der Rahmen einfach zum Fenster: Die
+Ränder verschwinden, und alles verhält sich genau wie zuvor — die Maske scrollt seitlich in
+ihrem eigenen Kästchen, falls sie wirklich nicht passt. Die Seite selbst bekommt bei keiner
+Fenstergröße einen waagerechten Rollbalken. Der Rahmen folgt auch der Zoomstufe, denn eine
+gezoomte Maske braucht mehr Platz.
+
 ## Statistik-Optionen
 
 **Optionen ▸ Statistiken** enthält automatisches Laden, automatisches Speichern und
@@ -120,9 +151,10 @@ irgendwohin gesendet:
   werden in `learn_anywhere.settings.json` geschrieben, in einem Ordner `LearnAnywhere`
   am üblichen Speicherort für benutzerbezogene Konfiguration Ihres Betriebssystems
   (`%APPDATA%` unter Windows; `$XDG_CONFIG_HOME` oder `~/.config` unter Linux).
-- **Darstellung, Sprache, die Zoomstufe, der Startordner, zuletzt verwendete Ordner, die
-  Schalter für automatisches Laden/Speichern sowie Größe und Position des Fensters**
-  werden getrennt davon im eigenen Einstellungsspeicher des Betriebssystems abgelegt.
+- **Darstellung, Sprache, die Zoomstufe, der Inhaltsrahmen, der Startordner, zuletzt
+  verwendete Ordner, die Schalter für automatisches Laden/Speichern sowie Größe und Position
+  des Fensters** werden getrennt davon im eigenen Einstellungsspeicher des Betriebssystems
+  abgelegt.
 
 Keine der beiden Dateien muss von Hand angefasst werden — alles darin ist über die in
 diesem Kapitel beschriebenen Menüs erreichbar —, aber beide sind reiner, lesbarer Text,

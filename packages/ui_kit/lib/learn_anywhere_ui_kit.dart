@@ -6,6 +6,7 @@ export 'src/fields/field_row_grid.dart';
 export 'src/help/help_content.dart';
 export 'src/help/help_viewer.dart';
 export 'src/i18n/learn_anywhere_localizations.dart';
+export 'src/layout/content_frame.dart';
 export 'src/menu/menu_accelerator_builder.dart';
 export 'src/menu/menu_accelerator_display_label.dart';
 export 'src/rich_text/learn_anywhere_palette.dart';

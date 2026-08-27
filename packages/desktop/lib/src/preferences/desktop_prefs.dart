@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Typed wrapper around [SharedPreferences] for desktop-specific settings.
 ///
-/// Covers UI theme, UI language, the zoom level, the start folder, and
-/// last-used file-dialog directories.
+/// Covers UI theme, UI language, the zoom level, the content frame, the start
+/// folder, and last-used file-dialog directories.
 /// Window geometry is handled separately by `WindowGeometryService`.
 /// Pure learning-engine settings are stored in the JSON settings file
 /// managed by the core package.
@@ -24,6 +24,7 @@ final class DesktopPrefs {
   static const String _keyLastDirFileSearch = 'last_dir_file_search';
   static const String _keyStartFolder = 'start_folder';
   static const String _keyZoomPercent = 'zoom_percent';
+  static const String _keyContentFrame = 'content_frame';
   static const String _keyAutoLoadStats = 'auto_load_stats';
   static const String _keyAutoSaveStats = 'auto_save_stats';
 
@@ -61,6 +62,19 @@ final class DesktopPrefs {
   void setZoomPercent(int value) => unawaited(
     _prefs.setInt(_keyZoomPercent, LearnAnywhereZoom.nearest(value)),
   );
+
+  // --- Content frame --------------------------------------------------------
+
+  /// Whether each screen's content is centred in a width-limited frame.
+  ///
+  /// On unless the learner has turned it off: the benefit of not staring into
+  /// one corner of a wide screen should reach her without her having to find a
+  /// setting first.
+  bool get contentFrameEnabled => _prefs.getBool(_keyContentFrame) ?? true;
+
+  /// Persists whether the content frame is in force.
+  void setContentFrameEnabled(bool value) =>
+      unawaited(_prefs.setBool(_keyContentFrame, value));
 
   // --- Start folder ---------------------------------------------------------
 
