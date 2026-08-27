@@ -166,10 +166,13 @@ final class _LearnAnywhereDesktopAppState
   // --- Content frame (N4) ---------------------------------------------------
 
   /// Adopts [value] as whether content is framed, and remembers it.
+  ///
+  /// Deliberately without the "already at this value" guard [_onZoomChanged]
+  /// has. The menu that sends this is cached, so a checkbox can in principle
+  /// render a value one step behind the setting; a guard would then swallow
+  /// the very click that would have put the two back in step, and the option
+  /// would look stuck. Re-applying the value it already holds costs nothing.
   void _onContentFrameChanged(bool value) {
-    if (value == _contentFrameEnabled) {
-      return;
-    }
     setState(() => _contentFrameEnabled = value);
     widget.prefs.setContentFrameEnabled(value);
   }
@@ -380,9 +383,13 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   // to it after a confirmation (see [_cancelEditor]). Null when not editing.
   DesktopDocument? _editorSnapshot;
   List<Widget>? _cachedMenuChildren;
-  String? _cachedMenuLocale;
-  _AppTheme? _cachedMenuTheme;
-  int? _cachedMenuZoom;
+  // Everything the cached menu RENDERS that can change underneath it. A value
+  // shown in the menu but missing from this key freezes at whatever it was
+  // when the menu was last built - the checkmark then disagrees with the
+  // setting, and clicking it appears to do nothing. Anything the menu reads
+  // from [widget] belongs here; anything it reads from this state's own fields
+  // clears [_cachedMenuChildren] by hand at the point it changes.
+  (String, _AppTheme, int, bool)? _cachedMenuKey;
 
   // --- ALT-mnemonic scoping (see docs/menu-alt-mnemonics.md) ----------------
   //
@@ -663,7 +670,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     // the content scope to re-activate page shortcuts immediately.
     if (widget.locale != oldWidget.locale ||
         widget.appTheme != oldWidget.appTheme ||
-        widget.zoomPercent != oldWidget.zoomPercent) {
+        widget.zoomPercent != oldWidget.zoomPercent ||
+        widget.contentFrameEnabled != oldWidget.contentFrameEnabled) {
       _cachedMenuChildren = null;
       _restoreContentFocus();
     }
@@ -1432,16 +1440,15 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   // _MenuAcceleratorLabelState._listenToKeyEvent and causes intermittent ~1 s
   // delays before Alt-key underlines appear. Caching restores the fast-path.
   List<Widget> _menuChildren(LearnAnywhereLocalizations messages) {
-    final String locale = messages.locale.languageCode;
-    final _AppTheme theme = widget.appTheme;
-    final int zoom = widget.zoomPercent;
-    if (locale != _cachedMenuLocale ||
-        theme != _cachedMenuTheme ||
-        zoom != _cachedMenuZoom) {
+    final (String, _AppTheme, int, bool) key = (
+      messages.locale.languageCode,
+      widget.appTheme,
+      widget.zoomPercent,
+      widget.contentFrameEnabled,
+    );
+    if (_cachedMenuKey != key) {
       _cachedMenuChildren = null;
-      _cachedMenuLocale = locale;
-      _cachedMenuTheme = theme;
-      _cachedMenuZoom = zoom;
+      _cachedMenuKey = key;
     }
     return _cachedMenuChildren ??= _buildMenuChildren(messages);
   }
@@ -1858,8 +1865,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     }
     setState(() {
       _learnSessionActive = active;
-      // The menu cache is keyed by locale/theme only; this label depends on
-      // session state, so drop the cache by hand.
+      // The menu cache is keyed by what comes down from the app; this label
+      // depends on session state, so drop the cache by hand.
       _cachedMenuChildren = null;
     });
   }

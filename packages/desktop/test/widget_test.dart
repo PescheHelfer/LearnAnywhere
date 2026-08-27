@@ -726,6 +726,48 @@ void main() {
     expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
   });
 
+  testWidgets('the centring checkbox keeps following the setting, both ways', (
+    WidgetTester tester,
+  ) async {
+    // The menu is cached across rebuilds. A value the menu renders but the
+    // cache key does not name freezes at whatever it was when the menu was
+    // last built: the checkmark then disagrees with the setting, and every
+    // further click sends the value the setting already holds, so the option
+    // reads as stuck. Toggling twice - with a cache-dropping change in
+    // between, which is what surfaced it - is what catches that.
+    tester.view.physicalSize = const Size(2400, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    expect(await contentFrameChecked(tester), isTrue);
+
+    await toggleContentFrame(tester);
+    expect(await contentFrameChecked(tester), isFalse);
+    await openEditorWithOneUnit(tester);
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    // Anything that drops the menu cache; the theme is the cheapest.
+    await tester.ensureVisible(find.text('Options'));
+    await tester.tap(find.text('Options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Theme'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dark').last);
+    await tester.pumpAndSettle();
+    expect(await contentFrameChecked(tester), isFalse);
+
+    // And back on again - the click that used to do nothing.
+    await toggleContentFrame(tester);
+    expect(await contentFrameChecked(tester), isTrue);
+    await openEditorWithOneUnit(tester);
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, greaterThan(0));
+  });
+
   testWidgets('a window narrower than the frame keeps today\'s layout', (
     WidgetTester tester,
   ) async {
@@ -1042,6 +1084,28 @@ Future<void> startOneQuestionSession(WidgetTester tester) async {
     await tester.enterText(find.byType(TextField).first, 'hello');
   }
   await tester.pumpAndSettle();
+}
+
+/// Whether Options -> Centred content frame currently shows a tick.
+///
+/// Reads the checkbox the learner actually sees, not the setting behind it -
+/// the point being to catch the two disagreeing.
+Future<bool> contentFrameChecked(WidgetTester tester) async {
+  await tester.ensureVisible(find.text('Options'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Options'));
+  await tester.pumpAndSettle();
+  final bool checked = tester
+      .widget<CheckboxMenuButton>(
+        find.ancestor(
+          of: find.text('Centred content frame').last,
+          matching: find.byType(CheckboxMenuButton),
+        ),
+      )
+      .value!;
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+  return checked;
 }
 
 /// Flips the Options -> Centred content frame checkbox.
