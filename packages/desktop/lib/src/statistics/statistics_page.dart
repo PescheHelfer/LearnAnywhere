@@ -192,7 +192,7 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Text(messages.message(LearnAnywhereMessage.actionCancel)),
-                        const Text('Esc', style: TextStyle(fontSize: 10)),
+                        Text('Esc', style: LearnAnywhereTokens.keyHint(context)),
                       ],
                     ),
                   ),
@@ -288,7 +288,7 @@ final class _DirectionViewMenu extends StatelessWidget {
       context,
     );
     return SizedBox(
-      width: LearnAnywhereZoom.scale(context, 240),
+      width: LearnAnywhereZoom.scaleBox(context, 240),
       child: DropdownButtonFormField<StatisticsDirectionView>(
         decoration: InputDecoration(
           labelText: messages.message(
@@ -716,7 +716,7 @@ final class _PracticeListState extends State<_PracticeList> {
                   },
                 ),
             SizedBox(
-              width: LearnAnywhereZoom.scale(context, 90),
+              width: LearnAnywhereZoom.scaleBox(context, 90),
               child: TextField(
                 controller: _minController,
                 keyboardType: TextInputType.number,
@@ -730,7 +730,7 @@ final class _PracticeListState extends State<_PracticeList> {
               ),
             ),
             SizedBox(
-              width: LearnAnywhereZoom.scale(context, 90),
+              width: LearnAnywhereZoom.scaleBox(context, 90),
               child: TextField(
                 controller: _maxController,
                 keyboardType: TextInputType.number,

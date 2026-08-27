@@ -531,7 +531,7 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
                         ),
                   },
                   child: SizedBox(
-                    width: LearnAnywhereZoom.scale(context, 320),
+                    width: LearnAnywhereZoom.scaleBox(context, 320),
                     child: ListView.builder(
                       shrinkWrap: true,
                       itemCount: categories.length,
@@ -1232,7 +1232,7 @@ final class _ActionButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(label),
-              Text(shortcut!, style: const TextStyle(fontSize: 10)),
+              Text(shortcut!, style: LearnAnywhereTokens.keyHint(context)),
             ],
           )
         : Text(label);

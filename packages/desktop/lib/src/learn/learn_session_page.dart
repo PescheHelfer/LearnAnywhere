@@ -1604,7 +1604,7 @@ final class _SetupView extends StatelessWidget {
                   Text(
                     messages.message(LearnAnywhereMessage.learnStartSession),
                   ),
-                  const Text('F3', style: TextStyle(fontSize: 10)),
+                  Text('F3', style: LearnAnywhereTokens.keyHint(context)),
                 ],
               ),
             ),
@@ -1615,7 +1615,7 @@ final class _SetupView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(messages.message(LearnAnywhereMessage.actionCancel)),
-                  const Text('Esc', style: TextStyle(fontSize: 10)),
+                  Text('Esc', style: LearnAnywhereTokens.keyHint(context)),
                 ],
               ),
             ),
@@ -2077,7 +2077,7 @@ final class _SessionView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(messages.message(LearnAnywhereMessage.actionCancel)),
-              const Text('Esc', style: TextStyle(fontSize: 10)),
+              Text('Esc', style: LearnAnywhereTokens.keyHint(context)),
             ],
           ),
         ),
@@ -2116,7 +2116,7 @@ final class _SessionView extends StatelessWidget {
                             : LearnAnywhereMessage.learnReveal),
                 ),
               ),
-              const Text('F10', style: TextStyle(fontSize: 10)),
+              Text('F10', style: LearnAnywhereTokens.keyHint(context)),
             ],
           ),
         ),
@@ -2235,7 +2235,7 @@ final class _SessionView extends StatelessWidget {
                                 LearnAnywhereMessage.learnContinue,
                               ),
                             ),
-                            const Text('F3', style: TextStyle(fontSize: 10)),
+                            Text('F3', style: LearnAnywhereTokens.keyHint(context)),
                           ],
                         ),
                       ),
@@ -2251,7 +2251,7 @@ final class _SessionView extends StatelessWidget {
                                 LearnAnywhereMessage.actionCancel,
                               ),
                             ),
-                            const Text('Esc', style: TextStyle(fontSize: 10)),
+                            Text('Esc', style: LearnAnywhereTokens.keyHint(context)),
                           ],
                         ),
                       ),
@@ -2965,7 +2965,7 @@ final class _ToggleRow extends StatelessWidget {
         child: Row(
           children: <Widget>[
             SizedBox(
-              width: LearnAnywhereZoom.scale(context, 280),
+              width: LearnAnywhereZoom.scaleBox(context, 280),
               child: Text(label, style: Theme.of(context).textTheme.bodyLarge),
             ),
             Switch(value: value, onChanged: onChanged),
@@ -3186,7 +3186,7 @@ final class _EvalButtonState extends State<_EvalButton> {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Text(widget.label),
-        Text(widget.hint, style: const TextStyle(fontSize: 10)),
+        Text(widget.hint, style: LearnAnywhereTokens.keyHint(context)),
       ],
     );
     if (widget.filled) {
@@ -3253,7 +3253,7 @@ final class _ToggleViewButtonState extends State<_ToggleViewButton> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(widget.label),
-          Text(widget.hint, style: const TextStyle(fontSize: 10)),
+          Text(widget.hint, style: LearnAnywhereTokens.keyHint(context)),
         ],
       ),
     );

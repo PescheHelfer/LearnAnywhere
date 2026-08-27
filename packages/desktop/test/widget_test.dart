@@ -495,16 +495,19 @@ void main() {
     await pressZoomKey(tester, LogicalKeyboardKey.minus);
     expect(await currentZoomLevel(tester), 125);
 
-    // Ctrl+0 goes home from anywhere.
+    // Ctrl+0 goes home from anywhere — home being 100 %, which is NOT the
+    // smallest level: there is one step below it.
     await pressZoomKey(tester, LogicalKeyboardKey.digit0);
     expect(await currentZoomLevel(tester), 100);
+    await pressZoomKey(tester, LogicalKeyboardKey.minus);
+    expect(await currentZoomLevel(tester), 75);
 
     // The bottom of the ladder holds; it does not wrap or go smaller.
     await pressZoomKey(tester, LogicalKeyboardKey.minus);
-    expect(await currentZoomLevel(tester), 100);
+    expect(await currentZoomLevel(tester), LearnAnywhereZoom.minimum);
 
     // And the top holds too.
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
       await pressZoomKey(tester, LogicalKeyboardKey.numpadAdd);
     }
     expect(await currentZoomLevel(tester), LearnAnywhereZoom.maximum);
@@ -531,6 +534,36 @@ void main() {
         greaterThan(plainMenu.width * 1.5));
     expect(tester.getSize(find.text('Learn Anywhere')).width,
         greaterThan(plainTitle.width * 1.5));
+  });
+
+  testWidgets('the key name under a button zooms with the label above it', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(2400, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Statistics'));
+    await tester.pumpAndSettle();
+
+    final Size plainLabel = tester.getSize(find.text('Cancel'));
+    final Size plainHint = tester.getSize(find.text('Esc'));
+
+    await setZoomFromMenu(tester, 200);
+    final double labelGrowth =
+        tester.getSize(find.text('Cancel')).width / plainLabel.width;
+    final double hintGrowth =
+        tester.getSize(find.text('Esc')).width / plainHint.width;
+
+    // The caption is written as a literal font size rather than taken from the
+    // theme, so it is the one piece of text that could be left behind. It has
+    // to travel with the label it belongs to, not sit at 10 pixels beside text
+    // the learner deliberately doubled.
+    expect(labelGrowth, greaterThan(1.8));
+    expect(hintGrowth, closeTo(labelGrowth, 0.15));
   });
 
   testWidgets('a mask field box grows together with the text inside it', (
@@ -577,21 +610,24 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('maximum zoom raises no overflow on any screen', (
+  testWidgets('the far ends of the zoom range raise no overflow anywhere', (
     WidgetTester tester,
   ) async {
     // Both the window the program opens at and a large monitor: the first is
     // where doubled text runs out of room first, and it is what the learner
-    // most likely has when she reaches for zoom in the first place.
-    for (final Size size in <Size>[
-      const Size(1280, 720),
-      const Size(2400, 1500),
+    // most likely has when she reaches for zoom in the first place. The
+    // smallest level is walked too — text that shrinks while paddings and
+    // icons stay put is the other end of the same hazard.
+    for (final int level in <int>[
+      LearnAnywhereZoom.minimum,
+      LearnAnywhereZoom.maximum,
     ]) {
-      await walkEveryScreen(
-        tester,
-        zoomPercent: LearnAnywhereZoom.maximum,
-        surface: size,
-      );
+      for (final Size size in <Size>[
+        const Size(1280, 720),
+        const Size(2400, 1500),
+      ]) {
+        await walkEveryScreen(tester, zoomPercent: level, surface: size);
+      }
     }
   });
 

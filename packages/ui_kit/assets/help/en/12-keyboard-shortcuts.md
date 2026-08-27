@@ -14,7 +14,7 @@ reference; each shortcut is also explained in context in its own chapter.
 | `Ctrl+0` | Back to 100% |
 
 The three zoom keys are the only `Ctrl` shortcuts in the program — everything else is a
-function key or an `Alt` mnemonic. They step between the five offered levels rather than
+function key or an `Alt` mnemonic. They step between the six offered levels rather than
 scaling freely; see [Settings](11-settings.md#zoom-level).
 
 ## Menu bar

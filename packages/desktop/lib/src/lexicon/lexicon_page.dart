@@ -88,7 +88,7 @@ final class _LexiconPageState extends State<LexiconPage> {
               crossAxisAlignment: WrapCrossAlignment.end,
               children: <Widget>[
                 SizedBox(
-                  width: LearnAnywhereZoom.scale(context, 280),
+                  width: LearnAnywhereZoom.scaleBox(context, 280),
                   child: TextField(
                     controller: _queryController,
                     decoration: InputDecoration(
@@ -100,7 +100,7 @@ final class _LexiconPageState extends State<LexiconPage> {
                   ),
                 ),
                 SizedBox(
-                  width: LearnAnywhereZoom.scale(context, 240),
+                  width: LearnAnywhereZoom.scaleBox(context, 240),
                   child: DropdownButtonFormField<int?>(
                     // Without this the selected entry keeps its natural width
                     // and overflows the fixed-width box — a long category name,
@@ -212,7 +212,7 @@ final class _LexiconPageState extends State<LexiconPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Text(messages.message(LearnAnywhereMessage.actionCancel)),
-                      const Text('Esc', style: TextStyle(fontSize: 10)),
+                      Text('Esc', style: LearnAnywhereTokens.keyHint(context)),
                     ],
                   ),
                 ),

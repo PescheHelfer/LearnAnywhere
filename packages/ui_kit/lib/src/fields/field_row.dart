@@ -31,7 +31,8 @@ double measureMonospaceCharWidth(TextStyle style) =>
 /// dominate the layout. Both bounds default to the shared tokens scaled by the
 /// zoom level in force: the names they bound are measured in the zoomed style,
 /// so a fixed ceiling would start ellipsizing, at 200 per cent, names that fit
-/// in full at 100.
+/// in full at 100 (and below 100 the bounds hold, which never truncates —
+/// smaller text needs less room, not more).
 double computeFieldLabelWidth(
   BuildContext context,
   LearningMask mask, {
@@ -51,12 +52,12 @@ double computeFieldLabelWidth(
   }
   return (widest + 16).clamp(
     minWidth ??
-        LearnAnywhereZoom.scale(
+        LearnAnywhereZoom.scaleBox(
           context,
           LearnAnywhereTokens.fieldLabelMinWidth,
         ),
     maxWidth ??
-        LearnAnywhereZoom.scale(
+        LearnAnywhereZoom.scaleBox(
           context,
           LearnAnywhereTokens.fieldLabelMaxWidth,
         ),

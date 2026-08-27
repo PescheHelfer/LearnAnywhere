@@ -7,9 +7,8 @@ zoom today; if it ever does, it uses the same mechanism.
 
 ## Context
 
-The learner picks a zoom level between 100 and 200 per cent and the whole program grows
-with it. Flutter offers two obvious ways to do that, and they are not interchangeable
-here.
+The learner picks a zoom level between 75 and 200 per cent and the whole program follows
+it. Flutter offers two obvious ways to do that, and they are not interchangeable here.
 
 The first is `MediaQuery.textScaler` (or a `TextScaler` on individual widgets). It is the
 platform's own accessibility mechanism, it is one line, and it reaches every piece of
@@ -54,11 +53,16 @@ Three consequences of that follow and are not negotiable:
 1. **The level lives in the theme, not in an inherited widget of its own.** Every screen
    and the menu bar scale because they all read text styles from the theme; no screen has
    to opt in, and no screen can opt out.
-2. **A fixed dimension that exists to hold text scales with it.** `LearnAnywhereZoom.scale`
-   recovers the factor from the theme and multiplies such a width — a dropdown sized for
-   its longest entry, a numeric field, the bounds a field-label column is clamped to, a
-   two-column breakpoint. This is what keeps the screens free of overflow, and free of
-   ellipsis, at 200 per cent.
+2. **A hard-coded number expressed in text-sized units follows the level too**, and there
+   are two kinds of them. `LearnAnywhereZoom.scaleText` scales a font size written as a
+   literal because the M3 scale has nothing small enough — the key-name caption under a
+   button — in **both** directions. `LearnAnywhereZoom.scaleBox` scales a box dimension —
+   a dropdown sized for its longest entry, a numeric field, the bounds a field-label
+   column is clamped to, a two-column breakpoint — but **never below its unzoomed value**,
+   because such a box also holds chrome that does not shrink (a dropdown's arrow, the
+   padding inside an input decoration); scaling one down to match 75-per-cent text
+   overflowed it on exactly that. Together these keep every screen free of overflow, and
+   free of ellipsis, at both ends of the range.
 3. **The mechanism is asserted by geometry, not by font size.** The shell test measures a
    mask field row at 100 and at 200 per cent and requires the box to grow by more than
    the text it holds. A test that read a `fontSize` would pass against the broken
@@ -68,12 +72,19 @@ Three consequences of that follow and are not negotiable:
 
 Accepted, and visible:
 
-- **Icon sizes, paddings, hairlines and the fixed key hints do not scale.** Chrome is
-  proportionally tighter at high zoom: the `F3`/`Esc` captions under the session pills,
-  the outcome emoji, the 4-pixel accent bar on a field row and the padding inside it all
-  keep their size while the text beside them grows. This is deliberate — scaling
-  everything turns a zoom level into a second window size — and it is why a field row
-  grows by nearly the full factor in width but by less in height.
+- **Icon sizes, paddings and hairlines do not scale.** Chrome is proportionally tighter
+  at high zoom: the outcome emoji, the 4-pixel accent bar on a field row and the padding
+  inside it all keep their size while the text beside them grows. This is deliberate —
+  scaling everything turns a zoom level into a second window size — and it is why a field
+  row grows by nearly the full factor in width but by less in height. **Text is not in
+  that set**, including the `F3`/`Esc` captions under the buttons: a caption naming the
+  key the learner is about to press is useless at 10 pixels beside text she deliberately
+  doubled, so it goes through `scaleText` like any other literal size.
+- **Below 100 per cent, only the text gets smaller.** Every `scaleBox` dimension holds at
+  its unzoomed value, so the 75-per-cent layout is the 100-per-cent layout with smaller
+  text in it — provably safe, since text that fits at 100 fits in the same box at 75. The
+  cost is that 75 per cent is slightly less compact than a fully proportional shrink would
+  be. The gain is that a level meant to fit more on screen cannot clip a dropdown arrow.
 - **The text geometry is pinned to Flutter's `englishLike` set.** The colour half of a
   `Typography` carries no font sizes at all; the geometry half does, and Flutter normally
   merges it in later, during localization. To have sizes to multiply, the theme merges
@@ -94,7 +105,7 @@ Accepted, and visible:
   was rejected because it makes correctness depend on every present and future
   measurement site remembering to pass it, and one that forgets clips silently. Scaling
   the theme makes the two agree by construction.
-- **A free-form percentage.** Rejected with the setting itself: five discrete levels mean
+- **A free-form percentage.** Rejected with the setting itself: six discrete levels mean
   the learner always lands on a size that has been laid out and tested, and the keys have
   something to step between.
 - **Deriving the level automatically from the deck or the screen.** Rejected in the

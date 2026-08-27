@@ -212,6 +212,7 @@ Locale _localeFromPrefs(DesktopPrefs prefs) {
 /// [LearnAnywhereZoom] defines.
 const List<(int, LearnAnywhereMessage)> _zoomMenuEntries =
     <(int, LearnAnywhereMessage)>[
+      (75, LearnAnywhereMessage.zoom75),
       (100, LearnAnywhereMessage.zoom100),
       (125, LearnAnywhereMessage.zoom125),
       (150, LearnAnywhereMessage.zoom150),

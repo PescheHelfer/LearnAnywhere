@@ -15,7 +15,7 @@ Zusammenhang erklärt.
 | `Strg+0` | Zurück auf 100 % |
 
 Die drei Zoomtasten sind die einzigen `Strg`-Tastenkürzel im Programm — alles andere ist
-eine Funktionstaste oder ein `Alt`-Tastenkürzel. Sie springen zwischen den fünf
+eine Funktionstaste oder ein `Alt`-Tastenkürzel. Sie springen zwischen den sechs
 angebotenen Stufen, statt stufenlos zu vergrößern; siehe
 [Einstellungen](11-settings.md#zoomstufe).
 

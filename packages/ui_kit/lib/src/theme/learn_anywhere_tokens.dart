@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'learn_anywhere_zoom.dart';
+
 /// Shared visual constants for Learn Anywhere widgets.
 final class LearnAnywhereTokens {
   const LearnAnywhereTokens._();
@@ -53,6 +55,20 @@ final class LearnAnywhereTokens {
       fontFamilyFallback: monospaceFallback,
     );
   }
+
+  /// Unzoomed size of the key-name caption under a button.
+  static const double keyHintFontSize = 10;
+
+  /// Style for the small key name printed under a button — `F3`, `Esc`, `F10`.
+  ///
+  /// Deliberately NOT a theme text style: it is smaller than anything the M3
+  /// scale offers, and it is the one caption that must stay subordinate to the
+  /// label above it. It still follows the zoom level, because a caption naming
+  /// the key the learner is about to press is of no use at 10 pixels beside
+  /// text she zoomed to twice that.
+  static TextStyle keyHint(BuildContext context) => TextStyle(
+    fontSize: LearnAnywhereZoom.scaleText(context, keyHintFontSize),
+  );
 
   /// Minimum width of a field row's label column.
   static const double fieldLabelMinWidth = 64;

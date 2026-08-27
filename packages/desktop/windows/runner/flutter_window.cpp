@@ -7,7 +7,7 @@
 
 namespace {
 
-// Every character used as an `&`-accelerator anywhere in the desktop menu bar
+// Every letter used as an `&`-accelerator anywhere in the desktop menu bar
 // (top-level entries AND submenu items, EN and DE), upper-cased. Windows has no
 // visibility into Flutter's menu widgets - there is no native HMENU on this
 // window - so DefWindowProc's default WM_SYSCHAR handling beeps for *every*
@@ -22,11 +22,7 @@ namespace {
 // "practice/Ueben" menu item) is spelled as a universal character escape
 // rather than a literal non-ASCII byte, so this compiles correctly regardless
 // of the MSVC source-file encoding/code-page in effect.
-//
-// The trailing digits are the Options -> Zoom level entries: a percentage has
-// no letter to mark, so those five items take digit accelerators.
-constexpr wchar_t kMenuAcceleratorChars[] =
-    L"ABCDEFGHIJKLMNOPSTUVXYZ\u00DC01257";
+constexpr wchar_t kMenuAcceleratorChars[] = L"ABCDEFGHIJKLMNOPSTUVXYZ\u00DC";
 
 bool IsMenuAcceleratorChar(WPARAM wparam) {
   const wchar_t upper = std::towupper(static_cast<wchar_t>(wparam));

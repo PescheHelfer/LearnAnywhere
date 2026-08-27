@@ -43,28 +43,36 @@ same setting.
 
 ## Zoom level
 
-**Options ▸ Zoom level** makes the whole program bigger on a large monitor: **100%** (the
-default), **125%**, **150%**, **175%** or **200%**. The current level is ticked in the
-menu. It applies to every screen and to the menu bar, and it is remembered, so you set it
-once.
+**Options ▸ Zoom level** resizes the whole program: **75%**, **100%** (the default),
+**125%**, **150%**, **175%** or **200%**. The larger levels are for reading comfortably
+from your usual seating distance on a big monitor; **75%** goes the other way, for fitting
+more of a wide deck on screen at once. The current level is ticked in the menu. It applies
+to every screen and to the menu bar, and it is remembered, so you set it once.
 
 `Ctrl` and `+` steps up a level, `Ctrl` and `-` steps down one, and `Ctrl+0` returns to
-100% — the same keys as in most other programs. They step between the five offered levels
+100% — the same keys as in most other programs. They step between the six offered levels
 rather than growing the text a little at a time, so you always land on a size that has
 been laid out and tested. These are the only `Ctrl` shortcuts in the program; everything
-else is a function key or an `Alt` mnemonic.
+else is a function key or an `Alt` mnemonic. The levels are also the one menu whose items
+have no underlined letter: six percentages simply do not contain six different digits
+between them, so they are picked with the arrow keys, the mouse, or these shortcuts.
 
 Zoom is never applied for you. It does not follow the deck, and it does not follow your
 operating system's own display scaling — if you have already scaled your desktop, the two
 add up, which is usually what you want.
 
 A field's box grows with the text inside it, so a longer field stays a longer box and
-nothing is cut off at any level. What does *not* grow is the fixed chrome around the
-text: icons, the spacing inside buttons, and the small `F3`/`Esc` captions under the
-session buttons. At 200% the interface is therefore a little tighter around its text than
-at 100%. If a screen that used two side-by-side columns runs out of room — the Mask
-Editor is the one that does — it stacks them instead, exactly as it does in a narrow
-window.
+nothing is cut off at any level. The small `F3`/`Esc` captions under the buttons follow
+the level too. What does *not* change size is the fixed chrome around the text: icons and
+the spacing inside buttons. At 200% the interface is therefore a little tighter around
+its text than at 100%. If a screen that used two side-by-side columns runs out of room —
+the Mask Editor is the one that does — it stacks them instead, exactly as it does in a
+narrow window.
+
+At 75% it is the text that shrinks; the boxes and controls holding it keep their normal
+size, because the arrows and icons inside them do not shrink and would otherwise be
+squeezed out. So 75% buys you room by making the words smaller, not by making the whole
+interface smaller.
 
 ## Statistics options
 

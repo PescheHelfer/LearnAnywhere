@@ -70,32 +70,101 @@ void main() {
   });
 
   group('zoom levels', () {
-    test('the offered levels are the five discrete ones, ascending', () {
-      expect(LearnAnywhereZoom.levels, <int>[100, 125, 150, 175, 200]);
-      expect(LearnAnywhereZoom.normal, 100);
+    test('the offered levels are the six discrete ones, ascending', () {
+      expect(LearnAnywhereZoom.levels, <int>[75, 100, 125, 150, 175, 200]);
+      expect(LearnAnywhereZoom.minimum, 75);
       expect(LearnAnywhereZoom.maximum, 200);
+      // 100 is where the program starts and where Ctrl+zero returns to — it is
+      // NOT the smallest level, and nothing may treat the two as the same.
+      expect(LearnAnywhereZoom.normal, 100);
+      expect(LearnAnywhereZoom.normal, isNot(LearnAnywhereZoom.minimum));
     });
 
     test('stepping moves between offered levels and stops at the ends', () {
       // The keys step through tested sizes; they never scale freely.
+      expect(LearnAnywhereZoom.stepUp(75), 100);
       expect(LearnAnywhereZoom.stepUp(100), 125);
       expect(LearnAnywhereZoom.stepUp(175), 200);
       expect(LearnAnywhereZoom.stepUp(200), 200);
       expect(LearnAnywhereZoom.stepDown(200), 175);
       expect(LearnAnywhereZoom.stepDown(125), 100);
-      expect(LearnAnywhereZoom.stepDown(100), 100);
+      // Below 100 there is now one more step, and then the floor.
+      expect(LearnAnywhereZoom.stepDown(100), 75);
+      expect(LearnAnywhereZoom.stepDown(75), 75);
     });
 
     test('a stored value that is not a level snaps onto the nearest one', () {
       // Anything can end up in the preferences store: a hand edit, or a level
       // some other build offered. Every caller wants a level back.
       expect(LearnAnywhereZoom.nearest(140), 150);
-      expect(LearnAnywhereZoom.nearest(0), 100);
+      expect(LearnAnywhereZoom.nearest(90), 100);
+      expect(LearnAnywhereZoom.nearest(0), 75);
       expect(LearnAnywhereZoom.nearest(5000), 200);
       expect(LearnAnywhereZoom.isLevel(140), isFalse);
+      expect(LearnAnywhereZoom.isLevel(75), isTrue);
       expect(LearnAnywhereZoom.isLevel(150), isTrue);
       // And stepping off a stray value lands on a level, not on a stray one.
       expect(LearnAnywhereZoom.stepUp(140), 175);
+    });
+
+    testWidgets('a key hint is a fixed size in text units, so it zooms too', (
+      WidgetTester tester,
+    ) async {
+      // The caption naming the key under a pill is smaller than anything the
+      // M3 scale offers, so it is written as a literal — but a literal that
+      // follows the level, or it is unreadable beside text the learner
+      // deliberately doubled.
+      Future<double?> hintSizeAt(int zoomPercent) async {
+        late TextStyle style;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: LearnAnywhereTheme.light(zoomPercent: zoomPercent),
+            home: Builder(
+              builder: (BuildContext context) {
+                style = LearnAnywhereTokens.keyHint(context);
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        return style.fontSize;
+      }
+
+      expect(await hintSizeAt(100), LearnAnywhereTokens.keyHintFontSize);
+      expect(await hintSizeAt(200), LearnAnywhereTokens.keyHintFontSize * 2);
+      // A font size scales BOTH ways: below 100 the caption has to keep
+      // shrinking with the label above it, or it stops being subordinate to it.
+      expect(await hintSizeAt(75), LearnAnywhereTokens.keyHintFontSize * 0.75);
+    });
+
+    testWidgets('a box dimension grows with zoom but never shrinks', (
+      WidgetTester tester,
+    ) async {
+      Future<double> boxAt(int zoomPercent) async {
+        late double width;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: LearnAnywhereTheme.light(zoomPercent: zoomPercent),
+            home: Builder(
+              builder: (BuildContext context) {
+                width = LearnAnywhereZoom.scaleBox(context, 240);
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        return width;
+      }
+
+      expect(await boxAt(100), 240);
+      expect(await boxAt(200), 480);
+      // Unlike a font size, a box holds fixed-size chrome as well as text — a
+      // dropdown's arrow, the padding in an input decoration — and that does
+      // not shrink. Scaling the box down to 180 for 75 per cent text overflowed
+      // on exactly that, so below the normal level every box holds its ground.
+      expect(await boxAt(75), 240);
     });
 
     test('the theme carries the zoom in its OWN font sizes', () {

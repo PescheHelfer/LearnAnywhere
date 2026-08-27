@@ -265,6 +265,9 @@ enum LearnAnywhereMessage {
   /// Zoom-level submenu label.
   zoomLabel,
 
+  /// Zoom level: 75 per cent.
+  zoom75,
+
   /// Zoom level: 100 per cent.
   zoom100,
 
@@ -1424,15 +1427,18 @@ final class LearnAnywhereCatalog {
           'folder you last used instead.',
       LearnAnywhereMessage.startFolderChoose: 'Choose folder...',
       LearnAnywhereMessage.startFolderClear: 'Clear start folder',
-      // The five zoom levels take DIGIT accelerators: a percentage has no
-      // letter to mark, and digits cannot collide with the Options subtree's
-      // letters at any nesting depth.
+      // The zoom levels are the one submenu with NO item accelerators. Six
+      // percentages contain only five distinct digits between them (0 1 2 5 7),
+      // so no assignment gives every level its own; marking five and leaving
+      // one bare would be worse than marking none. They stay reachable by
+      // arrow keys, by mouse, and — the point of them — by Ctrl+plus/minus/zero.
       LearnAnywhereMessage.zoomLabel: '&Zoom level', // Z
-      LearnAnywhereMessage.zoom100: '&100%', // 1
-      LearnAnywhereMessage.zoom125: '1&25%', // 2
-      LearnAnywhereMessage.zoom150: '1&50%', // 5
-      LearnAnywhereMessage.zoom175: '1&75%', // 7
-      LearnAnywhereMessage.zoom200: '20&0%', // 0
+      LearnAnywhereMessage.zoom75: '75%',
+      LearnAnywhereMessage.zoom100: '100%',
+      LearnAnywhereMessage.zoom125: '125%',
+      LearnAnywhereMessage.zoom150: '150%',
+      LearnAnywhereMessage.zoom175: '175%',
+      LearnAnywhereMessage.zoom200: '200%',
       LearnAnywhereMessage.themeLabel: '&Theme', // T
       LearnAnywhereMessage.themeSystem: '&System', // S
       LearnAnywhereMessage.themeLight: 'Lig&ht', // H
@@ -2012,11 +2018,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.startFolderChoose: 'Ordner wählen...',
       LearnAnywhereMessage.startFolderClear: 'Startordner zurücksetzen',
       LearnAnywhereMessage.zoomLabel: '&Zoomstufe', // Z
-      LearnAnywhereMessage.zoom100: '&100 %', // 1
-      LearnAnywhereMessage.zoom125: '1&25 %', // 2
-      LearnAnywhereMessage.zoom150: '1&50 %', // 5
-      LearnAnywhereMessage.zoom175: '1&75 %', // 7
-      LearnAnywhereMessage.zoom200: '20&0 %', // 0
+      LearnAnywhereMessage.zoom75: '75 %',
+      LearnAnywhereMessage.zoom100: '100 %',
+      LearnAnywhereMessage.zoom125: '125 %',
+      LearnAnywhereMessage.zoom150: '150 %',
+      LearnAnywhereMessage.zoom175: '175 %',
+      LearnAnywhereMessage.zoom200: '200 %',
       LearnAnywhereMessage.themeLabel: '&Darstellung', // D
       LearnAnywhereMessage.themeSystem: 'S&ystem', // Y (avoids S = Sprache label)
       LearnAnywhereMessage.themeLight: '&Hell', // H
