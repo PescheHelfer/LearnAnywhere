@@ -479,9 +479,8 @@ void main() {
     expect(selectedZoomLevel(tester), 175);
   });
 
-  testWidgets('Ctrl+plus, Ctrl+minus and Ctrl+zero step through the levels', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('every zoom key steps the level, including the keyboardless ones',
+      (WidgetTester tester) async {
     await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
 
@@ -511,6 +510,23 @@ void main() {
       await pressZoomKey(tester, LogicalKeyboardKey.numpadAdd);
     }
     expect(await currentZoomLevel(tester), LearnAnywhereZoom.maximum);
+
+    // Ctrl+. steps up as well. It is the one zoom-in key that needs neither a
+    // numeric keypad nor a Shift on any layout that gives '.' its own key, so
+    // it is what the guide can safely tell every learner to press.
+    await pressZoomKey(tester, LogicalKeyboardKey.digit0);
+    await pressZoomKey(tester, LogicalKeyboardKey.period);
+    expect(await currentZoomLevel(tester), 125);
+
+    // On a Swiss German keyboard the '+' key IS Shift+1, and that arrives as
+    // Ctrl+Shift+Digit1 because Windows derives the logical key from the key's
+    // unshifted meaning.
+    await pressZoomKey(tester, LogicalKeyboardKey.digit1, shift: true);
+    expect(await currentZoomLevel(tester), 150);
+
+    // Without the Shift it is a plain Ctrl+1, which the program does not claim.
+    await pressZoomKey(tester, LogicalKeyboardKey.digit1);
+    expect(await currentZoomLevel(tester), 150);
   });
 
   testWidgets('zoom reaches the menu bar, not only the screens', (
@@ -835,6 +851,109 @@ void main() {
     }
   });
 
+  testWidgets('changing the zoom level widens the frame with the mask', (
+    WidgetTester tester,
+  ) async {
+    // The test above proves the frame is right when the app STARTS at a level.
+    // This one changes the level while the app is running, which is the path a
+    // learner actually takes and the one that was broken: the frame width is
+    // measured from the theme and memoised, so a frame measured before the new
+    // theme was in force froze one level behind — and the mask, which is
+    // measured afresh on every build, no longer fitted the box around it.
+    tester.view.physicalSize = const Size(4000, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await openEditorWithOneUnit(tester);
+
+    await setZoomFromMenu(tester, 200);
+    await openEditorWithOneUnit(tester);
+
+    // The mask's own horizontal scroller is the symptom: it exists so a mask
+    // too wide for the window can still be read, and on a 4000-wide surface
+    // there is nothing for it to do.
+    final ScrollableState grid = tester.state<ScrollableState>(
+      find
+          .descendant(
+            of: find.byType(FieldRowGrid),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(grid.position.axis, Axis.horizontal);
+    expect(
+      grid.position.maxScrollExtent,
+      0,
+      reason: 'the mask is scrolling sideways inside a frame with room to spare',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a zoom round trip returns the frame to where it started', (
+    WidgetTester tester,
+  ) async {
+    // 100 -> 200 -> 100 has to land back on the 100 % layout exactly. It did
+    // not: the width measured on the way back was the outgoing 200 % one, so
+    // the frame came back too wide and every row inside it — the pill Wrap
+    // above all — broke at different places than it had before.
+    const double surface = 4000;
+    tester.view.physicalSize = const Size(surface, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+    await openEditorWithOneUnit(tester);
+    final Rect before = tester.getRect(editorPage(SingleChildScrollView));
+
+    await setZoomFromMenu(tester, 200);
+    await setZoomFromMenu(tester, 100);
+    await openEditorWithOneUnit(tester);
+    final Rect after = tester.getRect(editorPage(SingleChildScrollView));
+
+    // Width and position both: a frame that came back the right width but off
+    // centre would be just as wrong to the learner.
+    expect(after.width, closeTo(before.width, 0.01));
+    expect(after.left, closeTo(before.left, 0.01));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a zoom step is in force on the very next frame', (
+    WidgetTester tester,
+  ) async {
+    // What keeps the two tests above honest. A theme that ANIMATES to its new
+    // text sizes leaves every measurement taken during those 200 ms reading a
+    // size between two levels — which is both how the frame froze at the wrong
+    // width and, per ADR-0002, a discrete setting quietly made continuous.
+    // One pump, not pumpAndSettle: the point is that no intermediate state
+    // exists to settle.
+    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpAndSettle();
+
+    // Measured at the workspace heading — a plain Text on the page. NOT inside
+    // a button: every Material button wraps its child in an AnimatedTheme of
+    // its own to ease its icon colour, and that re-lerps the whole ThemeData,
+    // font sizes included. A button's label therefore still eases into its new
+    // size for 200 ms whatever the app does, so a measurement taken from
+    // inside one would describe Flutter's button animation rather than this
+    // program's zoom.
+    double bodySize() => Theme.of(
+      tester.element(find.text('Workspace')),
+    ).textTheme.bodyMedium!.fontSize!;
+    final double plain = bodySize();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.equal);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+
+    expect(bodySize(), closeTo(plain * 1.25, 0.001));
+  });
+
   testWidgets('the mask does not move when the feedback line appears', (
     WidgetTester tester,
   ) async {
@@ -1119,9 +1238,19 @@ Future<void> toggleContentFrame(WidgetTester tester) async {
 }
 
 /// Presses [key] with the left Ctrl held down.
-Future<void> pressZoomKey(WidgetTester tester, LogicalKeyboardKey key) async {
+Future<void> pressZoomKey(
+  WidgetTester tester,
+  LogicalKeyboardKey key, {
+  bool shift = false,
+}) async {
   await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+  if (shift) {
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+  }
   await tester.sendKeyEvent(key);
+  if (shift) {
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+  }
   await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
   await tester.pumpAndSettle();
 }

@@ -53,7 +53,11 @@ auf den Schirm. Die aktuelle Stufe ist im Menü angehakt. Sie gilt für jeden Bi
 und für die Menüleiste und wird gemerkt, Sie stellen sie also einmal ein.
 
 `Strg` und `+` geht eine Stufe hinauf, `Strg` und `-` eine Stufe hinunter, und `Strg+0`
-kehrt zu 100 % zurück — dieselben Tasten wie in den meisten anderen Programmen. Sie
+kehrt zu 100 % zurück — dieselben Tasten wie in den meisten anderen Programmen. Wo das `+`
+umständlich zu erreichen ist, geht **`Strg` und `.`** ebenfalls eine Stufe hinauf: Der
+Punkt braucht weder `Umschalt` noch einen Ziffernblock und liegt direkt neben dem `-`, das
+wieder hinunterführt. Auf einer Schweizer Tastatur, wo `+` auf der `1` liegt, geht auch
+`Strg+Umschalt+1` hinauf. Sie
 springen zwischen den sechs angebotenen Stufen, statt die Schrift stufenlos wachsen zu
 lassen; so landen Sie immer auf einer Größe, die geprüft wurde. Das sind die einzigen
 `Strg`-Tastenkürzel im Programm; alles andere ist eine Funktionstaste oder ein

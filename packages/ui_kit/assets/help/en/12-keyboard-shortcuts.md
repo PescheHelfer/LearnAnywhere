@@ -9,13 +9,20 @@ reference; each shortcut is also explained in context in its own chapter.
 |---|---|
 | `F1` | Open this user guide, as a dialog over whatever you are doing. Works from any screen, including mid-session or mid-edit — the only exceptions are while a menu is open or another dialog is already showing |
 | `Esc` | On any screen without its own `Esc` handling (Statistics, Lexicon, About, Options, Mask Editor), return to the workspace |
-| `Ctrl` and `+` | Next zoom level up |
+| `Ctrl` and `.` | Next zoom level up — the form that works on every keyboard |
+| `Ctrl` and `+` | Next zoom level up, where your keyboard has a `+` key of its own. On a Swiss keyboard, where `+` is the shifted `1`, that is `Ctrl+Shift+1`; on a numeric keypad it is the keypad's own `+` |
 | `Ctrl` and `-` | Next zoom level down |
 | `Ctrl+0` | Back to 100% |
 
-The three zoom keys are the only `Ctrl` shortcuts in the program — everything else is a
+The zoom keys are the only `Ctrl` shortcuts in the program — everything else is a
 function key or an `Alt` mnemonic. They step between the six offered levels rather than
 scaling freely; see [Settings](11-settings.md#zoom-level).
+
+`Ctrl` and `.` exists because `+` is not in the same place on every keyboard, and on some
+it needs a second finger on `Shift`. The full stop is a plain, unshifted key almost
+everywhere, and it sits right next to the `-` that zooms back out. If you are unsure which
+key your keyboard wants, use that one — or the **Options ▸ Zoom level** menu, which never
+depends on the keyboard at all.
 
 ## Menu bar
 

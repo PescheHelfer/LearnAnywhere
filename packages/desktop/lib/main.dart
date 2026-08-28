@@ -185,6 +185,16 @@ final class _LearnAnywhereDesktopAppState
       theme: _lightTheme,
       darkTheme: _darkTheme,
       themeMode: _themeMode,
+      // A theme change takes effect in one frame instead of being animated
+      // into place over 200 ms. This is not a matter of taste: the zoom level
+      // lives in the theme's font sizes, so an ANIMATED theme lerps them, and
+      // for the length of the animation the program runs at sizes between two
+      // levels — 137 %, 162 % — that were never laid out or tested, which is
+      // exactly what ADR-0002 makes the levels discrete to prevent. Anything
+      // that measures the theme during those frames reads a size that belongs
+      // to no level at all. The cost is that switching theme no longer
+      // cross-fades; see docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md.
+      themeAnimationStyle: AnimationStyle.noAnimation,
       locale: _locale,
       supportedLocales: LearnAnywhereLocalizations.supportedLocales,
       localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
@@ -324,7 +334,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   final DesktopFileService _fileService = const DesktopFileService();
   // Memo for [_deckContentFrameWidth]; see there for why it is cached, and
   // for what makes up the key.
-  (LearningMask, int, String)? _frameWidthKey;
+  (LearningMask, double, String)? _frameWidthKey;
   double? _frameWidth;
   DesktopFilePicker get _filePicker => widget.filePicker;
   final ScrollController _menuScrollController = ScrollController();
@@ -545,10 +555,25 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       return false;
     }
     final int current = widget.zoomPercent;
+    final bool shift = keyboard.isShiftPressed;
     final int? next = switch (event.logicalKey) {
+      // `equal` is the key Windows calls OEM_PLUS and defines, for every
+      // country, as "the + key": US, UK, German, AZERTY, Nordic. `add` is the
+      // '+' character itself, which is what the Linux shell reports — GTK
+      // derives the logical key from the SHIFTED keyval, so a layout whose plus
+      // needs Shift still arrives as a plus there.
       LogicalKeyboardKey.equal ||
       LogicalKeyboardKey.add ||
       LogicalKeyboardKey.numpadAdd => LearnAnywhereZoom.stepUp(current),
+      // Ctrl+. steps up too, and is the one the guide advertises: it needs no
+      // keypad and no Shift, and it sits next to the Ctrl+- that steps back
+      // down. OEM_PERIOD is the same "for any country" family as OEM_MINUS.
+      LogicalKeyboardKey.period => LearnAnywhereZoom.stepUp(current),
+      // A Swiss German keyboard has no + key of its own: + is Shift+1. Windows
+      // — unlike GTK above — derives the logical key from what the key means
+      // UNSHIFTED, so that gesture arrives there as Digit1 with Shift held.
+      // The Shift is required so a bare Ctrl+1 stays unclaimed.
+      LogicalKeyboardKey.digit1 when shift => LearnAnywhereZoom.stepUp(current),
       LogicalKeyboardKey.minus ||
       LogicalKeyboardKey.numpadSubtract => LearnAnywhereZoom.stepDown(current),
       LogicalKeyboardKey.digit0 ||
@@ -2540,16 +2565,23 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   ///
   /// Measuring walks every field of every category with a [TextPainter], and
   /// the session rebuilds on each answer; the cache is what keeps that off the
-  /// per-answer path. It is keyed by the zoom level and the language as well as
-  /// the mask, because both change what the measurements come back as.
+  /// per-answer path.
+  ///
+  /// The key names the **basis of the measurement**, never the setting behind
+  /// it: the text scale actually in force in [context], not
+  /// `widget.zoomPercent`. The two are not the same thing at the moment the
+  /// level changes — the widget field is new while the theme it is measured
+  /// against may not have caught up — and keying on the setting cached a width
+  /// measured against the previous level, then never asked again. Keyed on the
+  /// scale, the entry can only ever describe the theme it was taken from.
   double _deckContentFrameWidth(
     BuildContext context,
     LearnAnywhereLocalizations messages,
   ) {
     final LearningMask mask = _document.deck.mask;
-    final (LearningMask, int, String) key = (
+    final (LearningMask, double, String) key = (
       mask,
-      widget.zoomPercent,
+      LearnAnywhereZoom.factorOf(context),
       messages.locale.languageCode,
     );
     if (_frameWidth == null || _frameWidthKey != key) {

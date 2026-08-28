@@ -67,6 +67,22 @@ Three consequences of that follow and are not negotiable:
    mask field row at 100 and at 200 per cent and requires the box to grow by more than
    the text it holds. A test that read a `fontSize` would pass against the broken
    implementation, which is the whole failure being guarded against.
+4. **The level changes atomically, and a cached measurement is keyed on what it
+   measured.** The shell passes `themeAnimationStyle: AnimationStyle.noAnimation` to its
+   `MaterialApp`. Flutter's default animates a theme change over 200 ms, and `ThemeData`
+   lerps its `textTheme` — so for those 200 ms `factorOf` returns continuous values and
+   the whole program runs at sizes like 137 % that this record exists to prevent. Any
+   cache of a measured dimension is therefore keyed on **the basis of the measurement**
+   (`factorOf`), never on the setting that produces it: the two disagree at exactly the
+   moment the level changes, and a key naming the setting stores a width measured against
+   the previous level and then never asks again.
+
+   This was not hypothetical. Keyed on the zoom level, the content frame froze one level
+   behind on every step: the mask, measured afresh each build, outgrew the box around it
+   and fell back on its own horizontal scrolling, and a round trip back to 100 per cent
+   left the frame at its 200-per-cent width. Both are pinned by shell tests that change
+   the level at runtime — a fresh mount at each level, which is what the earlier tests
+   did, cannot see this at all.
 
 ## Consequences
 
@@ -80,6 +96,16 @@ Accepted, and visible:
   that set**, including the `F3`/`Esc` captions under the buttons: a caption naming the
   key the learner is about to press is useless at 10 pixels beside text she deliberately
   doubled, so it goes through `scaleText` like any other literal size.
+- **A theme switch snaps instead of cross-fading**, which is the price of item 4. It is
+  paid on a rare, deliberate menu action, and it buys atomicity for a setting the whole
+  layout is measured against.
+- **Material buttons still ease their labels into the new size.** `ButtonStyleButton`
+  wraps its child in an `AnimatedTheme` of its own to animate its icon colour, and that
+  re-lerps the entire `ThemeData`. Nothing can be done about it from here, and nothing
+  needs to be: it is 200 ms of cosmetics on button text. But it does mean **a measurement
+  must never be taken from a context inside a button** — it would read a size that belongs
+  to no level. Every measurement the frame depends on is taken at page level; the test
+  that pins item 4 reads the workspace heading for exactly this reason.
 - **Below 100 per cent, only the text gets smaller.** Every `scaleBox` dimension holds at
   its unzoomed value, so the 75-per-cent layout is the 100-per-cent layout with smaller
   text in it — provably safe, since text that fits at 100 fits in the same box at 75. The

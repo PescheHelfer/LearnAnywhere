@@ -10,14 +10,21 @@ Zusammenhang erklärt.
 |---|---|
 | `F1` | Öffnet dieses Benutzerhandbuch als Dialog über dem, was Sie gerade tun. Funktioniert auf jedem Bildschirm, auch mitten in einer Sitzung oder Bearbeitung — die einzigen Ausnahmen sind ein geöffnetes Menü oder ein bereits geöffneter anderer Dialog |
 | `Esc` | Kehrt auf jedem Bildschirm ohne eigene `Esc`-Behandlung (Statistik, Lexikon, Programminfo, Optionen, Mask Editor) zum Arbeitsbereich zurück |
-| `Strg` und `+` | Eine Zoomstufe hinauf |
+| `Strg` und `.` | Eine Zoomstufe hinauf — die Form, die auf jeder Tastatur funktioniert |
+| `Strg` und `+` | Eine Zoomstufe hinauf, sofern Ihre Tastatur eine eigene `+`-Taste hat. Auf einer Schweizer Tastatur, wo `+` auf der `1` liegt, ist das `Strg+Umschalt+1`; auf einem Ziffernblock dessen eigenes `+` |
 | `Strg` und `-` | Eine Zoomstufe hinunter |
 | `Strg+0` | Zurück auf 100 % |
 
-Die drei Zoomtasten sind die einzigen `Strg`-Tastenkürzel im Programm — alles andere ist
+Die Zoomtasten sind die einzigen `Strg`-Tastenkürzel im Programm — alles andere ist
 eine Funktionstaste oder ein `Alt`-Tastenkürzel. Sie springen zwischen den sechs
 angebotenen Stufen, statt stufenlos zu vergrößern; siehe
 [Einstellungen](11-settings.md#zoomstufe).
+
+`Strg` und `.` gibt es, weil das `+` nicht auf jeder Tastatur an derselben Stelle liegt und
+auf mancher einen zweiten Finger auf `Umschalt` verlangt. Der Punkt ist fast überall eine
+einfache, ungeschaltete Taste, und er liegt direkt neben dem `-`, das wieder
+herauszoomt. Wenn Sie unsicher sind, welche Taste Ihre Tastatur möchte, nehmen Sie diese —
+oder das Menü **Optionen ▸ Zoomstufe**, das gar nicht von der Tastatur abhängt.
 
 ## Menüleiste
 

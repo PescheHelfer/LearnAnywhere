@@ -50,7 +50,10 @@ more of a wide deck on screen at once. The current level is ticked in the menu. 
 to every screen and to the menu bar, and it is remembered, so you set it once.
 
 `Ctrl` and `+` steps up a level, `Ctrl` and `-` steps down one, and `Ctrl+0` returns to
-100% — the same keys as in most other programs. They step between the six offered levels
+100% — the same keys as in most other programs. Where `+` is awkward to reach, **`Ctrl`
+and `.`** steps up as well: the full stop needs no `Shift` and no numeric keypad, and it
+sits next to the `-` that steps back down. On a Swiss keyboard, where `+` is the shifted
+`1`, `Ctrl+Shift+1` steps up too. They step between the six offered levels
 rather than growing the text a little at a time, so you always land on a size that has
 been laid out and tested. These are the only `Ctrl` shortcuts in the program; everything
 else is a function key or an `Alt` mnemonic. The levels are also the one menu whose items
