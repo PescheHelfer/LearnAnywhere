@@ -2533,12 +2533,17 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// The current screen inside its content frame (N4).
   ///
   /// The one place a width is imposed: every screen below is built exactly as
-  /// it always was, and the frame is what centres it. Three policies, by route
+  /// it always was, and the frame is what centres it. Four policies, by route
   /// — and the catch-all is deliberate, so a route added later is framed rather
   /// than silently left in the corner:
   ///
   /// - the **session and editor** are sized from the open deck, so a mask never
   ///   scrolls sideways when it would have fitted;
+  /// - the **workspace** and the file-operations status keep the corner. Both
+  ///   are a title over a handful of left-aligned status lines, and a frame
+  ///   puts that in the middle of a mostly empty screen — which reads as text
+  ///   adrift rather than as a centred layout. They are exempt whatever the
+  ///   option says, because there is nothing there to centre;
   /// - **About** is exempt because it already centres and constrains itself;
   /// - everything else, the lexicon included, takes the fixed width.
   Widget _framedContentForRoute(
@@ -2547,6 +2552,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   ) {
     final Widget content = _contentForRoute();
     final double? width = switch (_route) {
+      _DesktopRoute.home ||
+      _DesktopRoute.fileOperations ||
       _DesktopRoute.about => null,
       _DesktopRoute.learn ||
       _DesktopRoute.editor => _deckContentFrameWidth(context, messages),

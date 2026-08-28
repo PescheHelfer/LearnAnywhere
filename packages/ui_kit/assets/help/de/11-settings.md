@@ -108,8 +108,11 @@ schmalen Fenster. Was der Rahmen nicht tut: eine Schaltfläche oder eine der bei
 Bewertungsknöpfe zusammenquetschen, damit sie passt. Schmaler als die breiteste einzelne
 davon wird er nie.
 
-Die **Programminfo** ist der einzige Bildschirm ohne Rahmen. Sie ist schon von sich aus
-schmal und zentriert; für einen Rahmen bleibt da nichts zu tun.
+Drei Bildschirme bekommen nie einen Rahmen, ganz gleich wie diese Einstellung steht. Der
+**Arbeitsbereich** und die Statusanzeige nach einem Dateivorgang bestehen jeweils aus einer
+Überschrift und wenigen Textzeilen: Zentriert wirken sie verloren mitten auf einer leeren
+Fläche statt gestaltet, sie bleiben deshalb oben links. Die **Programminfo** ist schon von
+sich aus schmal und zentriert; für einen Rahmen bleibt da nichts zu tun.
 
 Das **Lexikon** ist gerahmt wie alles andere. Seine Ergebnistabelle ist zwar das Breiteste im
 Programm, scrollt aber ohnehin seitlich in ihrem eigenen Kästchen — der Rahmen führt nur dazu,

@@ -682,7 +682,7 @@ void main() {
     },
   );
 
-  testWidgets('About keeps the whole window; every other screen is framed',
+  testWidgets('the status screens keep the corner; the working screens are framed',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(2400, 1500);
     tester.view.devicePixelRatio = 1.0;
@@ -691,8 +691,19 @@ void main() {
 
     await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
-    // The workspace is framed like every other screen.
+    // The workspace is a few left-aligned status lines; centring them leaves
+    // text adrift in an empty screen, so it keeps the corner whatever the
+    // option says.
+    expect(find.byType(ContentFrame), findsNothing);
+    expect(tester.getRect(find.text('Workspace')).left, lessThan(30));
+
+    await tester.ensureVisible(find.text('Statistics'));
+    await tester.tap(find.text('Statistics'));
+    await tester.pumpAndSettle();
+    // A working screen, framed.
     expect(find.byType(ContentFrame), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Lexicon'));
     await tester.tap(find.text('Lexicon'));
@@ -708,7 +719,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('About'));
     await tester.pumpAndSettle();
-    // The one exemption left: it already centres and constrains itself.
+    // Exempt for its own reason: it already centres and constrains itself.
     expect(find.byType(ContentFrame), findsNothing);
   });
 

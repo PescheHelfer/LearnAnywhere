@@ -99,8 +99,11 @@ simply wrap onto a second line inside it — which is what they do in a narrow w
 one thing the frame will not do is squeeze a button, or either group of the evaluation pills,
 to make it fit: it never goes narrower than the widest single one of those.
 
-The **About** box is the one screen with no frame. It is already narrow and centred by
-itself, so there is nothing for a frame to do.
+Three screens are never framed, whatever this setting says. The **workspace** and the status
+screen shown after a file operation are each a heading over a few lines of text: centring
+those leaves them adrift in the middle of an empty screen rather than looking laid out, so
+they keep the top-left corner. The **About** box is already narrow and centred by itself, so
+there is nothing for a frame to do.
 
 The **lexicon** is framed like everything else. Its results table is the widest thing in the
 program, but it already scrolls sideways inside its own box, so the frame only means it starts
