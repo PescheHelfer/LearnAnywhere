@@ -1498,37 +1498,23 @@ final class LearnAnywhereCatalog {
           '0.6.1 – Statistics now follow their units when a deck is edited '
           'outside the app, and the app reports any that were reset.',
       LearnAnywhereMessage.aboutVersion070:
-          '0.7.0 – Live session readouts now cover the whole deck in the '
-          'direction the session is set to, and come from its statistics; '
-          'Level Learning grades the letters its scaffold shows, and its '
-          'statistics follow units inserted or deleted in the editor; mask '
-          'editor rows move with their field and a category can be cloned; '
-          'new installs grade case- and accent-sensitively, and Arrow Down/Up '
-          'move between answer fields.',
+          '0.7.0 – Live session stats now reflect the whole deck; Level '
+          'Learning grades the letters shown and tracks edited units; mask '
+          'editor rows follow their field; new installs grade strictly '
+          '(case, accents); Arrow Up/Down move between fields.',
       LearnAnywhereMessage.aboutVersion080:
-          '0.8.0 – Every deck now keeps an all-time statistics record '
-          'alongside its current one; the statistics screen can show '
-          'either, clearing the current record leaves the all-time one '
-          'intact, and the all-time record can be cleared on its own or '
-          'loaded by hand; a refused write is reported instead of being '
-          'silently dropped.',
+          '0.8.0 – Added an all-time statistics record per deck, viewable '
+          'alongside the current one; clearing current stats leaves it '
+          'intact; failed writes are now reported instead of silently '
+          'dropped.',
       LearnAnywhereMessage.aboutVersion081:
-          '0.8.1 – A changed option now survives the next save instead of '
-          'falling back to its default; the evaluation choices sit beside the '
-          'action buttons and wrap onto their own line on a narrow window; '
-          'clearing the all-time statistics has moved into the All-time '
-          'actions menu beside the Current/All-time selector, and its '
-          'confirmation names the deck; an empty lexicon search now lists '
-          'every unit of the chosen category.',
+          '0.8.1 – Changed options now persist; evaluation buttons reflow '
+          'on narrow windows; clearing all-time stats moved to the '
+          'All-time menu; empty lexicon search lists the whole category.',
       LearnAnywhereMessage.aboutVersion090:
-          '0.9.0 – The welcome screen lists up to three recently opened '
-          'decks and switches between them in one click, even while a deck '
-          'is already loaded; a start folder can be set from the Options '
-          'menu so every file dialog opens there; the zoom level scales '
-          'the whole program from 75 to 200 per cent, with Ctrl+plus, '
-          'Ctrl+minus and Ctrl+zero to step through it; and each screen\'s '
-          'content now sits centred in the window on a wide monitor, an '
-          'option that can be turned off.',
+          '0.9.0 – Welcome screen lists up to three recent decks; '
+          'configurable start folder; zoom (75–200%) via Ctrl+/-/0; '
+          'optional content centring on wide screens.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2101,40 +2087,26 @@ final class LearnAnywhereCatalog {
           'außerhalb der App bearbeitet wurde; zurückgesetzte Einheiten werden '
           'gemeldet.',
       LearnAnywhereMessage.aboutVersion070:
-          '0.7.0 – Die Live-Anzeigen einer Lernsitzung umfassen jetzt die '
-          'gesamte Lern-Datei in der eingestellten Richtung und stammen aus '
-          'deren Statistik; das Stufenlernen bewertet die eingeblendeten '
-          'Buchstaben, und seine Statistik folgt im Editor eingefügten oder '
-          'gelöschten Einheiten; Zeilen im Maskeneditor bewegen sich mit '
-          'ihrem Feld und eine Kategorie lässt sich klonen; '
-          'Neuinstallationen werten Groß-/Kleinschreibung und Akzente '
-          'streng, und Pfeil hoch/runter wechseln zwischen Antwortfeldern.',
+          '0.7.0 – Live-Statistikanzeigen umfassen jetzt die gesamte '
+          'Lern-Datei; Stufenlernen bewertet die angezeigten Buchstaben und '
+          'verfolgt bearbeitete Einheiten; Maskeneditor-Zeilen folgen ihrem '
+          'Feld; Neuinstallationen werten streng (Groß-/Kleinschreibung, '
+          'Akzente); Pfeil hoch/runter wechseln zwischen Feldern.',
       LearnAnywhereMessage.aboutVersion080:
-          '0.8.0 – Jede Lern-Datei führt jetzt zusätzlich zur aktuellen '
-          'Statistik eine Allzeit-Statistik; der Statistikbildschirm kann '
-          'beide anzeigen, das Löschen der aktuellen Statistik lässt die '
-          'Allzeit-Statistik unangetastet, und die Allzeit-Statistik lässt '
-          'sich eigenständig löschen oder von Hand laden; ein abgelehntes '
-          'Schreiben wird gemeldet statt stillschweigend übersprungen.',
+          '0.8.0 – Allzeit-Statistik pro Lern-Datei hinzugefügt, neben der '
+          'aktuellen anzeigbar; Löschen der aktuellen Statistik lässt sie '
+          'unangetastet; abgelehnte Schreibvorgänge werden nun gemeldet '
+          'statt stillschweigend übersprungen.',
       LearnAnywhereMessage.aboutVersion081:
-          '0.8.1 – Eine geänderte Einstellung bleibt beim nächsten Speichern '
-          'erhalten, statt auf ihren Standardwert zurückzufallen; die '
-          'Bewertungsschaltflächen stehen neben den Aktionsschaltflächen und '
-          'brechen bei schmalem Fenster in eine eigene Zeile um; das Löschen '
-          'der Allzeit-Statistik liegt jetzt im Menü Allzeit-Aktionen neben '
-          'der Umschaltung Aktuell/Allzeit, und die Rückfrage nennt die '
-          'Lern-Datei; eine leere Suche im Lexikon listet jetzt alle '
-          'Einheiten der gewählten Kategorie.',
+          '0.8.1 – Geänderte Einstellungen bleiben erhalten; '
+          'Bewertungsschaltflächen brechen bei schmalem Fenster um; Löschen '
+          'der Allzeit-Statistik ist ins Allzeit-Menü verschoben; leere '
+          'Lexikon-Suche listet die ganze Kategorie.',
       LearnAnywhereMessage.aboutVersion090:
-          '0.9.0 – Der Startbildschirm listet bis zu drei zuletzt '
-          'verwendete Lern-Dateien und wechselt mit einem Klick zwischen '
-          'ihnen, auch während bereits eine Lern-Datei geöffnet ist; ein '
-          'Startordner lässt sich im Menü Optionen festlegen, sodass jeder '
-          'Dateidialog dort öffnet; die Zoomstufe skaliert das gesamte '
-          'Programm von 75 auf 200 Prozent, mit Strg+Plus, Strg+Minus und '
-          'Strg+Null zum Durchschalten; und der Inhalt jedes Bildschirms '
-          'sitzt jetzt bei einem breiten Bildschirm zentriert im Fenster, '
-          'eine Option, die sich abschalten lässt.',
+          '0.9.0 – Startbildschirm listet bis zu drei zuletzt verwendete '
+          'Lern-Dateien; einstellbarer Startordner; Zoom (75–200 %) über '
+          'Strg+/-/0; Option zum Zentrieren des Inhalts auf breiten '
+          'Bildschirmen.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
