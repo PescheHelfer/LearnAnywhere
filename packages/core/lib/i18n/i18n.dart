@@ -417,6 +417,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.9.0.
   aboutVersion090,
 
+  /// About page version history entry for 0.10.0.
+  aboutVersion100,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1626,6 +1629,11 @@ final class LearnAnywhereCatalog {
           '0.9.0 – Welcome screen lists up to three recent decks; '
           'configurable start folder; zoom (75–200%) via Ctrl+/-/0; '
           'optional content centring on wide screens.',
+      LearnAnywhereMessage.aboutVersion100:
+          '0.10.0 – Fields can be read aloud in a session: a speaker icon '
+          'per field, automatic speech at reveal, F4 to replay, voice and '
+          'speed set in Options; the Android companion speaks too. Windows '
+          'only; Linux ships mute.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2275,6 +2283,12 @@ final class LearnAnywhereCatalog {
           'Lern-Dateien; einstellbarer Startordner; Zoom (75–200 %) über '
           'Strg+/-/0; Option zum Zentrieren des Inhalts auf breiten '
           'Bildschirmen.',
+      LearnAnywhereMessage.aboutVersion100:
+          '0.10.0 – Felder können in einer Lern-Sitzung vorgelesen werden: '
+          'Lautsprecher-Symbol pro Feld, automatisches Vorlesen beim '
+          'Aufdecken, F4 zum Wiederholen, Stimme und Geschwindigkeit in den '
+          'Optionen; die Android-Begleit-App spricht ebenfalls. Nur '
+          'Windows; Linux bleibt stumm.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

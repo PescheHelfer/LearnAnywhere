@@ -9,7 +9,7 @@
 ///
 /// Only the semantic version — the `+N` build number is Android's
 /// `versionCode`, which the package manager reads and a user never sees.
-const String kMobileAppVersion = '0.4.0';
+const String kMobileAppVersion = '0.5.0';
 
 /// Project home, shown on the About screen.
 ///
