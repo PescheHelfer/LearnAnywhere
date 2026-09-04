@@ -255,7 +255,7 @@ sich herum.
 
 ## Was noch fehlt
 
-Die Sprachausgabe läuft unter **Windows**. **Linux** hat keine — dort erscheint gar kein
-Lautsprecher-Symbol, statt eines, das beim Klicken nichts täte, und **Optionen ▸
-Sprachausgabe...** steht nicht im Menü. Auch die **Android-Begleit-App** kann noch nicht
-sprechen.
+Die Sprachausgabe läuft unter **Windows** und in der **Android-Begleit-App** — siehe
+deren eigenes Kapitel, [Die Android-Begleit-App](14-android-companion.md#sprachausgabe).
+**Linux** hat keine — dort erscheint gar kein Lautsprecher-Symbol, statt eines, das beim
+Klicken nichts täte, und **Optionen ▸ Sprachausgabe...** steht nicht im Menü.

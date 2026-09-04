@@ -23,13 +23,22 @@ Future<void> main() async {
 /// Android companion app for read-only Learn Anywhere practice.
 final class LearnAnywhereMobileApp extends StatefulWidget {
   /// Creates the Android companion app.
-  const LearnAnywhereMobileApp({required this.prefs, this.fileService, super.key});
+  const LearnAnywhereMobileApp({
+    required this.prefs,
+    this.fileService,
+    this.speechEngine,
+    super.key,
+  });
 
   /// Preferences store for theme and language.
   final MobilePrefs prefs;
 
   /// File service used to manage the library and persist statistics.
   final MobileFileService? fileService;
+
+  /// The host's speech, overridden by tests. Production builds always get
+  /// [FlutterTtsEngine] — see [_LearnAnywhereMobileAppState._speechEngine].
+  final TtsEngine? speechEngine;
 
   @override
   State<LearnAnywhereMobileApp> createState() => _LearnAnywhereMobileAppState();
@@ -40,6 +49,11 @@ final class _LearnAnywhereMobileAppState extends State<LearnAnywhereMobileApp> {
   late MobileAppTheme _theme;
   late Locale _locale;
   LearnAnywhereSettings _settings = const LearnAnywhereSettings();
+
+  // Unlike desktop's Windows/Linux split, there is no non-speaking arm to
+  // pick here: the plugin behind FlutterTtsEngine has an Android
+  // implementation, so this shell always gets a host that can speak.
+  late final TtsEngine _speechEngine = widget.speechEngine ?? FlutterTtsEngine();
 
   @override
   void initState() {
@@ -97,6 +111,7 @@ final class _LearnAnywhereMobileAppState extends State<LearnAnywhereMobileApp> {
         home: MobileLibraryScreen(
           fileService: _fileService,
           prefs: widget.prefs,
+          speechEngine: _speechEngine,
         ),
       ),
     );
@@ -124,6 +139,7 @@ final class MobileLibraryScreen extends StatefulWidget {
   const MobileLibraryScreen({
     required this.fileService,
     required this.prefs,
+    required this.speechEngine,
     super.key,
   });
 
@@ -132,6 +148,9 @@ final class MobileLibraryScreen extends StatefulWidget {
 
   /// Preferences store for theme and language.
   final MobilePrefs prefs;
+
+  /// The host's speech, threaded down to the setup and settings screens.
+  final TtsEngine speechEngine;
 
   @override
   State<MobileLibraryScreen> createState() => _MobileLibraryScreenState();
@@ -200,6 +219,7 @@ final class _MobileLibraryScreenState extends State<MobileLibraryScreen> {
           builder: (BuildContext context) => MobileSetupScreen(
             document: document,
             fileService: widget.fileService,
+            speechEngine: widget.speechEngine,
           ),
         ),
       );
@@ -220,6 +240,7 @@ final class _MobileLibraryScreenState extends State<MobileLibraryScreen> {
         builder: (BuildContext context) => MobileSettingsScreen(
           prefs: widget.prefs,
           fileService: widget.fileService,
+          speechEngine: widget.speechEngine,
         ),
       ),
     );

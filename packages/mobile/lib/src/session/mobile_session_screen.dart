@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,8 @@ final class MobileSessionScreen extends StatefulWidget {
     required this.parameters,
     required this.wrongAnswerCeiling,
     required this.fileService,
+    this.speechEngine = const UnavailableTtsEngine(),
+    this.speechSettings = const SpeechSettings(),
     super.key,
   });
 
@@ -33,6 +36,16 @@ final class MobileSessionScreen extends StatefulWidget {
 
   /// File service used to persist statistics.
   final MobileFileService fileService;
+
+  /// The host's speech, injected by the shell.
+  ///
+  /// Defaults to the engine that cannot speak, so a caller that says nothing
+  /// about speech gets a session with no speaker icons rather than a session
+  /// that reaches for a plugin nobody promised is there.
+  final TtsEngine speechEngine;
+
+  /// The machine's chosen voices and speech rate.
+  final SpeechSettings speechSettings;
 
   @override
   State<MobileSessionScreen> createState() => _MobileSessionScreenState();
@@ -54,6 +67,17 @@ final class _MobileSessionScreenState extends State<MobileSessionScreen> {
   _MobileSessionStage _stage = _MobileSessionStage.prompt;
   SessionItem? _currentItem;
 
+  // The voices the host reported, read once. Empty on a host that cannot
+  // speak, and equally on one that speaks but has nothing installed — the
+  // difference is the engine's own isAvailable, not this list.
+  List<SpeechVoice> _voices = const <SpeechVoice>[];
+
+  // Bumped by every new speech request. A sequence reading several answer
+  // fields checks it between two of them and abandons itself when it no
+  // longer holds the newest number, so a new reveal replaces what is being
+  // said instead of queueing behind it.
+  int _speechGeneration = 0;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +90,108 @@ final class _MobileSessionScreenState extends State<MobileSessionScreen> {
       );
     }
     _selectNextItem();
+    unawaited(_loadVoices());
+  }
+
+  @override
+  void dispose() {
+    unawaited(widget.speechEngine.stop());
+    super.dispose();
+  }
+
+  /// Asks the host once which voices it has, so the speech policy can
+  /// resolve a field's language against them without the UI waiting on the
+  /// engine.
+  Future<void> _loadVoices() async {
+    if (!widget.speechEngine.isAvailable) {
+      return;
+    }
+    final List<SpeechVoice> voices = await widget.speechEngine.voices();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _voices = voices);
+  }
+
+  /// Says [utterance], or explains why it cannot be said.
+  Future<void> _speak(SpeechUtterance utterance) async {
+    if (!utterance.canBeSpoken) {
+      _explainMissingVoice(utterance);
+      return;
+    }
+    _speechGeneration += 1;
+    await widget.speechEngine.speak(utterance);
+  }
+
+  /// Tells the learner which language their phone has no voice for.
+  void _explainMissingVoice(SpeechUtterance utterance) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          messages
+              .message(LearnAnywhereMessage.learnSpeakNoVoiceMobile)
+              .replaceAll('{language}', utterance.language),
+        ),
+      ),
+    );
+  }
+
+  /// What may be spoken for the card as it now stands on screen.
+  ///
+  /// Built from the same call the view renders icons from, so an icon and
+  /// automatic speech can never disagree about what this card offers. A host
+  /// that cannot speak gets the silent plan.
+  SpeechPlan _speechPlan() {
+    final SessionItem? item = _currentItem;
+    if (item == null || !widget.speechEngine.isAvailable) {
+      return SpeechPlan.silent;
+    }
+    return buildSpeechPlan(
+      deck: _document.deck,
+      unit: _document.deck.units[item.unitIndex - 1],
+      direction: item.direction,
+      afterCheck: _stage == _MobileSessionStage.reveal,
+      voices: _voices,
+      settings: widget.speechSettings,
+    );
+  }
+
+  /// Reads the answer aloud: every Speak-enabled field holding the answer
+  /// role in this direction, in mask field order.
+  ///
+  /// Automatic speech plays this at the reveal and nothing else does — there
+  /// is no `F4` on a phone, so a per-field icon is the only way to hear a
+  /// word again. It always stops first, so leaving one card for the next
+  /// cuts the previous word off instead of queueing behind it.
+  Future<void> _speakAnswer() async {
+    final List<SpeechUtterance> utterances = _speechPlan().answerUtterances
+        .toList(growable: false);
+    final int generation = ++_speechGeneration;
+    // Stopped even when this card says nothing: silence here means silence,
+    // not the previous card still talking.
+    await widget.speechEngine.stop();
+    for (final SpeechUtterance utterance in utterances) {
+      if (!mounted || generation != _speechGeneration) {
+        return;
+      }
+      if (!utterance.canBeSpoken) {
+        continue;
+      }
+      await widget.speechEngine.speak(utterance);
+    }
+  }
+
+  /// Reveals the card's answer, and reads it aloud when automatic speech is
+  /// on — the one place a card becomes revealed, so "once per revealed card"
+  /// needs no bookkeeping of its own.
+  void _showAnswer() {
+    setState(() => _stage = _MobileSessionStage.reveal);
+    if (widget.speechSettings.automatic) {
+      unawaited(_speakAnswer());
+    }
   }
 
   @override
@@ -81,6 +207,7 @@ final class _MobileSessionScreenState extends State<MobileSessionScreen> {
 
   Widget _body() {
     final SessionItem? item = _currentItem;
+    final SpeechPlan speechPlan = _speechPlan();
     return Column(
       children: <Widget>[
         _MobileSessionHeader(
@@ -92,11 +219,15 @@ final class _MobileSessionScreenState extends State<MobileSessionScreen> {
             _MobileSessionStage.prompt when item != null => _PromptView(
               document: _document,
               item: item,
-              onShowAnswer: () => setState(() => _stage = _MobileSessionStage.reveal),
+              speechPlan: speechPlan,
+              onSpeak: _speak,
+              onShowAnswer: _showAnswer,
             ),
             _MobileSessionStage.reveal when item != null => _RevealView(
               document: _document,
               item: item,
+              speechPlan: speechPlan,
+              onSpeak: _speak,
               onRate: _rate,
             ),
             _ => _CompletedView(onExtend: _extendSession),
@@ -107,6 +238,7 @@ final class _MobileSessionScreenState extends State<MobileSessionScreen> {
   }
 
   void _extendSession() {
+    unawaited(widget.speechEngine.stop());
     setState(() {
       if (widget.parameters.mode == SessionMode.onceThrough) {
         _order = sessionItemOrder(
@@ -125,6 +257,7 @@ final class _MobileSessionScreenState extends State<MobileSessionScreen> {
     if (item == null) {
       return;
     }
+    unawaited(widget.speechEngine.stop());
     final List<UnitStats> updated = _recordRating(_document, item, rating);
     final MobileDeckDocument updatedDocument = _document.copyWith(
       statistics: updated,
@@ -354,11 +487,15 @@ final class _PromptView extends StatelessWidget {
   const _PromptView({
     required this.document,
     required this.item,
+    required this.speechPlan,
+    required this.onSpeak,
     required this.onShowAnswer,
   });
 
   final MobileDeckDocument document;
   final SessionItem item;
+  final SpeechPlan speechPlan;
+  final ValueChanged<SpeechUtterance> onSpeak;
   final VoidCallback onShowAnswer;
 
   @override
@@ -371,7 +508,14 @@ final class _PromptView extends StatelessWidget {
       item: item,
       child: Column(
         children: <Widget>[
-          Expanded(child: _QuestionPanel(document: document, item: item)),
+          Expanded(
+            child: _QuestionPanel(
+              document: document,
+              item: item,
+              speechPlan: speechPlan,
+              onSpeak: onSpeak,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(LearnAnywhereTokens.gapMedium),
             child: SizedBox(
@@ -400,10 +544,17 @@ final class _PromptView extends StatelessWidget {
 /// floor (a long prompt, or a category with many fields) reaches the reader
 /// instead of overflowing off the bottom.
 final class _QuestionPanel extends StatelessWidget {
-  const _QuestionPanel({required this.document, required this.item});
+  const _QuestionPanel({
+    required this.document,
+    required this.item,
+    required this.speechPlan,
+    required this.onSpeak,
+  });
 
   final MobileDeckDocument document;
   final SessionItem item;
+  final SpeechPlan speechPlan;
+  final ValueChanged<SpeechUtterance> onSpeak;
 
   @override
   Widget build(BuildContext context) {
@@ -442,6 +593,8 @@ final class _QuestionPanel extends StatelessWidget {
               title: messages.message(LearnAnywhereMessage.learnPrompt),
               fields: fields,
               valueStyle: style,
+              speechPlan: speechPlan,
+              onSpeak: onSpeak,
             ),
           ),
         );
@@ -454,11 +607,15 @@ final class _RevealView extends StatefulWidget {
   const _RevealView({
     required this.document,
     required this.item,
+    required this.speechPlan,
+    required this.onSpeak,
     required this.onRate,
   });
 
   final MobileDeckDocument document;
   final SessionItem item;
+  final SpeechPlan speechPlan;
+  final ValueChanged<SpeechUtterance> onSpeak;
   final ValueChanged<AttemptRating> onRate;
 
   @override
@@ -511,7 +668,12 @@ final class _RevealViewState extends State<_RevealView> {
           ),
           Expanded(
             child: _showQuestion
-                ? _QuestionPanel(document: widget.document, item: widget.item)
+                ? _QuestionPanel(
+                    document: widget.document,
+                    item: widget.item,
+                    speechPlan: widget.speechPlan,
+                    onSpeak: widget.onSpeak,
+                  )
                 : ListView(
                     padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
                     children: <Widget>[
@@ -529,6 +691,8 @@ final class _RevealViewState extends State<_RevealView> {
                         // tinted panel and its label, not by being smaller.
                         valueStyle: _cardValueStyle(context),
                         highlight: true,
+                        speechPlan: widget.speechPlan,
+                        onSpeak: widget.onSpeak,
                       ),
                       const SizedBox(height: LearnAnywhereTokens.gapLarge),
                       _FieldGroup(
@@ -545,6 +709,8 @@ final class _RevealViewState extends State<_RevealView> {
                         valueStyle: LearnAnywhereTokens.monospace(
                           Theme.of(context).textTheme.bodyLarge,
                         ),
+                        speechPlan: widget.speechPlan,
+                        onSpeak: widget.onSpeak,
                       ),
                     ],
                   ),
@@ -750,6 +916,8 @@ final class _FieldGroup extends StatelessWidget {
     required this.title,
     required this.fields,
     required this.valueStyle,
+    required this.speechPlan,
+    required this.onSpeak,
     this.highlight = false,
   });
 
@@ -759,6 +927,15 @@ final class _FieldGroup extends StatelessWidget {
   /// Style for the field values. Sized by the caller so the prompt can shrink
   /// to fit while the solution stays at its full size.
   final TextStyle valueStyle;
+
+  /// What may be spoken for the card as it now stands on screen — one rule,
+  /// no special cases: a field carries a speaker icon exactly when the
+  /// policy put an utterance in the plan for it, which is exactly when its
+  /// value is on screen, i.e. exactly when it appears in [fields].
+  final SpeechPlan speechPlan;
+
+  /// Says one of [speechPlan]'s utterances, or explains why it cannot.
+  final ValueChanged<SpeechUtterance> onSpeak;
 
   final bool highlight;
 
@@ -784,22 +961,44 @@ final class _FieldGroup extends StatelessWidget {
               Text('', style: textTheme.bodyLarge)
             else
               ...fields.entries.map(
-                (MapEntry<FieldDefinition, FieldValue> entry) => Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: LearnAnywhereTokens.gapMedium,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(entry.key.name, style: textTheme.labelLarge),
-                      const SizedBox(height: LearnAnywhereTokens.gapSmall),
-                      LearnAnywhereRichText(
-                        value: entry.value,
-                        style: valueStyle,
-                      ),
-                    ],
-                  ),
-                ),
+                (MapEntry<FieldDefinition, FieldValue> entry) {
+                  final SpeechUtterance? utterance = speechPlan.utteranceFor(
+                    entry.key.id,
+                  );
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: LearnAnywhereTokens.gapMedium,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                entry.key.name,
+                                style: textTheme.labelLarge,
+                              ),
+                            ),
+                            if (utterance != null)
+                              SpeakerButton(
+                                key: Key('speakField-${entry.key.id}'),
+                                tooltip: LearnAnywhereLocalizations.of(
+                                  context,
+                                ).message(LearnAnywhereMessage.learnSpeakField),
+                                onPressed: () => onSpeak(utterance),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: LearnAnywhereTokens.gapSmall),
+                        LearnAnywhereRichText(
+                          value: entry.value,
+                          style: valueStyle,
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
           ],
         ),

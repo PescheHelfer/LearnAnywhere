@@ -9,6 +9,7 @@ import '../mobile_app_theme.dart';
 import '../mobile_file_service.dart';
 import '../mobile_prefs.dart';
 import '../widgets/mobile_form_rows.dart';
+import 'mobile_speech_settings_screen.dart';
 
 /// Mobile settings screen: theme, language, and the guardrails that keep
 /// think-only Drill sessions from mastering a unit on one lucky "Knew it".
@@ -23,6 +24,7 @@ final class MobileSettingsScreen extends StatefulWidget {
   const MobileSettingsScreen({
     required this.prefs,
     required this.fileService,
+    required this.speechEngine,
     super.key,
   });
 
@@ -31,6 +33,9 @@ final class MobileSettingsScreen extends StatefulWidget {
 
   /// File service used to persist guardrail settings.
   final MobileFileService fileService;
+
+  /// The host's speech, threaded to the Speech screen.
+  final TtsEngine speechEngine;
 
   @override
   State<MobileSettingsScreen> createState() => _MobileSettingsScreenState();
@@ -50,6 +55,25 @@ final class _MobileSettingsScreenState extends State<MobileSettingsScreen> {
   void _applySettings(LearnAnywhereSettings next) {
     unawaited(widget.fileService.saveSettings(next));
     MobileAppScope.of(context).onSettingsChanged(next);
+  }
+
+  /// Opens the Speech screen with no deck open: only the languages already
+  /// configured are offered, matching [speechLanguagesFor]'s own rule.
+  Future<void> _openSpeechSettings() async {
+    final LearnAnywhereSettings settings = MobileAppScope.of(context).settings;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => MobileSpeechSettingsScreen(
+          engine: widget.speechEngine,
+          settings: settings.speech,
+          onChanged: (SpeechSettings next) {
+            _applySettings(
+              MobileAppScope.of(context).settings.copyWith(speech: next),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -129,6 +153,22 @@ final class _MobileSettingsScreenState extends State<MobileSettingsScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: LearnAnywhereTokens.gapMedium),
+            // On a host with no engine, this entry does not appear at all —
+            // mirroring the desktop, where the Speech screen is unreachable
+            // rather than present and empty.
+            if (widget.speechEngine.isAvailable)
+              Card(
+                margin: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.record_voice_over_outlined),
+                  title: Text(
+                    messages.message(LearnAnywhereMessage.speechSettingsTitle),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openSpeechSettings,
+                ),
+              ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
             MobileToggleRow(
               label: messages.message(

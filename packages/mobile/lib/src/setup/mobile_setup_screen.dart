@@ -7,6 +7,7 @@ import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import '../mobile_app_scope.dart';
 import '../mobile_file_service.dart';
 import '../session/mobile_session_screen.dart';
+import '../settings/mobile_speech_settings_screen.dart';
 import '../statistics/mobile_statistics_screen.dart';
 import '../widgets/mobile_form_rows.dart';
 
@@ -30,6 +31,7 @@ final class MobileSetupScreen extends StatefulWidget {
   const MobileSetupScreen({
     required this.document,
     required this.fileService,
+    required this.speechEngine,
     super.key,
   });
 
@@ -38,6 +40,10 @@ final class MobileSetupScreen extends StatefulWidget {
 
   /// File service used to persist statistics, settings, and reload the deck.
   final MobileFileService fileService;
+
+  /// The host's speech, threaded to the session and to the Speech screen,
+  /// where this deck's own languages populate the language list.
+  final TtsEngine speechEngine;
 
   @override
   State<MobileSetupScreen> createState() => _MobileSetupScreenState();
@@ -114,6 +120,24 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
     await _reload();
   }
 
+  /// Opens the Speech screen with THIS deck's languages available to
+  /// configure a voice for, in addition to the ones already configured —
+  /// reached from Settings too, where no deck is open yet.
+  Future<void> _openSpeechSettings() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => MobileSpeechSettingsScreen(
+          engine: widget.speechEngine,
+          deck: _document.deck,
+          settings: _settings.speech,
+          onChanged: (SpeechSettings next) {
+            _apply(_settings.copyWith(speech: next));
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _startSession() async {
     final int start = _startUnit.clamp(1, _maxUnit).toInt();
     final int end = _endUnit.clamp(start, _maxUnit).toInt();
@@ -139,6 +163,8 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
             value: settings.wrongAnswerCeiling,
           ),
           fileService: widget.fileService,
+          speechEngine: widget.speechEngine,
+          speechSettings: settings.speech,
         ),
       ),
     );
@@ -156,6 +182,15 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
       appBar: AppBar(
         title: Text(_document.deck.mask.name),
         actions: <Widget>[
+          // On a host with no engine, this entry does not appear at all —
+          // mirroring the desktop, where the Speech screen is unreachable
+          // rather than present and empty.
+          if (widget.speechEngine.isAvailable)
+            IconButton(
+              tooltip: messages.message(LearnAnywhereMessage.speechSettingsTitle),
+              onPressed: _openSpeechSettings,
+              icon: const Icon(Icons.record_voice_over_outlined),
+            ),
           IconButton(
             tooltip: messages.message(LearnAnywhereMessage.statisticsTitle),
             onPressed: _openStatistics,

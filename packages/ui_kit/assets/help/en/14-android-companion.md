@@ -18,6 +18,8 @@ It has:
 
 - Your imported decks, in a library on the phone.
 - Practice in **Drill mode**, **Endless mode** and **Once through**.
+- Speaker icons and, if you switch it on, the answer read aloud automatically — see
+  [Speech](#speech) below.
 - Per-deck statistics, saved after every card you rate.
 - Theme and language settings, and the two guardrails described below.
 
@@ -124,6 +126,47 @@ When a Drill or Once-through session runs out of cards, the app says so and offe
 there is no save button — which matters on a phone, where Android may close the app the
 moment you switch away from it.
 
+## Speech
+
+This is the one screen where the phone is ahead of the desktop: your phone already has
+speech voices for far more languages than a typical Windows machine, and headphones are
+usually already in your ears.
+
+A speaker icon sits beside every field the deck's mask has marked as speakable — the same
+authoring choice described in the desktop guide's
+[Speech](15-speech.md#the-speak-flag) chapter, which travels with the deck itself. On the
+**Prompt** screen that means the question field; on the **Solution** screen it means the
+answer and any remark fields, and the question is a tap away behind the **Prompt** /
+**Solution** switch. Tap an icon and that one field is read aloud, in a voice the phone
+already has for the field's language.
+
+Turn on **Read the answer aloud automatically** in the Speech screen (below) and the
+answer is read out the moment you tap **Show answer** — right or wrong makes no
+difference, so nothing is held back as a penalty. It reads once per card: switching the
+**Prompt** / **Solution** toggle back and forth does not repeat it, and tapping **Show
+answer** on the next card cuts off anything still being said rather than talking over it.
+There is no `F4` on a phone — a per-field speaker icon is always there to hear a word
+again.
+
+Listening costs nothing: it is never an attempt, and it moves no statistics.
+
+Reach the Speech screen two ways: the speaker icon in a deck's **Practice setup**, or
+**Speech** under the overflow menu's **Settings**, reached with no deck open. Either way
+it offers the same things:
+
+- One row per language the open deck uses (from Practice setup) or per language you have
+  already chosen a voice for (from Settings) — the voices your phone has installed for
+  it, and a speaker button that reads a short sample so you can hear a voice before
+  choosing it. A language your phone has no voice for says so instead of an empty list.
+- **Speech rate**, applying to everything the phone reads aloud.
+- **Read the answer aloud automatically**, described above.
+
+Which voice speaks a language is a choice that belongs to **this phone**, exactly as it
+belongs to each desktop machine on its own — a deck says only that a field is French, and
+each machine decides which of its own French voices says it. A deck carried over from the
+desktop therefore speaks on the phone without you touching the deck at all; only the
+voice choices differ, because they were never part of the deck to begin with.
+
 ## Statistics
 
 The chart icon on a deck's setup screen opens **Statistics** for that deck:
@@ -161,7 +204,9 @@ decks and start the figures fresh.
 The overflow menu in the library's top bar holds **User guide**, **Settings** and
 **About**.
 
-**Settings** has four things:
+**Settings** has five things:
+
+**Speech** — opens the [Speech](#speech) screen described above.
 
 **Theme** — **System**, **Light**, **Dark**, **Dark Blue** (the default) or **Light
 Blue**, the same five looks as the desktop.
@@ -185,8 +230,9 @@ accent sensitivity, the *Almost* verdict, complete-input and the session clock a
 typed answers, and there are none.
 
 **Theme and language** are stored in Android's own preference store. **The two
-guardrails** go into `learn_anywhere.settings.json`, the same file name and the same
-format the desktop uses, in the app's private documents folder.
+guardrails and your Speech voice choices** go into `learn_anywhere.settings.json`, the
+same file name and the same format the desktop uses, in the app's private documents
+folder.
 
 ## Installing and updating the app
 

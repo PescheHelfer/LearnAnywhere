@@ -181,6 +181,30 @@ SpeechVoice? resolveSpeechVoice(
   return candidates.isEmpty ? null : candidates.first;
 }
 
+/// [chosen] when it is still a real choice among [voices] — made for
+/// [engineId] and naming a voice still installed — or null otherwise.
+///
+/// A Speech screen's voice dropdown shows the stored choice as selected only
+/// when this returns it, and Automatic otherwise: a choice made for another
+/// engine, or naming a voice since uninstalled, must show as Automatic
+/// rather than a dropdown value the list does not actually offer. Shared by
+/// both shells' Speech screens so they cannot drift on this rule.
+VoiceChoice? selectableVoiceChoice(
+  VoiceChoice? chosen,
+  List<SpeechVoice> voices, {
+  String engineId = kSystemSpeechEngineId,
+}) {
+  if (chosen == null || chosen.engine != engineId) {
+    return null;
+  }
+  for (final SpeechVoice voice in voices) {
+    if (voice.id == chosen.voiceId) {
+      return chosen;
+    }
+  }
+  return null;
+}
+
 /// Every installed voice that could speak [language], best match first.
 ///
 /// The exact-tag voices in the order the host reports them, then the voices

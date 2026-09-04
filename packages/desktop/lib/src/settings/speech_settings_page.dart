@@ -331,14 +331,7 @@ final class _LanguageRow extends StatelessWidget {
     );
     // A stored choice for another engine, or for a voice since uninstalled,
     // shows as Automatic — which is exactly what the session would do with it.
-    final VoiceChoice? selectable = voices.any(
-          (SpeechVoice voice) =>
-              chosen != null &&
-              chosen!.engine == kSystemSpeechEngineId &&
-              voice.id == chosen!.voiceId,
-        )
-        ? chosen
-        : null;
+    final VoiceChoice? selectable = selectableVoiceChoice(chosen, voices);
     return Padding(
       padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapMedium),
       // Wrapped, not a Row: every part of a row is sized from the zoom level,
@@ -351,7 +344,7 @@ final class _LanguageRow extends StatelessWidget {
           SizedBox(
             width: LearnAnywhereZoom.scaleBox(context, 200),
             child: Text(
-              _languageLabel(language),
+              spokenLanguageLabel(language),
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ),
@@ -413,14 +406,4 @@ final class _LanguageRow extends StatelessWidget {
     );
   }
 
-  /// The language as the mask editor names it, falling back to the bare tag
-  /// for one typed by hand.
-  String _languageLabel(String tag) {
-    for (final SpokenLanguageOption option in spokenLanguageCatalog) {
-      if (option.tag == tag) {
-        return '${option.label} ($tag)';
-      }
-    }
-    return tag;
-  }
 }

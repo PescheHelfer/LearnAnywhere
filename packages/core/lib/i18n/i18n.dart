@@ -258,6 +258,10 @@ enum LearnAnywhereMessage {
   /// Explanation under the automatic-speech checkbox.
   speechAutomaticHint,
 
+  /// Explanation under the automatic-speech switch on the mobile companion,
+  /// where there is no `F4` to mention.
+  speechAutomaticHintMobile,
+
   /// Label of the speech-rate control.
   speechRateLabel,
 
@@ -718,6 +722,11 @@ enum LearnAnywhereMessage {
   /// Shown when a field is asked for aloud and no installed voice speaks its
   /// language. Carries `{language}`.
   learnSpeakNoVoice,
+
+  /// Shown when a field is asked for aloud and no installed voice speaks its
+  /// language, on the mobile companion, where there is no `F1` to mention.
+  /// Carries `{language}`.
+  learnSpeakNoVoiceMobile,
 
   /// Live elapsed-time label.
   learnLiveTime,
@@ -1508,6 +1517,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.speechAutomaticHint:
           'The answer is read out the moment it is revealed, right or wrong. '
           'F4 reads it again at any time, whether this is switched on or not.',
+      LearnAnywhereMessage.speechAutomaticHintMobile:
+          'The answer is read out the moment it is revealed, right or wrong. '
+          'Tap a field\'s speaker icon to hear it again at any time.',
       LearnAnywhereMessage.speechRateLabel: 'Speech rate',
       LearnAnywhereMessage.speechRateValue: '{percent}% of normal speed',
       LearnAnywhereMessage.speechRateHint:
@@ -1741,6 +1753,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnSpeakNoVoice:
           'No installed voice speaks {language}. The "Speech" chapter of the '
           'user guide (F1) explains how to add one.',
+      LearnAnywhereMessage.learnSpeakNoVoiceMobile:
+          'No installed voice speaks {language}. The user guide, in the '
+          'overflow menu, explains how to add one.',
       LearnAnywhereMessage.learnLiveTime: 'Time',
       LearnAnywhereMessage.learnUnitHeader: 'Unit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
@@ -2141,6 +2156,10 @@ final class LearnAnywhereCatalog {
           'Die Antwort wird vorgelesen, sobald sie aufgedeckt ist — richtig '
           'oder falsch. F4 liest sie jederzeit erneut vor, ob dies '
           'eingeschaltet ist oder nicht.',
+      LearnAnywhereMessage.speechAutomaticHintMobile:
+          'Die Antwort wird vorgelesen, sobald sie aufgedeckt ist — richtig '
+          'oder falsch. Tippen Sie auf das Lautsprechersymbol eines Feldes, '
+          'um es erneut zu hören.',
       LearnAnywhereMessage.speechRateLabel: 'Sprechtempo',
       LearnAnywhereMessage.speechRateValue: '{percent}% der normalen '
           'Geschwindigkeit',
@@ -2387,6 +2406,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnSpeakNoVoice:
           'Keine installierte Stimme spricht {language}. Das Kapitel '
           '"Sprachausgabe" im Benutzerhandbuch (F1) erklärt, wie Sie eine '
+          'hinzufügen.',
+      LearnAnywhereMessage.learnSpeakNoVoiceMobile:
+          'Keine installierte Stimme spricht {language}. Das '
+          'Benutzerhandbuch, im Überlaufmenü, erklärt, wie Sie eine '
           'hinzufügen.',
       LearnAnywhereMessage.learnLiveTime: 'Zeit',
       LearnAnywhereMessage.learnUnitHeader: 'Einheit {index}/{total}',

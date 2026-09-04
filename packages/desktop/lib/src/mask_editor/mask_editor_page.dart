@@ -1119,7 +1119,7 @@ final class _LanguageMenu extends StatelessWidget {
         LearnAnywhereMessage.maskEditorSpokenLanguageNone,
       ),
       for (final SpokenLanguageOption option in spokenLanguageCatalog)
-        option.tag: '${option.label} (${option.tag})',
+        option.tag: spokenLanguageLabel(option.tag),
       // A tag typed here earlier — or authored on another machine — keeps an
       // entry of its own, so opening the menu can never silently drop it.
       if (value != noSpokenLanguage && !isCatalogSpokenLanguage(value))

@@ -238,6 +238,7 @@ another machine would be carrying something meaningless.
 
 ## What is not there yet
 
-Speech runs on **Windows**. **Linux** has none — no speaker icons appear there at all,
-rather than icons that would do nothing when clicked, and **Options ▸ Speech...** is
-not in the menu. The **Android companion** cannot speak yet either.
+Speech runs on **Windows** and on the **Android companion** — see its own chapter,
+[The Android companion](14-android-companion.md#speech). **Linux** has none — no
+speaker icons appear there at all, rather than icons that would do nothing when
+clicked, and **Options ▸ Speech...** is not in the menu.

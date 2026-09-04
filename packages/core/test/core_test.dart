@@ -3332,6 +3332,12 @@ void main() {
       expect(isCatalogSpokenLanguage(noSpokenLanguage), isFalse);
     });
 
+    test('spokenLanguageLabel names a catalog tag, falls back to the bare '
+        'tag for one typed by hand', () {
+      expect(spokenLanguageLabel('fr-FR'), 'Français (France) (fr-FR)');
+      expect(spokenLanguageLabel('es-ES'), 'es-ES');
+    });
+
     test('a typed tag is accepted by shape, not by registry', () {
       // Shapes that exist: language, language-REGION, language-Script-REGION.
       expect(isValidSpokenLanguageTag('es'), isTrue);

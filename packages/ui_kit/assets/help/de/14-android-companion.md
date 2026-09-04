@@ -20,6 +20,8 @@ Sie bietet:
 
 - Ihre importierten Lern-Dateien in einer Bibliothek auf dem Telefon.
 - Üben im **Drill-Modus**, im **Endlos-Modus** und **Einmal durchgehen**.
+- Lautsprecher-Symbole und, wenn Sie es einschalten, die automatisch vorgelesene Antwort
+  — siehe [Sprachausgabe](#sprachausgabe) unten.
 - Statistik je Lern-Datei, gespeichert nach jeder bewerteten Karte.
 - Einstellungen für Darstellung und Sprache sowie die beiden unten beschriebenen
   Schutzregeln.
@@ -136,6 +138,50 @@ bietet **Sitzung erweitern** an, um weiterzumachen.
 ungespeichert, und es gibt keine Speichern-Schaltfläche — wichtig auf einem Telefon, wo
 Android die App in dem Moment beenden kann, in dem Sie zu etwas anderem wechseln.
 
+## Sprachausgabe
+
+Hier ist das Telefon dem Desktop sogar voraus: Ihr Telefon hat meist schon Stimmen für
+weit mehr Sprachen als ein typischer Windows-Rechner, und Kopfhörer stecken ohnehin oft
+schon im Ohr.
+
+Neben jedem Feld, das die Maske der Lern-Datei als vorlesbar markiert hat, steht ein
+Lautsprecher-Symbol — dieselbe Autoren-Entscheidung, die das Kapitel
+[Sprachausgabe](15-speech.md#das-hkchen-vorlesen) des Desktop-Handbuchs
+beschreibt und die mit der Lern-Datei selbst mitreist. Auf dem **Frage**-Bildschirm ist
+das das Fragefeld, auf dem **Lösung**-Bildschirm sind es das Antwortfeld und etwaige
+Bemerkungsfelder; die Frage ist einen Tipp auf den Umschalter **Frage** / **Lösung**
+entfernt. Tippen Sie ein Symbol an, und genau dieses Feld wird vorgelesen, in einer
+Stimme, die das Telefon für die Sprache des Feldes bereits hat.
+
+Schalten Sie **Antwort automatisch vorlesen** auf dem Bildschirm Sprachausgabe (unten)
+ein, wird die Antwort vorgelesen, sobald Sie auf **Antwort zeigen** tippen — richtig oder
+falsch macht keinen Unterschied, nichts wird also als Strafe zurückgehalten. Sie wird
+einmal je Karte vorgelesen: Der Umschalter **Frage** / **Lösung** wiederholt sie nicht,
+und **Antwort zeigen** bei der nächsten Karte bricht Laufendes ab, statt darüber
+hinwegzusprechen. Ein `F4` gibt es auf dem Telefon nicht — ein Lautsprecher-Symbol je Feld
+lässt sich jederzeit erneut antippen.
+
+Zuhören kostet nichts: Es ist nie ein Versuch, und es verändert keine Statistik.
+
+Den Bildschirm Sprachausgabe erreichen Sie auf zwei Wegen: über das Lautsprecher-Symbol in
+der **Übung einrichten** einer Lern-Datei, oder über **Sprachausgabe** im Überlaufmenü
+unter **Einstellungen**, auch ohne geöffnete Lern-Datei. Beide bieten dasselbe:
+
+- Eine Zeile je Sprache, die die geöffnete Lern-Datei verwendet (von Übung einrichten) oder
+  je Sprache, für die Sie bereits eine Stimme gewählt haben (von Einstellungen) — die auf
+  dem Telefon installierten Stimmen dafür, und eine Lautsprecher-Schaltfläche, die einen
+  kurzen Satz vorliest, damit Sie eine Stimme vor der Wahl hören können. Eine Sprache, für
+  die das Telefon keine Stimme hat, sagt das, statt eine leere Liste zu zeigen.
+- **Sprechtempo**, das für alles gilt, was das Telefon vorliest.
+- **Antwort automatisch vorlesen**, wie oben beschrieben.
+
+Welche Stimme eine Sprache spricht, ist eine Entscheidung, die **diesem Telefon** gehört
+— genau wie sie jedem Desktop-Rechner für sich gehört: Eine Lern-Datei sagt nur, dass ein
+Feld Französisch ist, und jedes Gerät entscheidet für sich, welche seiner
+Französisch-Stimmen es spricht. Eine vom Desktop übernommene Lern-Datei spricht deshalb
+auf dem Telefon, ohne dass Sie die Lern-Datei selbst anfassen; nur die Stimmwahl
+unterscheidet sich, weil sie nie Teil der Lern-Datei war.
+
 ## Statistik
 
 Das Diagramm-Symbol auf dem Einrichtungsbildschirm einer Lern-Datei öffnet die
@@ -176,7 +222,10 @@ neu an.
 Das Überlaufmenü in der oberen Leiste der Bibliothek enthält **Benutzerhandbuch**,
 **Einstellungen** und **Programminfo**.
 
-Unter **Einstellungen** stehen vier Dinge:
+Unter **Einstellungen** stehen fünf Dinge:
+
+**Sprachausgabe** — öffnet den oben beschriebenen Bildschirm
+[Sprachausgabe](#sprachausgabe).
 
 **Darstellung** — **System**, **Hell**, **Dunkel**, **Dunkelblau** (die Voreinstellung)
 oder **Hellblau**, dieselben fünf Erscheinungsbilder wie am Desktop.
@@ -202,8 +251,9 @@ Kleinschreibung, Akzente, das Urteil *Fast*, vollständige Eingabe und die Uhr b
 alle getippte Antworten — und die gibt es hier nicht.
 
 **Darstellung und Sprache** werden in Androids eigenem Einstellungsspeicher abgelegt.
-**Die beiden Schutzregeln** landen in `learn_anywhere.settings.json`, unter demselben
-Dateinamen und im selben Format wie am Desktop, im privaten Dokumentenordner der App.
+**Die beiden Schutzregeln und Ihre Stimmwahl unter Sprachausgabe** landen in
+`learn_anywhere.settings.json`, unter demselben Dateinamen und im selben Format wie am
+Desktop, im privaten Dokumentenordner der App.
 
 ## App installieren und aktualisieren
 

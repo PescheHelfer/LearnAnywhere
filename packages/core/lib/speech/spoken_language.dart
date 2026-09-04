@@ -121,10 +121,26 @@ const Map<String, String> _speechSamples = <String, String>{
 
 /// Whether [tag] is one of the [spokenLanguageCatalog] entries.
 bool isCatalogSpokenLanguage(String tag) {
+  return _catalogEntryFor(tag) != null;
+}
+
+/// The label a machine-readable spoken-language [tag] is shown under: the
+/// mask editor's own catalog wording plus the bare tag, or just the tag for
+/// one typed by hand and not in the catalog.
+///
+/// Shared by every screen that names a spoken language to a person — the
+/// mask editor's language picker and both shells' Speech settings screens —
+/// so they cannot drift into showing different text for the same tag.
+String spokenLanguageLabel(String tag) {
+  final SpokenLanguageOption? option = _catalogEntryFor(tag);
+  return option == null ? tag : '${option.label} ($tag)';
+}
+
+SpokenLanguageOption? _catalogEntryFor(String tag) {
   for (final SpokenLanguageOption option in spokenLanguageCatalog) {
     if (option.tag == tag) {
-      return true;
+      return option;
     }
   }
-  return false;
+  return null;
 }

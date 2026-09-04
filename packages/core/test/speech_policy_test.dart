@@ -576,6 +576,43 @@ void main() {
     });
   });
 
+  group('selectableVoiceChoice — what a Speech screen shows as chosen', () {
+    const VoiceChoice choice = VoiceChoice(
+      engine: kSystemSpeechEngineId,
+      voiceId: 'Microsoft Hortense',
+    );
+
+    test('a choice naming a still-installed voice for this engine is '
+        'selectable', () {
+      expect(
+        selectableVoiceChoice(choice, const <SpeechVoice>[french]),
+        choice,
+      );
+    });
+
+    test('null when nothing is chosen', () {
+      expect(selectableVoiceChoice(null, const <SpeechVoice>[french]), isNull);
+    });
+
+    test('null when the chosen voice is no longer installed', () {
+      expect(
+        selectableVoiceChoice(choice, const <SpeechVoice>[german]),
+        isNull,
+      );
+    });
+
+    test('null when the choice was made for another engine', () {
+      const VoiceChoice otherEngine = VoiceChoice(
+        engine: 'some-other-engine',
+        voiceId: 'Microsoft Hortense',
+      );
+      expect(
+        selectableVoiceChoice(otherEngine, const <SpeechVoice>[french]),
+        isNull,
+      );
+    });
+  });
+
   group('the unavailable engine', () {
     test('reports itself unavailable, has no voices, and does nothing', () {
       const TtsEngine engine = UnavailableTtsEngine();
