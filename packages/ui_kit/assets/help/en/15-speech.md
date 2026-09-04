@@ -6,7 +6,8 @@ language each field holds, and which fields may be read aloud.
 
 Once a field has a language and permission to be spoken, a speaker icon beside it in a
 learning session reads it aloud — see [Hearing a field](#hearing-a-field). What decides
-the *voice* is your computer, not your deck, and not everything is here yet: see
+the *voice* is your computer, not your deck, and you pick which of its voices to use
+under [Choosing a voice](#choosing-a-voice). Not everything is here yet: see
 [What is not there yet](#what-is-not-there-yet).
 
 ## Where speech is set
@@ -93,9 +94,10 @@ Listening costs you nothing. It is never an attempt, it moves no
 
 ## When nothing is said
 
-A voice belongs to the computer you are sitting at, never to your deck. The program looks
-for one that matches the field's language: first a voice for that exact language, then
-any voice for the same language from another region — a Canadian French voice reads a
+A voice belongs to the computer you are sitting at, never to your deck. The program takes
+the first of these it can: the voice you chose for that language under
+[Choosing a voice](#choosing-a-voice); then a voice for that exact language; then any
+voice for the same language from another region — a Canadian French voice reads a
 France-French field rather than leaving it silent.
 
 If neither is installed, the icon stays where it is and tells you so when you use it:
@@ -103,11 +105,78 @@ If neither is installed, the icon stays where it is and tells you so when you us
 how to add one."** The icon deliberately does not disappear. A missing icon looks exactly
 like a field nobody enabled speech for, and you would have no way to tell which it was.
 
-Windows installs speech voices along with its language features: open Windows' own
-**Settings**, go to **Time & language**, and add the language you need — on Windows 10
-under **Speech**, where **Manage voices** offers **Add voices**; on Windows 11 under
-**Language & region**, by adding the language and ticking its speech component. Learn
-Anywhere picks up a newly installed voice the next time you open a learning session.
+**Options ▸ Speech...** says the same thing before a session starts, and for every
+language at once: a row reading **"This computer has no voice for it-IT"** is that
+language telling you in advance that it will be silent. The next section is how to
+change that.
+
+## Installing a voice on Windows
+
+Windows installs speech voices along with its **language features**, one language at a
+time. There is no separate list of voices to buy or download, and a language added this
+way costs nothing.
+
+**Windows 11.** Open Windows' own **Settings**, go to **Time & language ▸ Language &
+region**, and press **Add a language**. Pick the one you need — *Français (France)* for
+`fr-FR`, *Deutsch (Deutschland)* for `de-DE`, *Italiano (Italia)* for `it-IT`, *English
+(United Kingdom)* for `en-GB`. On the **Install language features** page that follows,
+leave **Speech** (called **Text-to-speech** in some builds) ticked: that component *is*
+the voice, and with it unticked the language installs without one. The other components
+— display language, handwriting, the keyboard — are not needed for speech and can be
+left off.
+
+**Windows 10.** Open **Settings ▸ Time & Language ▸ Speech**. Under **Manage voices**,
+press **Add voices** and choose the language you need. If it is not in that list, add
+the language first under **Time & Language ▸ Language ▸ Add a language**, then come
+back to **Speech**.
+
+**Each region is its own voice.** `fr-FR` and `fr-CA` are two separate installs, and so
+are `en-GB` and `en-US`. If a field is Canadian French and only France French is
+installed, Learn Anywhere uses the France voice rather than staying silent — but
+installing the Canadian one is what makes the pronunciation right.
+
+A newly installed voice is picked up the next time you open a learning session or the
+**Options ▸ Speech...** screen. Nothing needs restarting, and nothing needs setting up
+inside Learn Anywhere for a new voice to be found.
+
+## Choosing a voice
+
+**Options ▸ Speech...** is where you decide *which* of your computer's voices speaks
+each language, and how fast everything is read.
+
+The screen lists one row per language: every language the open deck's mask uses, plus
+any language you have already chosen a voice for — so a choice made for another deck is
+never lost, and never invisible. With no deck open, only the languages you have
+configured remain.
+
+Each row offers:
+
+| | |
+|---|---|
+| **Voice** | The voices installed for that language, best match first. **"Automatic"** is where every row starts: it leaves the choice to the program, exactly as described under [When nothing is said](#when-nothing-is-said). |
+| The speaker button | Reads a short sample sentence aloud in that row's language and chosen voice, so you can hear a voice before settling on it. |
+
+A language your computer has no voice for shows that sentence instead of an empty list.
+
+**Speech rate** sits above the rows and applies to *everything* the program says — the
+samples on this screen and every speaker icon in a session alike. In a language you
+barely know it is the most useful control here: slowed down, a word you could not make
+out at all becomes a word whose parts you can hear. It is set as a share of each voice's
+own normal speed, and it is set by ear, since voices interpret it a little differently.
+
+Both the voices and the rate are remembered on **this machine**, in the settings file
+described in [Settings](11-settings.md#where-settings-live). Neither is ever written
+into a deck: a deck carrying one computer's voice names to another computer would be
+carrying something meaningless. The deck says only that a field is French; each machine
+decides which of its French voices says it.
+
+Uninstalling a voice you had chosen breaks nothing. That row falls back to
+**"Automatic"** and the field is spoken by whatever else fits, exactly as if you had
+never chosen at all.
+
+The whole entry is missing on a machine that cannot speak — **Linux** today — rather
+than present and empty. A screen for choosing between voices a machine does not have
+would offer nothing.
 
 ## What travels with the deck, and what does not
 
@@ -124,11 +193,8 @@ another machine would be carrying something meaningless.
 ## What is not there yet
 
 Speech is asked for, one field at a time, by clicking its icon. Reading the answer out
-automatically the moment it is revealed, a key that repeats it, choosing *which* of your
-installed voices speaks a language, and slowing the speech down are all still to come.
-There is no speech setting anywhere outside the mask editor yet: the program picks a
-matching voice on its own.
+automatically the moment it is revealed, and a key that repeats it, are still to come.
 
 Speech runs on **Windows**. **Linux** has none — no speaker icons appear there at all,
-rather than icons that would do nothing when clicked. The **Android companion** cannot
-speak yet either.
+rather than icons that would do nothing when clicked, and **Options ▸ Speech...** is
+not in the menu. The **Android companion** cannot speak yet either.

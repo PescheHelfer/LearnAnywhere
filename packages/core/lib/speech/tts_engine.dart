@@ -7,6 +7,8 @@
 /// [UnavailableTtsEngine] instead of a plugin that would throw.
 library;
 
+import 'speech_settings.dart';
+
 /// One voice the host reports.
 ///
 /// A voice is a property of the MACHINE, never of a deck: it is resolved fresh
@@ -62,6 +64,7 @@ final class SpeechUtterance {
     required this.text,
     required this.language,
     this.voice,
+    this.rate = kDefaultSpeechRate,
   });
 
   /// The field this text came from, as its mask field id numbers it.
@@ -75,6 +78,13 @@ final class SpeechUtterance {
 
   /// The host voice that will say it, or null when none matched.
   final SpeechVoice? voice;
+
+  /// How fast to say it, as a share of the voice's own normal speed.
+  ///
+  /// Carried on the utterance rather than held by the engine, so a plan
+  /// describes everything about what is to be said and the engine keeps no
+  /// state of its own between two utterances.
+  final double rate;
 
   /// Whether a voice was found, so this can actually be spoken.
   bool get canBeSpoken => voice != null;

@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 
 import '../engine/engine.dart';
 import '../models/models.dart';
+import '../speech/speech_settings.dart';
 
 /// Settings file format marker.
 const String settingsFormat = 'learn-anywhere/settings';
@@ -145,6 +146,7 @@ final class LearnAnywhereSettings {
     this.levelNamesEn = kDefaultLevelNamesEn,
     this.levelNamesDe = kDefaultLevelNamesDe,
     this.keepStatisticsVersions = 3,
+    this.speech = const SpeechSettings(),
     this.recentDeckPaths = const <String>[],
     this.lastMaskPath,
   });
@@ -218,6 +220,12 @@ final class LearnAnywhereSettings {
   /// pruned first after each new one is written; `0` keeps every file.
   final int keepStatisticsVersions;
 
+  /// The machine's own speech choices: a voice per language, and the rate.
+  ///
+  /// Stored here rather than in the deck because a voice belongs to the
+  /// computer it is installed on; see [SpeechSettings].
+  final SpeechSettings speech;
+
   /// Recently opened `.vok` deck paths, newest first, at most
   /// [maxRecentDeckPaths] and each deck only once.
   ///
@@ -258,6 +266,7 @@ final class LearnAnywhereSettings {
     List<String>? levelNamesEn,
     List<String>? levelNamesDe,
     int? keepStatisticsVersions,
+    SpeechSettings? speech,
     List<String>? recentDeckPaths,
     String? lastMaskPath,
     bool clearLastMaskPath = false,
@@ -289,6 +298,7 @@ final class LearnAnywhereSettings {
       levelNamesDe: levelNamesDe ?? this.levelNamesDe,
       keepStatisticsVersions:
           keepStatisticsVersions ?? this.keepStatisticsVersions,
+      speech: speech ?? this.speech,
       recentDeckPaths: recentDeckPaths ?? this.recentDeckPaths,
       lastMaskPath: clearLastMaskPath ? null : lastMaskPath ?? this.lastMaskPath,
     );
@@ -318,6 +328,7 @@ final class LearnAnywhereSettings {
         _stringListEquals(other.levelNamesEn, levelNamesEn) &&
         _stringListEquals(other.levelNamesDe, levelNamesDe) &&
         other.keepStatisticsVersions == keepStatisticsVersions &&
+        other.speech == speech &&
         _stringListEquals(other.recentDeckPaths, recentDeckPaths) &&
         other.lastMaskPath == lastMaskPath;
   }
@@ -345,6 +356,7 @@ final class LearnAnywhereSettings {
     Object.hashAll(levelNamesEn),
     Object.hashAll(levelNamesDe),
     keepStatisticsVersions,
+    speech,
     Object.hashAll(recentDeckPaths),
     lastMaskPath,
   ]);
@@ -391,6 +403,7 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
     'levelNamesEn': settings.levelNamesEn,
     'levelNamesDe': settings.levelNamesDe,
     'keepStatisticsVersions': settings.keepStatisticsVersions,
+    'speech': encodeSpeechSettings(settings.speech),
     'recentDeckPaths': settings.recentDeckPaths,
     // Written alongside the list, though it is derived from it: a build that
     // predates the list — the Android companion until it catches up — reads
@@ -463,6 +476,7 @@ LearnAnywhereSettings decodeSettings(Object? value) {
       json['keepStatisticsVersions'],
       defaults.keepStatisticsVersions,
     ),
+    speech: decodeSpeechSettings(json['speech']),
     recentDeckPaths: _recentDeckPaths(
       json['recentDeckPaths'],
       _nullableString(json['lastDeckPath']),

@@ -100,7 +100,39 @@ crashes.
    `200%`) contain only five distinct digits between them, so no assignment gives each
    level its own. They are reached by arrow keys, by mouse, and by their own
    `Ctrl+plus`/`Ctrl+minus`/`Ctrl+0` bindings instead.
-4. **Nested-submenu caveat (e.g. the Options → Theme/Language/Statistics
+4. **The Options submenu, letter by letter.** It is the deepest subtree and the
+   one a new entry usually lands in, so its assignments are written out here.
+   Every leaf at Options level competes with every item of every nested
+   submenu (see the caveat below), which is why the two columns are read
+   together rather than one at a time.
+
+   | Options-level entry | EN | DE |
+   |---|---|---|
+   | Advanced Learning Options / Erweiterte Lernoptionen | A | E |
+   | Speech... / Sprachausgabe... | P | P |
+   | Theme / Darstellung (submenu) | T | D |
+   | Zoom level / Zoomstufe (submenu) | Z | Z |
+   | Centred content frame / Zentrierter Inhaltsrahmen | C | I |
+   | Language / Sprache (submenu) | L | S |
+   | Statistics / Statistiken (submenu) | I | K |
+   | Start folder... / Startordner... | F | O |
+
+   | Nested item | EN | DE |
+   |---|---|---|
+   | Theme ▸ System | S | Y |
+   | Theme ▸ Light / Hell | H | H |
+   | Theme ▸ Dark / Dunkel | D | D |
+   | Theme ▸ Dark Blue / Dunkelblau | B | B |
+   | Theme ▸ Light Blue / Hellblau | U | U |
+   | Language ▸ English / Englisch | E | G |
+   | Language ▸ German / Deutsch | G | U |
+   | Statistics ▸ Auto-load / automatisch laden | O | L |
+   | Statistics ▸ Auto-save / automatisch speichern | V | T |
+   | Statistics ▸ Keep last N / Nur die letzten N | K | N |
+
+   Zoom level's own items carry no letters at all (see 3 above).
+
+5. **Nested-submenu caveat (e.g. the Options → Theme/Language/Statistics
    subtree):** Flutter keeps a parent menu's *leaf* items and its *closed
    sibling submenu labels* registered while a deeper submenu is open. So a
    Theme/Language/Statistics item letter must also avoid the active

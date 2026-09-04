@@ -124,6 +124,32 @@ ihrem eigenen Kästchen, falls sie wirklich nicht passt. Die Seite selbst bekomm
 Fenstergröße einen waagerechten Rollbalken. Der Rahmen folgt auch der Zoomstufe, denn eine
 gezoomte Maske braucht mehr Platz.
 
+## Sprachausgabe
+
+**Optionen ▸ Sprachausgabe...** ist der Ort, an dem Sie wählen, welche Stimme Ihres
+Computers welche Sprache vorliest — und wie schnell. Der ganze Bildschirm ist in
+[Sprachausgabe](15-speech.md#eine-stimme-aussuchen) beschrieben; hierher gehört, wo diese
+Einstellungen liegen und was sie umfassen.
+
+Der Bildschirm zeigt eine Zeile je Sprache: die Sprachen, die die Maske der geöffneten
+Lern-Datei verwendet, sowie jede, für die Sie bereits eine Stimme gewählt haben. Jede Zeile
+bietet die installierten Stimmen dieser Sprache und eine Lautsprecher-Schaltfläche, die einen
+Beispielsatz vorliest — so hören Sie eine Stimme, bevor Sie sich für sie entscheiden. Eine
+Zeile für eine Sprache, für die Ihr Rechner keine Stimme hat, sagt das stattdessen, und das
+Kapitel oben erklärt, wie Sie eine hinzufügen.
+
+**Sprechtempo** gilt für alles, was das Programm sagt — auch für die Beispielsätze auf
+diesem Bildschirm — und ist in einer kaum vertrauten Sprache die Einstellung, nach der man
+zuerst greift.
+
+Stimmenwahl wird **pro Rechner** gespeichert und **nie in der Lern-Datei**: Ihre Lern-Datei
+sagt, dass ein Feld französisch ist, und jeder Computer entscheidet, welche seiner
+französischen Stimmen es spricht. Kopieren Sie eine Lern-Datei auf einen anderen Computer,
+trägt sie keine Stimmennamen mit sich.
+
+Auf einem Rechner, der überhaupt nicht sprechen kann — heute **Linux** — fehlt der
+Menüpunkt ganz, statt vorhanden zu sein und nichts zu tun.
+
 ## Statistik-Optionen
 
 **Optionen ▸ Statistiken** enthält automatisches Laden, automatisches Speichern und
@@ -162,8 +188,8 @@ Suchen nach Kopien dieser Maske besser geeignet ist als jeder feste Ordner.
 Zwei getrennte Speicherorte, beide vollständig lokal — nichts hiervon wird jemals
 irgendwohin gesendet:
 
-- Ihre **Lernoptionen**, Stufennamen und zuletzt verwendeten Lern-Datei-/Maskenpfade
-  werden in `learn_anywhere.settings.json` geschrieben, in einem Ordner `LearnAnywhere`
+- Ihre **Lernoptionen**, Stufennamen, Sprachausgabe-Einstellungen und zuletzt verwendeten
+  Lern-Datei-/Maskenpfade werden in `learn_anywhere.settings.json` geschrieben, in einem Ordner `LearnAnywhere`
   am üblichen Speicherort für benutzerbezogene Konfiguration Ihres Betriebssystems
   (`%APPDATA%` unter Windows; `$XDG_CONFIG_HOME` oder `~/.config` unter Linux).
 - **Darstellung, Sprache, die Zoomstufe, der Inhaltsrahmen, der Startordner, zuletzt

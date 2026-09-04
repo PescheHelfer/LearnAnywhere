@@ -8,7 +8,8 @@ Sprache jedes Feld enthält und welche Felder vorgelesen werden dürfen.
 Hat ein Feld eine Sprache und die Erlaubnis, gesprochen zu werden, liest ein
 Lautsprecher-Symbol daneben es in einer Lernsitzung vor — siehe
 [Felder vorlesen lassen](#felder-vorlesen-lassen). Welche *Stimme* spricht, entscheidet
-Ihr Rechner, nicht Ihre Lern-Datei, und noch ist nicht alles da: siehe
+Ihr Rechner, nicht Ihre Lern-Datei; welche seiner Stimmen es sein soll, wählen Sie unter
+[Eine Stimme aussuchen](#eine-stimme-aussuchen). Noch ist nicht alles da: siehe
 [Was noch fehlt](#was-noch-fehlt).
 
 ## Wo die Sprachausgabe eingestellt wird
@@ -99,10 +100,12 @@ Wort zehnmal an, wenn es hilft.
 
 ## Wenn nichts gesprochen wird
 
-Eine Stimme gehört zum Rechner, an dem Sie sitzen, nie zur Lern-Datei. Das Programm sucht
-eine passende: zuerst eine Stimme für genau diese Sprache, dann irgendeine Stimme
-derselben Sprache aus einer anderen Region — eine kanadisch-französische Stimme liest
-also ein Feld in Frankreich-Französisch vor, statt es stumm zu lassen.
+Eine Stimme gehört zum Rechner, an dem Sie sitzen, nie zur Lern-Datei. Das Programm nimmt
+das Erste, was es bekommen kann: die Stimme, die Sie unter
+[Eine Stimme aussuchen](#eine-stimme-aussuchen) für diese Sprache gewählt haben; dann
+eine Stimme für genau diese Sprache; dann irgendeine Stimme derselben Sprache aus einer
+anderen Region — eine kanadisch-französische Stimme liest also ein Feld in
+Frankreich-Französisch vor, statt es stumm zu lassen.
 
 Ist keine von beiden installiert, bleibt das Symbol stehen und sagt Ihnen beim Benutzen,
 woran es liegt: **"Keine installierte Stimme spricht fr-FR. Das Kapitel "Sprachausgabe"
@@ -110,13 +113,81 @@ im Benutzerhandbuch (F1) erklärt, wie Sie eine hinzufügen."** Das Symbol versc
 bewusst nicht. Ein fehlendes Symbol sähe genau wie ein Feld aus, für das niemand das
 Vorlesen eingeschaltet hat, und Sie könnten die beiden Fälle nicht unterscheiden.
 
-Windows installiert Sprachstimmen zusammen mit seinen Sprachfunktionen: Öffnen Sie die
-**Einstellungen** von Windows, gehen Sie zu **Zeit und Sprache** und fügen Sie die
-gewünschte Sprache hinzu — unter Windows 10 im Bereich **Spracherkennung**, wo
-**Stimmen verwalten** die Schaltfläche **Stimmen hinzufügen** anbietet; unter Windows 11
-unter **Sprache und Region**, indem Sie die Sprache hinzufügen und ihre Sprachausgabe
-mitwählen. Learn Anywhere findet eine neu installierte Stimme, sobald Sie das nächste
-Mal eine Lernsitzung öffnen.
+**Optionen ▸ Sprachausgabe...** sagt dasselbe schon vor der Sitzung, und zwar für alle
+Sprachen auf einmal: Eine Zeile mit **"Dieser Computer hat keine Stimme für it-IT"** ist
+diese Sprache, die Ihnen vorab mitteilt, dass sie stumm bleiben wird. Der nächste
+Abschnitt sagt, wie Sie das ändern.
+
+## Eine Stimme unter Windows installieren
+
+Windows installiert Sprachstimmen zusammen mit seinen **Sprachfunktionen**, jeweils eine
+Sprache auf einmal. Es gibt keine gesonderte Liste von Stimmen zum Kaufen oder
+Herunterladen, und eine so hinzugefügte Sprache kostet nichts.
+
+**Windows 11.** Öffnen Sie die **Einstellungen** von Windows, gehen Sie zu **Zeit und
+Sprache ▸ Sprache und Region** und drücken Sie **Sprache hinzufügen**. Wählen Sie die
+gewünschte — *Français (France)* für `fr-FR`, *Deutsch (Deutschland)* für `de-DE`,
+*Italiano (Italia)* für `it-IT`, *English (United Kingdom)* für `en-GB`. Lassen Sie auf
+der folgenden Seite **Sprachfunktionen installieren** den Punkt **Sprachausgabe** (in
+manchen Versionen **Text-zu-Sprache**) angehakt: Dieser Bestandteil *ist* die Stimme,
+und ohne ihn wird die Sprache ohne Stimme installiert. Die übrigen Bestandteile —
+Anzeigesprache, Handschrift, Tastatur — braucht die Sprachausgabe nicht.
+
+**Windows 10.** Öffnen Sie **Einstellungen ▸ Zeit und Sprache ▸ Spracherkennung**.
+Drücken Sie unter **Stimmen verwalten** auf **Stimmen hinzufügen** und wählen Sie die
+gewünschte Sprache. Fehlt sie dort, fügen Sie sie zuerst unter **Zeit und Sprache ▸
+Sprache ▸ Sprache hinzufügen** hinzu und kehren Sie dann zu **Spracherkennung** zurück.
+
+**Jede Region ist eine eigene Stimme.** `fr-FR` und `fr-CA` sind zwei getrennte
+Installationen, ebenso `en-GB` und `en-US`. Ist ein Feld kanadisches Französisch und nur
+Frankreich-Französisch installiert, nimmt Learn Anywhere die französische Stimme, statt
+stumm zu bleiben — richtig ausgesprochen wird es aber erst mit der kanadischen.
+
+Eine neu installierte Stimme wird gefunden, sobald Sie das nächste Mal eine Lernsitzung
+oder den Bildschirm **Optionen ▸ Sprachausgabe...** öffnen. Nichts muss neu gestartet
+werden, und in Learn Anywhere ist für eine neue Stimme nichts einzurichten.
+
+## Eine Stimme aussuchen
+
+Unter **Optionen ▸ Sprachausgabe...** entscheiden Sie, *welche* Stimme Ihres Computers
+welche Sprache spricht und wie schnell alles vorgelesen wird.
+
+Der Bildschirm zeigt eine Zeile je Sprache: jede Sprache, die die Maske der geöffneten
+Lern-Datei verwendet, sowie jede, für die Sie bereits eine Stimme gewählt haben — eine
+Wahl für eine andere Lern-Datei geht also weder verloren noch aus dem Blick. Ohne
+geöffnete Lern-Datei bleiben nur die von Ihnen eingerichteten Sprachen übrig.
+
+Jede Zeile bietet:
+
+| | |
+|---|---|
+| **Stimme** | Die für diese Sprache installierten Stimmen, die beste zuerst. **"Automatisch"** ist der Anfangszustand: Die Wahl bleibt beim Programm, genau wie unter [Wenn nichts gesprochen wird](#wenn-nichts-gesprochen-wird) beschrieben. |
+| Die Lautsprecher-Schaltfläche | Liest einen kurzen Beispielsatz in der Sprache und der gewählten Stimme dieser Zeile vor, damit Sie eine Stimme hören, bevor Sie sich für sie entscheiden. |
+
+Eine Sprache, für die Ihr Computer keine Stimme hat, zeigt diesen Satz statt einer
+leeren Liste.
+
+**Sprechtempo** steht über den Zeilen und gilt für *alles*, was das Programm sagt — für
+die Beispielsätze auf diesem Bildschirm ebenso wie für jedes Lautsprecher-Symbol in
+einer Sitzung. In einer kaum vertrauten Sprache ist es die nützlichste Einstellung hier:
+verlangsamt wird aus einem Wort, das Sie gar nicht verstanden haben, ein Wort, dessen
+Teile Sie hören können. Es wird als Anteil der normalen Geschwindigkeit jeder Stimme
+eingestellt, und zwar nach Gehör — die Stimmen legen es etwas unterschiedlich aus.
+
+Sowohl die Stimmen als auch das Tempo werden auf **diesem Rechner** gemerkt, in der
+Datei aus [Einstellungen](11-settings.md#wo-einstellungen-liegen). Nichts davon wird je
+in eine Lern-Datei geschrieben: Eine Lern-Datei, die die Stimmennamen des einen Rechners
+auf einen anderen trägt, trüge etwas Bedeutungsloses mit sich. Die Lern-Datei sagt nur,
+dass ein Feld französisch ist; welche seiner französischen Stimmen es spricht,
+entscheidet jeder Rechner selbst.
+
+Wird eine gewählte Stimme später deinstalliert, geht nichts kaputt: Die Zeile fällt auf
+**"Automatisch"** zurück, und das Feld wird von dem gesprochen, was sonst passt — genau
+so, als hätten Sie nie gewählt.
+
+Auf einem Rechner, der nicht sprechen kann — heute **Linux** —, fehlt der Menüpunkt
+ganz, statt leer dazustehen. Ein Bildschirm zur Wahl zwischen Stimmen, die ein Rechner
+nicht hat, böte nichts.
 
 ## Was mitreist und was nicht
 
@@ -134,11 +205,10 @@ sich herum.
 ## Was noch fehlt
 
 Vorgelesen wird auf Anforderung, Feld für Feld, per Klick auf das Symbol. Die Antwort
-beim Aufdecken automatisch vorlesen zu lassen, eine Taste, die das wiederholt, die Wahl,
-*welche* Ihrer installierten Stimmen eine Sprache spricht, und ein langsameres
-Sprechtempo kommen noch. Ausserhalb des Mask Editors gibt es bisher keine Einstellung
-zur Sprachausgabe: das Programm wählt selbst eine passende Stimme.
+beim Aufdecken automatisch vorlesen zu lassen und eine Taste, die das wiederholt, kommen
+noch.
 
 Die Sprachausgabe läuft unter **Windows**. **Linux** hat keine — dort erscheint gar kein
-Lautsprecher-Symbol, statt eines, das beim Klicken nichts täte. Auch die
-**Android-Begleit-App** kann noch nicht sprechen.
+Lautsprecher-Symbol, statt eines, das beim Klicken nichts täte, und **Optionen ▸
+Sprachausgabe...** steht nicht im Menü. Auch die **Android-Begleit-App** kann noch nicht
+sprechen.

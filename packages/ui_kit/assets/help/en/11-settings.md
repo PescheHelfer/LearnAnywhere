@@ -115,6 +115,28 @@ inside its own box if it genuinely does not fit. The page itself never grows a h
 scrollbar at any window size. The frame follows the zoom level too, since a zoomed mask needs
 more room.
 
+## Speech
+
+**Options ▸ Speech...** is where you choose which of your computer's voices reads each
+language, and how fast. The whole screen is covered in [Speech](15-speech.md#choosing-a-voice);
+what belongs here is where the settings live and what they cover.
+
+The screen lists one language per row: the languages the open deck's mask uses, plus any you
+have already chosen a voice for. Each row offers that language's installed voices and a
+speaker button that reads a sample phrase aloud, so you can hear a voice before you pick it.
+A row for a language your machine has no voice for says so instead, and the chapter above
+explains how to add one.
+
+**Speech rate** applies to every single thing the program says — the sample phrases on this
+screen included — and is the setting worth reaching for first in a language you barely know.
+
+Voice choices are stored **per machine and never in the deck**: your deck says a field is
+French, and each computer decides which of its French voices says it. Copy a deck to another
+computer and it carries no voice names with it.
+
+The entry is absent on a machine that cannot speak at all — **Linux** today — rather than
+present and doing nothing.
+
 ## Statistics options
 
 **Options ▸ Statistics** holds auto-load, auto-save, and the session-file retention
@@ -148,7 +170,7 @@ for copies of that deck's mask than any fixed folder.
 
 Two separate stores, both entirely local — nothing here is ever sent anywhere:
 
-- Your **learning options**, level names, and last-used deck/mask paths are written to
+- Your **learning options**, level names, speech choices, and last-used deck/mask paths are written to
   `learn_anywhere.settings.json` in a `LearnAnywhere` folder under your operating
   system's standard per-user configuration location (`%APPDATA%` on Windows;
   `$XDG_CONFIG_HOME` or `~/.config` on Linux).

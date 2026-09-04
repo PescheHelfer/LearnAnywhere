@@ -604,6 +604,28 @@ void main() {
     });
   });
 
+  group('speech rate', () {
+    test('normal speed lands on the plugin scale\'s own normal', () {
+      // The plugin takes 0.0..1.0 and treats 0.5 as the voice's normal speed
+      // on both platforms that speak here.
+      expect(FlutterTtsEngine.pluginSpeechRate(kDefaultSpeechRate), 0.5);
+    });
+
+    test('slower is below it and faster above it, never outside the scale', () {
+      expect(
+        FlutterTtsEngine.pluginSpeechRate(kMinSpeechRate),
+        lessThan(FlutterTtsEngine.pluginSpeechRate(kDefaultSpeechRate)),
+      );
+      expect(
+        FlutterTtsEngine.pluginSpeechRate(kMaxSpeechRate),
+        greaterThan(FlutterTtsEngine.pluginSpeechRate(kDefaultSpeechRate)),
+      );
+      // A rate from a hand-edited settings file cannot push it off the scale.
+      expect(FlutterTtsEngine.pluginSpeechRate(99), inInclusiveRange(0.0, 1.0));
+      expect(FlutterTtsEngine.pluginSpeechRate(-99), inInclusiveRange(0.0, 1.0));
+    });
+  });
+
   group('rich text editing controller', () {
     test('formats only the selected range', () {
       final LearnAnywhereRichTextEditingController controller =

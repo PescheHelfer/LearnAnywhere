@@ -51,6 +51,7 @@ final class FlutterTtsEngine implements TtsEngine {
       // Cut off whatever is still being said: two words on top of each other
       // are worth less than either of them alone.
       await _tts.stop();
+      await _tts.setSpeechRate(pluginSpeechRate(utterance.rate));
       // The language is set as well as the voice because a host that ignores
       // one of the two still gets told which language this is.
       await _tts.setLanguage(voice.language);
@@ -66,6 +67,21 @@ final class FlutterTtsEngine implements TtsEngine {
   Future<void> stop() async {
     await _ask(() => _tts.stop());
   }
+
+  /// Translates an app speech rate into the number the plugin takes.
+  ///
+  /// The plugin's scale is `0.0..1.0` with **0.5 as the voice's normal speed**
+  /// on both platforms that can speak here: its Android side multiplies by two
+  /// before reaching a `TextToSpeech` whose normal is `1.0`, and its two
+  /// Windows backends both offset by `0.5` before reaching an engine whose
+  /// normal is the zero point. So halving the app rate lands on it.
+  ///
+  /// It is a direction rather than an exact factor: the Windows backends apply
+  /// the remainder on their own curves, so "half speed" is slower and not
+  /// necessarily half. The learner sets this by ear, which is the only way it
+  /// could be set anyway.
+  static double pluginSpeechRate(double rate) =>
+      (clampSpeechRate(rate) / 2).clamp(0.0, 1.0);
 
   /// Runs [request] against the host, treating a refusal as silence.
   ///

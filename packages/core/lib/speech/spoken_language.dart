@@ -86,6 +86,39 @@ String normalizeSpokenLanguageTag(String tag) {
   return buffer.toString();
 }
 
+/// Returns [tag] in the one spelling this app compares and stores by.
+///
+/// [normalizeSpokenLanguageTag] with a host's underscore form (`fr_FR`, which
+/// Android's locales produce) folded onto the hyphen form first, so a tag from
+/// a mask, from a settings file and from a host's voice list all reduce to the
+/// same string.
+String canonicalSpokenLanguageTag(String tag) =>
+    normalizeSpokenLanguageTag(tag.replaceAll('_', '-'));
+
+/// The primary language subtag of [tag] — `fr` of `fr-CA`.
+String baseSpokenLanguage(String tag) =>
+    canonicalSpokenLanguageTag(tag).split('-').first.toLowerCase();
+
+/// The phrase spoken when a voice for [language] is auditioned.
+///
+/// Written in the language being auditioned, because a voice is being judged
+/// on how it says that language and not on how it copes with another one. The
+/// four languages this program is built to drill have their own phrase; a
+/// hand-typed tag falls back to the English one, which still lets the voice be
+/// heard and compared with its neighbours in the list.
+String speechSampleFor(String language) {
+  return _speechSamples[baseSpokenLanguage(language)] ?? _speechSamples['en']!;
+}
+
+/// One sample phrase per base language. Short, ordinary sentences: the point
+/// is to hear the voice, not to test the engine.
+const Map<String, String> _speechSamples = <String, String>{
+  'de': 'Guten Tag, so klingt diese Stimme.',
+  'en': 'Good day, this is how this voice sounds.',
+  'fr': 'Bonjour, voici comment sonne cette voix.',
+  'it': 'Buongiorno, ecco come suona questa voce.',
+};
+
 /// Whether [tag] is one of the [spokenLanguageCatalog] entries.
 bool isCatalogSpokenLanguage(String tag) {
   for (final SpokenLanguageOption option in spokenLanguageCatalog) {

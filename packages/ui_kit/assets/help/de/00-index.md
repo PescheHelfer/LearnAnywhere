@@ -37,11 +37,11 @@ lange, bis alles beherrscht ist.
 | [Wie Antworten bewertet werden](08-answer-evaluation.md) | Vergleichsregeln, Fast-Treffer und das Korrigieren einer Bewertung |
 | [Statistik](09-statistics.md) | Trefferquoten-Gruppen, die Einheitenliste und eine Lern-Datei aus den schweren Karten |
 | [Das Lexikon](10-lexicon.md) | Geladene Lerneinheiten durchsuchen und Dateien auf der Festplatte durchsuchen |
-| [Einstellungen](11-settings.md) | Lernoptionen, Darstellung, Sprache und wo Einstellungen gespeichert werden |
+| [Einstellungen](11-settings.md) | Lernoptionen, Darstellung, Sprache, Sprachausgabe und wo Einstellungen gespeichert werden |
 | [Tastaturbefehle](12-keyboard-shortcuts.md) | Alle Tasten, auf die das Programm reagiert |
 | [Problembehebung](13-troubleshooting.md) | Was die Warnungen bedeuten und wie Sie wieder herauskommen |
 | [Die Android-Begleit-App](14-android-companion.md) | Die App fürs Telefon: Lern-Dateien importieren, üben, und was sie weglässt |
-| [Sprachausgabe](15-speech.md) | Der Maske sagen, welche Sprache ein Feld enthält, und sich ein Feld in einer Sitzung vorlesen lassen |
+| [Sprachausgabe](15-speech.md) | Der Maske sagen, welche Sprache ein Feld enthält, sich ein Feld in einer Sitzung vorlesen lassen und Stimme und Tempo wählen |
 
 ## Zur Schreibweise in diesem Handbuch
 

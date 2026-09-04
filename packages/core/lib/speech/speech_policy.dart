@@ -12,6 +12,7 @@ library;
 
 import '../engine/engine.dart';
 import '../models/models.dart';
+import 'speech_settings.dart';
 import 'spoken_language.dart';
 import 'tts_engine.dart';
 
@@ -71,6 +72,8 @@ SpeechPlan buildSpeechPlan({
   required bool afterCheck,
   required List<SpeechVoice> voices,
   bool answerShown = false,
+  SpeechSettings settings = const SpeechSettings(),
+  String engineId = kSystemSpeechEngineId,
 }) {
   final CategoryDefinition category = deck.categoryForUnit(unit);
   final List<SpeechUtterance> utterances = <SpeechUtterance>[];
@@ -98,7 +101,13 @@ SpeechPlan buildSpeechPlan({
         // the program does not edit what it was told to say.
         text: value.plainText,
         language: field.language,
-        voice: resolveSpeechVoice(field.language, voices),
+        voice: resolveSpeechVoice(
+          field.language,
+          voices,
+          settings: settings,
+          engineId: engineId,
+        ),
+        rate: settings.rate,
       ),
     );
   }
@@ -107,36 +116,102 @@ SpeechPlan buildSpeechPlan({
 
 /// The installed voice that should speak [language], or null when none should.
 ///
-/// Tries the exact tag first, then any voice sharing the base language — a
-/// Canadian French voice reads a France-French field rather than leaving it
-/// silent — and otherwise gives up. Both sides are compared canonically, so a
-/// host that reports `fr_FR` or `FR-fr` still matches `fr-FR`.
-SpeechVoice? resolveSpeechVoice(String language, List<SpeechVoice> voices) {
+/// Three steps, in order:
+///
+/// 1. the voice the learner chose for this language on this machine, when it
+///    is still installed and was chosen for [engineId];
+/// 2. a voice for the exact tag;
+/// 3. any voice sharing the base language — a Canadian French voice reads a
+///    France-French field rather than leaving it silent.
+///
+/// A stored choice never silences a field: one made for another engine, or
+/// naming a voice since uninstalled, simply falls through to the automatic
+/// steps below it.
+SpeechVoice? resolveSpeechVoice(
+  String language,
+  List<SpeechVoice> voices, {
+  SpeechSettings settings = const SpeechSettings(),
+  String engineId = kSystemSpeechEngineId,
+}) {
   if (language == noSpokenLanguage) {
     return null;
   }
-  final String wanted = _canonicalTag(language);
-  for (final SpeechVoice voice in voices) {
-    if (_canonicalTag(voice.language) == wanted) {
-      return voice;
+  final List<SpeechVoice> candidates = voicesForSpeechLanguage(
+    language,
+    voices,
+  );
+  final VoiceChoice? chosen = settings.voiceFor(language);
+  if (chosen != null && chosen.engine == engineId) {
+    for (final SpeechVoice voice in candidates) {
+      if (voice.id == chosen.voiceId) {
+        return voice;
+      }
     }
   }
-  final String base = _baseLanguage(wanted);
-  if (base.isEmpty) {
-    return null;
-  }
-  for (final SpeechVoice voice in voices) {
-    if (_baseLanguage(_canonicalTag(voice.language)) == base) {
-      return voice;
-    }
-  }
-  return null;
+  return candidates.isEmpty ? null : candidates.first;
 }
 
-/// [tag] in the casing this app stores, with a host's underscore form
-/// (`fr_FR`, which Android's locales produce) folded onto the hyphen form.
-String _canonicalTag(String tag) =>
-    normalizeSpokenLanguageTag(tag.replaceAll('_', '-'));
+/// Every installed voice that could speak [language], best match first.
+///
+/// The exact-tag voices in the order the host reports them, then the voices
+/// sharing only the base language. This is both what [resolveSpeechVoice]
+/// picks from and what the Speech screen offers, so the list the learner
+/// chooses from cannot differ from the list the program would choose from.
+/// An empty result means the machine has no voice for that language at all.
+List<SpeechVoice> voicesForSpeechLanguage(
+  String language,
+  List<SpeechVoice> voices,
+) {
+  if (language == noSpokenLanguage) {
+    return const <SpeechVoice>[];
+  }
+  final String wanted = canonicalSpokenLanguageTag(language);
+  final String base = baseSpokenLanguage(wanted);
+  final List<SpeechVoice> exact = <SpeechVoice>[];
+  final List<SpeechVoice> related = <SpeechVoice>[];
+  for (final SpeechVoice voice in voices) {
+    final String reported = canonicalSpokenLanguageTag(voice.language);
+    if (reported == wanted) {
+      exact.add(voice);
+    } else if (base.isNotEmpty && baseSpokenLanguage(reported) == base) {
+      related.add(voice);
+    }
+  }
+  return List<SpeechVoice>.unmodifiable(<SpeechVoice>[...exact, ...related]);
+}
 
-/// The primary language subtag of [tag] — `fr` of `fr-CA`.
-String _baseLanguage(String tag) => tag.split('-').first.toLowerCase();
+/// The languages the Speech screen lists, in the order it lists them.
+///
+/// The open deck's own languages first, in mask order, so the languages that
+/// matter right now are at the top; then any language already configured that
+/// the deck does not use, sorted, so a choice made for another deck is neither
+/// lost nor invisible. With no deck open only the configured ones remain.
+///
+/// A field's language is listed whether or not its `speak` flag is on: the row
+/// is about the language, and a field can be switched on later without the
+/// voice choice having to be made again.
+List<String> speechLanguagesFor({
+  LearningDeck? deck,
+  SpeechSettings settings = const SpeechSettings(),
+}) {
+  final List<String> ordered = <String>[];
+  final Set<String> seen = <String>{};
+  if (deck != null) {
+    for (final CategoryDefinition category in deck.mask.categories) {
+      for (final FieldDefinition field in category.fields) {
+        if (field.language == noSpokenLanguage) {
+          continue;
+        }
+        final String tag = canonicalSpokenLanguageTag(field.language);
+        if (seen.add(tag)) {
+          ordered.add(tag);
+        }
+      }
+    }
+  }
+  final List<String> configured = settings.voices.keys
+      .where((String tag) => !seen.contains(tag))
+      .toList()
+    ..sort();
+  return List<String>.unmodifiable(<String>[...ordered, ...configured]);
+}

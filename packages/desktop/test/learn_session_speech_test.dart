@@ -81,7 +81,11 @@ void main() {
     ],
   );
 
-  Widget buildPage(TtsEngine engine, SessionMode mode) {
+  Widget buildPage(
+    TtsEngine engine,
+    SessionMode mode,
+    SpeechSettings speechSettings,
+  ) {
     return MaterialApp(
       localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
       supportedLocales: LearnAnywhereLocalizations.supportedLocales,
@@ -89,6 +93,7 @@ void main() {
         body: LearnSessionPage(
           startSessionOnOpen: true,
           speechEngine: engine,
+          speechSettings: speechSettings,
           deck: deck,
           statistics: const <UnitStats>[],
           options: const DesktopQueryOptions(),
@@ -110,12 +115,13 @@ void main() {
     WidgetTester tester,
     TtsEngine engine, {
     SessionMode mode = SessionMode.onceThrough,
+    SpeechSettings speechSettings = const SpeechSettings(),
   }) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(buildPage(engine, mode));
+    await tester.pumpWidget(buildPage(engine, mode, speechSettings));
     await tester.pumpAndSettle();
   }
 
@@ -193,6 +199,38 @@ void main() {
     expect(engine.spoken, isEmpty);
     expect(find.textContaining('fr-FR'), findsOneWidget);
     expect(find.textContaining('Speech'), findsOneWidget);
+  });
+
+  testWidgets('an icon uses the voice and the rate chosen on the Speech '
+      'screen', (WidgetTester tester) async {
+    const SpeechVoice canadian = SpeechVoice(
+      id: 'Microsoft Claude',
+      name: 'Microsoft Claude',
+      language: 'fr-CA',
+    );
+    final _RecordingTtsEngine engine = _RecordingTtsEngine(
+      const <SpeechVoice>[frenchVoice, canadian],
+    );
+    await startSession(
+      tester,
+      engine,
+      speechSettings: const SpeechSettings(
+        rate: 0.7,
+        voices: <String, VoiceChoice>{
+          'fr-FR': VoiceChoice(
+            engine: kSystemSpeechEngineId,
+            voiceId: 'Microsoft Claude',
+          ),
+        },
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('speakField-0')));
+    await tester.pumpAndSettle();
+    // The Canadian voice, though a France-French one is installed: the
+    // learner's choice comes before the automatic match.
+    expect(engine.spoken.single.voice, canadian);
+    expect(engine.spoken.single.rate, 0.7);
   });
 
   testWidgets('a host that cannot speak shows no icons at all', (

@@ -35,6 +35,7 @@ final class LearnSessionPage extends StatefulWidget {
     this.onEndUnitChanged,
     this.onExit,
     this.speechEngine = const UnavailableTtsEngine(),
+    this.speechSettings = const SpeechSettings(),
     super.key,
   });
 
@@ -122,6 +123,12 @@ final class LearnSessionPage extends StatefulWidget {
   /// about speech gets a session with no speaker icons rather than a session
   /// reaching for a plugin its host may not have.
   final TtsEngine speechEngine;
+
+  /// The machine's chosen voices and speech rate.
+  ///
+  /// Passed to the policy rather than consulted here, so an icon in a session
+  /// uses exactly the voice the Speech screen auditioned.
+  final SpeechSettings speechSettings;
 
   @override
   State<LearnSessionPage> createState() => _LearnSessionPageState();
@@ -693,6 +700,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
             afterCheck: _evaluation != null,
             answerShown: answerShownAsSupport,
             voices: _voices,
+            settings: widget.speechSettings,
           )
         : SpeechPlan.silent;
     return _SessionView(

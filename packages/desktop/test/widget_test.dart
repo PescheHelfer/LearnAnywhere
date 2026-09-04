@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_desktop/main.dart';
 import 'package:learn_anywhere_desktop/src/editor/unit_editor_page.dart';
 import 'package:learn_anywhere_desktop/src/preferences/desktop_prefs.dart';
@@ -292,6 +293,42 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Accent sensitive'), findsOneWidget);
+  });
+
+  testWidgets('the Speech entry is there to speak and absent when not', (
+    WidgetTester tester,
+  ) async {
+    // A host that can speak offers the screen that chooses between its voices.
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: _AvailableTtsEngine(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Options'));
+    await tester.pumpAndSettle();
+    expect(find.text('Speech...'), findsOneWidget);
+
+    await tester.tap(find.text('Speech...').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Speech rate'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+
+    // A host that cannot does not offer it at all — not a dead entry.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Options'));
+    await tester.pumpAndSettle();
+    expect(find.text('Speech...'), findsNothing);
   });
 
   testWidgets('learn session checks answers and records live accuracy', (
@@ -1053,7 +1090,12 @@ Future<void> walkEveryScreen(
     await tester.pumpAndSettle();
   }
 
-  await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: zoomed));
+  await tester.pumpWidget(
+    // An engine that reports itself available on every host: whether the
+    // Options menu offers the Speech screen must not depend on the machine
+    // this test runs on.
+    LearnAnywhereDesktopApp(prefs: zoomed, speechEngine: _AvailableTtsEngine()),
+  );
   await tester.pumpAndSettle();
   await clean('the workspace');
 
@@ -1089,6 +1131,11 @@ Future<void> walkEveryScreen(
 
   await pick('Options', 'Advanced Learning Options');
   await clean('the advanced learning options');
+  await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+  await tester.pumpAndSettle();
+
+  await pick('Options', 'Speech...');
+  await clean('the speech settings');
   await tester.sendKeyEvent(LogicalKeyboardKey.escape);
   await tester.pumpAndSettle();
 
@@ -1342,4 +1389,23 @@ Finder editorInput(String fieldName) {
     ),
     matching: find.byType(TextField),
   );
+}
+
+/// A host that can speak, with nothing installed to speak with.
+///
+/// Enough to make the shell offer the Speech screen without reaching a plugin
+/// a widget test has no implementation of, and it answers the same way on
+/// every host — which the real platform choice, by design, does not.
+final class _AvailableTtsEngine implements TtsEngine {
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<List<SpeechVoice>> voices() async => const <SpeechVoice>[];
+
+  @override
+  Future<void> speak(SpeechUtterance utterance) async {}
+
+  @override
+  Future<void> stop() async {}
 }

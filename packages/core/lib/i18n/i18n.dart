@@ -243,6 +243,40 @@ enum LearnAnywhereMessage {
   /// Options menu: opens the start-folder prompt.
   menuOptionsStartFolder,
 
+  /// Options menu entry opening the Speech screen.
+  menuOptionsSpeech,
+
+  /// Title of the Speech screen.
+  speechSettingsTitle,
+
+  /// Lead paragraph of the Speech screen.
+  speechSettingsIntro,
+
+  /// Label of the speech-rate control.
+  speechRateLabel,
+
+  /// The rate as a percentage of normal speed. Carries `{percent}`.
+  speechRateValue,
+
+  /// Explanation under the speech-rate control.
+  speechRateHint,
+
+  /// Column heading over the voice chosen for each row.
+  speechVoiceColumn,
+
+  /// The voice-list entry that leaves the choice to the program.
+  speechVoiceAutomatic,
+
+  /// Shown in a row whose language has no installed voice. Carries
+  /// `{language}`.
+  speechNoVoiceInstalled,
+
+  /// Tooltip on the button that auditions a row's voice.
+  speechTestVoice,
+
+  /// Shown instead of the rows when there is no language to configure.
+  speechNoLanguages,
+
   /// Title of the start-folder prompt dialog.
   startFolderTitle,
 
@@ -1456,6 +1490,26 @@ final class LearnAnywhereCatalog {
           'The oldest timestamped session files beyond this count are '
           'deleted after each new one is written. 0 keeps every file.',
       LearnAnywhereMessage.menuOptionsStartFolder: 'Start &folder...', // F
+      LearnAnywhereMessage.menuOptionsSpeech: 'S&peech...', // P
+      LearnAnywhereMessage.speechSettingsTitle: 'Speech',
+      LearnAnywhereMessage.speechSettingsIntro:
+          'Which voice speaks each language belongs to this computer, not to '
+          'your decks, so nothing here travels with a deck you copy. The '
+          'languages listed are the ones the open deck uses, plus any you '
+          'have already chosen a voice for.',
+      LearnAnywhereMessage.speechRateLabel: 'Speech rate',
+      LearnAnywhereMessage.speechRateValue: '{percent}% of normal speed',
+      LearnAnywhereMessage.speechRateHint:
+          'Applies to everything spoken, including the test buttons below.',
+      LearnAnywhereMessage.speechVoiceColumn: 'Voice',
+      LearnAnywhereMessage.speechVoiceAutomatic: 'Automatic',
+      LearnAnywhereMessage.speechNoVoiceInstalled:
+          'This computer has no voice for {language}. The "Speech" chapter of '
+          'the user guide (F1) explains how to add one.',
+      LearnAnywhereMessage.speechTestVoice: 'Hear this voice',
+      LearnAnywhereMessage.speechNoLanguages:
+          'No language to set a voice for yet. Give a field a spoken language '
+          'in the mask editor, and it appears here.',
       LearnAnywhereMessage.startFolderTitle: 'Start folder',
       LearnAnywhereMessage.startFolderHint:
           'Every file dialog opens in this folder, whatever folder you last '
@@ -2063,6 +2117,30 @@ final class LearnAnywhereCatalog {
           'Die ältesten Sitzungsdateien über diese Anzahl hinaus werden nach '
           'jeder neu geschriebenen Datei gelöscht. 0 behält alle Dateien.',
       LearnAnywhereMessage.menuOptionsStartFolder: 'Start&ordner...', // O
+      LearnAnywhereMessage.menuOptionsSpeech: 'S&prachausgabe...', // P
+      LearnAnywhereMessage.speechSettingsTitle: 'Sprachausgabe',
+      LearnAnywhereMessage.speechSettingsIntro:
+          'Welche Stimme eine Sprache spricht, gehört zu diesem Computer und '
+          'nicht zu Ihren Decks; nichts davon wandert mit einem kopierten Deck '
+          'mit. Aufgeführt sind die Sprachen des geöffneten Decks sowie '
+          'jede, für die Sie bereits eine Stimme gewählt haben.',
+      LearnAnywhereMessage.speechRateLabel: 'Sprechtempo',
+      LearnAnywhereMessage.speechRateValue: '{percent}% der normalen '
+          'Geschwindigkeit',
+      LearnAnywhereMessage.speechRateHint:
+          'Gilt für alles Vorgelesene, auch für die Testschaltflächen '
+          'unten.',
+      LearnAnywhereMessage.speechVoiceColumn: 'Stimme',
+      LearnAnywhereMessage.speechVoiceAutomatic: 'Automatisch',
+      LearnAnywhereMessage.speechNoVoiceInstalled:
+          'Dieser Computer hat keine Stimme für {language}. Das Kapitel '
+          '"Sprachausgabe" im Benutzerhandbuch (F1) erklärt, wie Sie eine '
+          'hinzufügen.',
+      LearnAnywhereMessage.speechTestVoice: 'Diese Stimme anhören',
+      LearnAnywhereMessage.speechNoLanguages:
+          'Noch keine Sprache, für die eine Stimme gewählt werden könnte. '
+          'Geben Sie einem Feld im Maskeneditor eine Vorlesesprache, dann '
+          'erscheint sie hier.',
       LearnAnywhereMessage.startFolderTitle: 'Startordner',
       LearnAnywhereMessage.startFolderHint:
           'Jeder Dateidialog öffnet sich in diesem Ordner, unabhängig davon, wo '

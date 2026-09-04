@@ -24,6 +24,7 @@ import 'src/mask_editor/mask_editor_page.dart';
 import 'src/mask_editor/mask_sync_dialog.dart';
 import 'src/preferences/desktop_prefs.dart';
 import 'src/settings/settings_save.dart';
+import 'src/settings/speech_settings_page.dart';
 import 'src/statistics/statistics_page.dart';
 
 Future<void> main() async {
@@ -59,6 +60,7 @@ final class LearnAnywhereDesktopApp extends StatefulWidget {
     super.key,
     required this.prefs,
     this.filePicker = const DesktopFilePicker(),
+    this.speechEngine,
   });
 
   /// Desktop-specific preferences (theme, locale, dialog dirs, window bounds).
@@ -67,6 +69,13 @@ final class LearnAnywhereDesktopApp extends StatefulWidget {
   /// Bridge to the native file dialogs. Defaults to the real one; a test passes
   /// a recording subclass to observe the directory each dialog opens at.
   final DesktopFilePicker filePicker;
+
+  /// The host's speech. Null picks the engine this platform can speak through.
+  ///
+  /// Injected for the same reason the file picker is: whether this host can
+  /// speak decides what the menu offers, and a test must be able to exercise
+  /// both answers whichever machine it is running on.
+  final TtsEngine? speechEngine;
 
   @override
   State<LearnAnywhereDesktopApp> createState() =>
@@ -89,6 +98,17 @@ final class _LearnAnywhereDesktopAppState
   // route through [_DesktopHome].
   late bool _contentFrameEnabled;
   final WindowGeometryService _geometryService = WindowGeometryService();
+  // Speech is INJECTED rather than reached for. The plugin behind
+  // FlutterTtsEngine carries a Windows implementation and no Linux one, so
+  // Linux is handed the engine that reports itself unavailable: no session
+  // there ever calls a plugin that is not registered, no speaker icon is
+  // offered for something the host cannot do, and the Speech screen that
+  // would choose between its voices is not in the menu at all.
+  late final TtsEngine _speechEngine =
+      widget.speechEngine ??
+      (Platform.isWindows
+          ? FlutterTtsEngine()
+          : const UnavailableTtsEngine());
 
   ThemeData get _lightTheme => _appTheme == _AppTheme.lightBlue
       ? LearnAnywhereTheme.lightBlue(zoomPercent: _zoomPercent)
@@ -201,6 +221,7 @@ final class _LearnAnywhereDesktopAppState
       home: _DesktopHome(
         prefs: widget.prefs,
         filePicker: widget.filePicker,
+        speechEngine: _speechEngine,
         appTheme: _appTheme,
         locale: _locale,
         zoomPercent: _zoomPercent,
@@ -259,6 +280,7 @@ enum _DesktopRoute {
   maskEditor,
   learn,
   queryOptions,
+  speechSettings,
   statistics,
   lexicon,
   about,
@@ -303,6 +325,7 @@ final class _DesktopHome extends StatefulWidget {
   const _DesktopHome({
     required this.prefs,
     required this.filePicker,
+    required this.speechEngine,
     required this.appTheme,
     required this.locale,
     required this.zoomPercent,
@@ -315,6 +338,10 @@ final class _DesktopHome extends StatefulWidget {
 
   final DesktopPrefs prefs;
   final DesktopFilePicker filePicker;
+
+  /// The host's speech, chosen by the shell above (see
+  /// [LearnAnywhereDesktopApp.speechEngine]).
+  final TtsEngine speechEngine;
   final _AppTheme appTheme;
   final Locale locale;
   final int zoomPercent;
@@ -332,14 +359,6 @@ final class _DesktopHome extends StatefulWidget {
 
 final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   final DesktopFileService _fileService = const DesktopFileService();
-  // Speech is INJECTED rather than reached for. The plugin behind
-  // FlutterTtsEngine carries a Windows implementation and no Linux one, so
-  // Linux is handed the engine that reports itself unavailable: no session
-  // there ever calls a plugin that is not registered, and no speaker icon is
-  // offered for something the host cannot do.
-  final TtsEngine _speechEngine = Platform.isWindows
-      ? FlutterTtsEngine()
-      : const UnavailableTtsEngine();
   // Memo for [_deckContentFrameWidth]; see there for why it is cached, and
   // for what makes up the key.
   (LearningMask, double, String)? _frameWidthKey;
@@ -1621,6 +1640,17 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
               builder: menuAcceleratorBuilder,
             ),
           ),
+          // Absent, not disabled, on a host that cannot speak: a screen for
+          // choosing between voices a machine does not have would offer
+          // nothing, and the whole feature is hidden there already.
+          if (widget.speechEngine.isAvailable)
+            MenuItemButton(
+              onPressed: () => _selectRoute(_DesktopRoute.speechSettings),
+              child: MenuAcceleratorLabel(
+                messages.message(LearnAnywhereMessage.menuOptionsSpeech),
+                builder: menuAcceleratorBuilder,
+              ),
+            ),
           const _MenuSeparator(),
           SubmenuButton(
             menuChildren: <Widget>[
@@ -2657,7 +2687,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _DesktopRoute.learn => LearnSessionPage(
         deck: _document.deck,
         statistics: _document.statistics,
-        speechEngine: _speechEngine,
+        speechEngine: widget.speechEngine,
+        speechSettings: _settings.speech,
         levelStatistics: _document.levelStatistics,
         levelNames: widget.locale.languageCode == 'de'
             ? _settings.levelNamesDe
@@ -2728,6 +2759,16 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
               levelNamesDe: levelNamesDe,
             ),
           );
+          unawaited(_saveSettings());
+        },
+        onClose: () => _selectRoute(_DesktopRoute.home),
+      ),
+      _DesktopRoute.speechSettings => SpeechSettingsPage(
+        engine: widget.speechEngine,
+        deck: _document.deck,
+        settings: _settings.speech,
+        onChanged: (SpeechSettings value) {
+          setState(() => _settings = _settings.copyWith(speech: value));
           unawaited(_saveSettings());
         },
         onClose: () => _selectRoute(_DesktopRoute.home),

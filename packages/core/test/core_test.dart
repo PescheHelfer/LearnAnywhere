@@ -2158,6 +2158,39 @@ void main() {
       expect(restored, settings);
     });
 
+    test('carries the machine speech choices through JSON', () {
+      const LearnAnywhereSettings settings = LearnAnywhereSettings(
+        speech: SpeechSettings(
+          rate: 0.7,
+          voices: <String, VoiceChoice>{
+            'fr-FR': VoiceChoice(
+              engine: kSystemSpeechEngineId,
+              voiceId: 'Microsoft Hortense',
+            ),
+          },
+        ),
+      );
+      final LearnAnywhereSettings restored = decodeSettingsJson(
+        encodeSettingsJson(settings),
+      );
+      expect(restored, settings);
+      expect(restored.speech.voiceFor('fr-FR')?.engine, kSystemSpeechEngineId);
+    });
+
+    test('starts with the automatic voice and normal speed', () {
+      const LearnAnywhereSettings defaults = LearnAnywhereSettings();
+      expect(defaults.speech.rate, kDefaultSpeechRate);
+      expect(defaults.speech.voices, isEmpty);
+      // A settings file written before speech existed loads unchanged.
+      expect(decodeSettings(<String, Object?>{'shuffle': true}).speech,
+          defaults.speech);
+      // And a broken speech object never fails the whole load.
+      expect(
+        decodeSettings(<String, Object?>{'speech': 'loud'}).speech,
+        defaults.speech,
+      );
+    });
+
     test('keepStatisticsVersions defaults to 3 and round-trips 0 (keep all)',
         () {
       expect(const LearnAnywhereSettings().keepStatisticsVersions, 3);
