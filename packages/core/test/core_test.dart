@@ -505,6 +505,234 @@ void main() {
     });
   });
 
+  group('field visibility', () {
+    final LearningMask mask = sampleMask();
+    final CategoryDefinition category = mask.categories.first;
+    final FieldDefinition question = category.fieldNamed('DE')!;
+    final FieldDefinition answer = category.fieldNamed('FR1')!;
+    final FieldDefinition remark = category.fieldNamed('Note')!;
+    final FieldDefinition hidden = category.fields.last;
+
+    test('question field is always row- and value-visible', () {
+      for (final bool afterCheck in <bool>[false, true]) {
+        for (final bool withInput in <bool>[false, true]) {
+          expect(
+            isFieldRowVisible(
+              question,
+              QueryDirection.direction1,
+              afterCheck: afterCheck,
+              withInput: withInput,
+            ),
+            isTrue,
+          );
+          expect(
+            isFieldValueVisible(
+              question,
+              QueryDirection.direction1,
+              afterCheck: afterCheck,
+            ),
+            isTrue,
+          );
+        }
+      }
+    });
+
+    test(
+      'answer field in typed mode is row-visible but not value-visible '
+      'before Check',
+      () {
+        expect(
+          isFieldRowVisible(
+            answer,
+            QueryDirection.direction1,
+            afterCheck: false,
+            withInput: true,
+          ),
+          isTrue,
+        );
+        expect(
+          isFieldValueVisible(
+            answer,
+            QueryDirection.direction1,
+            afterCheck: false,
+          ),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'answer field in typed mode is both row- and value-visible after Check',
+      () {
+        expect(
+          isFieldRowVisible(
+            answer,
+            QueryDirection.direction1,
+            afterCheck: true,
+            withInput: true,
+          ),
+          isTrue,
+        );
+        expect(
+          isFieldValueVisible(
+            answer,
+            QueryDirection.direction1,
+            afterCheck: true,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'answer field in non-typed mode is neither row- nor value-visible '
+      'before Check',
+      () {
+        expect(
+          isFieldRowVisible(
+            answer,
+            QueryDirection.direction1,
+            afterCheck: false,
+            withInput: false,
+          ),
+          isFalse,
+        );
+        expect(
+          isFieldValueVisible(
+            answer,
+            QueryDirection.direction1,
+            afterCheck: false,
+          ),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'answer field in non-typed mode is both row- and value-visible '
+      'after Check',
+      () {
+        expect(
+          isFieldRowVisible(
+            answer,
+            QueryDirection.direction1,
+            afterCheck: true,
+            withInput: false,
+          ),
+          isTrue,
+        );
+        expect(
+          isFieldValueVisible(
+            answer,
+            QueryDirection.direction1,
+            afterCheck: true,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'remark field is neither before Check and both after, regardless of '
+      'input mode',
+      () {
+        for (final bool withInput in <bool>[false, true]) {
+          expect(
+            isFieldRowVisible(
+              remark,
+              QueryDirection.direction1,
+              afterCheck: false,
+              withInput: withInput,
+            ),
+            isFalse,
+          );
+          expect(
+            isFieldRowVisible(
+              remark,
+              QueryDirection.direction1,
+              afterCheck: true,
+              withInput: withInput,
+            ),
+            isTrue,
+          );
+        }
+        expect(
+          isFieldValueVisible(
+            remark,
+            QueryDirection.direction1,
+            afterCheck: false,
+          ),
+          isFalse,
+        );
+        expect(
+          isFieldValueVisible(
+            remark,
+            QueryDirection.direction1,
+            afterCheck: true,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test('hidden field is never row- or value-visible', () {
+      for (final bool afterCheck in <bool>[false, true]) {
+        for (final bool withInput in <bool>[false, true]) {
+          expect(
+            isFieldRowVisible(
+              hidden,
+              QueryDirection.direction1,
+              afterCheck: afterCheck,
+              withInput: withInput,
+            ),
+            isFalse,
+          );
+          expect(
+            isFieldValueVisible(
+              hidden,
+              QueryDirection.direction1,
+              afterCheck: afterCheck,
+            ),
+            isFalse,
+          );
+        }
+      }
+    });
+
+    test(
+      'role flips with direction: the direction-1 question is the '
+      'direction-2 answer',
+      () {
+        expect(
+          isFieldRowVisible(
+            question,
+            QueryDirection.direction2,
+            afterCheck: false,
+            withInput: false,
+          ),
+          isFalse,
+        );
+        expect(
+          isFieldRowVisible(
+            question,
+            QueryDirection.direction2,
+            afterCheck: false,
+            withInput: true,
+          ),
+          isTrue,
+        );
+        expect(
+          isFieldValueVisible(
+            question,
+            QueryDirection.direction2,
+            afterCheck: false,
+          ),
+          isFalse,
+        );
+      },
+    );
+  });
+
   group('answer evaluation', () {
     test('matches equal-group answers independent of order', () {
       final LearningDeck deck = sampleDeck();

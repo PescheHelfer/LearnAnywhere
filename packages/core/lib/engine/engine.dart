@@ -240,6 +240,45 @@ Map<FieldDefinition, FieldValue> remarkFields(
   return _fieldsForRole(deck, unit, direction, FieldRole.remark);
 }
 
+/// Whether [field] renders as a row for [direction] in the current session
+/// state.
+///
+/// A remark row appears only after Check. An answer row appears before Check
+/// only in typed-input mode, where it renders as an empty input box. A
+/// hidden field never renders.
+bool isFieldRowVisible(
+  FieldDefinition field,
+  QueryDirection direction, {
+  required bool afterCheck,
+  required bool withInput,
+}) {
+  if (field.isHidden) return false;
+  return switch (field.roleFor(direction)) {
+    FieldRole.question => true,
+    FieldRole.remark => afterCheck,
+    FieldRole.answer => afterCheck || withInput,
+  };
+}
+
+/// Whether [field]'s value — not just an empty row — is on screen.
+///
+/// Distinct from [isFieldRowVisible]: in typed-input mode an answer row
+/// renders before Check as an empty input box, so its row is visible while
+/// its value is not. Speech must check this, not [isFieldRowVisible], or it
+/// would read out the solution the learner is still trying to produce.
+bool isFieldValueVisible(
+  FieldDefinition field,
+  QueryDirection direction, {
+  required bool afterCheck,
+}) {
+  if (field.isHidden) return false;
+  return switch (field.roleFor(direction)) {
+    FieldRole.question => true,
+    FieldRole.remark => afterCheck,
+    FieldRole.answer => afterCheck,
+  };
+}
+
 /// Evaluates an entered answer map against the deck solution.
 AnswerEvaluation evaluateAnswer({
   required LearningDeck deck,

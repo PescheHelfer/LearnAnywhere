@@ -2100,8 +2100,11 @@ final class _SessionView extends StatelessWidget {
 
               final bool isEditable =
                   role == FieldRole.answer &&
-                  evaluation == null &&
-                  parameters.withInput;
+                  !isFieldValueVisible(
+                    field,
+                    item.direction,
+                    afterCheck: evaluation != null,
+                  );
               final Widget content =
                   override ??
                   (isEditable
@@ -2247,25 +2250,16 @@ final class _SessionView extends StatelessWidget {
     final LearningUnit unit = deck.units[item.unitIndex - 1];
     final CategoryDefinition category = deck.categoryForUnit(unit);
 
-    // All non-hidden fields for the category, in definition order.
-    final List<FieldDefinition> allFields = category.fields
-        .where((FieldDefinition f) => !f.isHidden)
-        .toList(growable: false);
-
     // Only render fields that are relevant in the current state.
-    final List<FieldDefinition> visibleFields = allFields
-        .where((FieldDefinition f) {
-          final FieldRole r = f.roleFor(item.direction);
-          // Remarks appear only after Check.
-          if (r == FieldRole.remark && evaluation == null) return false;
-          // Answer fields without typed-input mode are hidden before Check.
-          if (r == FieldRole.answer &&
-              evaluation == null &&
-              !parameters.withInput) {
-            return false;
-          }
-          return true;
-        })
+    final List<FieldDefinition> visibleFields = category.fields
+        .where(
+          (FieldDefinition f) => isFieldRowVisible(
+            f,
+            item.direction,
+            afterCheck: evaluation != null,
+            withInput: parameters.withInput,
+          ),
+        )
         .toList(growable: false);
 
     final bool timeWarning =
