@@ -138,6 +138,12 @@ Beispielsatz vorliest — so hören Sie eine Stimme, bevor Sie sich für sie ent
 Zeile für eine Sprache, für die Ihr Rechner keine Stimme hat, sagt das stattdessen, und das
 Kapitel oben erklärt, wie Sie eine hinzufügen.
 
+**Antwort automatisch vorlesen** ist der einzige Schalter, der das Programm ungefragt
+sprechen lässt: ist er gesetzt, wird jede aufgedeckte Antwort vorgelesen. Er ist aus, bis Sie
+ihn einschalten;
+[Die Antwort automatisch vorlesen](15-speech.md#die-antwort-automatisch-vorlesen)
+beschreibt, was wann vorgelesen wird.
+
 **Sprechtempo** gilt für alles, was das Programm sagt — auch für die Beispielsätze auf
 diesem Bildschirm — und ist in einer kaum vertrauten Sprache die Einstellung, nach der man
 zuerst greift.

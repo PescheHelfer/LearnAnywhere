@@ -299,6 +299,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         // without interrupting the running session.
         SingleActivator(LogicalKeyboardKey.f3): _LearnContinueIntent(),
         SingleActivator(LogicalKeyboardKey.enter): _LearnContinueIntent(),
+        // F4 replays what automatic speech plays. Free everywhere else in the
+        // session and in the menu bar, so the program stays fully operable
+        // from the keyboard without taking a key that already does something.
+        SingleActivator(LogicalKeyboardKey.f4): _LearnSpeakAnswerIntent(),
         SingleActivator(LogicalKeyboardKey.f5): _LearnRate1Intent(),
         SingleActivator(LogicalKeyboardKey.f6): _LearnRate2Intent(),
         SingleActivator(LogicalKeyboardKey.f7): _LearnRate3Intent(),
@@ -343,6 +347,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   // cannot speak, and equally on one that speaks but has nothing installed —
   // the difference is the engine's own isAvailable, not this list.
   List<SpeechVoice> _voices = const <SpeechVoice>[];
+
+  // Bumped by every new speech request. A sequence reading several answer
+  // fields checks it between two of them and abandons itself when it no longer
+  // holds the newest number, so a reveal, an icon or a second F4 replaces what
+  // is being said instead of being queued behind it.
+  int _speechGeneration = 0;
 
   SessionItem? _currentItem;
   AnswerEvaluation? _evaluation;
@@ -414,21 +424,83 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   /// thing that gets them from silence to sound.
   Future<void> _speak(SpeechUtterance utterance) async {
     if (!utterance.canBeSpoken) {
-      final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-        context,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            messages
-                .message(LearnAnywhereMessage.learnSpeakNoVoice)
-                .replaceAll('{language}', utterance.language),
-          ),
-        ),
-      );
+      _explainMissingVoice(utterance);
       return;
     }
+    _speechGeneration += 1;
     await widget.speechEngine.speak(utterance);
+  }
+
+  /// Tells the learner which language their machine has no voice for.
+  void _explainMissingVoice(SpeechUtterance utterance) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          messages
+              .message(LearnAnywhereMessage.learnSpeakNoVoice)
+              .replaceAll('{language}', utterance.language),
+        ),
+      ),
+    );
+  }
+
+  /// What may be spoken for the unit as it now stands on screen.
+  ///
+  /// Built from the same call the view renders icons from, so an icon, `F4`
+  /// and automatic speech can never disagree about what this unit offers. A
+  /// host that cannot speak gets the silent plan.
+  SpeechPlan _speechPlan() {
+    final SessionItem? item = _currentItem;
+    if (item == null || !widget.speechEngine.isAvailable) {
+      return SpeechPlan.silent;
+    }
+    return buildSpeechPlan(
+      deck: widget.deck,
+      unit: widget.deck.units[item.unitIndex - 1],
+      direction: item.direction,
+      afterCheck: _evaluation != null,
+      answerShown: _answerShownAsSupport,
+      voices: _voices,
+      settings: widget.speechSettings,
+    );
+  }
+
+  /// Reads the answer aloud: every Speak-enabled field holding the answer
+  /// role in this direction, in mask field order.
+  ///
+  /// The one set automatic speech plays at the reveal and `F4` plays on
+  /// demand. It always stops first, so moving to a new unit cuts the previous
+  /// word off instead of queueing behind it, and it abandons itself the
+  /// moment a newer request arrives — hammering Enter must not stack eight
+  /// words on top of each other.
+  ///
+  /// [explain] tells a learner who pressed `F4` which language has no voice.
+  /// Automatic speech passes false: a feature that speaks by itself must not
+  /// also complain by itself, once per unit, for the rest of the session.
+  Future<void> _speakAnswer({required bool explain}) async {
+    final List<SpeechUtterance> utterances = _speechPlan().answerUtterances
+        .toList(growable: false);
+    final int generation = ++_speechGeneration;
+    // Stopped even when this unit says nothing: silence here means silence,
+    // not the previous unit still talking.
+    await widget.speechEngine.stop();
+    bool explained = false;
+    for (final SpeechUtterance utterance in utterances) {
+      if (!mounted || generation != _speechGeneration) {
+        return;
+      }
+      if (!utterance.canBeSpoken) {
+        if (explain && !explained) {
+          explained = true;
+          _explainMissingVoice(utterance);
+        }
+        continue;
+      }
+      await widget.speechEngine.speak(utterance);
+    }
   }
 
   @override
@@ -561,6 +633,15 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
                 return null;
               },
             ),
+            _LearnSpeakAnswerIntent: CallbackAction<_LearnSpeakAnswerIntent>(
+              onInvoke: (_) {
+                // The same set automatic speech plays, whether it is on or
+                // off. Asked for by hand, so a language with no voice says so
+                // rather than leaving the learner wondering.
+                unawaited(_speakAnswer(explain: true));
+                return null;
+              },
+            ),
             _LearnSetupIntent: CallbackAction<_LearnSetupIntent>(
               onInvoke: (_) {
                 _cancelSession();
@@ -683,26 +764,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    // Level Learning at the top of the ladder shows the whole solution to be
-    // memorized, so the answer's value is on screen before any Check.
-    final bool answerShownAsSupport =
-        _isLevelLearning &&
-        _activeLevel == kMaxSupportLevel &&
-        !_level3Memorized;
+    final bool answerShownAsSupport = _answerShownAsSupport;
     // What may be spoken for the unit as it now stands. A host that cannot
     // speak gets the silent plan, so no icon is rendered at all — a disabled
     // one would only offer what the machine cannot do.
-    final SpeechPlan speechPlan = widget.speechEngine.isAvailable
-        ? buildSpeechPlan(
-            deck: widget.deck,
-            unit: widget.deck.units[_currentItem!.unitIndex - 1],
-            direction: _currentItem!.direction,
-            afterCheck: _evaluation != null,
-            answerShown: answerShownAsSupport,
-            voices: _voices,
-            settings: widget.speechSettings,
-          )
-        : SpeechPlan.silent;
+    final SpeechPlan speechPlan = _speechPlan();
     return _SessionView(
       deck: widget.deck,
       statistics: widget.statistics,
@@ -957,6 +1023,16 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
 
   bool get _isLevelLearning =>
       _draftParameters.mode == SessionMode.levelLearning;
+
+  /// Whether the answer's value is on screen as Level-Learning support.
+  ///
+  /// At the top of the ladder the whole solution is shown to be memorized, so
+  /// the answer is visible before any Check — which the field grid, the icons
+  /// and `F4` must all agree about, and do because they read this.
+  bool get _answerShownAsSupport =>
+      _isLevelLearning &&
+      _activeLevel == kMaxSupportLevel &&
+      !_level3Memorized;
 
   /// Whether [level] uses the editable cell scaffold (levels 1 and 2), which
   /// owns its own per-cell focus.
@@ -1262,6 +1338,13 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _rootFocusNode.requestFocus();
     });
+    // Automatic speech reads the answer out here and nowhere else: this is the
+    // one place a unit becomes revealed, and it runs once per unit whatever
+    // the outcome — a mistake is the moment hearing it said properly is worth
+    // most. Cycling the answer view afterwards touches none of this.
+    if (widget.speechSettings.automatic) {
+      unawaited(_speakAnswer(explain: false));
+    }
   }
 
   void _continueShortcut() {
@@ -3497,6 +3580,10 @@ final class _LearnContinueIntent extends Intent {
 
 final class _LearnRevealIntent extends Intent {
   const _LearnRevealIntent();
+}
+
+final class _LearnSpeakAnswerIntent extends Intent {
+  const _LearnSpeakAnswerIntent();
 }
 
 final class _LearnSetupIntent extends Intent {

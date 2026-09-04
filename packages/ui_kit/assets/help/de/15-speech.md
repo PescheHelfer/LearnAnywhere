@@ -7,7 +7,11 @@ Sprache jedes Feld enthält und welche Felder vorgelesen werden dürfen.
 
 Hat ein Feld eine Sprache und die Erlaubnis, gesprochen zu werden, liest ein
 Lautsprecher-Symbol daneben es in einer Lernsitzung vor — siehe
-[Felder vorlesen lassen](#felder-vorlesen-lassen). Welche *Stimme* spricht, entscheidet
+[Felder vorlesen lassen](#felder-vorlesen-lassen). Schalten Sie das automatische
+Vorlesen ein, liest sich die Antwort bei jedem Aufdecken von selbst vor, und `F4` gibt
+sie erneut aus — siehe
+[Die Antwort automatisch vorlesen](#die-antwort-automatisch-vorlesen). Welche *Stimme*
+spricht, entscheidet
 Ihr Rechner, nicht Ihre Lern-Datei; welche seiner Stimmen es sein soll, wählen Sie unter
 [Eine Stimme aussuchen](#eine-stimme-aussuchen). Noch ist nicht alles da: siehe
 [Was noch fehlt](#was-noch-fehlt).
@@ -98,6 +102,48 @@ Zuhören kostet nichts. Es ist nie ein Versuch, bewegt keine
 [Stufenleiter](07-level-learning.md) weder hinauf- noch hinunterbringen. Hören Sie ein
 Wort zehnmal an, wenn es hilft.
 
+## Die Antwort automatisch vorlesen
+
+Für jedes einzelne Wort auf ein Symbol zu klicken, wird schnell mühsam. Setzen Sie unter
+[Eine Stimme aussuchen](#eine-stimme-aussuchen) das Häkchen bei **Antwort automatisch
+vorlesen**, und die Antwort wird vorgelesen, sobald sie aufgedeckt ist — Sie können die
+Maus liegen lassen und weitertippen.
+
+Vorgelesen wird die Antwort und nur die Antwort: jedes Feld, das vorgelesen werden darf
+und in der gefragten Richtung die Rolle Antwort hat, in der Reihenfolge der Maske. Die
+Frage wird nicht vorgelesen — Sie sehen sie die ganze Zeit — und ein Bemerkungs-Feld
+ebenso wenig, denn es ist in beiden Richtungen eine Bemerkung. Bemerkungen behalten ihr
+eigenes Symbol, ein Beispielsatz ist also weiterhin einen Klick entfernt.
+
+Vorgelesen wird, ob Sie richtig lagen, falsch lagen oder ein *Fast* bekommen haben.
+Gerade ein Fehler ist der Moment, in dem es am meisten bringt, das Wort richtig
+ausgesprochen zu hören; nichts wird als Strafe zurückgehalten. Es funktioniert auf jeder
+Stufe des [Stufenlernens](07-level-learning.md) gleich und auch beim blossen Aufdecken
+ohne Tippen.
+
+Drei Einzelheiten, die Ihnen binnen zehn Sekunden auffallen würden, wären sie falsch:
+
+- Vorgelesen wird **einmal** je aufgedeckter Einheit. Das Durchschalten der Antwortansicht
+  mit `F9` wiederholt nichts.
+- Das Aufdecken einer neuen Einheit **bricht** ab, was noch gesprochen wird, statt sich
+  dahinter anzustellen. Wer `Enter` durch zehn Einheiten hält, hört das zehnte Wort und
+  nicht alle zehn übereinander.
+- Eine Einheit ohne etwas zum Vorlesen — kein Antwortfeld mit **Vorlesen**, oder nichts
+  darin geschrieben — bleibt einfach stumm. Es wird nichts gemeldet, und es geht nichts
+  schief.
+
+`F4` liest dasselbe jederzeit erneut vor, ob eingeschaltet oder nicht. Es gibt genau das
+aus, was das automatische Vorlesen ausgibt; so gibt es eine Regel zu lernen und nicht
+zwei. Vor dem Aufdecken gibt es nichts vorzulesen — `F4` kann Ihnen die Lösung nicht
+vorab verraten. Die einzige Ausnahme ist die oberste Stufe der
+[Stufenleiter](07-level-learning.md), wo die Lösung zum Einprägen auf dem Bildschirm
+steht: dort trägt sie ein Symbol, und dort liest `F4` sie ebenfalls vor.
+
+Ist das Häkchen nicht gesetzt, sagt das Programm nie etwas, ohne dass Sie es verlangen —
+per Symbol oder per `F4`. So oder so ist Zuhören nie ein Versuch: Hören Sie ein Wort
+zehnmal an, und Ihre [Statistik](09-statistics.md) und Ihr Platz auf der Stufenleiter
+stehen genau dort, wo sie vorher standen.
+
 ## Wenn nichts gesprochen wird
 
 Eine Stimme gehört zum Rechner, an dem Sie sitzen, nie zur Lern-Datei. Das Programm nimmt
@@ -150,7 +196,12 @@ werden, und in Learn Anywhere ist für eine neue Stimme nichts einzurichten.
 ## Eine Stimme aussuchen
 
 Unter **Optionen ▸ Sprachausgabe...** entscheiden Sie, *welche* Stimme Ihres Computers
-welche Sprache spricht und wie schnell alles vorgelesen wird.
+welche Sprache spricht, wie schnell alles vorgelesen wird und ob die Antwort von selbst
+vorgelesen wird.
+
+**Antwort automatisch vorlesen** steht zuoberst auf dem Bildschirm. Es ist aus, bis Sie
+es einschalten, es wird über Sitzungen hinweg gemerkt, und was es tut, steht unter
+[Die Antwort automatisch vorlesen](#die-antwort-automatisch-vorlesen).
 
 Der Bildschirm zeigt eine Zeile je Sprache: jede Sprache, die die Maske der geöffneten
 Lern-Datei verwendet, sowie jede, für die Sie bereits eine Stimme gewählt haben — eine
@@ -203,10 +254,6 @@ Stimmennamen des einen Rechners auf einen anderen trägt, trüge etwas Bedeutung
 sich herum.
 
 ## Was noch fehlt
-
-Vorgelesen wird auf Anforderung, Feld für Feld, per Klick auf das Symbol. Die Antwort
-beim Aufdecken automatisch vorlesen zu lassen und eine Taste, die das wiederholt, kommen
-noch.
 
 Die Sprachausgabe läuft unter **Windows**. **Linux** hat keine — dort erscheint gar kein
 Lautsprecher-Symbol, statt eines, das beim Klicken nichts täte, und **Optionen ▸

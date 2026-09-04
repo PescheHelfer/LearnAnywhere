@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
@@ -604,6 +607,101 @@ void main() {
     });
   });
 
+  group('speaking through the host', () {
+    const SpeechVoice french = SpeechVoice(
+      id: 'Microsoft Hortense',
+      name: 'Microsoft Hortense',
+      language: 'fr-FR',
+    );
+    const SpeechUtterance first = SpeechUtterance(
+      fieldId: 0,
+      text: 'anniversaire',
+      language: 'fr-FR',
+      voice: french,
+    );
+    const SpeechUtterance second = SpeechUtterance(
+      fieldId: 1,
+      text: 'maison',
+      language: 'fr-FR',
+      voice: french,
+    );
+
+    test('a second utterance waits for the first to be over', () async {
+      final _FakeFlutterTts host = _FakeFlutterTts();
+      final FlutterTtsEngine engine = FlutterTtsEngine(tts: host);
+
+      // What reading a two-field answer does: one after the other, awaited.
+      final Future<void> sequence = Future<void>(() async {
+        await engine.speak(first);
+        await engine.speak(second);
+      });
+      await pumpEventQueue();
+      // The second has not started: without this the first would be cut off
+      // and only the last field of an answer would ever be heard.
+      expect(host.spoken, <String>['anniversaire']);
+
+      host.reportComplete();
+      await pumpEventQueue();
+      expect(host.spoken, <String>['anniversaire', 'maison']);
+
+      host.reportComplete();
+      await sequence;
+    });
+
+    test('an utterance the host refuses does not stall the next one', () async {
+      // The plugin answers 0 when it will not speak. No completion is ever
+      // reported for one of those, so waiting on it would wedge the sequence.
+      final _FakeFlutterTts host = _FakeFlutterTts()..accepts = 0;
+      final FlutterTtsEngine engine = FlutterTtsEngine(tts: host);
+
+      await Future<void>(() async {
+        await engine.speak(first);
+        await engine.speak(second);
+      }).timeout(const Duration(seconds: 5));
+      expect(host.spoken, <String>['anniversaire', 'maison']);
+    });
+
+    test('stop ends the wait for what was being said', () async {
+      final _FakeFlutterTts host = _FakeFlutterTts();
+      final FlutterTtsEngine engine = FlutterTtsEngine(tts: host);
+
+      final Future<void> speaking = engine.speak(first);
+      await pumpEventQueue();
+      // A host that reports no cancel of its own must not leave the caller
+      // waiting on a word that is no longer being said.
+      await engine.stop();
+      await speaking.timeout(const Duration(seconds: 5));
+    });
+
+    test('a cancel report from the utterance being replaced does not end its '
+        'successor', () async {
+      final _FakeFlutterTts host = _FakeFlutterTts();
+      final FlutterTtsEngine engine = FlutterTtsEngine(tts: host);
+
+      final Future<void> speaking = engine.speak(first);
+      await pumpEventQueue();
+
+      // The next request stops the host on its way in, and the host reports
+      // that cancel while the new utterance is still being set up.
+      host.onSetVoice = host.reportCancel;
+      final Future<void> next = engine.speak(second);
+      await pumpEventQueue();
+      await speaking;
+
+      bool ended = false;
+      unawaited(next.then((_) => ended = true));
+      await pumpEventQueue();
+      expect(
+        ended,
+        isFalse,
+        reason: 'the cancel belonged to the utterance being replaced',
+      );
+
+      host.reportComplete();
+      await next.timeout(const Duration(seconds: 5));
+    });
+  });
+
   group('speech rate', () {
     test('normal speed lands on the plugin scale\'s own normal', () {
       // The plugin takes 0.0..1.0 and treats 0.5 as the voice's normal speed
@@ -774,4 +872,59 @@ final class _LocalizationProbe extends StatelessWidget {
       ).message(LearnAnywhereMessage.learnPrompt),
     );
   }
+}
+
+/// A `FlutterTts` that answers the way the plugin does, with no host behind it.
+///
+/// The completion, cancel and error reports arrive when a test says they do,
+/// which is what makes the engine's timing — one utterance at a time, in mask
+/// order — testable with no audio.
+final class _FakeFlutterTts extends FlutterTts {
+  /// What [speak] answers: 1 takes the utterance on, anything else refuses it.
+  Object accepts = 1;
+
+  /// Run while the voice is being set, to report something mid-setup.
+  VoidCallback? onSetVoice;
+
+  /// Every text handed over, in order.
+  final List<String> spoken = <String>[];
+
+  VoidCallback? _completion;
+  VoidCallback? _cancel;
+
+  /// The host reporting that the utterance is over.
+  void reportComplete() => _completion?.call();
+
+  /// The host reporting that the utterance was cut off.
+  void reportCancel() => _cancel?.call();
+
+  @override
+  void setCompletionHandler(VoidCallback callback) => _completion = callback;
+
+  @override
+  void setCancelHandler(VoidCallback callback) => _cancel = callback;
+
+  @override
+  void setErrorHandler(ErrorHandler handler) {}
+
+  @override
+  Future<dynamic> setSpeechRate(double rate) async => 1;
+
+  @override
+  Future<dynamic> setLanguage(String language) async => 1;
+
+  @override
+  Future<dynamic> setVoice(Map<String, String> voice) async {
+    onSetVoice?.call();
+    return 1;
+  }
+
+  @override
+  Future<dynamic> speak(String text, {bool focus = false}) async {
+    spoken.add(text);
+    return accepts;
+  }
+
+  @override
+  Future<dynamic> stop() async => 1;
 }

@@ -67,6 +67,7 @@ See [The unit editor](04-unit-editor.md) for what each of these does in detail.
 | Key | Action |
 |---|---|
 | `F3` or `Enter` | Check answer / Continue |
+| `F4` | Read the answer aloud again |
 | `F5` | Rating button 1 |
 | `F6` | Rating button 2 |
 | `F7` | Rating button 3 |
@@ -82,6 +83,11 @@ See [Learning sessions](06-learning-sessions.md),
 [Level learning](07-level-learning.md), and
 [How answers are judged](08-answer-evaluation.md#rating-the-attempt) for what each
 rating button means in a given situation.
+
+`F4` plays exactly what automatic speech plays — the answer fields that may be read
+aloud — whether automatic speech is switched on or not, and says nothing before the
+answer is revealed. See
+[Reading the answer automatically](15-speech.md#reading-the-answer-automatically).
 
 ## Options and Mask Editor
 

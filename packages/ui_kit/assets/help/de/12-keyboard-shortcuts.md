@@ -71,6 +71,7 @@ Was jede dieser Tasten im Einzelnen bewirkt, steht in
 | Taste | Aktion |
 |---|---|
 | `F3` oder `Enter` | Antwort prüfen / Weiter |
+| `F4` | Antwort erneut vorlesen |
 | `F5` | Bewertungsschaltfläche 1 |
 | `F6` | Bewertungsschaltfläche 2 |
 | `F7` | Bewertungsschaltfläche 3 |
@@ -85,6 +86,11 @@ Was jede dieser Tasten im Einzelnen bewirkt, steht in
 Was jede Bewertungsschaltfläche in einer gegebenen Situation bedeutet, steht in
 [Lernsitzungen](06-learning-sessions.md), [Stufenlernen](07-level-learning.md) und
 [Wie Antworten bewertet werden](08-answer-evaluation.md#den-versuch-bewerten).
+
+`F4` gibt genau das aus, was das automatische Vorlesen ausgibt — die Antwortfelder, die
+vorgelesen werden dürfen —, ob das automatische Vorlesen eingeschaltet ist oder nicht,
+und sagt vor dem Aufdecken nichts. Siehe
+[Die Antwort automatisch vorlesen](15-speech.md#die-antwort-automatisch-vorlesen).
 
 ## Optionen und Mask Editor
 

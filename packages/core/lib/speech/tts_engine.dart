@@ -108,6 +108,10 @@ abstract interface class TtsEngine {
 
   /// Says [utterance] in its resolved voice, cutting off anything still being
   /// said.
+  ///
+  /// Completes when the utterance is over, as far as the host reports it, so
+  /// awaiting one before starting the next is how several fields are read in
+  /// order rather than on top of each other.
   Future<void> speak(SpeechUtterance utterance);
 
   /// Stops whatever is being said, if anything.

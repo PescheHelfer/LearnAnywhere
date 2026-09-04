@@ -313,6 +313,11 @@ void main() {
     await tester.tap(find.text('Speech...').last);
     await tester.pumpAndSettle();
     expect(find.text('Speech rate'), findsOneWidget);
+    expect(find.text('Read the answer aloud automatically'), findsOneWidget);
+    // The screen scrolls: on the test surface the Close button sits below the
+    // language rows and is not built until it is scrolled to.
+    await tester.drag(find.byType(ListView), const Offset(0, -400));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
 

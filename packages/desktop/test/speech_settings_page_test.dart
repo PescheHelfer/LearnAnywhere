@@ -281,6 +281,48 @@ void main() {
     expect(engine.spoken.single.rate, settings().rate);
   });
 
+  testWidgets('the automatic-speech switch starts off and is stored when it '
+      'is turned on', (WidgetTester tester) async {
+    final SpeechSettings Function() settings = await pumpScreen(
+      tester,
+      engine: _RecordingTtsEngine(const <SpeechVoice>[hortense]),
+    );
+
+    expect(settings().automatic, isFalse);
+    expect(
+      tester.widget<Checkbox>(find.byKey(const Key('speechAutomatic'))).value,
+      isFalse,
+    );
+
+    await tester.tap(find.byKey(const Key('speechAutomatic')));
+    await tester.pumpAndSettle();
+    expect(settings().automatic, isTrue);
+
+    // And back off again, without disturbing anything else on the screen.
+    await tester.tap(find.byKey(const Key('speechAutomatic')));
+    await tester.pumpAndSettle();
+    expect(settings().automatic, isFalse);
+    expect(settings().rate, kDefaultSpeechRate);
+  });
+
+  testWidgets('choosing a voice leaves automatic speech switched on', (
+    WidgetTester tester,
+  ) async {
+    final SpeechSettings Function() settings = await pumpScreen(
+      tester,
+      engine: _RecordingTtsEngine(const <SpeechVoice>[hortense]),
+      initial: const SpeechSettings(automatic: true),
+    );
+
+    await tester.tap(find.byKey(const Key('speechVoice-fr-FR')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Microsoft Hortense').last);
+    await tester.pumpAndSettle();
+
+    expect(settings().voiceFor('fr-FR')?.voiceId, 'Microsoft Hortense');
+    expect(settings().automatic, isTrue);
+  });
+
   testWidgets('neither end of the zoom range runs off the edge', (
     WidgetTester tester,
   ) async {

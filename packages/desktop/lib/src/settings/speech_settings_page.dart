@@ -122,6 +122,32 @@ final class _SpeechSettingsPageState extends State<SpeechSettingsPage> {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: LearnAnywhereTokens.gapLarge),
+          // The one switch that lets the program speak unasked, so it sits
+          // above the rate: what is said before how fast.
+          Row(
+            children: <Widget>[
+              Checkbox(
+                key: const Key('speechAutomatic'),
+                value: widget.settings.automatic,
+                onChanged: (bool? value) {
+                  widget.onChanged(
+                    widget.settings.copyWith(automatic: value ?? false),
+                  );
+                },
+              ),
+              Expanded(
+                child: Text(
+                  messages.message(LearnAnywhereMessage.speechAutomaticLabel),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            messages.message(LearnAnywhereMessage.speechAutomaticHint),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapLarge),
           _RateControl(
             rate: widget.settings.rate,
             onChanged: (double value) {

@@ -20,13 +20,22 @@ import 'tts_engine.dart';
 ///
 /// One [SpeechUtterance] per field that offers speech, in the order the mask
 /// declares its fields, and [iconFieldIds] naming the same fields.
+/// [answerUtterances] is the subset that reads the answer — what automatic
+/// speech plays at the reveal and what `F4` plays on demand, which are one
+/// set and not two.
 final class SpeechPlan {
   /// Creates a plan from [utterances], one per field offering speech.
-  SpeechPlan(List<SpeechUtterance> utterances)
-    : _byFieldId = Map<int, SpeechUtterance>.unmodifiable(<int, SpeechUtterance>{
-        for (final SpeechUtterance utterance in utterances)
-          utterance.fieldId: utterance,
-      });
+  ///
+  /// [answerFieldIds] names those of them holding the answer role in the
+  /// direction the plan was built for.
+  SpeechPlan(
+    List<SpeechUtterance> utterances, {
+    Iterable<int> answerFieldIds = const <int>[],
+  }) : _byFieldId = Map<int, SpeechUtterance>.unmodifiable(<int, SpeechUtterance>{
+         for (final SpeechUtterance utterance in utterances)
+           utterance.fieldId: utterance,
+       }),
+       _answerFieldIds = Set<int>.unmodifiable(answerFieldIds);
 
   /// The plan for a host that cannot speak, or a unit with nothing to say.
   static final SpeechPlan silent = SpeechPlan(const <SpeechUtterance>[]);
@@ -36,11 +45,28 @@ final class SpeechPlan {
   // about which fields those are.
   final Map<int, SpeechUtterance> _byFieldId;
 
+  // Which of those fields hold the answer role. Kept as ids rather than as a
+  // second list so the answer set is a FILTER over the one list above and can
+  // never name an utterance the plan does not have.
+  final Set<int> _answerFieldIds;
+
   /// What can be said, in mask field order.
   Iterable<SpeechUtterance> get utterances => _byFieldId.values;
 
   /// The fields carrying a speaker icon — exactly those with an utterance.
   Iterable<int> get iconFieldIds => _byFieldId.keys;
+
+  /// What reads the answer, in mask field order.
+  ///
+  /// Automatic speech plays this at the reveal and `F4` plays it on demand:
+  /// one rule for both. A field holding the remark role in both directions is
+  /// therefore never played automatically however loudly its `speak` flag is
+  /// set — it stays available through its own icon, which is intended.
+  Iterable<SpeechUtterance> get answerUtterances =>
+      _byFieldId.values.where(
+        (SpeechUtterance utterance) =>
+            _answerFieldIds.contains(utterance.fieldId),
+      );
 
   /// The utterance for the field with [fieldId], or null when that field
   /// offers no speech in the current state.
@@ -77,6 +103,7 @@ SpeechPlan buildSpeechPlan({
 }) {
   final CategoryDefinition category = deck.categoryForUnit(unit);
   final List<SpeechUtterance> utterances = <SpeechUtterance>[];
+  final Set<int> answerFieldIds = <int>{};
   for (final FieldDefinition field in category.fields) {
     if (!field.speak || field.language == noSpokenLanguage) {
       continue;
@@ -93,6 +120,9 @@ SpeechPlan buildSpeechPlan({
     // An icon over an empty field would be an icon that does nothing.
     if (value.isBlank) {
       continue;
+    }
+    if (field.roleFor(direction) == FieldRole.answer) {
+      answerFieldIds.add(field.id);
     }
     utterances.add(
       SpeechUtterance(
@@ -111,7 +141,7 @@ SpeechPlan buildSpeechPlan({
       ),
     );
   }
-  return SpeechPlan(utterances);
+  return SpeechPlan(utterances, answerFieldIds: answerFieldIds);
 }
 
 /// The installed voice that should speak [language], or null when none should.

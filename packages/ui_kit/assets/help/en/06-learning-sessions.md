@@ -65,6 +65,10 @@ allows the field to be spoken and its value is on screen — so the prompt can b
 straight away, and the answer once you have checked. See
 [Speech](15-speech.md#hearing-a-field).
 
+With **automatic speech** switched on, the answer reads itself out at every reveal,
+right or wrong, and `F4` reads it again whenever you want it — see
+[Reading the answer automatically](15-speech.md#reading-the-answer-automatically).
+
 A live panel tracks **Attempts**, **Mastered**, **Remaining**, **Accuracy**, the current
 unit's own accuracy, and — if enabled in
 [Settings](11-settings.md#learning-options) — elapsed **Time**.

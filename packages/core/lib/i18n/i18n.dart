@@ -252,6 +252,12 @@ enum LearnAnywhereMessage {
   /// Lead paragraph of the Speech screen.
   speechSettingsIntro,
 
+  /// Label of the automatic-speech checkbox.
+  speechAutomaticLabel,
+
+  /// Explanation under the automatic-speech checkbox.
+  speechAutomaticHint,
+
   /// Label of the speech-rate control.
   speechRateLabel,
 
@@ -1497,6 +1503,11 @@ final class LearnAnywhereCatalog {
           'your decks, so nothing here travels with a deck you copy. The '
           'languages listed are the ones the open deck uses, plus any you '
           'have already chosen a voice for.',
+      LearnAnywhereMessage.speechAutomaticLabel:
+          'Read the answer aloud automatically',
+      LearnAnywhereMessage.speechAutomaticHint:
+          'The answer is read out the moment it is revealed, right or wrong. '
+          'F4 reads it again at any time, whether this is switched on or not.',
       LearnAnywhereMessage.speechRateLabel: 'Speech rate',
       LearnAnywhereMessage.speechRateValue: '{percent}% of normal speed',
       LearnAnywhereMessage.speechRateHint:
@@ -2124,6 +2135,12 @@ final class LearnAnywhereCatalog {
           'nicht zu Ihren Decks; nichts davon wandert mit einem kopierten Deck '
           'mit. Aufgeführt sind die Sprachen des geöffneten Decks sowie '
           'jede, für die Sie bereits eine Stimme gewählt haben.',
+      LearnAnywhereMessage.speechAutomaticLabel:
+          'Antwort automatisch vorlesen',
+      LearnAnywhereMessage.speechAutomaticHint:
+          'Die Antwort wird vorgelesen, sobald sie aufgedeckt ist — richtig '
+          'oder falsch. F4 liest sie jederzeit erneut vor, ob dies '
+          'eingeschaltet ist oder nicht.',
       LearnAnywhereMessage.speechRateLabel: 'Sprechtempo',
       LearnAnywhereMessage.speechRateValue: '{percent}% der normalen '
           'Geschwindigkeit',

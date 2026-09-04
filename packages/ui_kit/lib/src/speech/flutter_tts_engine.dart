@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:learn_anywhere_core/core.dart';
@@ -13,9 +15,46 @@ import 'package:learn_anywhere_core/core.dart';
 /// the shell selects [UnavailableTtsEngine] there instead.
 final class FlutterTtsEngine implements TtsEngine {
   /// Creates an engine over [tts], or over a fresh `FlutterTts`.
-  FlutterTtsEngine({FlutterTts? tts}) : _tts = tts ?? FlutterTts();
+  FlutterTtsEngine({FlutterTts? tts}) : _tts = tts ?? FlutterTts() {
+    // The host tells us when a word is over, and [speak] does not return
+    // before then. That is what lets a caller reading two answer fields say
+    // them in order: without it the second would cut off the first, and only
+    // the last field of a multi-field answer would ever be heard.
+    _tts.setCompletionHandler(_hostFinished);
+    _tts.setCancelHandler(_hostFinished);
+    _tts.setErrorHandler((dynamic _) => _hostFinished());
+  }
+
+  /// How long an utterance may run before it is given up on.
+  ///
+  /// Purely insurance: a host that never reports a completion would otherwise
+  /// leave the rest of a multi-field answer unsaid until something else stops
+  /// speech. Longer than any single field read at the slowest rate.
+  static const Duration _utteranceLimit = Duration(seconds: 60);
+
+  /// What the plugin answers when it has taken an utterance on. Anything else
+  /// is a refusal, and no completion will ever be reported for it.
+  static const Object _accepted = 1;
 
   final FlutterTts _tts;
+
+  /// The utterance the host is speaking, or null when it is saying nothing.
+  ///
+  /// One at a time by construction: a new request replaces this one, and the
+  /// replaced request gives up rather than speaking over its successor.
+  _SpokenRequest? _current;
+
+  /// The host reporting that what it was saying is over, one way or another.
+  void _hostFinished() {
+    final _SpokenRequest? request = _current;
+    // Only ever the utterance actually handed to the host: a cancel report
+    // arriving while the NEXT request is still being set up belongs to the one
+    // being replaced, and must not end the new one before it has begun.
+    if (request != null && request.issued) {
+      _current = null;
+      request.finish();
+    }
+  }
 
   @override
   bool get isAvailable => true;
@@ -47,7 +86,13 @@ final class FlutterTtsEngine implements TtsEngine {
     if (voice == null || utterance.text.isEmpty) {
       return;
     }
-    await _ask(() async {
+    // Claimed before the first await, so a request arriving while this one is
+    // still being set up wins and this one gives up. Whoever was waiting on
+    // the utterance being replaced stops waiting here.
+    final _SpokenRequest request = _SpokenRequest();
+    _current?.finish();
+    _current = request;
+    final Object? accepted = await _ask(() async {
       // Cut off whatever is still being said: two words on top of each other
       // are worth less than either of them alone.
       await _tts.stop();
@@ -59,13 +104,43 @@ final class FlutterTtsEngine implements TtsEngine {
         'name': voice.id,
         'locale': voice.language,
       });
+      // Handed over here, and marked as handed over here: the stop above has
+      // already been answered, so every report that follows is about this
+      // utterance and not about the one it replaced.
+      request.issued = true;
       return await _tts.speak(utterance.text);
     });
+    if (!identical(_current, request)) {
+      // Replaced while the host was being set up. The utterance that replaced
+      // it owns the voice now, and stopped this one on its way in.
+      return;
+    }
+    if (accepted != _accepted) {
+      // The host refused it, so no completion will ever arrive. Waiting for
+      // one would only stall whatever comes next.
+      _current = null;
+      return;
+    }
+    try {
+      await request.done.timeout(_utteranceLimit);
+    } on TimeoutException {
+      // A host that reported no completion. Nothing is broken and nothing is
+      // said about it; the next utterance simply goes ahead.
+    } finally {
+      if (identical(_current, request)) {
+        _current = null;
+      }
+    }
   }
 
   @override
   Future<void> stop() async {
+    final _SpokenRequest? request = _current;
+    _current = null;
     await _ask(() => _tts.stop());
+    // Not left to the host's own cancel report: a host that sends none would
+    // leave a caller waiting on a word that is no longer being said.
+    request?.finish();
   }
 
   /// Translates an app speech rate into the number the plugin takes.
@@ -96,6 +171,28 @@ final class FlutterTtsEngine implements TtsEngine {
       return null;
     } on MissingPluginException {
       return null;
+    }
+  }
+}
+
+/// One utterance handed to the host, and the wait for it to be over.
+///
+/// [issued] separates a request the host has actually been asked to speak from
+/// one still being set up, which is what tells a completion report from the
+/// previous utterance apart from one belonging to this one.
+final class _SpokenRequest {
+  final Completer<void> _done = Completer<void>();
+
+  /// Whether the host has been handed this utterance yet.
+  bool issued = false;
+
+  /// Completes when the utterance is over, cancelled or refused.
+  Future<void> get done => _done.future;
+
+  /// Ends the wait, once.
+  void finish() {
+    if (!_done.isCompleted) {
+      _done.complete();
     }
   }
 }

@@ -72,9 +72,17 @@ final class SpeechSettings {
   /// [voices] is keyed by canonical spoken-language tag; use [withVoice] to
   /// build one, which canonicalises the key for you.
   const SpeechSettings({
+    this.automatic = false,
     this.rate = kDefaultSpeechRate,
     this.voices = const <String, VoiceChoice>{},
   });
+
+  /// Whether the answer is read aloud the moment it is revealed.
+  ///
+  /// Off by default, and the one switch that makes the program speak without
+  /// being asked: with it off nothing is ever said unless the learner clicks
+  /// an icon or presses the replay key.
+  final bool automatic;
 
   /// Speech speed as a share of the voice's own normal speed, between
   /// [kMinSpeechRate] and [kMaxSpeechRate].
@@ -100,17 +108,31 @@ final class SpeechSettings {
     } else {
       next[tag] = choice;
     }
-    return SpeechSettings(rate: rate, voices: Map<String, VoiceChoice>.unmodifiable(next));
+    return SpeechSettings(
+      automatic: automatic,
+      rate: rate,
+      voices: Map<String, VoiceChoice>.unmodifiable(next),
+    );
   }
 
   /// Returns a copy with selected fields changed.
-  SpeechSettings copyWith({double? rate, Map<String, VoiceChoice>? voices}) {
-    return SpeechSettings(rate: rate ?? this.rate, voices: voices ?? this.voices);
+  SpeechSettings copyWith({
+    bool? automatic,
+    double? rate,
+    Map<String, VoiceChoice>? voices,
+  }) {
+    return SpeechSettings(
+      automatic: automatic ?? this.automatic,
+      rate: rate ?? this.rate,
+      voices: voices ?? this.voices,
+    );
   }
 
   @override
   bool operator ==(Object other) {
-    if (other is! SpeechSettings || other.rate != rate) {
+    if (other is! SpeechSettings ||
+        other.automatic != automatic ||
+        other.rate != rate) {
       return false;
     }
     if (other.voices.length != voices.length) {
@@ -126,6 +148,7 @@ final class SpeechSettings {
 
   @override
   int get hashCode => Object.hash(
+    automatic,
     rate,
     Object.hashAllUnordered(<Object>[
       for (final MapEntry<String, VoiceChoice> entry in voices.entries)
@@ -137,6 +160,7 @@ final class SpeechSettings {
 /// Encodes [settings] as the settings file's `speech` object.
 Map<String, Object?> encodeSpeechSettings(SpeechSettings settings) {
   return <String, Object?>{
+    'automatic': settings.automatic,
     'rate': settings.rate,
     'voices': <String, Object?>{
       for (final MapEntry<String, VoiceChoice> entry in settings.voices.entries)
@@ -158,6 +182,7 @@ SpeechSettings decodeSpeechSettings(Object? value) {
   if (value is! Map) {
     return const SpeechSettings();
   }
+  final Object? automatic = value['automatic'];
   final Object? rate = value['rate'];
   final Object? voices = value['voices'];
   final Map<String, VoiceChoice> choices = <String, VoiceChoice>{};
@@ -188,6 +213,9 @@ SpeechSettings decodeSpeechSettings(Object? value) {
     }
   }
   return SpeechSettings(
+    // Anything but a plain true leaves it off: the program speaking of its own
+    // accord is the one thing a half-readable settings file must not turn on.
+    automatic: automatic is bool && automatic,
     rate: rate is num ? clampSpeechRate(rate.toDouble()) : kDefaultSpeechRate,
     voices: Map<String, VoiceChoice>.unmodifiable(choices),
   );

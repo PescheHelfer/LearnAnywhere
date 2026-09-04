@@ -119,6 +119,58 @@ void main() {
     });
   });
 
+  group('the automatic-speech switch', () {
+    test('starts off, so a program that never spoke stays silent', () {
+      expect(const SpeechSettings().automatic, isFalse);
+    });
+
+    test('survives a round trip through JSON', () {
+      const SpeechSettings settings = SpeechSettings(
+        automatic: true,
+        rate: 0.8,
+      );
+      expect(decodeSpeechSettings(encodeSpeechSettings(settings)), settings);
+      expect(
+        decodeSpeechSettings(encodeSpeechSettings(settings)).automatic,
+        isTrue,
+      );
+    });
+
+    test('is carried through withVoice and copyWith', () {
+      const SpeechSettings on = SpeechSettings(automatic: true);
+      const VoiceChoice hortenseChoice = VoiceChoice(
+        engine: kSystemSpeechEngineId,
+        voiceId: 'Hortense',
+      );
+      // Choosing a voice must not switch speech off behind the learner's back.
+      expect(on.withVoice('fr-FR', hortenseChoice).automatic, isTrue);
+      expect(on.copyWith(rate: 0.6).automatic, isTrue);
+      expect(on.copyWith(automatic: false).automatic, isFalse);
+    });
+
+    test('takes part in equality', () {
+      expect(
+        const SpeechSettings(automatic: true),
+        isNot(const SpeechSettings()),
+      );
+      expect(
+        const SpeechSettings(automatic: true),
+        const SpeechSettings(automatic: true),
+      );
+    });
+
+    test('a missing or unreadable value leaves it off', () {
+      expect(
+        decodeSpeechSettings(<String, Object?>{'rate': 0.9}).automatic,
+        isFalse,
+      );
+      expect(
+        decodeSpeechSettings(<String, Object?>{'automatic': 'yes'}).automatic,
+        isFalse,
+      );
+    });
+  });
+
   group('decoding tolerates what it does not understand', () {
     test('anything that is not a map yields the defaults', () {
       expect(decodeSpeechSettings(null), const SpeechSettings());

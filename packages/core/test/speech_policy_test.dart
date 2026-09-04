@@ -332,6 +332,163 @@ void main() {
     });
   });
 
+  group('the answer set — what automatic speech and F4 both play', () {
+    const FieldDefinition frenchRemark = FieldDefinition(
+      id: 2,
+      name: 'Example',
+      length: 60,
+      equalGroup: 0,
+      role1: FieldRole.remark,
+      role2: FieldRole.remark,
+      language: 'fr-FR',
+      speak: true,
+    );
+
+    LearningDeck threeFieldDeck() => deckOf(
+      <FieldDefinition>[frenchQuestion, germanAnswer, frenchRemark],
+      <int, FieldValue>{
+        0: const FieldValue.plain('anniversaire'),
+        1: const FieldValue.plain('Geburtstag'),
+        2: const FieldValue.plain('Bon anniversaire!'),
+      },
+    );
+
+    test('is exactly the Speak-enabled fields holding the answer role', () {
+      final LearningDeck deck = threeFieldDeck();
+
+      final SpeechPlan plan = buildSpeechPlan(
+        deck: deck,
+        unit: deck.units.single,
+        direction: QueryDirection.direction1,
+        afterCheck: true,
+        voices: const <SpeechVoice>[french, german],
+      );
+      // The question is on screen already and the remark holds the remark
+      // role in BOTH directions, so neither is ever played automatically —
+      // both keep their icon.
+      expect(plan.iconFieldIds, <int>[0, 1, 2]);
+      expect(
+        plan.answerUtterances.map((SpeechUtterance u) => u.fieldId),
+        <int>[1],
+      );
+    });
+
+    test('follows the direction: the other field answers in direction 2', () {
+      final LearningDeck deck = threeFieldDeck();
+
+      expect(
+        buildSpeechPlan(
+          deck: deck,
+          unit: deck.units.single,
+          direction: QueryDirection.direction2,
+          afterCheck: true,
+          voices: const <SpeechVoice>[french, german],
+        ).answerUtterances.map((SpeechUtterance u) => u.text),
+        <String>['anniversaire'],
+      );
+    });
+
+    test('is empty before the answer is revealed', () {
+      final LearningDeck deck = threeFieldDeck();
+
+      expect(
+        buildSpeechPlan(
+          deck: deck,
+          unit: deck.units.single,
+          direction: QueryDirection.direction1,
+          afterCheck: false,
+          voices: const <SpeechVoice>[french, german],
+        ).answerUtterances,
+        isEmpty,
+      );
+    });
+
+    test('holds an answer shown as Level-Learning support', () {
+      final LearningDeck deck = threeFieldDeck();
+
+      expect(
+        buildSpeechPlan(
+          deck: deck,
+          unit: deck.units.single,
+          direction: QueryDirection.direction1,
+          afterCheck: false,
+          answerShown: true,
+          voices: const <SpeechVoice>[french, german],
+        ).answerUtterances.map((SpeechUtterance u) => u.fieldId),
+        <int>[1],
+      );
+    });
+
+    test('runs in mask field order, not answer-role order', () {
+      const FieldDefinition secondAnswer = FieldDefinition(
+        id: 3,
+        name: 'German 2',
+        length: 40,
+        equalGroup: 0,
+        role1: FieldRole.answer,
+        role2: FieldRole.question,
+        language: 'de-DE',
+        speak: true,
+      );
+      // Declared second-answer-first, so an implementation reading roles in
+      // any other order than the mask's would show up here.
+      final LearningDeck deck = deckOf(
+        <FieldDefinition>[secondAnswer, frenchQuestion, germanAnswer],
+        <int, FieldValue>{
+          0: const FieldValue.plain('anniversaire'),
+          1: const FieldValue.plain('Geburtstag'),
+          3: const FieldValue.plain('Wiegenfest'),
+        },
+      );
+
+      expect(
+        buildSpeechPlan(
+          deck: deck,
+          unit: deck.units.single,
+          direction: QueryDirection.direction1,
+          afterCheck: true,
+          voices: const <SpeechVoice>[french, german],
+        ).answerUtterances.map((SpeechUtterance u) => u.text),
+        <String>['Wiegenfest', 'Geburtstag'],
+      );
+    });
+
+    test('is empty when no answer field may be spoken', () {
+      const FieldDefinition mutedAnswer = FieldDefinition(
+        id: 1,
+        name: 'German',
+        length: 40,
+        equalGroup: 0,
+        role1: FieldRole.answer,
+        role2: FieldRole.question,
+        language: 'de-DE',
+      );
+      final LearningDeck deck = deckOf(
+        <FieldDefinition>[frenchQuestion, mutedAnswer],
+        <int, FieldValue>{
+          0: const FieldValue.plain('anniversaire'),
+          1: const FieldValue.plain('Geburtstag'),
+        },
+      );
+
+      final SpeechPlan plan = buildSpeechPlan(
+        deck: deck,
+        unit: deck.units.single,
+        direction: QueryDirection.direction1,
+        afterCheck: true,
+        voices: const <SpeechVoice>[french, german],
+      );
+      expect(plan.answerUtterances, isEmpty);
+      // The question is still on offer through its own icon.
+      expect(plan.iconFieldIds, <int>[0]);
+    });
+
+    test('the silent plan has neither icons nor an answer set', () {
+      expect(SpeechPlan.silent.iconFieldIds, isEmpty);
+      expect(SpeechPlan.silent.answerUtterances, isEmpty);
+    });
+  });
+
   group('what is said', () {
     test('the spoken text is the plain text of the value, verbatim', () {
       final LearningDeck deck = deckOf(

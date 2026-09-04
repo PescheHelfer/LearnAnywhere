@@ -69,6 +69,11 @@ Ein kleines Lautsprecher-Symbol neben einem Feld liest dieses Feld vor. Es ersch
 Bildschirm steht — die Frage also sofort, die Antwort nach dem Prüfen. Siehe
 [Sprachausgabe](15-speech.md#felder-vorlesen-lassen).
 
+Ist das **automatische Vorlesen** eingeschaltet, liest sich die Antwort bei jedem
+Aufdecken selbst vor, richtig oder falsch, und `F4` liest sie erneut vor, wann immer Sie
+wollen — siehe
+[Die Antwort automatisch vorlesen](15-speech.md#die-antwort-automatisch-vorlesen).
+
 Eine Live-Anzeige verfolgt **Versuche**, **Beherrscht**, **Übrig**, **Korrekt**, die
 Trefferquote der aktuellen Einheit sowie — falls in den
 [Einstellungen](11-settings.md#lernoptionen) eingeschaltet — die verstrichene **Zeit**.

@@ -5,9 +5,11 @@ word you can only read is a word you cannot say. Speech starts in the mask: you 
 language each field holds, and which fields may be read aloud.
 
 Once a field has a language and permission to be spoken, a speaker icon beside it in a
-learning session reads it aloud — see [Hearing a field](#hearing-a-field). What decides
-the *voice* is your computer, not your deck, and you pick which of its voices to use
-under [Choosing a voice](#choosing-a-voice). Not everything is here yet: see
+learning session reads it aloud — see [Hearing a field](#hearing-a-field). Switch on
+automatic speech and the answer reads itself out at every reveal, with `F4` to hear it
+again — see [Reading the answer automatically](#reading-the-answer-automatically). What
+decides the *voice* is your computer, not your deck, and you pick which of its voices to
+use under [Choosing a voice](#choosing-a-voice). Not everything is here yet: see
 [What is not there yet](#what-is-not-there-yet).
 
 ## Where speech is set
@@ -92,6 +94,46 @@ Listening costs you nothing. It is never an attempt, it moves no
 [statistics](09-statistics.md), and it cannot move you up or down the
 [level ladder](07-level-learning.md). Play a word ten times if it helps.
 
+## Reading the answer automatically
+
+Clicking an icon for every single word gets old. Tick **Read the answer aloud
+automatically** under [Choosing a voice](#choosing-a-voice) and the answer is read out
+the moment it is revealed — you can leave the mouse alone and keep typing.
+
+What is read is the answer and only the answer: every field that may be spoken and holds
+the answer role in the direction you are being asked in, in the order the mask lists
+them. The question is not read out — you have been looking at it all along — and neither
+is a remark field, which is a remark in both directions. Remarks keep their own icon, so
+an example sentence is still one click away when you want it.
+
+It is read whether you got it right, got it wrong, or were told it was *Almost*. A
+mistake is precisely the moment hearing the word said properly is worth most, so nothing
+is held back as a penalty. It works the same way at every
+[level-learning](07-level-learning.md) level, and on a plain reveal when you are not
+typing at all.
+
+Three details you would notice within ten seconds if they were wrong:
+
+- The answer is read **once** per revealed unit. Cycling the answer view with `F9` does
+  not make it repeat.
+- Revealing a new unit **cuts off** whatever is still being said instead of queueing
+  behind it. Holding `Enter` through ten units leaves you hearing the tenth word, not all
+  ten on top of each other.
+- A unit with nothing to read — no answer field with **Speak** ticked, or nothing written
+  in one — is simply silent. Nothing is announced, and nothing goes wrong.
+
+`F4` reads the same thing again, at any time, whether the switch is on or off. It plays
+exactly what automatic speech plays, so there is one rule to learn and not two. Before
+you have revealed the answer there is nothing for it to play — `F4` cannot show you the
+solution early. The one exception is the top of the
+[level ladder](07-level-learning.md), where the solution is on screen to be memorised: it
+carries an icon there, and `F4` reads it there too.
+
+With the switch off, the program never says anything unless you ask it to, by an icon or
+by `F4`. Either way, listening is never an attempt: play a word ten times and your
+[statistics](09-statistics.md) and your place on the level ladder are exactly where they
+were.
+
 ## When nothing is said
 
 A voice belongs to the computer you are sitting at, never to your deck. The program takes
@@ -142,7 +184,11 @@ inside Learn Anywhere for a new voice to be found.
 ## Choosing a voice
 
 **Options ▸ Speech...** is where you decide *which* of your computer's voices speaks
-each language, and how fast everything is read.
+each language, how fast everything is read, and whether the answer is read out by itself.
+
+**Read the answer aloud automatically** sits at the top of the screen. It is off until
+you switch it on, it is remembered between sessions, and what it does is described under
+[Reading the answer automatically](#reading-the-answer-automatically).
 
 The screen lists one row per language: every language the open deck's mask uses, plus
 any language you have already chosen a voice for — so a choice made for another deck is
@@ -191,9 +237,6 @@ to the machine it is installed on, and a deck carrying one machine's voice names
 another machine would be carrying something meaningless.
 
 ## What is not there yet
-
-Speech is asked for, one field at a time, by clicking its icon. Reading the answer out
-automatically the moment it is revealed, and a key that repeats it, are still to come.
 
 Speech runs on **Windows**. **Linux** has none — no speaker icons appear there at all,
 rather than icons that would do nothing when clicked, and **Options ▸ Speech...** is
