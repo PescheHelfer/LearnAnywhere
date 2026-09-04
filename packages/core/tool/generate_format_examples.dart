@@ -38,12 +38,17 @@ void main() {
             role2: FieldRole.answer,
           ),
           FieldDefinition(
+            // Speech configured: the field holds French and may be read aloud.
+            // Both keys are omitted from every OTHER field here, because they
+            // are written only when not at their default.
             id: 1,
             name: 'French',
             length: 40,
             equalGroup: 0,
             role1: FieldRole.answer,
             role2: FieldRole.question,
+            language: 'fr-FR',
+            speak: true,
           ),
           FieldDefinition(
             // A hidden field (empty display name) still has a stable id and can

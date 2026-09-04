@@ -42,6 +42,8 @@ them (**"Fields: {count}/20"**). Each field has:
 | Length | 1 to 80 characters |
 | Group | The field's equal group — 0 means none |
 | Role dir. 1 / Role dir. 2 | `Q`, `A` or `R` in each direction — see [Concepts](02-concepts.md#role-what-a-field-is-asked-as) |
+| Spoken language | The language this field is written in — see [Speech](15-speech.md#choosing-a-spoken-language) |
+| Speak | Whether this field may be read aloud; ticked for you when you make the field an answer — see [Speech](15-speech.md#the-speak-flag) |
 
 **Add field**, **Delete field**, and **Move up** / **Move down** work the same way as
 for categories. Shortening a field's length so that it would truncate existing data, or

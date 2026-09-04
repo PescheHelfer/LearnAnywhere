@@ -3124,8 +3124,206 @@ void main() {
       );
     });
   });
-}
 
+  group('spoken language and the Speak flag', () {
+    /// A one-field mask whose single field can be given speech settings.
+    LearningMask maskWithField(FieldDefinition field) {
+      return LearningMask(
+        maskId: 'm_new_speech-fixture',
+        name: 'Speech',
+        direction1Label: 'A',
+        direction2Label: 'B',
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 0,
+            name: 'Words',
+            fields: <FieldDefinition>[field],
+          ),
+        ],
+      );
+    }
+
+    const FieldDefinition plainField = FieldDefinition(
+      id: 0,
+      name: 'French',
+      length: 40,
+      equalGroup: 0,
+      role1: FieldRole.answer,
+      role2: FieldRole.question,
+    );
+
+    Map<String, Object?> encodedField(FieldDefinition field) {
+      final Map<String, Object?> raw =
+          jsonDecode(encodeMaskJson(maskWithField(field)))
+              as Map<String, Object?>;
+      final Map<String, Object?> category =
+          (raw['categories']! as List<Object?>).single as Map<String, Object?>;
+      return (category['fields']! as List<Object?>).single
+          as Map<String, Object?>;
+    }
+
+    test('a field starts with no spoken language and speech off', () {
+      expect(plainField.language, noSpokenLanguage);
+      expect(plainField.speak, isFalse);
+    });
+
+    test('copyWith carries both values and keeps the id', () {
+      final FieldDefinition spoken = plainField.copyWith(
+        language: 'fr-FR',
+        speak: true,
+      );
+      expect(spoken.id, plainField.id);
+      expect(spoken.name, plainField.name);
+      expect(spoken.language, 'fr-FR');
+      expect(spoken.speak, isTrue);
+      // Changing something else leaves both alone.
+      final FieldDefinition renamed = spoken.copyWith(name: 'Francais');
+      expect(renamed.language, 'fr-FR');
+      expect(renamed.speak, isTrue);
+    });
+
+    test('both keys are omitted when at their default', () {
+      final Map<String, Object?> field = encodedField(plainField);
+      expect(field.containsKey('language'), isFalse);
+      expect(field.containsKey('speak'), isFalse);
+      // Each key stands on its own default: a field carrying a language but no
+      // speech writes only the language, and the other way round.
+      expect(
+        encodedField(
+          plainField.copyWith(language: 'fr-FR'),
+        ).containsKey('speak'),
+        isFalse,
+      );
+      expect(
+        encodedField(plainField.copyWith(speak: true)).containsKey('language'),
+        isFalse,
+      );
+    });
+
+    test('a configured field round-trips through the mask file', () {
+      final LearningMask mask = maskWithField(
+        plainField.copyWith(language: 'fr-FR', speak: true),
+      );
+      final String encoded = encodeMaskJson(mask);
+      final FieldDefinition restored = decodeMaskJson(
+        encoded,
+      ).categories.single.fields.single;
+
+      expect(restored.language, 'fr-FR');
+      expect(restored.speak, isTrue);
+      expect(encodeMaskJson(decodeMaskJson(encoded)), encoded);
+    });
+
+    test('the format version is unchanged by the added keys', () {
+      final Map<String, Object?> raw =
+          jsonDecode(
+                encodeMaskJson(
+                  maskWithField(
+                    plainField.copyWith(language: 'fr-FR', speak: true),
+                  ),
+                ),
+              )
+              as Map<String, Object?>;
+      expect(raw['version'], currentFormatVersion);
+    });
+
+    test('a malformed language or speak value falls back to the default', () {
+      // Tolerant like every other additive key: a hand-edited or
+      // Converter-written file that gets these wrong loads as a field with no
+      // speech rather than failing the whole mask.
+      const String source = '''
+{
+  "format": "learn-anywhere/mask",
+  "version": 1,
+  "maskId": "m_new_tolerant",
+  "name": "Tolerant",
+  "direction1Label": "A",
+  "direction2Label": "B",
+  "categories": [
+    { "id": 0, "name": "Words", "fields": [
+      {"id":0,"name":"Q","length":40,"equalGroup":0,"role1":"Q","role2":"A",
+       "language":"french","speak":"yes"},
+      {"id":1,"name":"A","length":40,"equalGroup":0,"role1":"A","role2":"Q",
+       "language":"FR-fr","speak":true}
+    ]}
+  ]
+}
+''';
+      final List<FieldDefinition> fields = decodeMaskJson(
+        source,
+      ).categories.single.fields;
+
+      expect(fields.first.language, noSpokenLanguage);
+      expect(fields.first.speak, isFalse);
+      // A well-shaped tag in unconventional casing is kept, normalized.
+      expect(fields.last.language, 'fr-FR');
+      expect(fields.last.speak, isTrue);
+    });
+
+    test('changing either key stays a compatible mask change', () {
+      final LearningMask before = maskWithField(plainField);
+      final LearningMask after = maskWithField(
+        plainField.copyWith(language: 'fr-FR', speak: true),
+      );
+      final MaskCompatibilityResult result = checkMaskCompatibility(
+        oldMask: before,
+        newMask: after,
+        units: <LearningUnit>[
+          const LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{0: FieldValue.plain('la maison')},
+          ),
+        ],
+      );
+
+      expect(result.isCompatible, isTrue);
+      expect(result.reasons, isEmpty);
+    });
+
+    test('the catalogue offers the drilled languages and their regions', () {
+      final List<String> tags = spokenLanguageCatalog
+          .map((SpokenLanguageOption option) => option.tag)
+          .toList();
+
+      expect(tags, containsAll(<String>['de-DE', 'en-GB', 'fr-FR', 'it-IT']));
+      // The regional distinctions a learner can actually hear.
+      expect(tags, containsAll(<String>['de-AT', 'de-CH', 'en-US', 'fr-CA']));
+      expect(tags.toSet().length, tags.length, reason: 'no duplicate tags');
+      for (final SpokenLanguageOption option in spokenLanguageCatalog) {
+        expect(isValidSpokenLanguageTag(option.tag), isTrue);
+        expect(normalizeSpokenLanguageTag(option.tag), option.tag);
+        expect(isCatalogSpokenLanguage(option.tag), isTrue);
+        expect(option.label, isNotEmpty);
+      }
+      expect(isCatalogSpokenLanguage('es-ES'), isFalse);
+      expect(isCatalogSpokenLanguage(noSpokenLanguage), isFalse);
+    });
+
+    test('a typed tag is accepted by shape, not by registry', () {
+      // Shapes that exist: language, language-REGION, language-Script-REGION.
+      expect(isValidSpokenLanguageTag('es'), isTrue);
+      expect(isValidSpokenLanguageTag('es-ES'), isTrue);
+      expect(isValidSpokenLanguageTag('ru-RU'), isTrue);
+      expect(isValidSpokenLanguageTag('zh-Hant-TW'), isTrue);
+      expect(isValidSpokenLanguageTag('es-419'), isTrue);
+      // Shapes that do not.
+      expect(isValidSpokenLanguageTag('french'), isFalse);
+      expect(isValidSpokenLanguageTag('fr_FR'), isFalse);
+      expect(isValidSpokenLanguageTag('f'), isFalse);
+      expect(isValidSpokenLanguageTag('fr-'), isFalse);
+      expect(isValidSpokenLanguageTag('fr FR'), isFalse);
+      // The empty tag means "never spoken" and is not a tag.
+      expect(isValidSpokenLanguageTag(noSpokenLanguage), isFalse);
+    });
+
+    test('normalizing only fixes casing, and leaves a bad tag alone', () {
+      expect(normalizeSpokenLanguageTag('FR-fr'), 'fr-FR');
+      expect(normalizeSpokenLanguageTag('zh-hant-tw'), 'zh-Hant-TW');
+      expect(normalizeSpokenLanguageTag('es-419'), 'es-419');
+      expect(normalizeSpokenLanguageTag('french'), 'french');
+    });
+  });
+}
 // --- Fixtures for the mask-compatibility tests ----------------------------
 
 FieldDefinition compatDeField() => const FieldDefinition(

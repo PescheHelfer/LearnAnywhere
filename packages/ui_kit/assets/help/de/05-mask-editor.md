@@ -47,6 +47,8 @@ Eine Kategorie auswählen öffnet ihr Feld-Panel **Felder**, bis zu
 | Länge | 1 bis 80 Zeichen |
 | Gruppe | Die Gleichheitsgruppe des Feldes — 0 bedeutet keine |
 | Rolle Abfr. 1 / Rolle Abfr. 2 | `Q`, `A` oder `R` in jeder Richtung — siehe [Grundbegriffe](02-concepts.md#rolle-als-was-ein-feld-abgefragt-wird) |
+| Vorlesesprache | Die Sprache, in der dieses Feld geschrieben ist — siehe [Sprachausgabe](15-speech.md#eine-vorlesesprache-whlen) |
+| Vorlesen | Ob dieses Feld vorgelesen werden darf; wird gesetzt, sobald Sie das Feld zur Antwort machen — siehe [Sprachausgabe](15-speech.md#das-hkchen-vorlesen) |
 
 **Feld hinzufügen**, **Feld löschen** sowie **Nach oben** / **Nach unten** funktionieren
 wie bei Kategorien. Eine Feldlänge so zu verkürzen, dass vorhandene Daten abgeschnitten

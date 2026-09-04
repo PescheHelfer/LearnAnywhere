@@ -40,6 +40,32 @@ Top-level `format` is `learn-anywhere/mask`, `version` `1`, then the mask body:
 `name` (empty = hidden), `length` (1..80), `equalGroup` (0 = positional; equal
 non-zero groups are interchangeable answers), and `role1`/`role2` (`Q`/`A`/`R`).
 
+A field may additionally carry the two **speech** keys, seen on field `1` of the
+example:
+
+- **`language`** — the spoken language of that field's values as a BCP-47 tag,
+  shaped `language[-Script][-REGION]` (`fr-FR`, `de-AT`, `zh-Hant-TW`). It says
+  what language the field holds, never which voice reads it: a voice is a
+  property of the machine and is never written to a file that travels.
+- **`speak`** — `true` when the field may be read aloud.
+
+Both are **optional and additive at version `1`** — the version is deliberately
+NOT bumped, on the same reasoning as the `.sta` per-unit `hash` below: decoders
+ignore keys they do not know, so a mask carrying speech still loads in a build
+that predates it. What the Converter must do:
+
+- **Omit both keys whenever they are at their default** (`language` empty,
+  `speak` false). Writing `"language": ""` or `"speak": false` is wrong: an
+  unconfigured mask must stay byte-identical to what every shipped build
+  produces, which the round-trip fixture test depends on.
+- **Never invent a language.** Legacy files say nothing about pronunciation, so
+  a converted mask omits both keys on every field and the author fills them in.
+  The program never guesses a field's language from its content.
+- Write tags in conventional casing (lower-case language, title-case script,
+  upper-case region). The app normalizes what it reads, and **drops** a value
+  that is not a string of that shape — or a `speak` that is not a boolean — to
+  the default rather than failing the load.
+
 ## `.vok` (deck) — `example.vok`
 
 Top-level `format` is `learn-anywhere/lessons`, `version` `1`, then:

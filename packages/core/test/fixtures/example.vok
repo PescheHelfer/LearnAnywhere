@@ -26,7 +26,9 @@
             "length": 40,
             "equalGroup": 0,
             "role1": "A",
-            "role2": "Q"
+            "role2": "Q",
+            "language": "fr-FR",
+            "speak": true
           },
           {
             "id": 2,

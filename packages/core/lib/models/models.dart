@@ -3,6 +3,8 @@ library;
 
 import 'dart:math';
 
+import '../speech/spoken_language.dart';
+
 /// Stable package identifier used by setup smoke tests.
 const String corePackageName = 'learn_anywhere_core';
 
@@ -314,6 +316,8 @@ final class FieldDefinition {
     required this.equalGroup,
     required this.role1,
     required this.role2,
+    this.language = noSpokenLanguage,
+    this.speak = false,
   });
 
   /// Stable field identifier, unique WITHIN its owning mask.
@@ -343,6 +347,23 @@ final class FieldDefinition {
   /// The field role in direction 2.
   final FieldRole role2;
 
+  /// The language this field's values are spoken in, as a BCP-47 tag such as
+  /// `fr-FR`, or [noSpokenLanguage] (the default) for a field that is never
+  /// read aloud.
+  ///
+  /// A property of the FIELD, not of a direction: a French word is French
+  /// whether it is being asked or answered. It lives in the mask so it travels
+  /// with the deck; which voice actually says it is a property of the machine
+  /// and is never stored here.
+  final String language;
+
+  /// Whether this field may be read aloud.
+  ///
+  /// Defaults to `false`, so a mask that predates speech asks for none.
+  /// Independent of [language]: a field can carry a language while speech is
+  /// switched off for it (a gender field answered only `m` or `f`, say).
+  final bool speak;
+
   /// Whether this field should be hidden in the applications.
   bool get isHidden => name.isEmpty;
 
@@ -352,6 +373,32 @@ final class FieldDefinition {
       QueryDirection.direction1 => role1,
       QueryDirection.direction2 => role2,
     };
+  }
+
+  /// Returns a copy with selected properties changed.
+  ///
+  /// The [id] is preserved unless explicitly overridden: renaming, retyping or
+  /// reordering a field never changes the identity unit values are keyed by.
+  FieldDefinition copyWith({
+    int? id,
+    String? name,
+    int? length,
+    int? equalGroup,
+    FieldRole? role1,
+    FieldRole? role2,
+    String? language,
+    bool? speak,
+  }) {
+    return FieldDefinition(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      length: length ?? this.length,
+      equalGroup: equalGroup ?? this.equalGroup,
+      role1: role1 ?? this.role1,
+      role2: role2 ?? this.role2,
+      language: language ?? this.language,
+      speak: speak ?? this.speak,
+    );
   }
 }
 

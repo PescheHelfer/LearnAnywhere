@@ -4,6 +4,7 @@ library;
 import 'dart:convert';
 
 import '../models/models.dart';
+import '../speech/spoken_language.dart';
 
 /// Mask file format marker.
 const String maskFormat = 'learn-anywhere/mask';
@@ -361,6 +362,15 @@ FieldDefinition _decodeField(Object? value, String path, int fallbackId) {
       path: '$path.equalGroup',
     );
   }
+  // Speech keys are ADDITIVE at the current format version and read
+  // tolerantly: anything that is not a well-shaped tag (or not a bool) falls
+  // back to the default, exactly as a build predating speech would behave.
+  final Object? rawLanguage = json['language'];
+  final String language =
+      rawLanguage is String && isValidSpokenLanguageTag(rawLanguage)
+      ? normalizeSpokenLanguageTag(rawLanguage)
+      : noSpokenLanguage;
+  final Object? rawSpeak = json['speak'];
   return FieldDefinition(
     id: id,
     name: name,
@@ -368,6 +378,8 @@ FieldDefinition _decodeField(Object? value, String path, int fallbackId) {
     equalGroup: equalGroup,
     role1: _decodeRole(json['role1'], '$path.role1'),
     role2: _decodeRole(json['role2'], '$path.role2'),
+    language: language,
+    speak: rawSpeak is bool && rawSpeak,
   );
 }
 
@@ -379,6 +391,10 @@ Map<String, Object?> _encodeField(FieldDefinition field) {
     'equalGroup': field.equalGroup,
     'role1': field.role1.code,
     'role2': field.role2.code,
+    // Written ONLY when not at their default, so a mask with no speech
+    // configured stays byte-identical to what builds predating this produce.
+    if (field.language != noSpokenLanguage) 'language': field.language,
+    if (field.speak) 'speak': true,
   };
 }
 

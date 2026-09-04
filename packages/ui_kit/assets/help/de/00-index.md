@@ -41,6 +41,7 @@ lange, bis alles beherrscht ist.
 | [Tastaturbefehle](12-keyboard-shortcuts.md) | Alle Tasten, auf die das Programm reagiert |
 | [Problembehebung](13-troubleshooting.md) | Was die Warnungen bedeuten und wie Sie wieder herauskommen |
 | [Die Android-Begleit-App](14-android-companion.md) | Die App fürs Telefon: Lern-Dateien importieren, üben, und was sie weglässt |
+| [Sprachausgabe](15-speech.md) | Der Maske sagen, welche Sprache ein Feld enthält und welche Felder vorgelesen werden dürfen |
 
 ## Zur Schreibweise in diesem Handbuch
 

@@ -1045,6 +1045,33 @@ enum LearnAnywhereMessage {
   /// Role direction 2 column label.
   maskEditorRole2,
 
+  /// Spoken-language column label in the mask editor's Fields table.
+  maskEditorSpokenLanguage,
+
+  /// Tooltip on the spoken-language column header.
+  maskEditorSpokenLanguageTooltip,
+
+  /// Speak-flag column label in the mask editor's Fields table.
+  maskEditorSpeak,
+
+  /// Tooltip on the Speak column header.
+  maskEditorSpeakTooltip,
+
+  /// Spoken-language entry meaning the field is never read aloud.
+  maskEditorSpokenLanguageNone,
+
+  /// Spoken-language entry that asks for a typed language tag.
+  maskEditorSpokenLanguageOther,
+
+  /// Title of the dialog that takes a typed language tag.
+  maskEditorSpokenLanguageOtherTitle,
+
+  /// Helper text under the typed language tag input.
+  maskEditorSpokenLanguageOtherHint,
+
+  /// Error shown when a typed language tag is not shaped like one.
+  maskEditorSpokenLanguageInvalid,
+
   /// Category count helper text.
   maskEditorCategoryCount,
 
@@ -1780,6 +1807,22 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorEqualGroup: 'Group',
       LearnAnywhereMessage.maskEditorRole1: 'Role dir. 1',
       LearnAnywhereMessage.maskEditorRole2: 'Role dir. 2',
+      LearnAnywhereMessage.maskEditorSpokenLanguage: 'Spoken language',
+      LearnAnywhereMessage.maskEditorSpokenLanguageTooltip:
+          'The language this field is written in. It decides which voice reads '
+          'the field aloud; empty means the field is never spoken.',
+      LearnAnywhereMessage.maskEditorSpeak: 'Speak',
+      LearnAnywhereMessage.maskEditorSpeakTooltip:
+          'Whether this field may be read aloud. Ticked for you when you make '
+          'the field the answer of a direction; never unticked for you.',
+      LearnAnywhereMessage.maskEditorSpokenLanguageNone: '(none)',
+      LearnAnywhereMessage.maskEditorSpokenLanguageOther: 'Other...',
+      LearnAnywhereMessage.maskEditorSpokenLanguageOtherTitle:
+          'Other spoken language',
+      LearnAnywhereMessage.maskEditorSpokenLanguageOtherHint:
+          'A language tag such as es-ES, ru-RU or pt-BR.',
+      LearnAnywhereMessage.maskEditorSpokenLanguageInvalid:
+          'Not a language tag. Use a form like fr-FR.',
       LearnAnywhereMessage.maskEditorCategoryCount: 'Categories: {count}/20',
       LearnAnywhereMessage.maskEditorFieldCount: 'Fields: {count}/20',
       LearnAnywhereMessage.maskEditorLimitReached: 'Limit reached',
@@ -2385,6 +2428,23 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskEditorEqualGroup: 'Gruppe',
       LearnAnywhereMessage.maskEditorRole1: 'Rolle Abfr. 1',
       LearnAnywhereMessage.maskEditorRole2: 'Rolle Abfr. 2',
+      LearnAnywhereMessage.maskEditorSpokenLanguage: 'Vorlesesprache',
+      LearnAnywhereMessage.maskEditorSpokenLanguageTooltip:
+          'Die Sprache, in der dieses Feld geschrieben ist. Sie bestimmt, '
+          'welche Stimme das Feld vorliest; leer bedeutet, dass das Feld nie '
+          'vorgelesen wird.',
+      LearnAnywhereMessage.maskEditorSpeak: 'Vorlesen',
+      LearnAnywhereMessage.maskEditorSpeakTooltip:
+          'Ob dieses Feld vorgelesen werden darf. Wird gesetzt, sobald Sie das '
+          'Feld zur Antwort einer Richtung machen; nie automatisch entfernt.',
+      LearnAnywhereMessage.maskEditorSpokenLanguageNone: '(keine)',
+      LearnAnywhereMessage.maskEditorSpokenLanguageOther: 'Andere...',
+      LearnAnywhereMessage.maskEditorSpokenLanguageOtherTitle:
+          'Andere Vorlesesprache',
+      LearnAnywhereMessage.maskEditorSpokenLanguageOtherHint:
+          'Ein Sprachkürzel wie es-ES, ru-RU oder pt-BR.',
+      LearnAnywhereMessage.maskEditorSpokenLanguageInvalid:
+          'Kein Sprachkürzel. Form wie fr-FR verwenden.',
       LearnAnywhereMessage.maskEditorCategoryCount: 'Kategorien: {count}/20',
       LearnAnywhereMessage.maskEditorFieldCount: 'Felder: {count}/20',
       LearnAnywhereMessage.maskEditorLimitReached: 'Grenze erreicht',

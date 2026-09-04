@@ -642,6 +642,235 @@ void main() {
     expect(addButton.onPressed, isNull);
     expect(cloneButton.onPressed, isNull);
   });
+
+  group('spoken language and Speak columns', () {
+    /// A one-category mask with a single French answer field.
+    LearningMask maskWith(FieldDefinition field) {
+      return LearningMask(
+        maskId: 'm_new_speech-columns-fixture',
+        name: 'Speech',
+        direction1Label: 'De -> Fr',
+        direction2Label: 'Fr -> De',
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 0,
+            name: 'Words',
+            fields: <FieldDefinition>[field],
+          ),
+        ],
+      );
+    }
+
+    const FieldDefinition french = FieldDefinition(
+      id: 0,
+      name: 'French',
+      length: 40,
+      equalGroup: 0,
+      role1: FieldRole.remark,
+      role2: FieldRole.remark,
+    );
+
+    /// Pumps the editor over a surface wide enough for the two extra columns.
+    /// The table is what grew, so the test surface grows with it rather than
+    /// the columns being squeezed.
+    Future<LearningMask Function()> pumpEditor(
+      WidgetTester tester,
+      LearningMask mask,
+    ) async {
+      tester.view.physicalSize = const Size(1800, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      LearningMask emitted = mask;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return MaskEditorPage(
+                  mask: emitted,
+                  onChanged: (LearningMask value) =>
+                      setState(() => emitted = value),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return () => emitted;
+    }
+
+    FieldDefinition onlyField(LearningMask mask) =>
+        mask.categories.single.fields.single;
+
+    testWidgets('both columns show what the field carries', (
+      WidgetTester tester,
+    ) async {
+      await pumpEditor(
+        tester,
+        maskWith(french.copyWith(language: 'fr-FR', speak: true)),
+      );
+
+      expect(find.text('Spoken language'), findsOneWidget);
+      expect(find.text('Speak'), findsOneWidget);
+      expect(find.text('Français (France) (fr-FR)'), findsOneWidget);
+      expect(
+        tester
+            .widget<Checkbox>(
+              find.byKey(const ValueKey<String>('field-speak-0-0')),
+            )
+            .value,
+        isTrue,
+      );
+    });
+
+    testWidgets('picking a language from the list stores its tag', (
+      WidgetTester tester,
+    ) async {
+      final LearningMask Function() emitted = await pumpEditor(
+        tester,
+        maskWith(french),
+      );
+      expect(onlyField(emitted()).language, noSpokenLanguage);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('field-language-0-0')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Italiano (Italia) (it-IT)').last);
+      await tester.pumpAndSettle();
+
+      expect(onlyField(emitted()).language, 'it-IT');
+      // Choosing a language says nothing about whether the field is spoken.
+      expect(onlyField(emitted()).speak, isFalse);
+    });
+
+    testWidgets('the Speak checkbox toggles on its own', (
+      WidgetTester tester,
+    ) async {
+      final LearningMask Function() emitted = await pumpEditor(
+        tester,
+        maskWith(french),
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('field-speak-0-0')));
+      await tester.pumpAndSettle();
+      expect(onlyField(emitted()).speak, isTrue);
+
+      await tester.tap(find.byKey(const ValueKey<String>('field-speak-0-0')));
+      await tester.pumpAndSettle();
+      expect(onlyField(emitted()).speak, isFalse);
+    });
+
+    testWidgets('making a field the answer of a direction ticks Speak', (
+      WidgetTester tester,
+    ) async {
+      final LearningMask Function() emitted = await pumpEditor(
+        tester,
+        maskWith(french),
+      );
+      expect(onlyField(emitted()).speak, isFalse);
+
+      await tester.tap(find.byKey(const ValueKey<String>('field-role2-0-0')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('A').last);
+      await tester.pumpAndSettle();
+
+      expect(onlyField(emitted()).role2, FieldRole.answer);
+      expect(onlyField(emitted()).speak, isTrue);
+    });
+
+    testWidgets('a field unticked on purpose stays unticked', (
+      WidgetTester tester,
+    ) async {
+      // Already an answer field, with speech deliberately switched off — the
+      // gender column answered only "m" or "f".
+      final LearningMask Function() emitted = await pumpEditor(
+        tester,
+        maskWith(
+          french.copyWith(role1: FieldRole.answer, role2: FieldRole.question),
+        ),
+      );
+
+      // Renaming it does not turn speech back on.
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('field-name-0-0')),
+        'Gender',
+      );
+      await tester.pumpAndSettle();
+      expect(onlyField(emitted()).speak, isFalse);
+
+      // Nor does taking the answer role away from a direction.
+      await tester.tap(find.byKey(const ValueKey<String>('field-role1-0-0')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('R').last);
+      await tester.pumpAndSettle();
+      expect(onlyField(emitted()).role1, FieldRole.remark);
+      expect(onlyField(emitted()).speak, isFalse);
+    });
+
+    testWidgets('Other... takes a typed tag and rejects a malformed one', (
+      WidgetTester tester,
+    ) async {
+      final LearningMask Function() emitted = await pumpEditor(
+        tester,
+        maskWith(french),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('field-language-0-0')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Other...').last);
+      await tester.pumpAndSettle();
+
+      // A word is not a language tag: the dialog says so and stays open.
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('field-language-other-input')),
+        'spanish',
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('field-language-other-ok')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Not a language tag. Use a form like fr-FR.'),
+          findsOneWidget);
+      expect(onlyField(emitted()).language, noSpokenLanguage);
+
+      // A well-shaped tag is taken, and stored in conventional casing.
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('field-language-other-input')),
+        'ES-es',
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('field-language-other-ok')),
+      );
+      await tester.pumpAndSettle();
+      expect(onlyField(emitted()).language, 'es-ES');
+      // It keeps an entry of its own in the list, so it survives reopening.
+      expect(find.text('es-ES'), findsOneWidget);
+    });
+
+    testWidgets('cloning a category carries both values to the copy', (
+      WidgetTester tester,
+    ) async {
+      final LearningMask Function() emitted = await pumpEditor(
+        tester,
+        maskWith(french.copyWith(language: 'fr-FR', speak: true)),
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('category-clone-0')));
+      await tester.pumpAndSettle();
+
+      final FieldDefinition cloned = emitted().categories[1].fields.single;
+      expect(cloned.id, 1, reason: 'a fresh identity');
+      expect(cloned.language, 'fr-FR');
+      expect(cloned.speak, isTrue);
+    });
+  });
 }
 
 // Reads the text actually rendered in a field cell (its internal controller),

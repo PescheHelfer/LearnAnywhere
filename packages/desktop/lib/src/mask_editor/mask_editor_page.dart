@@ -254,15 +254,10 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
     // same id, since none of those calls would have added a field yet.
     final int firstNewFieldId = _nextFieldId(widget.mask);
     final List<FieldDefinition> clonedFields = <FieldDefinition>[
+      // Everything but the identity is copied, speech settings included: the
+      // clone describes the same kind of content as its source.
       for (var i = 0; i < source.fields.length; i += 1)
-        FieldDefinition(
-          id: firstNewFieldId + i,
-          name: source.fields[i].name,
-          length: source.fields[i].length,
-          equalGroup: source.fields[i].equalGroup,
-          role1: source.fields[i].role1,
-          role2: source.fields[i].role2,
-        ),
+        source.fields[i].copyWith(id: firstNewFieldId + i),
     ];
     final String cloneName = messages
         .message(LearnAnywhereMessage.maskEditorClonedCategoryName)
@@ -828,6 +823,24 @@ final class _FieldGridState extends State<_FieldGrid> {
                         messages.message(LearnAnywhereMessage.maskEditorRole2),
                       ),
                     ),
+                    DataColumn(
+                      label: Text(
+                        messages.message(
+                          LearnAnywhereMessage.maskEditorSpokenLanguage,
+                        ),
+                      ),
+                      tooltip: messages.message(
+                        LearnAnywhereMessage.maskEditorSpokenLanguageTooltip,
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        messages.message(LearnAnywhereMessage.maskEditorSpeak),
+                      ),
+                      tooltip: messages.message(
+                        LearnAnywhereMessage.maskEditorSpeakTooltip,
+                      ),
+                    ),
                     const DataColumn(label: SizedBox.shrink()),
                   ],
                   rows: <DataRow>[
@@ -895,7 +908,7 @@ final class _FieldGridState extends State<_FieldGrid> {
               initialValue: field.name,
               decoration: const InputDecoration(counterText: '', isDense: true),
               onChanged: (String value) {
-                widget.onFieldChanged(index, _copyField(field, name: value));
+                widget.onFieldChanged(index, field.copyWith(name: value));
               },
             ),
           ),
@@ -918,8 +931,7 @@ final class _FieldGridState extends State<_FieldGrid> {
                 }
                 widget.onFieldChanged(
                   index,
-                  _copyField(
-                    field,
+                  field.copyWith(
                     length: parsed.clamp(minFieldLength, maxFieldLength),
                   ),
                 );
@@ -943,7 +955,7 @@ final class _FieldGridState extends State<_FieldGrid> {
               onChanged: (String value) {
                 widget.onFieldChanged(
                   index,
-                  _copyField(field, equalGroup: int.tryParse(value) ?? 0),
+                  field.copyWith(equalGroup: int.tryParse(value) ?? 0),
                 );
               },
             ),
@@ -954,7 +966,13 @@ final class _FieldGridState extends State<_FieldGrid> {
             key: ValueKey<String>('field-role1-$categoryId-${field.id}'),
             value: field.role1,
             onChanged: (FieldRole value) {
-              widget.onFieldChanged(index, _copyField(field, role1: value));
+              widget.onFieldChanged(
+                index,
+                field.copyWith(
+                  role1: value,
+                  speak: _speakAfterRole(field, value),
+                ),
+              );
             },
           ),
         ),
@@ -963,7 +981,37 @@ final class _FieldGridState extends State<_FieldGrid> {
             key: ValueKey<String>('field-role2-$categoryId-${field.id}'),
             value: field.role2,
             onChanged: (FieldRole value) {
-              widget.onFieldChanged(index, _copyField(field, role2: value));
+              widget.onFieldChanged(
+                index,
+                field.copyWith(
+                  role2: value,
+                  speak: _speakAfterRole(field, value),
+                ),
+              );
+            },
+          ),
+        ),
+        DataCell(
+          SizedBox(
+            width: LearnAnywhereZoom.scaleBox(context, 240),
+            child: _LanguageMenu(
+              key: ValueKey<String>('field-language-$categoryId-${field.id}'),
+              value: field.language,
+              onChanged: (String value) {
+                widget.onFieldChanged(index, field.copyWith(language: value));
+              },
+            ),
+          ),
+        ),
+        DataCell(
+          Checkbox(
+            key: ValueKey<String>('field-speak-$categoryId-${field.id}'),
+            value: field.speak,
+            onChanged: (bool? value) {
+              widget.onFieldChanged(
+                index,
+                field.copyWith(speak: value ?? false),
+              );
             },
           ),
         ),
@@ -1006,6 +1054,16 @@ final class _FieldGridState extends State<_FieldGrid> {
   }
 }
 
+/// The Speak flag after [field] is given [role] in one of its two directions.
+///
+/// Making a field the answer of a direction is the common case for speech, so
+/// it ticks Speak for the author. It is deliberately one-way: nothing here ever
+/// unticks, so a field the author switched speech off for on purpose (a gender
+/// column answered only `m` or `f`, say) stays off through any later role edit.
+bool _speakAfterRole(FieldDefinition field, FieldRole role) {
+  return field.speak || role == FieldRole.answer;
+}
+
 final class _RoleMenu extends StatelessWidget {
   const _RoleMenu({required this.value, required this.onChanged, super.key});
 
@@ -1033,23 +1091,156 @@ final class _RoleMenu extends StatelessWidget {
   }
 }
 
-FieldDefinition _copyField(
-  FieldDefinition field, {
-  String? name,
-  int? length,
-  int? equalGroup,
-  FieldRole? role1,
-  FieldRole? role2,
-}) {
-  return FieldDefinition(
-    // The id is stable: renaming/retyping a field never changes it.
-    id: field.id,
-    name: name ?? field.name,
-    length: length ?? field.length,
-    equalGroup: equalGroup ?? field.equalGroup,
-    role1: role1 ?? field.role1,
-    role2: role2 ?? field.role2,
+/// Picks a field's spoken language from the curated catalogue, or takes a typed
+/// tag through [_OtherLanguageDialog].
+final class _LanguageMenu extends StatelessWidget {
+  const _LanguageMenu({
+    required this.value,
+    required this.onChanged,
+    super.key,
+  });
+
+  /// The field's current tag, or [noSpokenLanguage].
+  final String value;
+
+  final ValueChanged<String> onChanged;
+
+  /// Menu value standing for "let me type a tag". Not a language tag, and
+  /// unrepresentable as one, so it can never collide with a real entry.
+  static const String _otherEntry = '?other';
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final Map<String, String> entries = <String, String>{
+      noSpokenLanguage: messages.message(
+        LearnAnywhereMessage.maskEditorSpokenLanguageNone,
+      ),
+      for (final SpokenLanguageOption option in spokenLanguageCatalog)
+        option.tag: '${option.label} (${option.tag})',
+      // A tag typed here earlier — or authored on another machine — keeps an
+      // entry of its own, so opening the menu can never silently drop it.
+      if (value != noSpokenLanguage && !isCatalogSpokenLanguage(value))
+        value: value,
+      _otherEntry: messages.message(
+        LearnAnywhereMessage.maskEditorSpokenLanguageOther,
+      ),
+    };
+    return DropdownButton<String>(
+      value: value,
+      isExpanded: true,
+      items: entries.entries
+          .map(
+            (MapEntry<String, String> entry) => DropdownMenuItem<String>(
+              value: entry.key,
+              child: Text(entry.value, overflow: TextOverflow.ellipsis),
+            ),
+          )
+          .toList(growable: false),
+      onChanged: (String? selected) async {
+        if (selected == null) {
+          return;
+        }
+        if (selected != _otherEntry) {
+          onChanged(selected);
+          return;
+        }
+        final String? typed = await showDialog<String>(
+          context: context,
+          builder: (BuildContext context) =>
+              _OtherLanguageDialog(initialValue: value),
+        );
+        // The editor can be gone by the time the dialog closes (Esc discards
+        // the whole page); `onChanged` ends in the page's setState, so report
+        // nothing to a page that no longer exists.
+        if (typed != null && context.mounted) {
+          onChanged(typed);
+        }
+      },
+    );
+  }
+}
+
+/// Takes a language tag the catalogue does not offer, validated for shape.
+final class _OtherLanguageDialog extends StatefulWidget {
+  const _OtherLanguageDialog({required this.initialValue});
+
+  final String initialValue;
+
+  @override
+  State<_OtherLanguageDialog> createState() => _OtherLanguageDialogState();
+}
+
+final class _OtherLanguageDialogState extends State<_OtherLanguageDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialValue,
   );
+  bool _invalid = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final String typed = _controller.text.trim();
+    if (!isValidSpokenLanguageTag(typed)) {
+      setState(() => _invalid = true);
+      return;
+    }
+    // Stored in the catalogue's casing, so a typed "FR-fr" is the same tag as
+    // the one the list offers rather than a second, unmatchable one.
+    Navigator.of(context).pop(normalizeSpokenLanguageTag(typed));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return AlertDialog(
+      title: Text(
+        messages.message(
+          LearnAnywhereMessage.maskEditorSpokenLanguageOtherTitle,
+        ),
+      ),
+      content: TextField(
+        key: const ValueKey<String>('field-language-other-input'),
+        controller: _controller,
+        autofocus: true,
+        onChanged: (_) {
+          if (_invalid) {
+            setState(() => _invalid = false);
+          }
+        },
+        onSubmitted: (_) => _submit(),
+        decoration: InputDecoration(
+          helperText: messages.message(
+            LearnAnywhereMessage.maskEditorSpokenLanguageOtherHint,
+          ),
+          errorText: _invalid
+              ? messages.message(
+                  LearnAnywhereMessage.maskEditorSpokenLanguageInvalid,
+                )
+              : null,
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+        ),
+        FilledButton(
+          key: const ValueKey<String>('field-language-other-ok'),
+          onPressed: _submit,
+          child: Text(messages.message(LearnAnywhereMessage.actionOk)),
+        ),
+      ],
+    );
+  }
 }
 
 String _withCount(String template, int count) {
