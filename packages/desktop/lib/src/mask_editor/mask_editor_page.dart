@@ -970,7 +970,7 @@ final class _FieldGridState extends State<_FieldGrid> {
                 index,
                 field.copyWith(
                   role1: value,
-                  speak: _speakAfterRole(field, value),
+                  speak: _speakAfterRole(field, field.role1, value),
                 ),
               );
             },
@@ -985,7 +985,7 @@ final class _FieldGridState extends State<_FieldGrid> {
                 index,
                 field.copyWith(
                   role2: value,
-                  speak: _speakAfterRole(field, value),
+                  speak: _speakAfterRole(field, field.role2, value),
                 ),
               );
             },
@@ -1054,14 +1054,19 @@ final class _FieldGridState extends State<_FieldGrid> {
   }
 }
 
-/// The Speak flag after [field] is given [role] in one of its two directions.
+/// The Speak flag after [field]'s role changes from [previousRole] to [role]
+/// in one of its two directions.
 ///
 /// Making a field the answer of a direction is the common case for speech, so
-/// it ticks Speak for the author. It is deliberately one-way: nothing here ever
-/// unticks, so a field the author switched speech off for on purpose (a gender
-/// column answered only `m` or `f`, say) stays off through any later role edit.
-bool _speakAfterRole(FieldDefinition field, FieldRole role) {
-  return field.speak || role == FieldRole.answer;
+/// it ticks Speak for the author — but only on the transition into that role.
+/// It is deliberately one-way: nothing here ever unticks, so a field the
+/// author switched speech off for on purpose (a gender column answered only
+/// `m` or `f`, say) stays off through any later role edit — including
+/// reopening the same dropdown and reselecting the role it already has, which
+/// still fires `onChanged` with an unchanged value.
+bool _speakAfterRole(FieldDefinition field, FieldRole previousRole, FieldRole role) {
+  return field.speak ||
+      (role == FieldRole.answer && previousRole != FieldRole.answer);
 }
 
 final class _RoleMenu extends StatelessWidget {

@@ -803,6 +803,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(onlyField(emitted()).speak, isFalse);
 
+      // Nor does reopening the dropdown and reselecting the role it already
+      // has — a no-op edit a reachable Flutter DropdownButton still reports
+      // through onChanged.
+      await tester.tap(find.byKey(const ValueKey<String>('field-role1-0-0')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('A').last);
+      await tester.pumpAndSettle();
+      expect(onlyField(emitted()).role1, FieldRole.answer);
+      expect(onlyField(emitted()).speak, isFalse);
+
       // Nor does taking the answer role away from a direction.
       await tester.tap(find.byKey(const ValueKey<String>('field-role1-0-0')));
       await tester.pumpAndSettle();
