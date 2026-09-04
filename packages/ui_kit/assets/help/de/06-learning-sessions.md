@@ -64,6 +64,11 @@ abgeschnitten zu werden.
 wollen. `F9` wechselt durch, was der Antwortbereich zeigt: **Korrektur** (Ihre Antwort
 mit gegen die Lösung hervorgehobenen Unterschieden) → **Lösung** → **Ihre Antwort**.
 
+Ein kleines Lautsprecher-Symbol neben einem Feld liest dieses Feld vor. Es erscheint
+überall dort, wo die Maske das Vorlesen des Feldes erlaubt und dessen Wert auf dem
+Bildschirm steht — die Frage also sofort, die Antwort nach dem Prüfen. Siehe
+[Sprachausgabe](15-speech.md#felder-vorlesen-lassen).
+
 Eine Live-Anzeige verfolgt **Versuche**, **Beherrscht**, **Übrig**, **Korrekt**, die
 Trefferquote der aktuellen Einheit sowie — falls in den
 [Einstellungen](11-settings.md#lernoptionen) eingeschaltet — die verstrichene **Zeit**.

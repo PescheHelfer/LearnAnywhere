@@ -108,6 +108,7 @@ final class FieldRow extends StatelessWidget {
     required this.backgroundColor,
     required this.value,
     this.counterText,
+    this.trailing,
     super.key,
   });
 
@@ -132,6 +133,13 @@ final class FieldRow extends StatelessWidget {
 
   /// Optional "used/allowed" character counter, shown only by the Editor.
   final String? counterText;
+
+  /// Optional control beside the row, outside the fixed-width value column.
+  ///
+  /// Outside deliberately: the value column is sized to the field's declared
+  /// length, and anything placed inside it would eat characters the field is
+  /// entitled to. Used by the Learn session for its speaker icon.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -181,6 +189,15 @@ final class FieldRow extends StatelessWidget {
               ],
             ),
           ),
+          if (trailing != null)
+            Container(
+              color: backgroundColor,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.only(
+                right: LearnAnywhereTokens.fieldRowCounterGap,
+              ),
+              child: trailing,
+            ),
         ],
       ),
     );

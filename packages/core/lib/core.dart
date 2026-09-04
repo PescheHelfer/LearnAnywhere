@@ -9,6 +9,8 @@ export 'paths/deck_paths.dart';
 export 'rich_text/rich_text_ops.dart';
 export 'serialization/serialization.dart';
 export 'settings/settings.dart';
+export 'speech/speech_policy.dart';
 export 'speech/spoken_language.dart';
+export 'speech/tts_engine.dart';
 export 'statistics/all_time.dart';
 export 'statistics/unit_identity.dart';

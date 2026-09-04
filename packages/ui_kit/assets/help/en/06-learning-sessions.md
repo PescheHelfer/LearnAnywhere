@@ -60,6 +60,11 @@ to a line of their own rather than being cut off.
 `F9` cycles what the answer area shows: **Correction** (your answer with differences
 highlighted against the solution) → **Solution** → **Your answer**.
 
+A small speaker icon beside a field reads that field aloud. It appears wherever the mask
+allows the field to be spoken and its value is on screen — so the prompt can be heard
+straight away, and the answer once you have checked. See
+[Speech](15-speech.md#hearing-a-field).
+
 A live panel tracks **Attempts**, **Mastered**, **Remaining**, **Accuracy**, the current
 unit's own accuracy, and — if enabled in
 [Settings](11-settings.md#learning-options) — elapsed **Time**.

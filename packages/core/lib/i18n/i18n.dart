@@ -672,6 +672,13 @@ enum LearnAnywhereMessage {
   /// header (non-Level modes).
   learnUnitAccuracy,
 
+  /// Tooltip on the speaker icon beside a field in a learning session.
+  learnSpeakField,
+
+  /// Shown when a field is asked for aloud and no installed voice speaks its
+  /// language. Carries `{language}`.
+  learnSpeakNoVoice,
+
   /// Live elapsed-time label.
   learnLiveTime,
 
@@ -1665,6 +1672,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveRemaining: 'Remaining',
       LearnAnywhereMessage.learnLiveAccuracy: 'Accuracy',
       LearnAnywhereMessage.learnUnitAccuracy: 'This unit',
+      LearnAnywhereMessage.learnSpeakField: 'Read this field aloud',
+      LearnAnywhereMessage.learnSpeakNoVoice:
+          'No installed voice speaks {language}. The "Speech" chapter of the '
+          'user guide (F1) explains how to add one.',
       LearnAnywhereMessage.learnLiveTime: 'Time',
       LearnAnywhereMessage.learnUnitHeader: 'Unit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
@@ -2277,6 +2288,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveRemaining: 'Übrig',
       LearnAnywhereMessage.learnLiveAccuracy: 'Korrekt',
       LearnAnywhereMessage.learnUnitAccuracy: 'Diese Einheit',
+      LearnAnywhereMessage.learnSpeakField: 'Dieses Feld vorlesen',
+      LearnAnywhereMessage.learnSpeakNoVoice:
+          'Keine installierte Stimme spricht {language}. Das Kapitel '
+          '"Sprachausgabe" im Benutzerhandbuch (F1) erklärt, wie Sie eine '
+          'hinzufügen.',
       LearnAnywhereMessage.learnLiveTime: 'Zeit',
       LearnAnywhereMessage.learnUnitHeader: 'Einheit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',

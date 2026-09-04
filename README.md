@@ -56,6 +56,10 @@ which wrote the code.
 - **Statistics that mean something.** Per-unit, per-direction accuracy grouped into
   seven buckets, with a unit list you can filter and then save as a new deck of
   exactly the items you keep getting wrong.
+- **Reads your cards aloud.** A mask says what language each field holds; in a session a
+  speaker icon beside the field reads it out through the voices the operating system
+  already has. Local, free and offline — nothing is uploaded and nothing is downloaded.
+  Windows only for now; Linux ships mute.
 - **A lexicon.** Search the units in memory, or sweep a whole folder tree of decks on disk.
 - **Rich text in fields.** Bold, italic, underline, colour and highlight, stored portably.
 - **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, content centred in the window on a wide screen, and full keyboard operation including ALT menu mnemonics.
@@ -181,6 +185,12 @@ the app, check the version rather than the file.
 ## Build from source
 
 Requires the Flutter SDK (>= 3.44.0, Dart >= 3.12.2) with desktop support enabled for your platform.
+
+The **Windows** build additionally needs `nuget.exe` on the `PATH`: the speech plugin
+fetches the CppWinRT package with it at configure time, and CMake stops with
+`nuget.exe not found. Please install it.` when it is missing. Download the single
+executable from <https://www.nuget.org/downloads> into any folder on the `PATH`. The
+Linux and Android builds do not need it — neither builds the speech plugin.
 
 ```sh
 git clone https://github.com/PescheHelfer/LearnAnywhere.git

@@ -34,6 +34,7 @@ final class LearnSessionPage extends StatefulWidget {
     this.onStartUnitChanged,
     this.onEndUnitChanged,
     this.onExit,
+    this.speechEngine = const UnavailableTtsEngine(),
     super.key,
   });
 
@@ -114,6 +115,13 @@ final class LearnSessionPage extends StatefulWidget {
 
   /// Called when the user exits the learn session back to the home screen.
   final VoidCallback? onExit;
+
+  /// The host's speech, injected by the shell.
+  ///
+  /// Defaults to the engine that cannot speak, so a caller that says nothing
+  /// about speech gets a session with no speaker icons rather than a session
+  /// reaching for a plugin its host may not have.
+  final TtsEngine speechEngine;
 
   @override
   State<LearnSessionPage> createState() => _LearnSessionPageState();
@@ -324,6 +332,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   int _orderPosition = 0;
   Map<int, String> _lastEntered = <int, String>{};
 
+  // The voices the host reported, read once in initState. Empty on a host that
+  // cannot speak, and equally on one that speaks but has nothing installed —
+  // the difference is the engine's own isAvailable, not this list.
+  List<SpeechVoice> _voices = const <SpeechVoice>[];
+
   SessionItem? _currentItem;
   AnswerEvaluation? _evaluation;
   // Display classification of the revealed answer (correct/almost/wrong). Drives
@@ -367,10 +380,48 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     if (widget.options.showClock) {
       _startClock();
     }
+    unawaited(_loadVoices());
     // Created by Learn ▸ "Learn with last settings": skip the setup screen.
     if (widget.startSessionOnOpen) {
       _startSessionOnOpen();
     }
+  }
+
+  /// Asks the host once which voices it has, so the speech policy can resolve
+  /// a field's language against them without the UI waiting on the engine.
+  Future<void> _loadVoices() async {
+    if (!widget.speechEngine.isAvailable) {
+      return;
+    }
+    final List<SpeechVoice> voices = await widget.speechEngine.voices();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _voices = voices);
+  }
+
+  /// Says [utterance], or explains why it cannot be said.
+  ///
+  /// The unresolved case is a message and not a missing icon: the learner is
+  /// told which language their machine has no voice for, which is the one
+  /// thing that gets them from silence to sound.
+  Future<void> _speak(SpeechUtterance utterance) async {
+    if (!utterance.canBeSpoken) {
+      final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+        context,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            messages
+                .message(LearnAnywhereMessage.learnSpeakNoVoice)
+                .replaceAll('{language}', utterance.language),
+          ),
+        ),
+      );
+      return;
+    }
+    await widget.speechEngine.speak(utterance);
   }
 
   @override
@@ -447,6 +498,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   @override
   void dispose() {
     _clockTimer?.cancel();
+    // Leaving the session cuts off a word still being spoken: a voice talking
+    // over the screen the learner has just moved to is nobody's idea of help.
+    unawaited(widget.speechEngine.stop());
     _rootFocusNode.dispose();
     for (final TextEditingController controller in _answerControllers.values) {
       controller.dispose();
@@ -622,9 +676,31 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
+    // Level Learning at the top of the ladder shows the whole solution to be
+    // memorized, so the answer's value is on screen before any Check.
+    final bool answerShownAsSupport =
+        _isLevelLearning &&
+        _activeLevel == kMaxSupportLevel &&
+        !_level3Memorized;
+    // What may be spoken for the unit as it now stands. A host that cannot
+    // speak gets the silent plan, so no icon is rendered at all — a disabled
+    // one would only offer what the machine cannot do.
+    final SpeechPlan speechPlan = widget.speechEngine.isAvailable
+        ? buildSpeechPlan(
+            deck: widget.deck,
+            unit: widget.deck.units[_currentItem!.unitIndex - 1],
+            direction: _currentItem!.direction,
+            afterCheck: _evaluation != null,
+            answerShown: answerShownAsSupport,
+            voices: _voices,
+          )
+        : SpeechPlan.silent;
     return _SessionView(
       deck: widget.deck,
       statistics: widget.statistics,
+      speechPlan: speechPlan,
+      onSpeak: _speak,
+      answerShownAsSupport: answerShownAsSupport,
       levelStatistics: _levelStats,
       levelNames: widget.levelNames,
       entryLevelCap: widget.entryLevelCap,
@@ -1745,6 +1821,9 @@ final class _SessionView extends StatelessWidget {
   const _SessionView({
     required this.deck,
     required this.statistics,
+    required this.speechPlan,
+    required this.onSpeak,
+    required this.answerShownAsSupport,
     required this.levelStatistics,
     required this.levelNames,
     required this.entryLevelCap,
@@ -1775,6 +1854,21 @@ final class _SessionView extends StatelessWidget {
 
   final LearningDeck deck;
   final List<UnitStats> statistics;
+
+  /// What may be spoken for this unit as it currently stands, decided by the
+  /// core policy. The view renders it and decides nothing of its own.
+  final SpeechPlan speechPlan;
+
+  /// Says one of [speechPlan]'s utterances, or explains why it cannot.
+  final ValueChanged<SpeechUtterance> onSpeak;
+
+  /// Whether the whole answer is on screen as Level-Learning support, before
+  /// any Check — the state the top of the ladder shows for memorizing.
+  ///
+  /// Passed rather than re-derived so the field grid and the speech plan can
+  /// never disagree about what the learner can see.
+  final bool answerShownAsSupport;
+
   final List<LevelUnitStats> levelStatistics;
   final List<String> levelNames;
   final int entryLevelCap;
@@ -2104,6 +2198,7 @@ final class _SessionView extends StatelessWidget {
                     field,
                     item.direction,
                     afterCheck: evaluation != null,
+                    answerShown: answerShownAsSupport,
                   );
               final Widget content =
                   override ??
@@ -2119,6 +2214,13 @@ final class _SessionView extends StatelessWidget {
                           style: valueStyle,
                         ));
 
+              // One rule, no special cases: a field carries a speaker exactly
+              // when the policy put an utterance in the plan for it, which is
+              // exactly when its value is on screen.
+              final SpeechUtterance? utterance = speechPlan.utteranceFor(
+                field.id,
+              );
+
               return FieldRow(
                 label: field.name,
                 labelWidth: labelWidth,
@@ -2126,6 +2228,15 @@ final class _SessionView extends StatelessWidget {
                 accentColor: accentColor,
                 backgroundColor: bgColor,
                 value: content,
+                trailing: utterance == null
+                    ? null
+                    : SpeakerButton(
+                        key: Key('speakField-${field.id}'),
+                        tooltip: LearnAnywhereLocalizations.of(
+                          ctx,
+                        ).message(LearnAnywhereMessage.learnSpeakField),
+                        onPressed: () => onSpeak(utterance),
+                      ),
               );
             },
           ),

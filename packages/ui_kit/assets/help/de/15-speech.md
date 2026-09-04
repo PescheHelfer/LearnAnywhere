@@ -5,8 +5,10 @@ sagen, weiss es das nicht — und ein Wort, das Sie nur lesen können, ist ein W
 nicht aussprechen können. Die Sprachausgabe beginnt in der Maske: Sie legen fest, welche
 Sprache jedes Feld enthält und welche Felder vorgelesen werden dürfen.
 
-In dieser Version wird noch nichts vorgelesen. Was Sie hier einstellen, wird in der Maske
-gespeichert und reist mit Ihren Lern-Dateien mit, ist also nicht umsonst — siehe
+Hat ein Feld eine Sprache und die Erlaubnis, gesprochen zu werden, liest ein
+Lautsprecher-Symbol daneben es in einer Lernsitzung vor — siehe
+[Felder vorlesen lassen](#felder-vorlesen-lassen). Welche *Stimme* spricht, entscheidet
+Ihr Rechner, nicht Ihre Lern-Datei, und noch ist nicht alles da: siehe
 [Was noch fehlt](#was-noch-fehlt).
 
 ## Wo die Sprachausgabe eingestellt wird
@@ -60,6 +62,62 @@ Es wird nie für Sie entfernt. Nehmen Sie es weg — eine Geschlechts-Spalte, di
 Ein Feld mit gesetztem **Vorlesen**, aber ohne gewählte Vorlesesprache kann nicht
 vorgelesen werden: es fehlt die Angabe, welche Stimme es lesen soll.
 
+## Felder vorlesen lassen
+
+In einer [Lernsitzung](06-learning-sessions.md) steht neben jedem Feld, das vorgelesen
+werden darf und dessen Wert auf dem Bildschirm steht, ein kleines Lautsprecher-Symbol.
+Ein Klick darauf liest genau dieses Feld vor, mit einer Stimme, die Ihr Rechner für die
+Sprache des Feldes bereits hat. Nichts wird heruntergeladen, nichts verlässt Ihren
+Rechner.
+
+Es gibt eine Regel, und sie braucht keine Ausnahmen: **das Symbol steht dort, wo der Wert
+seines Feldes steht.** Ein Frage-Feld trägt es, sobald die Karte erscheint — Sie können
+das Wort also hören, während Sie noch über der Antwort brüten. Ein Antwort- oder
+Bemerkungs-Feld bekommt es in dem Moment, in dem es aufgedeckt wird, also dann, wenn Sie
+es ohnehin lesen können. Die Lösung vorab zu hören, ist damit unmöglich.
+
+Die Regel gilt auch im [Stufenlernen](07-level-learning.md), und dort zahlt sie sich aus:
+auf der obersten Stufe steht die ganze Lösung zum Lesen und Einprägen auf dem Bildschirm,
+trägt also ein Symbol — das Wort zu hören ist genau der Zweck dieses Schritts. Mit
+**Verdecken & tippen** verschwindet das Symbol zusammen mit der Lösung.
+
+Kein Symbol steht neben:
+
+- einem Feld ohne Häkchen bei **Vorlesen**,
+- einem Feld mit **"(keine)"** als Vorlesesprache,
+- einem versteckten Feld (einem ohne Namen),
+- einem Antwort- oder Bemerkungs-Feld vor dem Prüfen,
+- einem Feld, das diese Einheit leer lässt.
+
+Vorgelesen wird genau das, was im Feld steht, samt allem, was Sie durchgestrichen haben:
+das Programm sagt, was geschrieben wurde, und bessert nichts aus.
+
+Zuhören kostet nichts. Es ist nie ein Versuch, bewegt keine
+[Statistik](09-statistics.md) und kann Sie auf der
+[Stufenleiter](07-level-learning.md) weder hinauf- noch hinunterbringen. Hören Sie ein
+Wort zehnmal an, wenn es hilft.
+
+## Wenn nichts gesprochen wird
+
+Eine Stimme gehört zum Rechner, an dem Sie sitzen, nie zur Lern-Datei. Das Programm sucht
+eine passende: zuerst eine Stimme für genau diese Sprache, dann irgendeine Stimme
+derselben Sprache aus einer anderen Region — eine kanadisch-französische Stimme liest
+also ein Feld in Frankreich-Französisch vor, statt es stumm zu lassen.
+
+Ist keine von beiden installiert, bleibt das Symbol stehen und sagt Ihnen beim Benutzen,
+woran es liegt: **"Keine installierte Stimme spricht fr-FR. Das Kapitel "Sprachausgabe"
+im Benutzerhandbuch (F1) erklärt, wie Sie eine hinzufügen."** Das Symbol verschwindet
+bewusst nicht. Ein fehlendes Symbol sähe genau wie ein Feld aus, für das niemand das
+Vorlesen eingeschaltet hat, und Sie könnten die beiden Fälle nicht unterscheiden.
+
+Windows installiert Sprachstimmen zusammen mit seinen Sprachfunktionen: Öffnen Sie die
+**Einstellungen** von Windows, gehen Sie zu **Zeit und Sprache** und fügen Sie die
+gewünschte Sprache hinzu — unter Windows 10 im Bereich **Spracherkennung**, wo
+**Stimmen verwalten** die Schaltfläche **Stimmen hinzufügen** anbietet; unter Windows 11
+unter **Sprache und Region**, indem Sie die Sprache hinzufügen und ihre Sprachausgabe
+mitwählen. Learn Anywhere findet eine neu installierte Stimme, sobald Sie das nächste
+Mal eine Lernsitzung öffnen.
+
 ## Was mitreist und was nicht
 
 Vorlesesprache und **Vorlesen** stehen in der Maske, folgen einer Lern-Datei also auf
@@ -75,8 +133,12 @@ sich herum.
 
 ## Was noch fehlt
 
-Diese Version hält nur die Absicht fest — kein Feld wird vorgelesen, und ausserhalb des
-Mask Editors gibt es keine Einstellung zur Sprachausgabe. Was Sie hier festlegen, ist
-das, womit das Vorlesen arbeiten wird, sobald es kommt, auf den Systemen, die sprechen
-können: Windows und die Android-Begleit-App. Linux hat keine Sprachausgabe und sagt das
-klar, statt eine Einstellung zu zeigen, die nichts tut.
+Vorgelesen wird auf Anforderung, Feld für Feld, per Klick auf das Symbol. Die Antwort
+beim Aufdecken automatisch vorlesen zu lassen, eine Taste, die das wiederholt, die Wahl,
+*welche* Ihrer installierten Stimmen eine Sprache spricht, und ein langsameres
+Sprechtempo kommen noch. Ausserhalb des Mask Editors gibt es bisher keine Einstellung
+zur Sprachausgabe: das Programm wählt selbst eine passende Stimme.
+
+Die Sprachausgabe läuft unter **Windows**. **Linux** hat keine — dort erscheint gar kein
+Lautsprecher-Symbol, statt eines, das beim Klicken nichts täte. Auch die
+**Android-Begleit-App** kann noch nicht sprechen.

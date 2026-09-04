@@ -266,16 +266,22 @@ bool isFieldRowVisible(
 /// renders before Check as an empty input box, so its row is visible while
 /// its value is not. Speech must check this, not [isFieldRowVisible], or it
 /// would read out the solution the learner is still trying to produce.
+///
+/// [answerShown] is the one case where an answer's value is on screen before
+/// Check: Level Learning at [kMaxSupportLevel] shows the whole solution to be
+/// read and memorized, until "Hide & type". Nothing is being withheld there,
+/// so nothing can be given away.
 bool isFieldValueVisible(
   FieldDefinition field,
   QueryDirection direction, {
   required bool afterCheck,
+  bool answerShown = false,
 }) {
   if (field.isHidden) return false;
   return switch (field.roleFor(direction)) {
     FieldRole.question => true,
     FieldRole.remark => afterCheck,
-    FieldRole.answer => afterCheck,
+    FieldRole.answer => afterCheck || answerShown,
   };
 }
 

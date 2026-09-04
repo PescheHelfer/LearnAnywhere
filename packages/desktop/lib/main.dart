@@ -332,6 +332,14 @@ final class _DesktopHome extends StatefulWidget {
 
 final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   final DesktopFileService _fileService = const DesktopFileService();
+  // Speech is INJECTED rather than reached for. The plugin behind
+  // FlutterTtsEngine carries a Windows implementation and no Linux one, so
+  // Linux is handed the engine that reports itself unavailable: no session
+  // there ever calls a plugin that is not registered, and no speaker icon is
+  // offered for something the host cannot do.
+  final TtsEngine _speechEngine = Platform.isWindows
+      ? FlutterTtsEngine()
+      : const UnavailableTtsEngine();
   // Memo for [_deckContentFrameWidth]; see there for why it is cached, and
   // for what makes up the key.
   (LearningMask, double, String)? _frameWidthKey;
@@ -2649,6 +2657,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _DesktopRoute.learn => LearnSessionPage(
         deck: _document.deck,
         statistics: _document.statistics,
+        speechEngine: _speechEngine,
         levelStatistics: _document.levelStatistics,
         levelNames: widget.locale.languageCode == 'de'
             ? _settings.levelNamesDe

@@ -19,6 +19,12 @@ dependencies:
   flutter_markdown_plus: ^1.0.12
   flutter_localizations:
     sdk: flutter
+  # Speaks a field aloud through the voices the operating system already has —
+  # nothing to download, nothing sent anywhere. It carries Windows and Android
+  # implementations and NO Linux one, which is why the shells inject the
+  # engine: Linux is handed the UnavailableTtsEngine from core and never
+  # reaches this plugin.
+  flutter_tts: ^4.2.5
   learn_anywhere_core:
     path: ../core
 
