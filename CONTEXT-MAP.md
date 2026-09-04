@@ -29,9 +29,11 @@ counter moves.
 
 | File | |
 |---|---|
-| [`packages/core/CONTEXT.md`](packages/core/CONTEXT.md) | Statistics vocabulary — the two records, session files, learning sessions. |
+| [`packages/core/CONTEXT.md`](packages/core/CONTEXT.md) | Statistics vocabulary — the two records, session files, learning sessions — and speech vocabulary: spoken language, voice, speech engine. |
 | [`docs/adr/0001-all-time-statistics-accumulate-live-deltas.md`](docs/adr/0001-all-time-statistics-accumulate-live-deltas.md) | Why the lifetime record is accumulated live and never derived. |
 | [`docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md`](docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md) | Why zoom scales the theme's font sizes and never the text scaler. |
+| [`docs/adr/0003-spoken-language-belongs-to-the-field.md`](docs/adr/0003-spoken-language-belongs-to-the-field.md) | Why a spoken language is a property of a field and never of a direction or a deck. |
+| [`docs/adr/0004-flutter-tts-first-linux-mute.md`](docs/adr/0004-flutter-tts-first-linux-mute.md) | Why the simpler speech engine ships first, and why Linux ships mute. |
 | [`packages/desktop/CONTEXT.md`](packages/desktop/CONTEXT.md) | Desktop shell vocabulary — start folder, content frame, zoom level, recent decks. |
 
 The other contexts have no `CONTEXT.md` or `docs/adr/` yet. That is not a gap to fill
