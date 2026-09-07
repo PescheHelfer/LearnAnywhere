@@ -186,9 +186,14 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
                         ),
                         Text(
                           _folderOf(entry.path),
+                          // Always the muted foreground, selectable row or
+                          // not: it is secondary info either way, and a bare
+                          // onSurfaceVariant is the same sub-4.5:1 color the
+                          // status label was moved off of in Dark Blue.
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color:
-                                rowForeground ?? theme.colorScheme.onSurfaceVariant,
+                            color: LearnAnywhereChromeTheme.mutedForegroundOf(
+                              theme,
+                            ),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

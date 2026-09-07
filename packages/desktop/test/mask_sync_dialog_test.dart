@@ -152,7 +152,7 @@ void main() {
     (WidgetTester tester) async {
       final List<MaskSyncEntry> entries = <MaskSyncEntry>[
         const MaskSyncEntry(
-          path: '/decks/up-to-date.vok',
+          path: '/decks/one/up-to-date.vok',
           isMask: false,
           revision: 1,
           status: MaskSyncStatus.upToDate,
@@ -160,7 +160,7 @@ void main() {
           maskName: 'Up To Date Deck',
         ),
         const MaskSyncEntry(
-          path: '/decks/english.vok',
+          path: '/decks/two/english.vok',
           isMask: false,
           revision: 1,
           status: MaskSyncStatus.willUpdate,
@@ -168,7 +168,7 @@ void main() {
           maskName: 'English Deck',
         ),
         const MaskSyncEntry(
-          path: '/decks/french.vok',
+          path: '/decks/three/french.vok',
           isMask: false,
           revision: 1,
           status: MaskSyncStatus.wouldBreak,
@@ -225,6 +225,14 @@ void main() {
       expect(colorOf('up-to-date.vok'), mutedForeground);
       expect(colorOf('french.vok'), mutedForeground);
       expect(colorOf('english.vok'), isNot(mutedForeground));
+
+      // The folder line is secondary info on every row, selectable or not,
+      // so it always uses the muted foreground — never the bare
+      // onSurfaceVariant that fails 4.5:1 against this dialog's surface in
+      // Dark Blue.
+      expect(colorOf('/decks/one'), mutedForeground);
+      expect(colorOf('/decks/two'), mutedForeground);
+      expect(colorOf('/decks/three'), mutedForeground);
 
       // The would-break row's own alarm-colored status label and its
       // breaking-reason line are untouched by that dimming.
