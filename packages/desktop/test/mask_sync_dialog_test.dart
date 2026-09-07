@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_desktop/src/file_operations/desktop_file_service.dart';
@@ -25,14 +26,69 @@ void main() {
       // mass-overwrite every willUpdate copy found under the folder.
       expect(_applyButton(tester).onPressed, isNull);
 
-      // Checking a row's checkbox enables Apply. The checkbox itself is
-      // excluded from hit-testing on a selectable row (the row's own InkWell
-      // owns the tap instead, so a click anywhere on the row toggles it), so
-      // this tap is expected to land on that InkWell rather than the
-      // Checkbox render object directly.
-      await tester.tap(find.byType(Checkbox).first, warnIfMissed: false);
+      // Checking a row's checkbox enables Apply. The Checkbox's own tap
+      // recognizer wins over the ancestor InkWell's, so tapping it directly
+      // toggles the row exactly once.
+      await tester.tap(find.byType(Checkbox).first);
       await tester.pumpAndSettle();
       expect(_applyButton(tester).onPressed, isNotNull);
+    },
+  );
+
+  testWidgets(
+    "a selectable row's checkbox can be actuated through its semantics "
+    "action, and a non-selectable row's checkbox cannot",
+    (WidgetTester tester) async {
+      final List<MaskSyncEntry> entries = <MaskSyncEntry>[
+        _entry('/decks/up-to-date.vok', MaskSyncStatus.upToDate),
+        _entry('/decks/english.vok', MaskSyncStatus.willUpdate),
+      ];
+
+      // Disposed explicitly (not via addTearDown, whose teardown fires too
+      // late in this harness to satisfy the "no handle left active" check)
+      // but inside try/finally, so a failing expect below still disposes it
+      // instead of leaking a force-enabled semantics tree into later tests.
+      final SemanticsHandle handle = tester.ensureSemantics();
+      try {
+        await _openDialog(tester, entries: entries);
+        expect(_applyButton(tester).onPressed, isNull);
+
+        // The non-selectable row's checkbox does not expose a tap action at
+        // all — untickable by semantics, not merely announced-but-inert.
+        final FinderBase<SemanticsNode> nonSelectable = find.semantics.byLabel(
+          RegExp('up-to-date.vok'),
+        );
+        expect(
+          nonSelectable.evaluate().single.getSemanticsData().hasAction(
+            SemanticsAction.tap,
+          ),
+          isFalse,
+        );
+
+        // The selectable row's checkbox exposes a tap action, and performing
+        // it — the way assistive tech would — actually toggles the row.
+        final FinderBase<SemanticsNode> selectable = find.semantics.byLabel(
+          RegExp('english.vok'),
+        );
+        expect(
+          selectable.evaluate().single.getSemanticsData().hasAction(
+            SemanticsAction.tap,
+          ),
+          isTrue,
+        );
+        tester.semantics.tap(selectable);
+        await tester.pumpAndSettle();
+        expect(_applyButton(tester).onPressed, isNotNull);
+
+        // And toggling it again through the same action clears the
+        // selection, confirming the action reaches this row's own toggle
+        // rather than some other handler firing alongside it.
+        tester.semantics.tap(selectable);
+        await tester.pumpAndSettle();
+        expect(_applyButton(tester).onPressed, isNull);
+      } finally {
+        handle.dispose();
+      }
     },
   );
 
@@ -62,60 +118,59 @@ void main() {
     },
   );
 
-  testWidgets(
-    'a non-selectable row is dimmed into the muted foreground, but a '
-    "would-break row's status label and reasons stay at full strength",
-    (WidgetTester tester) async {
-      final List<MaskSyncEntry> entries = <MaskSyncEntry>[
-        _entry('/decks/one/up-to-date.vok', MaskSyncStatus.upToDate),
-        _entry('/decks/two/english.vok', MaskSyncStatus.willUpdate),
-        _entry(
-          '/decks/three/french.vok',
-          MaskSyncStatus.wouldBreak,
-          reasons: _breakingReasons,
-        ),
-      ];
+  testWidgets('a non-selectable row is dimmed into the muted foreground, but a '
+      "would-break row's status label and reasons stay at full strength", (
+    WidgetTester tester,
+  ) async {
+    final List<MaskSyncEntry> entries = <MaskSyncEntry>[
+      _entry('/decks/one/up-to-date.vok', MaskSyncStatus.upToDate),
+      _entry('/decks/two/english.vok', MaskSyncStatus.willUpdate),
+      _entry(
+        '/decks/three/french.vok',
+        MaskSyncStatus.wouldBreak,
+        reasons: _breakingReasons,
+      ),
+    ];
 
-      await _openDialog(
-        tester,
-        entries: entries,
-        // Dark Blue is the one theme that opts into its own muted
-        // foreground, so this is the theme that can tell "used the muted
-        // foreground" apart from "used onSurfaceVariant anyway".
-        theme: LearnAnywhereTheme.darkBlue(),
-      );
+    await _openDialog(
+      tester,
+      entries: entries,
+      // Dark Blue is the one theme that opts into its own muted
+      // foreground, so this is the theme that can tell "used the muted
+      // foreground" apart from "used onSurfaceVariant anyway".
+      theme: LearnAnywhereTheme.darkBlue(),
+    );
 
-      const Color mutedForeground = Color(0xFF9DB2E8);
-      Color? colorOf(String textContaining) =>
-          tester.widget<Text>(find.textContaining(textContaining)).style?.color;
+    const Color mutedForeground = Color(0xFF9DB2E8);
+    Color? colorOf(String textContaining) =>
+        tester.widget<Text>(find.textContaining(textContaining)).style?.color;
 
-      // Non-selectable rows (up to date, would break) dim their name line
-      // into the muted foreground; the selectable row does not.
-      expect(colorOf('up-to-date.vok'), mutedForeground);
-      expect(colorOf('french.vok'), mutedForeground);
-      expect(colorOf('english.vok'), isNot(mutedForeground));
+    // Non-selectable rows (up to date, would break) dim their name line
+    // into the muted foreground; the selectable row does not.
+    expect(colorOf('up-to-date.vok'), mutedForeground);
+    expect(colorOf('french.vok'), mutedForeground);
+    expect(colorOf('english.vok'), isNot(mutedForeground));
 
-      // The folder line is secondary info on every row, selectable or not,
-      // so it always uses the muted foreground — never the bare
-      // onSurfaceVariant that fails 4.5:1 against this dialog's surface in
-      // Dark Blue.
-      expect(colorOf('/decks/one'), mutedForeground);
-      expect(colorOf('/decks/two'), mutedForeground);
-      expect(colorOf('/decks/three'), mutedForeground);
+    // The folder line is secondary info on every row, selectable or not,
+    // so it always uses the muted foreground — never the bare
+    // onSurfaceVariant that fails 4.5:1 against this dialog's surface in
+    // Dark Blue.
+    expect(colorOf('/decks/one'), mutedForeground);
+    expect(colorOf('/decks/two'), mutedForeground);
+    expect(colorOf('/decks/three'), mutedForeground);
 
-      // The would-break row's own alarm-colored status label and its
-      // breaking-reason line are untouched by that dimming.
-      final ThemeData theme = LearnAnywhereTheme.darkBlue();
-      expect(
-        tester.widget<Text>(find.text('Would break')).style?.color,
-        theme.colorScheme.error,
-      );
-      expect(colorOf('Deleting field'), isNot(mutedForeground));
+    // The would-break row's own alarm-colored status label and its
+    // breaking-reason line are untouched by that dimming.
+    final ThemeData theme = LearnAnywhereTheme.darkBlue();
+    expect(
+      tester.widget<Text>(find.text('Would break')).style?.color,
+      theme.colorScheme.error,
+    );
+    expect(colorOf('Deleting field'), isNot(mutedForeground));
 
-      // Dimming is a color swap, never an Opacity wrapper.
-      expect(find.byType(Opacity), findsNothing);
-    },
-  );
+    // Dimming is a color swap, never an Opacity wrapper.
+    expect(find.byType(Opacity), findsNothing);
+  });
 
   testWidgets(
     'applying keeps the dialog open and every row reports its own fresh '
@@ -313,9 +368,7 @@ void main() {
     final _FakeSync sync = _FakeSync(
       gate: inFlight.future,
       rescans: <List<MaskSyncEntry>>[
-        <MaskSyncEntry>[
-          _entry('/decks/english.vok', MaskSyncStatus.upToDate),
-        ],
+        <MaskSyncEntry>[_entry('/decks/english.vok', MaskSyncStatus.upToDate)],
       ],
     );
 

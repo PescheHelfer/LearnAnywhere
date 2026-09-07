@@ -315,66 +315,84 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
       });
     }
 
+    final bool isSelected = _selected.contains(entry.path);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          InkWell(
+          // One semantics node for the whole row, rather than the row, its
+          // InkWell and its checkbox each contributing their own tap
+          // action: merging non-container Semantics nodes merges their
+          // actions too, so a screen-reader tap would fire toggle() more
+          // than once (a net no-op for two, since it flips back). The
+          // InkWell's own semantics are excluded and the Checkbox's are
+          // hidden by ExcludeSemantics below, leaving this node as the only
+          // source of the row's tap action.
+          Semantics(
+            container: true,
+            enabled: selectable,
+            checked: selectable ? isSelected : null,
             onTap: selectable ? toggle : null,
-            child: Row(
-              children: <Widget>[
-                // The row's own InkWell owns the tap when selectable, so the
-                // checkbox is excluded from hit-testing to avoid the two
-                // handlers racing over the same click; its semantics stay
-                // live for assistive tech.
-                IgnorePointer(
-                  ignoring: selectable,
-                  child: Checkbox(
-                    value: _selected.contains(entry.path),
-                    onChanged: selectable ? (bool? value) => toggle() : null,
-                  ),
-                ),
-                Expanded(
-                  child: Tooltip(
-                    message: entry.path,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        // The file name is the identifying part, so it goes on
-                        // its own un-ellipsized line; only the (usually much
-                        // longer) folder path below is left to truncate.
-                        Text(
-                          '${_fileNameOf(entry.path)}  '
-                          '(rev ${entry.revision})',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: rowForeground,
-                          ),
-                        ),
-                        Text(
-                          _folderOf(entry.path),
-                          // Always the muted foreground, selectable row or
-                          // not: it is secondary info either way, and a bare
-                          // onSurfaceVariant is the same sub-4.5:1 color the
-                          // status label was moved off of in Dark Blue.
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: LearnAnywhereChromeTheme.mutedForegroundOf(
-                              theme,
-                            ),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+            child: InkWell(
+              onTap: selectable ? toggle : null,
+              excludeFromSemantics: true,
+              child: Row(
+                children: <Widget>[
+                  // The Checkbox's own tap recognizer is still the
+                  // innermost one in the pointer gesture arena, so a mouse
+                  // or touch tap here wins over the ancestor InkWell's and
+                  // still produces exactly one toggle.
+                  ExcludeSemantics(
+                    child: Checkbox(
+                      value: isSelected,
+                      onChanged: selectable ? (bool? value) => toggle() : null,
                     ),
                   ),
-                ),
-                Text(
-                  _statusLabel(messages, entry.status),
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: _statusColor(theme, entry.status),
+                  Expanded(
+                    child: Tooltip(
+                      message: entry.path,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          // The file name is the identifying part, so it
+                          // goes on its own un-ellipsized line; only the
+                          // (usually much longer) folder path below is left
+                          // to truncate.
+                          Text(
+                            '${_fileNameOf(entry.path)}  '
+                            '(rev ${entry.revision})',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: rowForeground,
+                            ),
+                          ),
+                          Text(
+                            _folderOf(entry.path),
+                            // Always the muted foreground, selectable row
+                            // or not: it is secondary info either way, and
+                            // a bare onSurfaceVariant is the same
+                            // sub-4.5:1 color the status label was moved
+                            // off of in Dark Blue.
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: LearnAnywhereChromeTheme.mutedForegroundOf(
+                                theme,
+                              ),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  Text(
+                    _statusLabel(messages, entry.status),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: _statusColor(theme, entry.status),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           // Breaking reasons stay at full strength even on a dimmed
@@ -398,8 +416,10 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
   ) {
     return messages.message(switch (status) {
       MaskSyncStatus.upToDate => LearnAnywhereMessage.maskSyncStatusUpToDate,
-      MaskSyncStatus.willUpdate => LearnAnywhereMessage.maskSyncStatusWillUpdate,
-      MaskSyncStatus.wouldBreak => LearnAnywhereMessage.maskSyncStatusWouldBreak,
+      MaskSyncStatus.willUpdate =>
+        LearnAnywhereMessage.maskSyncStatusWillUpdate,
+      MaskSyncStatus.wouldBreak =>
+        LearnAnywhereMessage.maskSyncStatusWouldBreak,
       MaskSyncStatus.differs => LearnAnywhereMessage.maskSyncStatusDiffers,
       MaskSyncStatus.newer => LearnAnywhereMessage.maskSyncStatusNewer,
     });
@@ -449,20 +469,23 @@ String describeBreakingReason(
       ? '#${reason.fieldId}'
       : reason.fieldName;
   return switch (reason.kind) {
-    MaskBreakingKind.categoryDeleted => messages
-        .message(LearnAnywhereMessage.maskBreakCategoryDeleted)
-        .replaceAll('{category}', category)
-        .replaceAll('{count}', reason.affectedUnits.toString()),
-    MaskBreakingKind.fieldDeleted => messages
-        .message(LearnAnywhereMessage.maskBreakFieldDeleted)
-        .replaceAll('{field}', field)
-        .replaceAll('{category}', category)
-        .replaceAll('{count}', reason.affectedUnits.toString()),
-    MaskBreakingKind.fieldLengthTooShort => messages
-        .message(LearnAnywhereMessage.maskBreakFieldTooShort)
-        .replaceAll('{field}', field)
-        .replaceAll('{category}', category)
-        .replaceAll('{length}', (reason.newLength ?? 0).toString())
-        .replaceAll('{count}', reason.affectedUnits.toString()),
+    MaskBreakingKind.categoryDeleted =>
+      messages
+          .message(LearnAnywhereMessage.maskBreakCategoryDeleted)
+          .replaceAll('{category}', category)
+          .replaceAll('{count}', reason.affectedUnits.toString()),
+    MaskBreakingKind.fieldDeleted =>
+      messages
+          .message(LearnAnywhereMessage.maskBreakFieldDeleted)
+          .replaceAll('{field}', field)
+          .replaceAll('{category}', category)
+          .replaceAll('{count}', reason.affectedUnits.toString()),
+    MaskBreakingKind.fieldLengthTooShort =>
+      messages
+          .message(LearnAnywhereMessage.maskBreakFieldTooShort)
+          .replaceAll('{field}', field)
+          .replaceAll('{category}', category)
+          .replaceAll('{length}', (reason.newLength ?? 0).toString())
+          .replaceAll('{count}', reason.affectedUnits.toString()),
   };
 }
