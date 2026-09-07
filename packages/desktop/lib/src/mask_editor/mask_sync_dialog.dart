@@ -13,6 +13,36 @@ typedef MaskSyncApplyCallback =
 /// entries.
 typedef MaskSyncRescanCallback = Future<List<MaskSyncEntry>> Function();
 
+/// The outcome of a full [MaskSyncDialog.show] visit — every apply round
+/// from the moment the dialog opened until it closed.
+///
+/// The three possible outcomes are told apart by [written] and [failure]
+/// together: wrote nothing ([written] empty, [failure] null), wrote
+/// something ([written] non-empty, [failure] null), and wrote something then
+/// failed ([written] possibly non-empty, [failure] set). The last case is
+/// why this is a returned value rather than a thrown exception: a caller
+/// that received the failure as a throw out of `show` could catch it
+/// without ever learning what had already landed on disk before it — the
+/// exact desync (a rewritten file, an untouched in-memory copy) this type
+/// exists to prevent. A caller must apply [written] before it does anything
+/// with [failure].
+final class MaskSyncOutcome {
+  /// Creates an outcome.
+  const MaskSyncOutcome({required this.written, this.failure});
+
+  /// Every path actually written across every apply round of the visit,
+  /// insertion-ordered and de-duplicated.
+  final List<String> written;
+
+  /// The error and stack trace it was thrown with, set when the round behind
+  /// the last write failed to re-scan. The paths in [written] written by
+  /// that same round are already included — the failure does not retract
+  /// them. Carried as one record, rather than two independently-nullable
+  /// fields, so an error without its stack trace (or the reverse) cannot be
+  /// constructed.
+  final (Object error, StackTrace stackTrace)? failure;
+}
+
 /// Review dialog for tier-2 cross-directory mask sync (Step 7).
 ///
 /// Lists every `.inf`/`.vok` copy of the mask found under the chosen folder
@@ -79,14 +109,19 @@ final class MaskSyncDialog extends StatefulWidget {
   /// unsaved).
   final String? referenceSourcePath;
 
-  /// Shows the dialog; returns the paths actually written across every apply
+  /// Shows the dialog; returns a [MaskSyncOutcome] describing every apply
   /// round of the visit.
   ///
-  /// Closing without writing anything returns an **empty list**, never `null`:
-  /// the caller has to tell "nothing was written" apart from "the command was
+  /// Closing without writing anything returns an outcome with an **empty**
+  /// [MaskSyncOutcome.written] list, never a separate "not run" signal: the
+  /// caller has to tell "nothing was written" apart from "the command was
   /// never run", and Cancel, Escape and the barrier must be indistinguishable
-  /// to the learner.
-  static Future<List<String>> show(
+  /// to the learner. When the round behind the last write fails to re-scan,
+  /// the same outcome carries both [MaskSyncOutcome.written] (whatever landed
+  /// before the failure) and [MaskSyncOutcome.failure] — never the failure
+  /// alone, since a caller that could see one without the other could bring
+  /// its own state out of sync with what is actually on disk.
+  static Future<MaskSyncOutcome> show(
     BuildContext context,
     List<MaskSyncEntry> entries, {
     required String referenceName,
@@ -98,8 +133,7 @@ final class MaskSyncDialog extends StatefulWidget {
     // Insertion-ordered and de-duplicated: a row can only be applied twice if
     // its first write failed, and a failure contributes nothing here anyway.
     final Set<String> written = <String>{};
-    Object? failure;
-    StackTrace? failureStack;
+    (Object, StackTrace)? failure;
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) => MaskSyncDialog(
@@ -111,20 +145,17 @@ final class MaskSyncDialog extends StatefulWidget {
         onRescan: onRescan,
         onWritten: written.addAll,
         onFailed: (Object error, StackTrace stackTrace) {
-          failure = error;
-          failureStack = stackTrace;
+          failure = (error, stackTrace);
         },
       ),
     );
     // An apply round is driven from a button callback, so a throw inside it
-    // reaches no caller on its own. Carrying it out here puts it back on the
-    // caller's awaited path, where the shell reports file errors in the UI
-    // language — copies written before the failure are still on disk, they
-    // are just reported as an error rather than as a count.
-    if (failure != null) {
-      Error.throwWithStackTrace(failure!, failureStack!);
-    }
-    return written.toList();
+    // reaches no caller on its own. Handing it back here, alongside the
+    // ledger rather than in place of it, puts it back on the caller's
+    // awaited path without losing what the ledger says actually happened:
+    // copies written before the failure are still on disk, and the caller
+    // needs to know exactly which ones before it reports the failure.
+    return MaskSyncOutcome(written: written.toList(), failure: failure);
   }
 
   @override

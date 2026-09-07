@@ -298,7 +298,11 @@ void main() {
       // the failure, rather than it vanishing into an unawaited callback.
       expect(find.text('Update other copies of this mask'), findsNothing);
       expect(result.failure, isNotNull);
-      expect(result.written, isNull);
+      // The write that landed before the re-scan failed is still handed
+      // back, not thrown away with the error: the caller has to bring its
+      // own in-memory copy in line with what is actually on disk before it
+      // reports the failure, and it can only do that if the ledger survives.
+      expect(result.written, <String>['/decks/english.vok']);
     },
   );
 
@@ -412,7 +416,7 @@ class _FakeSync {
   Future<List<MaskSyncEntry>> rescan() async => _remaining.removeAt(0);
 }
 
-/// Captures what the dialog returned to — or threw at — its caller.
+/// Captures the [MaskSyncOutcome] the dialog returned to its caller.
 class _Result {
   List<String>? written;
   Object? failure;
@@ -441,23 +445,19 @@ Future<void> _openDialog(
           builder: (BuildContext context) {
             return ElevatedButton(
               onPressed: () async {
-                // The shell awaits this call inside its file-operation guard,
-                // so a failure has to arrive here as a throw.
-                try {
-                  // Assigned via a local: `result?.x = await ...` would
-                  // short-circuit the await away whenever result is null.
-                  final List<String> written = await MaskSyncDialog.show(
-                    context,
-                    entries,
-                    referenceName: 'English Deck',
-                    referenceRevision: 1,
-                    onApply: fake.apply,
-                    onRescan: fake.rescan,
-                  );
-                  result?.written = written;
-                } on Object catch (error) {
-                  result?.failure = error;
-                }
+                // The outcome carries the ledger and the failure together —
+                // never one without the other — so there is nothing to
+                // catch here, unlike the old throwing contract.
+                final MaskSyncOutcome outcome = await MaskSyncDialog.show(
+                  context,
+                  entries,
+                  referenceName: 'English Deck',
+                  referenceRevision: 1,
+                  onApply: fake.apply,
+                  onRescan: fake.rescan,
+                );
+                result?.written = outcome.written;
+                result?.failure = outcome.failure?.$1;
               },
               child: const Text('open'),
             );

@@ -2432,7 +2432,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // wants, writing and re-scanning through these two callbacks, and
       // returns the paths whose writes actually landed — empty when it is
       // closed having written nothing.
-      final List<String> written = await MaskSyncDialog.show(
+      final MaskSyncOutcome outcome = await MaskSyncDialog.show(
         context,
         entries,
         referenceName: reference.name,
@@ -2450,14 +2450,26 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       if (!mounted) {
         return;
       }
-      // Keep the open deck in sync when its own write actually landed.
+      // Keep the open deck in sync when its own write actually landed, even
+      // if the round that wrote it then failed to re-scan (`outcome.failure`,
+      // checked below). Skipping this on failure would leave `_document`
+      // holding the old embedded mask while the file on disk already has the
+      // new one; the next ordinary save of this deck would silently rewrite
+      // that just-synced file back to the stale mask, undoing the sync with
+      // nothing anywhere reporting it. So this has to run before the failure
+      // is reported, not after.
       final String? deckPath = _document.deckPath;
-      if (deckPath != null && written.contains(deckPath)) {
+      if (deckPath != null && outcome.written.contains(deckPath)) {
         setState(() {
           _document = _document.copyWith(
             deck: applyMaskToDeck(_document.deck, reference),
           );
         });
+      }
+      final (Object, StackTrace)? failure = outcome.failure;
+      if (failure != null) {
+        final (Object error, StackTrace stackTrace) = failure;
+        Error.throwWithStackTrace(error, stackTrace);
       }
       // Reported even when nothing was written: Cancel, Escape and the
       // barrier all reach here with an empty list, and that "nothing was
@@ -2468,10 +2480,13 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // having written nothing must not navigate the learner away from
       // wherever they ran the command — the Mask Editor included, where a
       // route change would strand unsaved edits with no save prompt.
-      if (written.isEmpty) {
+      if (outcome.written.isEmpty) {
         _showStatus(LearnAnywhereMessage.maskSyncNoneUpdated);
       } else {
-        _setFileStatus(LearnAnywhereMessage.maskSyncDone, count: written.length);
+        _setFileStatus(
+          LearnAnywhereMessage.maskSyncDone,
+          count: outcome.written.length,
+        );
       }
     });
   }
