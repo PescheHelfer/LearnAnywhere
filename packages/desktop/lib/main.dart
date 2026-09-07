@@ -2140,10 +2140,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         }
         // Force: accept the data loss and overwrite every matching deck.
         await _fileService.saveMask(saved, infPath);
-        await _fileService.applyMaskPropagation(
-          newMask: saved,
-          deckPaths: plan.allPaths,
-        );
+        final List<MaskWriteResult> propagationResults = await _fileService
+            .applyMaskPropagation(newMask: saved, deckPaths: plan.allPaths);
         final bool openDeckWritten = await _applyMaskToLoadedDeck(
           saved,
           force: true,
@@ -2151,7 +2149,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         _finishMaskSave(
           infPath,
           saved,
-          updatedDeckCount: plan.allPaths.length + (openDeckWritten ? 1 : 0),
+          updatedDeckCount:
+              propagationResults.where((MaskWriteResult r) => r.succeeded).length +
+              (openDeckWritten ? 1 : 0),
         );
         return;
       }
@@ -2170,10 +2170,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         toUpdate = checked;
       }
       await _fileService.saveMask(saved, infPath);
-      await _fileService.applyMaskPropagation(
-        newMask: saved,
-        deckPaths: toUpdate,
-      );
+      final List<MaskWriteResult> propagationResults = await _fileService
+          .applyMaskPropagation(newMask: saved, deckPaths: toUpdate);
       final bool openDeckWritten = await _applyMaskToLoadedDeck(
         saved,
         force: false,
@@ -2181,7 +2179,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _finishMaskSave(
         infPath,
         saved,
-        updatedDeckCount: toUpdate.length + (openDeckWritten ? 1 : 0),
+        updatedDeckCount:
+            propagationResults.where((MaskWriteResult r) => r.succeeded).length +
+            (openDeckWritten ? 1 : 0),
       );
     });
   }
@@ -2425,10 +2425,12 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       if (selected == null || selected.isEmpty) {
         return;
       }
-      final List<MaskSyncWriteResult> results = await _fileService
-          .applyMaskSync(reference: reference, paths: selected);
+      final List<MaskWriteResult> results = await _fileService.applyMaskSync(
+        reference: reference,
+        paths: selected,
+      );
       final Set<String> written = <String>{
-        for (final MaskSyncWriteResult result in results)
+        for (final MaskWriteResult result in results)
           if (result.succeeded) result.path,
       };
       // Keep the open deck in sync when its own write actually landed.

@@ -302,21 +302,30 @@ final class DesktopFileService {
 
   /// Overwrites the embedded mask cache of each deck in [deckPaths] with
   /// [newMask], pruning any unit data orphaned by the new schema (see
-  /// [applyMaskToDeck]). Decks that fail to decode are skipped.
-  Future<void> applyMaskPropagation({
+  /// [applyMaskToDeck]).
+  ///
+  /// Returns one result per path, in the order given, so a caller can report
+  /// how many writes actually landed. A path that fails to decode or write is
+  /// reported as a failure rather than silently skipped — but never aborts
+  /// the rest of the batch.
+  Future<List<MaskWriteResult>> applyMaskPropagation({
     required LearningMask newMask,
     required Iterable<String> deckPaths,
   }) async {
+    final List<MaskWriteResult> results = <MaskWriteResult>[];
     for (final String path in deckPaths) {
-      final LearningDeck deck;
+      bool wrote = false;
       try {
-        deck = decodeDeckJson(await File(path).readAsString());
+        final LearningDeck deck = decodeDeckJson(await File(path).readAsString());
+        final LearningDeck updated = applyMaskToDeck(deck, newMask);
+        await File(path).writeAsString(encodeDeckJson(updated));
+        wrote = true;
       } on Object {
-        continue;
+        wrote = false;
       }
-      final LearningDeck updated = applyMaskToDeck(deck, newMask);
-      await File(path).writeAsString(encodeDeckJson(updated));
+      results.add(MaskWriteResult(path: path, succeeded: wrote));
     }
+    return results;
   }
 
   /// Recursively scans [root] for `.inf` and `.vok` files whose maskId equals
@@ -416,11 +425,11 @@ final class DesktopFileService {
   /// (e.g. read-only, or removed between scan and apply) is reported as a
   /// failure rather than silently skipped — but never aborts the rest of the
   /// batch.
-  Future<List<MaskSyncWriteResult>> applyMaskSync({
+  Future<List<MaskWriteResult>> applyMaskSync({
     required LearningMask reference,
     required Iterable<String> paths,
   }) async {
-    final List<MaskSyncWriteResult> results = <MaskSyncWriteResult>[];
+    final List<MaskWriteResult> results = <MaskWriteResult>[];
     for (final String path in paths) {
       bool wrote = false;
       try {
@@ -439,7 +448,7 @@ final class DesktopFileService {
       } on Object {
         wrote = false;
       }
-      results.add(MaskSyncWriteResult(path: path, succeeded: wrote));
+      results.add(MaskWriteResult(path: path, succeeded: wrote));
     }
     return results;
   }
@@ -1000,13 +1009,14 @@ final class MaskSyncEntry {
   bool get isUpdatable => status == MaskSyncStatus.willUpdate;
 }
 
-/// One path's outcome from [DesktopFileService.applyMaskSync].
-final class MaskSyncWriteResult {
+/// One path's outcome from [DesktopFileService.applyMaskPropagation] or
+/// [DesktopFileService.applyMaskSync].
+final class MaskWriteResult {
   /// Creates a write result.
-  const MaskSyncWriteResult({required this.path, required this.succeeded});
+  const MaskWriteResult({required this.path, required this.succeeded});
 
   /// The path this result is for, as given to [DesktopFileService
-  /// .applyMaskSync].
+  /// .applyMaskPropagation] or [DesktopFileService.applyMaskSync].
   final String path;
 
   /// Whether the write landed on disk.

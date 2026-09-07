@@ -1587,11 +1587,34 @@ void main() {
       expect(plan.breaking, hasLength(1));
       expect(plan.breaking.single.deckPath, breakPath);
 
-      // Auto-apply to the compatible deck only.
-      await service.applyMaskPropagation(
-        newMask: shrunk,
-        deckPaths: plan.compatible,
-      );
+      // Auto-apply to the compatible deck, plus two paths that were never
+      // planned and cannot be written — the same two techniques 02 uses so
+      // both failure shapes are proven non-fatal and reported rather than
+      // silently skipped or left to escape as an exception. Both fail the
+      // same way on Linux and Windows (unlike a permission bit): missingPath
+      // doesn't exist, so the decode throws; missingDirPath's parent
+      // directory doesn't exist, so it throws the same way.
+      final String missingPath = '${temp.path}${sep}missing.vok';
+      final String missingDirPath =
+          '${temp.path}${sep}no-such-dir${sep}missing.vok';
+      final List<MaskWriteResult> compatibleResults = await service
+          .applyMaskPropagation(
+            newMask: shrunk,
+            deckPaths: <String>[okPath, missingPath, missingDirPath],
+          );
+
+      // One result per path given, naming the path and whether it landed —
+      // the batch runs to completion instead of aborting on the first
+      // failure.
+      final Map<String, bool> succeededByPath = <String, bool>{
+        for (final MaskWriteResult r in compatibleResults) r.path: r.succeeded,
+      };
+      expect(succeededByPath, <String, bool>{
+        okPath: true,
+        missingPath: false,
+        missingDirPath: false,
+      });
+
       final LearningDeck updatedOk = decodeDeckJson(
         await File(okPath).readAsString(),
       );
@@ -1604,10 +1627,13 @@ void main() {
       expect(untouched.mask.categories.single.fields.single.length, 40);
 
       // Forcing applies to the breaking deck too, truncating its data.
-      await service.applyMaskPropagation(
-        newMask: shrunk,
-        deckPaths: <String>[breakPath],
-      );
+      final List<MaskWriteResult> forcedResults = await service
+          .applyMaskPropagation(
+            newMask: shrunk,
+            deckPaths: <String>[breakPath],
+          );
+      expect(forcedResults.single.path, breakPath);
+      expect(forcedResults.single.succeeded, isTrue);
       final LearningDeck forced = decodeDeckJson(
         await File(breakPath).readAsString(),
       );
@@ -1743,14 +1769,14 @@ void main() {
       final String missingPath = '${nested.path}${sep}missing.vok';
       final String missingDirPath =
           '${nested.path}${sep}no-such-dir${sep}missing.inf';
-      final List<MaskSyncWriteResult> results = await service.applyMaskSync(
+      final List<MaskWriteResult> results = await service.applyMaskSync(
         reference: reference,
         paths: <String>[...updatable, missingPath, missingDirPath],
       );
 
       // One result per path given, naming the path and whether it landed.
       final Map<String, bool> succeededByPath = <String, bool>{
-        for (final MaskSyncWriteResult r in results) r.path: r.succeeded,
+        for (final MaskWriteResult r in results) r.path: r.succeeded,
       };
       expect(succeededByPath.length, updatable.length + 2);
       for (final String path in updatable) {
@@ -1812,7 +1838,7 @@ void main() {
         await File(otherPath).writeAsString('untouched');
         final DesktopFileService service = const DesktopFileService();
 
-        final List<MaskSyncWriteResult> results = await service.applyMaskSync(
+        final List<MaskWriteResult> results = await service.applyMaskSync(
           reference: sampleMask(),
           paths: <String>[otherPath],
         );
