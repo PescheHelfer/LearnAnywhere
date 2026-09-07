@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
@@ -92,7 +94,7 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
               // stacked layout has to take over sooner.
               final bool compact =
                   constraints.maxWidth <
-                  LearnAnywhereZoom.scaleBox(context, 900);
+                  LearnAnywhereZoom.scaleBox(context, _twoColumnBreakpoint);
               final Widget categories = _CategoryList(
                 mask: mask,
                 selectedIndex: _selectedCategoryIndex,
@@ -126,7 +128,11 @@ final class _MaskEditorPageState extends State<MaskEditorPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   SizedBox(
-                    width: LearnAnywhereZoom.scaleBox(context, 420),
+                    key: const ValueKey<String>('mask-editor-categories-column'),
+                    width: LearnAnywhereZoom.scaleBox(
+                      context,
+                      _categoriesColumnWidth,
+                    ),
                     child: categories,
                   ),
                   const SizedBox(width: LearnAnywhereTokens.gapLarge),
@@ -714,6 +720,122 @@ final class _CategoryTile extends StatelessWidget {
   }
 }
 
+/// The categories column beside the Fields table, and the window width below
+/// which the two stack into one column. Both unzoomed, and both in text-sized
+/// units, so both are scaled where they are read.
+const double _categoriesColumnWidth = 420;
+const double _twoColumnBreakpoint = 900;
+
+/// The Fields table's own spacing: the margin outside its first and last
+/// columns, and the gap between neighbouring ones.
+const double _tableHorizontalMargin = 8;
+const double _tableColumnSpacing = 16;
+
+/// Unzoomed widths of the Fields table's fixed cell boxes, in column order.
+///
+/// Read by the row builder and by [maskEditorContentFrameWidth] alike, so the
+/// boxes the frame is derived for are by construction the boxes the table lays
+/// out.
+const double _fieldNameCellWidth = 200;
+const double _fieldLengthCellWidth = 72;
+const double _fieldEqualGroupCellWidth = 56;
+const double _fieldLanguageCellWidth = 240;
+
+/// Fixed chrome around a role dropdown's one-letter code: the drop arrow and
+/// the button's own padding.
+///
+/// A constant while the code beside it is measured, because none of it follows
+/// the text size — the same reason the pill chrome in ui_kit is one. Pinned
+/// against the real table by the content-frame test.
+const double _roleMenuChrome = 32;
+
+/// The tap target a bare [Checkbox] occupies, and the one each row-action
+/// [IconButton] occupies. Fixed chrome again, and there are three actions.
+const double _speakCellWidth = 48;
+const double _rowActionButtonWidth = 48;
+
+/// The border and padding between the Fields panel's outer edge and its table.
+const double _fieldsPanelChrome = 2 * (1 + LearnAnywhereTokens.gapMedium);
+
+/// The content-frame width the Mask Editor needs so its Fields table never has
+/// to scroll sideways on a window wide enough to hold it.
+///
+/// This screen derives its own frame rather than taking the shared fixed width,
+/// the way the session and unit-editor screens already do. The fixed width was
+/// chosen to clear this screen's two-column breakpoint, but the table outgrew
+/// it when the *Spoken language* and *Speak* columns arrived — and because that
+/// width never moves, widening the window could not help, which is what made
+/// the table read as broken rather than merely tight.
+///
+/// No locale's figure is written down here. The headers are measured with a
+/// text painter in the style they are painted in, so the result follows the
+/// language, the zoom level and the host's font — German comes out wider than
+/// English because its headers are, not because anything was told so. The
+/// table's fixed boxes and the categories column stay the desktop shell's own
+/// numbers, which is why this lives beside the page and adds nothing to ui_kit.
+double maskEditorContentFrameWidth(
+  BuildContext context,
+  LearnAnywhereLocalizations messages,
+) =>
+    LearnAnywhereZoom.scaleBox(context, _categoriesColumnWidth) +
+    LearnAnywhereTokens.gapLarge +
+    _fieldsPanelChrome +
+    _fieldsTableWidth(context, messages) +
+    LearnAnywhereTokens.contentFrameMargin;
+
+/// The width the Fields table asks for: its margins and column gaps, plus each
+/// column at the wider of its header and the control beneath it.
+double _fieldsTableWidth(
+  BuildContext context,
+  LearnAnywhereLocalizations messages,
+) {
+  final ThemeData theme = Theme.of(context);
+  final TextStyle headingStyle =
+      theme.textTheme.titleSmall ?? const TextStyle();
+  // A role menu shows a single letter, so it is the header that decides those
+  // two columns — but measure the codes rather than assume that stays true.
+  final TextStyle menuStyle = theme.textTheme.titleMedium ?? const TextStyle();
+  double roleCode = 0;
+  for (final FieldRole role in FieldRole.values) {
+    roleCode = math.max(roleCode, measureTextWidth(role.code, menuStyle));
+  }
+  final List<(LearnAnywhereMessage?, double)> columns =
+      <(LearnAnywhereMessage?, double)>[
+        (
+          LearnAnywhereMessage.maskEditorFieldName,
+          LearnAnywhereZoom.scaleBox(context, _fieldNameCellWidth),
+        ),
+        (
+          LearnAnywhereMessage.maskEditorFieldLength,
+          LearnAnywhereZoom.scaleBox(context, _fieldLengthCellWidth),
+        ),
+        (
+          LearnAnywhereMessage.maskEditorEqualGroup,
+          LearnAnywhereZoom.scaleBox(context, _fieldEqualGroupCellWidth),
+        ),
+        (LearnAnywhereMessage.maskEditorRole1, _roleMenuChrome + roleCode),
+        (LearnAnywhereMessage.maskEditorRole2, _roleMenuChrome + roleCode),
+        (
+          LearnAnywhereMessage.maskEditorSpokenLanguage,
+          LearnAnywhereZoom.scaleBox(context, _fieldLanguageCellWidth),
+        ),
+        (LearnAnywhereMessage.maskEditorSpeak, _speakCellWidth),
+        // The row actions carry no header of their own.
+        (null, 3 * _rowActionButtonWidth),
+      ];
+  double width =
+      2 * _tableHorizontalMargin + (columns.length - 1) * _tableColumnSpacing;
+  for (final (LearnAnywhereMessage? header, double cell) in columns) {
+    width += math.max(
+      header == null
+          ? 0
+          : measureTextWidth(messages.message(header), headingStyle),
+      cell,
+    );
+  }
+  return width;
+}
+
 final class _FieldGrid extends StatefulWidget {
   const _FieldGrid({
     required this.category,
@@ -786,8 +908,8 @@ final class _FieldGridState extends State<_FieldGrid> {
                 controller: _scrollController,
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
-                  columnSpacing: 16,
-                  horizontalMargin: 8,
+                  columnSpacing: _tableColumnSpacing,
+                  horizontalMargin: _tableHorizontalMargin,
                   dataRowMinHeight: 40,
                   dataRowMaxHeight: 44,
                   headingRowHeight: 36,
@@ -902,7 +1024,7 @@ final class _FieldGridState extends State<_FieldGrid> {
       cells: <DataCell>[
         DataCell(
           SizedBox(
-            width: LearnAnywhereZoom.scaleBox(context, 200),
+            width: LearnAnywhereZoom.scaleBox(context, _fieldNameCellWidth),
             child: TextFormField(
               key: ValueKey<String>('field-name-$categoryId-${field.id}'),
               initialValue: field.name,
@@ -915,7 +1037,7 @@ final class _FieldGridState extends State<_FieldGrid> {
         ),
         DataCell(
           SizedBox(
-            width: LearnAnywhereZoom.scaleBox(context, 72),
+            width: LearnAnywhereZoom.scaleBox(context, _fieldLengthCellWidth),
             child: TextFormField(
               key: ValueKey<String>('field-length-$categoryId-${field.id}'),
               initialValue: field.length.toString(),
@@ -941,7 +1063,7 @@ final class _FieldGridState extends State<_FieldGrid> {
         ),
         DataCell(
           SizedBox(
-            width: LearnAnywhereZoom.scaleBox(context, 56),
+            width: LearnAnywhereZoom.scaleBox(context, _fieldEqualGroupCellWidth),
             child: TextFormField(
               key: ValueKey<String>(
                 'field-equal-group-$categoryId-${field.id}',
@@ -993,7 +1115,7 @@ final class _FieldGridState extends State<_FieldGrid> {
         ),
         DataCell(
           SizedBox(
-            width: LearnAnywhereZoom.scaleBox(context, 240),
+            width: LearnAnywhereZoom.scaleBox(context, _fieldLanguageCellWidth),
             child: _LanguageMenu(
               key: ValueKey<String>('field-language-$categoryId-${field.id}'),
               value: field.language,

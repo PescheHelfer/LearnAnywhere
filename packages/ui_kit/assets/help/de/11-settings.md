@@ -102,6 +102,10 @@ hätte, nie seitlich gescrollt werden muss. Beim Lernen und beim Bearbeiten ders
 Lern-Datei ist er gleich breit, es verschiebt sich also nichts, wenn Sie zwischen beidem
 wechseln.
 
+Der **Mask Editor** wird genauso bemessen, aber aus seiner eigenen Tabelle **Felder** statt
+aus der Lern-Datei: Seine Spalten bestimmen die Breite des Rahmens, sodass ein Fenster, das
+alle Spalten fasst, die Tabelle nicht mehr seitlich scrollen lässt.
+
 Eine Lern-Datei mit kurzen Feldern bekommt somit einen schmalen Rahmen, und die
 Schaltflächenreihen darunter rücken darin einfach auf eine zweite Zeile — genau wie in einem
 schmalen Fenster. Was der Rahmen nicht tut: eine Schaltfläche oder eine der beiden Gruppen der

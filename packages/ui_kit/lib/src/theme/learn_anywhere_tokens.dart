@@ -93,11 +93,17 @@ final class LearnAnywhereTokens {
   /// Gap between a field row's value and the used/allowed counter beside it.
   static const double fieldRowCounterGap = 4;
 
-  /// Unzoomed width of the content frame on every screen that is not sized
-  /// from the open deck.
+  /// Unzoomed width of the content frame on every screen that derives no width
+  /// of its own — Statistics, the Lexicon, Speech settings and Options.
   ///
-  /// Chosen to clear the Mask Editor's own two-column breakpoint (900 in the
-  /// same units), so framing that screen never costs it its second column.
+  /// It was chosen to clear the Mask Editor's own two-column breakpoint (900 in
+  /// the same units), so framing that screen never cost it its second column.
+  /// **The Mask Editor no longer uses it**: its Fields table outgrew this width
+  /// when the speech columns arrived, and a width that never moves cannot be
+  /// widened by widening the window, so that screen derives its own beside
+  /// `MaskEditorPage` in the desktop shell. The figure is kept as it is because
+  /// the screens still on it are laid out for it — raising it to fit a table it
+  /// no longer sizes would only widen those.
   static const double contentFrameFixedWidth = 1000;
 
   /// Room the content frame adds around whatever it was sized to hold.

@@ -94,6 +94,10 @@ widest field your mask can show, so a mask that would have fitted never has to b
 sideways. It is the same width while learning and while editing the same deck, so nothing
 moves when you switch between the two.
 
+The **Mask Editor** is sized the same way, but from its own **Fields** table rather than
+from the deck: its columns decide how wide the frame is, so a window wide enough to show
+them all no longer leaves the table scrolling sideways.
+
 A deck of short fields therefore gets a narrow frame, and the rows of buttons underneath
 simply wrap onto a second line inside it — which is what they do in a narrow window too. The
 one thing the frame will not do is squeeze a button, or either group of the evaluation pills,

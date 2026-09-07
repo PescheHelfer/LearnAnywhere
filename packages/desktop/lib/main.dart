@@ -363,6 +363,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   // for what makes up the key.
   (LearningMask, double, String)? _frameWidthKey;
   double? _frameWidth;
+  // Memo for [_maskEditorContentFrameWidth]; keyed on the same measurement
+  // basis, minus the mask, which no part of that width is derived from.
+  (double, String)? _maskFrameWidthKey;
+  double? _maskFrameWidth;
   DesktopFilePicker get _filePicker => widget.filePicker;
   final ScrollController _menuScrollController = ScrollController();
   // The main content area lives in its own FocusScope so that keyboard focus
@@ -2595,12 +2599,15 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// The current screen inside its content frame (N4).
   ///
   /// The one place a width is imposed: every screen below is built exactly as
-  /// it always was, and the frame is what centres it. Four policies, by route
+  /// it always was, and the frame is what centres it. Five policies, by route
   /// — and the catch-all is deliberate, so a route added later is framed rather
   /// than silently left in the corner:
   ///
   /// - the **session and editor** are sized from the open deck, so a mask never
   ///   scrolls sideways when it would have fitted;
+  /// - the **mask editor** derives its own width the same way, from the Fields
+  ///   table it has to hold. The fixed width no longer covers that table, and a
+  ///   fixed width cannot be widened by widening the window;
   /// - the **workspace** and the file-operations status keep the corner. Both
   ///   are a title over a handful of left-aligned status lines, and a frame
   ///   puts that in the middle of a mostly empty screen — which reads as text
@@ -2619,6 +2626,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _DesktopRoute.about => null,
       _DesktopRoute.learn ||
       _DesktopRoute.editor => _deckContentFrameWidth(context, messages),
+      _DesktopRoute.maskEditor => _maskEditorContentFrameWidth(
+        context,
+        messages,
+      ),
       _ => fixedContentFrameWidth(context),
     };
     if (width == null) return content;
@@ -2670,6 +2681,31 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       );
     }
     return _frameWidth!;
+  }
+
+  /// The Mask Editor's own frame width, memoised on the same terms.
+  ///
+  /// Measuring walks the table's eight headers with a [TextPainter], and the
+  /// page rebuilds on every keystroke in a field name; the cache is what keeps
+  /// that off the typing path.
+  ///
+  /// The key names the **basis of the measurement** and never the setting
+  /// behind it, for exactly the reason spelled out on [_deckContentFrameWidth]:
+  /// the text scale actually in force in [context], plus the language whose
+  /// headers were measured.
+  double _maskEditorContentFrameWidth(
+    BuildContext context,
+    LearnAnywhereLocalizations messages,
+  ) {
+    final (double, String) key = (
+      LearnAnywhereZoom.factorOf(context),
+      messages.locale.languageCode,
+    );
+    if (_maskFrameWidth == null || _maskFrameWidthKey != key) {
+      _maskFrameWidthKey = key;
+      _maskFrameWidth = maskEditorContentFrameWidth(context, messages);
+    }
+    return _maskFrameWidth!;
   }
 
   Widget _contentForRoute() {
