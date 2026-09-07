@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -247,6 +248,36 @@ void main() {
         LearnAnywhereTokens.fieldLabelMaxWidth * 2,
       );
     });
+
+    test(
+      'the muted foreground clears WCAG text contrast on every theme',
+      () {
+        // Resolved exactly the way the mask sync dialog resolves it: the
+        // theme's own opt-in color first, `onSurfaceVariant` otherwise — so
+        // this fails the moment either drifts back under the floor.
+        for (final ThemeData theme in <ThemeData>[
+          LearnAnywhereTheme.light(),
+          LearnAnywhereTheme.dark(),
+          LearnAnywhereTheme.darkBlue(),
+          LearnAnywhereTheme.lightBlue(),
+        ]) {
+          final Color foreground = LearnAnywhereChromeTheme.mutedForegroundOf(
+            theme,
+          );
+          final double ratio = _contrastRatio(
+            foreground,
+            theme.colorScheme.surfaceContainerHigh,
+          );
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason:
+                'muted foreground vs surfaceContainerHigh in the theme whose '
+                'surface is ${theme.colorScheme.surface}',
+          );
+        }
+      },
+    );
 
     test('every theme scales, and 100 per cent changes nothing', () {
       for (final ThemeData Function({int zoomPercent}) build
@@ -807,6 +838,32 @@ void main() {
       expect(controller.fieldValue, original);
     });
   });
+}
+
+/// WCAG contrast ratio between two colors, from their relative luminances.
+///
+/// `(L1 + 0.05) / (L2 + 0.05)` with `L1` the lighter of the two, per the
+/// WCAG 2.x definition — the same formula the ticket's measured ratios
+/// (1.11:1, 1.29:1) came from.
+double _contrastRatio(Color a, Color b) {
+  final double lumA = _relativeLuminance(a);
+  final double lumB = _relativeLuminance(b);
+  final double lighter = lumA > lumB ? lumA : lumB;
+  final double darker = lumA > lumB ? lumB : lumA;
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/// WCAG relative luminance of an sRGB color.
+double _relativeLuminance(Color color) {
+  double channel(double srgb) {
+    return srgb <= 0.03928
+        ? srgb / 12.92
+        : math.pow((srgb + 0.055) / 1.055, 2.4).toDouble();
+  }
+
+  return 0.2126 * channel(color.r) +
+      0.7152 * channel(color.g) +
+      0.0722 * channel(color.b);
 }
 
 /// Pumps [viewer] on a surface wide enough for the side-by-side layout.

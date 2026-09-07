@@ -4153,10 +4153,12 @@ final class _MenuSeparator extends StatelessWidget {
   Widget build(BuildContext context) {
     // `outlineVariant` all but disappears against the dark blue theme's menu
     // surface (that theme sets outline == outlineVariant), so it opts into a
-    // brighter color via LearnAnywhereMenuTheme; every other theme falls back
-    // to the shared outlineVariant role unchanged.
+    // brighter color via LearnAnywhereChromeTheme; every other theme falls
+    // back to the shared outlineVariant role unchanged.
     final Color color =
-        Theme.of(context).extension<LearnAnywhereMenuTheme>()?.separatorColor ??
+        Theme.of(context)
+            .extension<LearnAnywhereChromeTheme>()
+            ?.separatorColor ??
         Theme.of(context).colorScheme.outlineVariant;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

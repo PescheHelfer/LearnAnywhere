@@ -94,6 +94,8 @@ jede den Status:
 | Abweichend (gleiche Revision) | Gleiche Revisionsnummer, aber anderer Inhalt — ungewöhnlich; vor dem Anwenden prüfen |
 | Neuer (wird nicht überschrieben) | Die eigene Kopie der Lern-Datei ist aktueller als diese und bleibt unangetastet |
 
-Wählen Sie die gewünschten aus und klicken Sie auf **Auswahl aktualisieren**. Nicht
-Ausgewähltes bleibt unangetastet. Werden im gewählten Ordner keine weiteren Kopien
-gefunden, wird das gemeldet, statt Sie im Unklaren zu lassen.
+Nur Zeilen mit **Wird aktualisiert** lassen sich ankreuzen; die anderen vier Status
+dienen nur zur Information und sind abgeblendet, um zu zeigen, dass sie nicht zur
+Auswahl stehen. Wählen Sie die gewünschten aus und klicken Sie auf **Auswahl
+aktualisieren**. Nicht Ausgewähltes bleibt unangetastet. Werden im gewählten Ordner
+keine weiteren Kopien gefunden, wird das gemeldet, statt Sie im Unklaren zu lassen.

@@ -8,35 +8,61 @@ import 'learn_anywhere_zoom.dart';
 /// [ColorScheme.outlineVariant] is the default separator color, but the dark
 /// blue theme sets `outline` and `outlineVariant` to the same low-contrast
 /// value, so that theme opts into a stronger, theme-appropriate color here
-/// instead of changing the shared role for every theme.
+/// instead of changing the shared role for every theme. [mutedForeground]
+/// follows the same opt-in pattern for secondary/inert text.
 @immutable
-final class LearnAnywhereMenuTheme
-    extends ThemeExtension<LearnAnywhereMenuTheme> {
-  /// Creates a menu theme extension.
-  const LearnAnywhereMenuTheme({required this.separatorColor});
+final class LearnAnywhereChromeTheme
+    extends ThemeExtension<LearnAnywhereChromeTheme> {
+  /// Creates a chrome theme extension.
+  const LearnAnywhereChromeTheme({
+    required this.separatorColor,
+    this.mutedForeground,
+  });
 
   /// Color used by menu separators (`_MenuSeparator` in the desktop shell).
   final Color separatorColor;
 
+  /// Muted foreground for secondary or inert text (e.g. an "up to date"
+  /// status label, or a dimmed non-selectable row) that needs more contrast
+  /// than [ColorScheme.onSurfaceVariant] gives on this particular theme.
+  ///
+  /// `null` means the theme doesn't need to opt in; callers fall back to
+  /// [ColorScheme.onSurfaceVariant].
+  final Color? mutedForeground;
+
+  /// Resolves the muted foreground for [theme]: the extension's own color
+  /// when it opts in, otherwise [ColorScheme.onSurfaceVariant].
+  static Color mutedForegroundOf(ThemeData theme) {
+    return theme.extension<LearnAnywhereChromeTheme>()?.mutedForeground ??
+        theme.colorScheme.onSurfaceVariant;
+  }
+
   @override
-  LearnAnywhereMenuTheme copyWith({Color? separatorColor}) {
-    return LearnAnywhereMenuTheme(
+  LearnAnywhereChromeTheme copyWith({
+    Color? separatorColor,
+    Color? mutedForeground,
+  }) {
+    return LearnAnywhereChromeTheme(
       separatorColor: separatorColor ?? this.separatorColor,
+      mutedForeground: mutedForeground ?? this.mutedForeground,
     );
   }
 
   @override
-  LearnAnywhereMenuTheme lerp(
-    ThemeExtension<LearnAnywhereMenuTheme>? other,
+  LearnAnywhereChromeTheme lerp(
+    ThemeExtension<LearnAnywhereChromeTheme>? other,
     double t,
   ) {
-    if (other is! LearnAnywhereMenuTheme) {
+    if (other is! LearnAnywhereChromeTheme) {
       return this;
     }
-    return LearnAnywhereMenuTheme(
+    return LearnAnywhereChromeTheme(
       separatorColor:
           Color.lerp(separatorColor, other.separatorColor, t) ??
           separatorColor,
+      mutedForeground:
+          Color.lerp(mutedForeground, other.mutedForeground, t) ??
+          mutedForeground,
     );
   }
 }
@@ -87,7 +113,15 @@ final class LearnAnywhereTheme {
     );
     return _base(colors, zoomPercent).copyWith(
       extensions: const <ThemeExtension<dynamic>>[
-        LearnAnywhereMenuTheme(separatorColor: Color(0xFFFFC600)),
+        LearnAnywhereChromeTheme(
+          separatorColor: Color(0xFFFFC600),
+          // The shared onSurfaceVariant (0xFF7285B7) is tuned against
+          // `surface`, one step darker than the surfaceContainerHigh a
+          // Material dialog actually paints on, which eats its contrast
+          // margin below the 4.5:1 text floor. This is brighter, for that
+          // one step lighter.
+          mutedForeground: Color(0xFF9DB2E8),
+        ),
       ],
     );
   }

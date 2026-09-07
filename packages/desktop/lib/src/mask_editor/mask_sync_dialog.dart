@@ -132,60 +132,81 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
     MaskSyncEntry entry,
   ) {
     final bool selectable = entry.isUpdatable;
+    // Dimmed by color swap, never by Opacity: opacity composites toward the
+    // background with no defined stopping point and would drag Dark Blue's
+    // row text below the contrast floor it otherwise clears comfortably.
+    final Color? rowForeground = selectable
+        ? null
+        : LearnAnywhereChromeTheme.mutedForegroundOf(theme);
+    void toggle() {
+      setState(() {
+        if (_selected.contains(entry.path)) {
+          _selected.remove(entry.path);
+        } else {
+          _selected.add(entry.path);
+        }
+      });
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Checkbox(
-                value: _selected.contains(entry.path),
-                onChanged: selectable
-                    ? (bool? value) {
-                        setState(() {
-                          if (value ?? false) {
-                            _selected.add(entry.path);
-                          } else {
-                            _selected.remove(entry.path);
-                          }
-                        });
-                      }
-                    : null,
-              ),
-              Expanded(
-                child: Tooltip(
-                  message: entry.path,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      // The file name is the identifying part, so it goes on
-                      // its own un-ellipsized line; only the (usually much
-                      // longer) folder path below is left to truncate.
-                      Text(
-                        '${_fileNameOf(entry.path)}  '
-                        '(rev ${entry.revision})',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      Text(
-                        _folderOf(entry.path),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+          InkWell(
+            onTap: selectable ? toggle : null,
+            child: Row(
+              children: <Widget>[
+                // The row's own InkWell owns the tap when selectable, so the
+                // checkbox is excluded from hit-testing to avoid the two
+                // handlers racing over the same click; its semantics stay
+                // live for assistive tech.
+                IgnorePointer(
+                  ignoring: selectable,
+                  child: Checkbox(
+                    value: _selected.contains(entry.path),
+                    onChanged: selectable ? (bool? value) => toggle() : null,
                   ),
                 ),
-              ),
-              Text(
-                _statusLabel(messages, entry.status),
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: _statusColor(theme, entry.status),
+                Expanded(
+                  child: Tooltip(
+                    message: entry.path,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        // The file name is the identifying part, so it goes on
+                        // its own un-ellipsized line; only the (usually much
+                        // longer) folder path below is left to truncate.
+                        Text(
+                          '${_fileNameOf(entry.path)}  '
+                          '(rev ${entry.revision})',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: rowForeground,
+                          ),
+                        ),
+                        Text(
+                          _folderOf(entry.path),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color:
+                                rowForeground ?? theme.colorScheme.onSurfaceVariant,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                Text(
+                  _statusLabel(messages, entry.status),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: _statusColor(theme, entry.status),
+                  ),
+                ),
+              ],
+            ),
           ),
+          // Breaking reasons stay at full strength even on a dimmed
+          // (would-break) row: dimming must not quiet a warning.
           for (final MaskBreakingReason reason in entry.reasons)
             Padding(
               padding: const EdgeInsets.only(left: 48, bottom: 2),
@@ -214,7 +235,9 @@ class _MaskSyncDialogState extends State<MaskSyncDialog> {
 
   Color _statusColor(ThemeData theme, MaskSyncStatus status) {
     return switch (status) {
-      MaskSyncStatus.upToDate => theme.colorScheme.outline,
+      MaskSyncStatus.upToDate => LearnAnywhereChromeTheme.mutedForegroundOf(
+        theme,
+      ),
       MaskSyncStatus.willUpdate => theme.colorScheme.primary,
       MaskSyncStatus.wouldBreak => theme.colorScheme.error,
       MaskSyncStatus.differs => theme.colorScheme.tertiary,

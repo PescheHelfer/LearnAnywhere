@@ -85,6 +85,7 @@ each one's status:
 | Differs (same revision) | Same revision number but different content — unexpected; investigate before applying |
 | Newer (not overwritten) | The deck's own copy is ahead of this one and is left alone |
 
-Tick the ones you want, then **Update selected**. Nothing not ticked is touched. If no
-other copies are found in the chosen folder, you are told so rather than left to
-wonder.
+Only **Will update** rows can be ticked; the other four statuses are shown for
+information and are dimmed to show they are not on offer. Tick the ones you want, then
+**Update selected**. Nothing not ticked is touched. If no other copies are found in the
+chosen folder, you are told so rather than left to wonder.
