@@ -2415,24 +2415,27 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         );
         return;
       }
-      final List<String>? selected = await MaskSyncDialog.show(
+      // The dialog stays open across as many apply rounds as the learner
+      // wants, writing and re-scanning through these two callbacks, and
+      // returns the paths whose writes actually landed — empty when it is
+      // closed having written nothing.
+      final List<String> written = await MaskSyncDialog.show(
         context,
         entries,
         referenceName: reference.name,
         referenceRevision: reference.revision,
         referenceSourcePath: _document.deckPath,
+        onApply: (List<String> paths) =>
+            _fileService.applyMaskSync(reference: reference, paths: paths),
+        onRescan: () =>
+            _fileService.scanMaskCopies(root: root, reference: reference),
       );
-      if (selected == null || selected.isEmpty) {
+      if (!mounted) {
         return;
       }
-      final List<MaskWriteResult> results = await _fileService.applyMaskSync(
-        reference: reference,
-        paths: selected,
-      );
-      final Set<String> written = <String>{
-        for (final MaskWriteResult result in results)
-          if (result.succeeded) result.path,
-      };
+      // Reported even when the count is zero: leaving the previous round's
+      // "Synced N copies" standing after a round that wrote nothing is the
+      // same stale-evidence problem the dialog was reworked to end.
       // Keep the open deck in sync when its own write actually landed.
       final String? deckPath = _document.deckPath;
       if (deckPath != null && written.contains(deckPath)) {

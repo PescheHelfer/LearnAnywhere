@@ -86,6 +86,16 @@ each one's status:
 | Newer (not overwritten) | The deck's own copy is ahead of this one and is left alone |
 
 Only **Will update** rows can be ticked; the other four statuses are shown for
-information and are dimmed to show they are not on offer. Tick the ones you want, then
-**Update selected**. Nothing not ticked is touched. If no other copies are found in the
-chosen folder, you are told so rather than left to wonder.
+information and are dimmed to show they are not on offer. Nothing is ever ticked for
+you, so a stray click on **Update selected** cannot overwrite anything by itself. Tick
+the ones you want, then **Update selected**. Nothing not ticked is touched.
+
+The dialog then stays open. The ticked copies are written, the folder is searched
+again, and every row is re-read from disk: a copy that was updated now reads **Up to
+date** under its own folder path, and one whose write failed still reads **Will
+update** — so which files changed, and which did not, is on screen next to their paths
+for as long as you want to look. Rows that are now up to date can no longer be ticked,
+so nothing is written twice. You can tick a further set and press **Update selected**
+again as often as you like; **Cancel** closes the dialog and undoes nothing that was
+already written. If no other copies are found in the chosen folder, you are told so
+rather than left to wonder.

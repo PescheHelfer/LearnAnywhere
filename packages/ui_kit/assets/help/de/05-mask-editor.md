@@ -96,6 +96,19 @@ jede den Status:
 
 Nur Zeilen mit **Wird aktualisiert** lassen sich ankreuzen; die anderen vier Status
 dienen nur zur Information und sind abgeblendet, um zu zeigen, dass sie nicht zur
-Auswahl stehen. Wählen Sie die gewünschten aus und klicken Sie auf **Auswahl
-aktualisieren**. Nicht Ausgewähltes bleibt unangetastet. Werden im gewählten Ordner
-keine weiteren Kopien gefunden, wird das gemeldet, statt Sie im Unklaren zu lassen.
+Auswahl stehen. Es ist nie etwas für Sie vorangekreuzt, damit ein versehentlicher Klick
+auf **Auswahl aktualisieren** für sich allein nichts überschreiben kann. Wählen Sie die
+gewünschten aus und klicken Sie auf **Auswahl aktualisieren**. Nicht Ausgewähltes
+bleibt unangetastet.
+
+Der Dialog bleibt danach offen. Die angekreuzten Kopien werden geschrieben, der Ordner
+wird erneut durchsucht, und jede Zeile wird frisch von der Festplatte gelesen: Eine
+aktualisierte Kopie zeigt nun **Aktuell** unter ihrem eigenen Ordnerpfad, eine, deren
+Schreibvorgang fehlschlug, weiterhin **Wird aktualisiert** — welche Dateien sich
+geändert haben und welche nicht, steht also neben ihren Pfaden auf dem Bildschirm,
+solange Sie hinsehen möchten. Zeilen, die jetzt aktuell sind, lassen sich nicht mehr
+ankreuzen, es wird also nichts zweimal geschrieben. Sie können eine weitere Auswahl
+ankreuzen und **Auswahl aktualisieren** so oft drücken, wie Sie möchten; **Abbruch**
+schließt den Dialog und macht nichts rückgängig, was bereits geschrieben wurde. Werden
+im gewählten Ordner keine weiteren Kopien gefunden, wird das gemeldet, statt Sie im
+Unklaren zu lassen.
