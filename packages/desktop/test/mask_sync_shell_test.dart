@@ -432,6 +432,84 @@ void main() {
       });
     },
   );
+
+  testWidgets(
+    'cancelling the sync dialog from inside the Mask Editor leaves the '
+    'unsaved edits and the editor itself in place',
+    (WidgetTester tester) async {
+      final LearningMask original = _mask(name: 'Original');
+      final String originalPath = '${maskDir.path}${Platform.pathSeparator}'
+          'original.inf';
+      final String copyPath = '${scanDir.path}${Platform.pathSeparator}'
+          'copy.inf';
+      // A copy one revision behind, so the row is selectable ("Will
+      // update") rather than merely informational — the point is that
+      // Cancel writes nothing even though there was something on offer.
+      File(
+        originalPath,
+      ).writeAsStringSync(encodeMaskJson(original.copyWith(revision: 1)));
+      File(copyPath).writeAsStringSync(encodeMaskJson(original));
+
+      final _ScriptedFilePicker picker = _ScriptedFilePicker(
+        openPathToReturn: originalPath,
+        directoryToReturn: scanDir.path,
+      );
+      await tester.runAsync(() async {
+        await pumpShell(tester, picker);
+        await loadMask(tester);
+
+        await pickMenuItem(tester, 'Edit', 'Mask Editor');
+        await waitForRealIo();
+        await settle(tester);
+
+        await tester.enterText(
+          find.byKey(const ValueKey<String>('mask-name-field')),
+          'Edited',
+        );
+        await settle(tester);
+
+        await pickMenuItem(
+          tester,
+          'Edit',
+          'Update other copies of this mask...',
+        );
+        await waitForRealIo();
+        await settle(tester);
+        expect(find.text('Will update'), findsOneWidget);
+
+        // Cancel without ticking anything. (.last: the Mask Editor
+        // underneath has its own Cancel button too.)
+        await tester.tap(find.text('Cancel').last);
+        await settle(tester);
+
+        // The report lands, but unlike before this ticket it must not carry
+        // the learner off the Mask Editor: the name field, still reading
+        // "Edited", is proof the editor — and its unsaved edit — survived.
+        expect(find.text('No copies were updated'), findsWidgets);
+        expect(find.text('Update other copies of this mask'), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('mask-name-field')),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Edited'), findsWidgets);
+        expect(
+          decodeMaskJson(File(originalPath).readAsStringSync()).name,
+          'Original',
+        );
+
+        // Closing normally afterwards still writes the edit that survived
+        // the cancelled sync.
+        await tester.tap(find.text('OK'));
+        await waitForRealIo();
+        await settle(tester);
+
+        final LearningMask written = decodeMaskJson(
+          File(originalPath).readAsStringSync(),
+        );
+        expect(written.name, 'Edited');
+      });
+    },
+  );
 }
 
 LearningMask _mask({required String name}) {

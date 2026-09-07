@@ -107,4 +107,6 @@ rather than left to wonder.
 Closing the dialog — with **Cancel**, the Escape key, or by clicking outside it — without
 ever having written anything reports **"No copies were updated"** in the same place a
 successful sync is reported, so cancelling reads differently from a silent failure and
-from never having run the command at all.
+from never having run the command at all. Reporting it this way leaves you exactly where
+you ran the command from — the mask editor included, unsaved edits and all — rather than
+sending you anywhere else.

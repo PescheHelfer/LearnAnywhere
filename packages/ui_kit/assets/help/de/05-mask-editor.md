@@ -122,4 +122,6 @@ Schließen Sie den Dialog — mit **Abbruch**, der Escape-Taste oder durch Klick
 außerhalb von ihm —, ohne dass etwas geschrieben wurde, wird **"Es wurden keine Kopien
 aktualisiert"** an derselben Stelle gemeldet, an der auch ein erfolgreicher Abgleich
 gemeldet wird, sodass sich ein Abbruch von einem stillen Fehlschlag und davon
-unterscheidet, den Befehl nie ausgeführt zu haben.
+unterscheidet, den Befehl nie ausgeführt zu haben. Diese Meldung lässt Sie genau dort,
+von wo aus Sie den Befehl aufgerufen haben — auch im Mask Editor, ungespeicherte
+Änderungen eingeschlossen —, statt Sie anderswohin zu schicken.

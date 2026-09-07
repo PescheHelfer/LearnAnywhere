@@ -2464,9 +2464,12 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // written" outcome gets its own message rather than reusing "Synced 0
       // copy(ies)" — the same stale-evidence problem the dialog was reworked
       // to end, and the reason how it was closed must not change what the
-      // learner is told.
+      // learner is told. Uses `_showStatus`, not `_setFileStatus`: closing
+      // having written nothing must not navigate the learner away from
+      // wherever they ran the command — the Mask Editor included, where a
+      // route change would strand unsaved edits with no save prompt.
       if (written.isEmpty) {
-        _setFileStatus(LearnAnywhereMessage.maskSyncNoneUpdated);
+        _showStatus(LearnAnywhereMessage.maskSyncNoneUpdated);
       } else {
         _setFileStatus(LearnAnywhereMessage.maskSyncDone, count: written.length);
       }
