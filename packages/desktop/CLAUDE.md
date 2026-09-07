@@ -85,3 +85,26 @@ Changes with the most breaking potential:
 - Widening a screen's default layout — can overflow the default 800×600 test
   surface; widen it in the test via `tester.view.physicalSize` instead of shrinking
   the UI.
+
+## A shell test that must verify real loaded content is expensive — scope tickets accordingly
+
+`start_folder_test.dart`'s `_RecordingFilePicker` deliberately never returns a real path
+from `openPath` — it only records which directory a dialog was asked to open. That's
+the cheap, fast, default shape for a "drive the whole app with a subclassed picker" test,
+and it's enough whenever the assertion is about *which folder/file was requested*.
+
+It is **not** enough when the assertion needs to be about content the app actually
+loaded through that path (e.g. "the reference shown is X", "the field now says Y"). That
+requires a real, non-fake `dart:io` read to complete inside a `testWidgets` body, which
+only works if the *triggering tap itself* runs inside `tester.runAsync` — one call
+wrapping the whole interaction, settled with plain `pump()`/`pump(Duration)`, never
+`pumpAndSettle` (nested inside `runAsync` it silently never completes; nothing errors,
+assertions just fail as if the load never happened). See
+`packages/desktop/test/mask_sync_shell_test.dart` for the worked pattern and the
+`shell-test-real-io-needs-runasync-around-the-tap` memory for the full why.
+
+**When writing a ticket:** don't write "covered at the shell seam" as if it were
+`start_folder_test.dart`-cheap unless it only needs to check a requested path. If the
+acceptance criteria need loaded *content* verified through the real UI, say so explicitly
+and expect the slower, more fragile real-I/O pattern — or prefer testing that content at
+a lower seam (the file-service layer, or the relevant dialog with fakes) instead.
