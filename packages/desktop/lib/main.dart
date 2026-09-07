@@ -2387,7 +2387,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// reference; copies that differ at the same revision, or decks that would
   /// break, are shown but never auto-merged.
   Future<void> _updateMaskCopies() async {
-    final LearningMask reference = _document.mask;
+    // The Mask Editor's own mask when it holds one: that is the mask the
+    // learner is looking at and editing, and the one the command should
+    // propagate. The document's mask is the fallback for every other route.
+    final LearningMask reference = _maskEditorMask ?? _document.mask;
     // Deliberately ignores the start folder (N2): the open deck's own folder is
     // a more specific and more useful root for a copy scan than any global
     // setting, and overriding it would make the common case worse.
@@ -2424,7 +2427,11 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         entries,
         referenceName: reference.name,
         referenceRevision: reference.revision,
-        referenceSourcePath: _document.deckPath,
+        // Falls back to the last mask path so a standalone loaded mask
+        // (deckPath null) still names its source file — the one field
+        // identifying the reference must not vanish in exactly the case
+        // where several same-named masks are in play.
+        referenceSourcePath: _document.deckPath ?? _lastMaskPath,
         onApply: (List<String> paths) =>
             _fileService.applyMaskSync(reference: reference, paths: paths),
         onRescan: () =>
@@ -2433,9 +2440,6 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       if (!mounted) {
         return;
       }
-      // Reported even when the count is zero: leaving the previous round's
-      // "Synced N copies" standing after a round that wrote nothing is the
-      // same stale-evidence problem the dialog was reworked to end.
       // Keep the open deck in sync when its own write actually landed.
       final String? deckPath = _document.deckPath;
       if (deckPath != null && written.contains(deckPath)) {
@@ -2445,7 +2449,17 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           );
         });
       }
-      _setFileStatus(LearnAnywhereMessage.maskSyncDone, count: written.length);
+      // Reported even when nothing was written: Cancel, Escape and the
+      // barrier all reach here with an empty list, and that "nothing was
+      // written" outcome gets its own message rather than reusing "Synced 0
+      // copy(ies)" — the same stale-evidence problem the dialog was reworked
+      // to end, and the reason how it was closed must not change what the
+      // learner is told.
+      if (written.isEmpty) {
+        _setFileStatus(LearnAnywhereMessage.maskSyncNoneUpdated);
+      } else {
+        _setFileStatus(LearnAnywhereMessage.maskSyncDone, count: written.length);
+      }
     });
   }
 

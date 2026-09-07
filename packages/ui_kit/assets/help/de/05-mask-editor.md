@@ -84,7 +84,12 @@ Das Bearbeiten der verknüpften `.inf` rührt für sich genommen keine Lern-Date
 behält ihre eigene eingefrorene Kopie, bis ausdrücklich anders angewiesen.
 **Edit ▸ Andere Kopien dieser Maske aktualisieren...** durchsucht einen von Ihnen
 gewählten Ordner nach jeder weiteren aus derselben Maske gebauten Datei und meldet für
-jede den Status:
+jede den Status. Verbreitet wird jeweils die Maske, die Sie gerade vor sich haben: die
+eigene Maske des Mask Editors, wenn dieser geöffnet ist, sonst die Maske der aktuell
+geöffneten Lern-Datei. Über der Liste nennt eine Zeile **Referenzmaske:** sie und ihre
+Revision, und eine Zeile **Aus:** die Datei, aus der sie stammt — ist keine Lern-Datei
+geöffnet, wird dafür die zuletzt geöffnete Maskendatei genannt, damit auch eine einzeln
+geladene Maske ihre Quelldatei nennt.
 
 | Status | Bedeutung |
 |---|---|
@@ -112,3 +117,9 @@ ankreuzen und **Auswahl aktualisieren** so oft drücken, wie Sie möchten; **Abb
 schließt den Dialog und macht nichts rückgängig, was bereits geschrieben wurde. Werden
 im gewählten Ordner keine weiteren Kopien gefunden, wird das gemeldet, statt Sie im
 Unklaren zu lassen.
+
+Schließen Sie den Dialog — mit **Abbruch**, der Escape-Taste oder durch Klicken
+außerhalb von ihm —, ohne dass etwas geschrieben wurde, wird **"Es wurden keine Kopien
+aktualisiert"** an derselben Stelle gemeldet, an der auch ein erfolgreicher Abgleich
+gemeldet wird, sodass sich ein Abbruch von einem stillen Fehlschlag und davon
+unterscheidet, den Befehl nie ausgeführt zu haben.

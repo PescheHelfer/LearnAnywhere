@@ -75,7 +75,11 @@ never been written to disk at all.
 Editing the linked `.inf` does not, by itself, touch any deck — each deck keeps its own
 frozen copy until told otherwise. **Edit ▸ Update other copies of this mask...**
 searches a folder you choose for every other file built from the same mask and reports
-each one's status:
+each one's status. The mask it propagates is whichever one you are looking at: the mask
+editor's own mask when the editor is open, and the current deck's mask otherwise. Above
+the list, a **Reference mask:** line names it and its revision, and a **From:** line
+names the file it came from — falling back to the last mask file you opened when no deck
+is open, so a standalone loaded mask still names its source.
 
 | Status | Meaning |
 |---|---|
@@ -99,3 +103,8 @@ so nothing is written twice. You can tick a further set and press **Update selec
 again as often as you like; **Cancel** closes the dialog and undoes nothing that was
 already written. If no other copies are found in the chosen folder, you are told so
 rather than left to wonder.
+
+Closing the dialog — with **Cancel**, the Escape key, or by clicking outside it — without
+ever having written anything reports **"No copies were updated"** in the same place a
+successful sync is reported, so cancelling reads differently from a silent failure and
+from never having run the command at all.

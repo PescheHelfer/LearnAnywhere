@@ -1256,6 +1256,10 @@ enum LearnAnywhereMessage {
   /// Status shown after a sync run, with a `{count}` placeholder.
   maskSyncDone,
 
+  /// Status shown when the sync dialog is closed having written nothing —
+  /// Cancel, Escape and the barrier all reach this, indistinguishably.
+  maskSyncNoneUpdated,
+
   /// Cancel action.
   actionCancel,
 
@@ -1983,6 +1987,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskSyncNoneFound:
           'No other copies of this mask were found under {folder}',
       LearnAnywhereMessage.maskSyncDone: 'Synced {count} copy(ies)',
+      LearnAnywhereMessage.maskSyncNoneUpdated: 'No copies were updated',
       LearnAnywhereMessage.actionCancel: 'Cancel',
       LearnAnywhereMessage.actionContinue: 'Continue',
       LearnAnywhereMessage.actionClear: 'Clear',
@@ -2663,6 +2668,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskSyncNoneFound:
           'Keine weiteren Kopien dieser Maske gefunden unter {folder}',
       LearnAnywhereMessage.maskSyncDone: '{count} Kopie(n) synchronisiert',
+      LearnAnywhereMessage.maskSyncNoneUpdated:
+          'Es wurden keine Kopien aktualisiert',
       LearnAnywhereMessage.actionCancel: 'Abbruch',
       LearnAnywhereMessage.actionContinue: 'Weiter',
       LearnAnywhereMessage.actionClear: 'Löschen',
