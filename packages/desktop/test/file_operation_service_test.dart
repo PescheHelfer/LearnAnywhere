@@ -1729,12 +1729,35 @@ void main() {
       expect(maskNameByPath[identicalPath], reference.name);
       expect(maskNameByPath[okDeckPath], 'Ok Deck Mask');
 
-      // Apply only the updatable (willUpdate) copies.
+      // Apply only the updatable (willUpdate) copies, plus two paths that
+      // were never scanned and cannot be written — one for each branch of
+      // applyMaskSync's try, so both are proven to report failure rather
+      // than silently skip. Both fail the same way on Linux and Windows
+      // (unlike provoking a permission bit): missingPath doesn't exist, so
+      // the .vok branch's decode throws; missingDirPath's parent directory
+      // doesn't exist, so the .inf branch's plain write throws.
       final List<String> updatable = entries
           .where((MaskSyncEntry e) => e.isUpdatable)
           .map((MaskSyncEntry e) => e.path)
           .toList();
-      await service.applyMaskSync(reference: reference, paths: updatable);
+      final String missingPath = '${nested.path}${sep}missing.vok';
+      final String missingDirPath =
+          '${nested.path}${sep}no-such-dir${sep}missing.inf';
+      final List<MaskSyncWriteResult> results = await service.applyMaskSync(
+        reference: reference,
+        paths: <String>[...updatable, missingPath, missingDirPath],
+      );
+
+      // One result per path given, naming the path and whether it landed.
+      final Map<String, bool> succeededByPath = <String, bool>{
+        for (final MaskSyncWriteResult r in results) r.path: r.succeeded,
+      };
+      expect(succeededByPath.length, updatable.length + 2);
+      for (final String path in updatable) {
+        expect(succeededByPath[path], isTrue, reason: path);
+      }
+      expect(succeededByPath[missingPath], isFalse);
+      expect(succeededByPath[missingDirPath], isFalse);
 
       // The older .inf now matches the reference exactly.
       expect(
@@ -1756,8 +1779,50 @@ void main() {
         80,
       );
       expect((await service.readMask(sameRevPath)).revision, 3);
+
+      // Re-scanning classifies the just-written copies as up to date, and
+      // leaves the untouched ones exactly as before.
+      final List<MaskSyncEntry> rescanned = await service.scanMaskCopies(
+        root: temp.path,
+        reference: reference,
+      );
+      final Map<String, MaskSyncStatus> rescannedByPath = <String, MaskSyncStatus>{
+        for (final MaskSyncEntry e in rescanned) e.path: e.status,
+      };
+      expect(rescannedByPath[olderPath], MaskSyncStatus.upToDate);
+      expect(rescannedByPath[okDeckPath], MaskSyncStatus.upToDate);
+      expect(rescannedByPath[identicalPath], MaskSyncStatus.upToDate);
+      expect(rescannedByPath[breakDeckPath], MaskSyncStatus.wouldBreak);
+      expect(rescannedByPath[sameRevPath], MaskSyncStatus.differs);
+
       await temp.delete(recursive: true);
     });
+
+    test(
+      'applyMaskSync reports a path it never writes to as failed, not succeeded',
+      () async {
+        // scanMaskCopies only ever hands back .inf/.vok paths, so this
+        // extension can't reach applyMaskSync today — but the return value's
+        // whole contract is "whether the write landed", and nothing is
+        // written for a path that matches neither extension.
+        final Directory temp = await Directory.systemTemp.createTemp(
+          'learn_anywhere_sync_unknown_ext',
+        );
+        final String otherPath = '${temp.path}${Platform.pathSeparator}notes.txt';
+        await File(otherPath).writeAsString('untouched');
+        final DesktopFileService service = const DesktopFileService();
+
+        final List<MaskSyncWriteResult> results = await service.applyMaskSync(
+          reference: sampleMask(),
+          paths: <String>[otherPath],
+        );
+
+        expect(results.single.path, otherPath);
+        expect(results.single.succeeded, isFalse);
+        expect(await File(otherPath).readAsString(), 'untouched');
+        await temp.delete(recursive: true);
+      },
+    );
 
     test(
       'classifies a copy ahead of the reference as newer, never updatable',

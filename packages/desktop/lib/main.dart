@@ -2425,17 +2425,22 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       if (selected == null || selected.isEmpty) {
         return;
       }
-      await _fileService.applyMaskSync(reference: reference, paths: selected);
-      // Keep the open deck in sync when it was one of the updated copies.
+      final List<MaskSyncWriteResult> results = await _fileService
+          .applyMaskSync(reference: reference, paths: selected);
+      final Set<String> written = <String>{
+        for (final MaskSyncWriteResult result in results)
+          if (result.succeeded) result.path,
+      };
+      // Keep the open deck in sync when its own write actually landed.
       final String? deckPath = _document.deckPath;
-      if (deckPath != null && selected.contains(deckPath)) {
+      if (deckPath != null && written.contains(deckPath)) {
         setState(() {
           _document = _document.copyWith(
             deck: applyMaskToDeck(_document.deck, reference),
           );
         });
       }
-      _setFileStatus(LearnAnywhereMessage.maskSyncDone, count: selected.length);
+      _setFileStatus(LearnAnywhereMessage.maskSyncDone, count: written.length);
     });
   }
 

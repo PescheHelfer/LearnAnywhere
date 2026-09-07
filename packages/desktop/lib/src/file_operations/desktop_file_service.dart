@@ -409,16 +409,24 @@ final class DesktopFileService {
 
   /// Overwrites each `.inf` in [paths] with [reference] and rewrites each
   /// `.vok`'s embedded cache via [applyMaskToDeck]. The caller passes only the
-  /// paths the user selected (never breaking ones). Files that fail to decode
-  /// are skipped.
-  Future<void> applyMaskSync({
+  /// paths the user selected (never breaking ones).
+  ///
+  /// Returns one result per path, in the order given, so a caller can report
+  /// how many writes actually landed. A path that fails to decode or write
+  /// (e.g. read-only, or removed between scan and apply) is reported as a
+  /// failure rather than silently skipped — but never aborts the rest of the
+  /// batch.
+  Future<List<MaskSyncWriteResult>> applyMaskSync({
     required LearningMask reference,
     required Iterable<String> paths,
   }) async {
+    final List<MaskSyncWriteResult> results = <MaskSyncWriteResult>[];
     for (final String path in paths) {
+      bool wrote = false;
       try {
         if (DeckPaths.hasExtension(path, 'inf')) {
           await File(path).writeAsString(encodeMaskJson(reference));
+          wrote = true;
         } else if (DeckPaths.hasExtension(path, 'vok')) {
           final LearningDeck deck = decodeDeckJson(
             await File(path).readAsString(),
@@ -426,11 +434,14 @@ final class DesktopFileService {
           await File(
             path,
           ).writeAsString(encodeDeckJson(applyMaskToDeck(deck, reference)));
+          wrote = true;
         }
       } on Object {
-        continue;
+        wrote = false;
       }
+      results.add(MaskSyncWriteResult(path: path, succeeded: wrote));
     }
+    return results;
   }
 
   MaskSyncStatus _classifyMaskCopy(
@@ -987,6 +998,19 @@ final class MaskSyncEntry {
 
   /// Whether the sync may update this copy (only older/compatible copies).
   bool get isUpdatable => status == MaskSyncStatus.willUpdate;
+}
+
+/// One path's outcome from [DesktopFileService.applyMaskSync].
+final class MaskSyncWriteResult {
+  /// Creates a write result.
+  const MaskSyncWriteResult({required this.path, required this.succeeded});
+
+  /// The path this result is for, as given to [DesktopFileService
+  /// .applyMaskSync].
+  final String path;
+
+  /// Whether the write landed on disk.
+  final bool succeeded;
 }
 
 /// A same-directory deck that a mask edit would break, with its reasons.
