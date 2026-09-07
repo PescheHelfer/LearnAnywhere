@@ -2391,10 +2391,16 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// reference; copies that differ at the same revision, or decks that would
   /// break, are shown but never auto-merged.
   Future<void> _updateMaskCopies() async {
-    // The Mask Editor's own mask when it holds one: that is the mask the
-    // learner is looking at and editing, and the one the command should
-    // propagate. The document's mask is the fallback for every other route.
-    final LearningMask reference = _maskEditorMask ?? _document.mask;
+    // The Mask Editor's own mask, edits included, only while that screen is
+    // showing: that is the mask the learner is looking at. Gated on the
+    // route rather than on `_maskEditorMask` being non-null, because leaving
+    // the editor (Escape, a menu item, any route change, opening a different
+    // deck) doesn't clear that field — only Close/Cancel do — so a non-null
+    // check would keep propagating an abandoned, never-saved edit long after
+    // the screen closed. Every other route uses the document's mask.
+    final LearningMask reference = _route == _DesktopRoute.maskEditor
+        ? (_maskEditorMask ?? _document.mask)
+        : _document.mask;
     // Deliberately ignores the start folder (N2): the open deck's own folder is
     // a more specific and more useful root for a copy scan than any global
     // setting, and overriding it would make the common case worse.

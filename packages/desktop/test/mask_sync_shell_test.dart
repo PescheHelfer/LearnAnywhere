@@ -116,6 +116,14 @@ void main() {
     await settle(tester);
   }
 
+  /// Ticks the sync dialog's row for [fileName]. The row's [Checkbox] is
+  /// itself `IgnorePointer`d (its own `InkWell` owns the tap — see
+  /// `mask_sync_dialog.dart`), so the tap has to land on the row's text.
+  Future<void> tickSyncRow(WidgetTester tester, String fileName) async {
+    await tester.tap(find.textContaining(fileName));
+    await settle(tester);
+  }
+
   /// The rendered "From: {path}" line, or null if no such line is on screen.
   ///
   /// Matched by predicate rather than an exact string: the Mask Editor's own
@@ -231,6 +239,134 @@ void main() {
 
         expect(find.text('Up to date'), findsOneWidget);
         expect(find.text('Differs (same revision)'), findsNothing);
+      });
+    },
+  );
+
+  testWidgets(
+    'leaving the Mask Editor by Escape and running the sync command '
+    'propagates the document\'s mask, not the abandoned edit',
+    (WidgetTester tester) async {
+      final LearningMask original = _mask(name: 'Original').copyWith(
+        revision: 1,
+      );
+      final String originalPath = '${maskDir.path}${Platform.pathSeparator}'
+          'original.inf';
+      final String copyPath = '${scanDir.path}${Platform.pathSeparator}'
+          'copy.inf';
+      File(originalPath).writeAsStringSync(encodeMaskJson(original));
+      // One revision behind the document, so it is selectable ("Will
+      // update") against either candidate reference — the point of this
+      // test is which mask's *content* lands on disk, not whether the row
+      // is offered.
+      File(
+        copyPath,
+      ).writeAsStringSync(encodeMaskJson(original.copyWith(revision: 0)));
+
+      final _ScriptedFilePicker picker = _ScriptedFilePicker(
+        openPathToReturn: originalPath,
+        directoryToReturn: scanDir.path,
+      );
+      await tester.runAsync(() async {
+        await pumpShell(tester, picker);
+        await loadMask(tester);
+
+        await pickMenuItem(tester, 'Edit', 'Mask Editor');
+        await waitForRealIo();
+        await settle(tester);
+
+        await tester.enterText(
+          find.byKey(const ValueKey<String>('mask-name-field')),
+          'Edited',
+        );
+        await settle(tester);
+
+        // Abandon the edit: Escape returns home without saving, and must
+        // not leave the edited name behind as the sync reference.
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await settle(tester);
+
+        await pickMenuItem(
+          tester,
+          'Edit',
+          'Update other copies of this mask...',
+        );
+        await waitForRealIo();
+        await settle(tester);
+
+        expect(find.text('Will update'), findsOneWidget);
+        // The reference line already names the document's mask, not the
+        // abandoned edit.
+        expect(find.textContaining('Edited'), findsNothing);
+
+        await tickSyncRow(tester, 'copy.inf');
+        await tester.tap(find.text('Update selected'));
+        await waitForRealIo();
+        await settle(tester);
+
+        final LearningMask written = decodeMaskJson(
+          File(copyPath).readAsStringSync(),
+        );
+        expect(written.name, 'Original');
+      });
+    },
+  );
+
+  testWidgets(
+    'running the sync command from inside the Mask Editor still propagates '
+    'the editor\'s own edits',
+    (WidgetTester tester) async {
+      final LearningMask original = _mask(name: 'Original').copyWith(
+        revision: 1,
+      );
+      final String originalPath = '${maskDir.path}${Platform.pathSeparator}'
+          'original.inf';
+      final String copyPath = '${scanDir.path}${Platform.pathSeparator}'
+          'copy.inf';
+      File(originalPath).writeAsStringSync(encodeMaskJson(original));
+      File(
+        copyPath,
+      ).writeAsStringSync(encodeMaskJson(original.copyWith(revision: 0)));
+
+      final _ScriptedFilePicker picker = _ScriptedFilePicker(
+        openPathToReturn: originalPath,
+        directoryToReturn: scanDir.path,
+      );
+      await tester.runAsync(() async {
+        await pumpShell(tester, picker);
+        await loadMask(tester);
+
+        await pickMenuItem(tester, 'Edit', 'Mask Editor');
+        await waitForRealIo();
+        await settle(tester);
+
+        await tester.enterText(
+          find.byKey(const ValueKey<String>('mask-name-field')),
+          'Edited',
+        );
+        await settle(tester);
+
+        // Still on the Mask Editor route — the command must use its
+        // (unsaved) mask as the reference.
+        await pickMenuItem(
+          tester,
+          'Edit',
+          'Update other copies of this mask...',
+        );
+        await waitForRealIo();
+        await settle(tester);
+
+        expect(find.text('Will update'), findsOneWidget);
+
+        await tickSyncRow(tester, 'copy.inf');
+        await tester.tap(find.text('Update selected'));
+        await waitForRealIo();
+        await settle(tester);
+
+        final LearningMask written = decodeMaskJson(
+          File(copyPath).readAsStringSync(),
+        );
+        expect(written.name, 'Edited');
       });
     },
   );
