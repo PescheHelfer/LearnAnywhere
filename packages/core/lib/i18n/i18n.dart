@@ -420,6 +420,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.10.0.
   aboutVersion100,
 
+  /// About page version history entry for 0.10.1.
+  aboutVersion101,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1638,6 +1641,12 @@ final class LearnAnywhereCatalog {
           'per field, automatic speech at reveal, F4 to replay, voice and '
           'speed set in Options; the Android companion speaks too. Windows '
           'only; Linux ships mute.',
+      LearnAnywhereMessage.aboutVersion101:
+          '0.10.1 – Mask Sync fixes: readable contrast, real write counts, '
+          'dialog stays open after a rescan, correct shell names, fields '
+          'table fits its frame, sync reference follows the open editor, '
+          'cancel no longer leaves the Mask Editor, a failed rescan keeps '
+          'the written ledger, row checkboxes reachable by assistive tech.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2294,6 +2303,14 @@ final class LearnAnywhereCatalog {
           'Aufdecken, F4 zum Wiederholen, Stimme und Geschwindigkeit in den '
           'Optionen; die Android-Begleit-App spricht ebenfalls. Nur '
           'Windows; Linux bleibt stumm.',
+      LearnAnywhereMessage.aboutVersion101:
+          '0.10.1 – Mask-Sync-Korrekturen: lesbarer Kontrast, korrekte '
+          'Schreib-Zählung, Dialog bleibt nach erneutem Scan offen, '
+          'korrekte Shell-Namen, Feldtabelle passt in ihren Rahmen, '
+          'Sync-Referenz folgt dem offenen Editor, Abbrechen verlässt den '
+          'Mask-Editor nicht mehr, ein fehlgeschlagener Rescan behält das '
+          'geschriebene Journal, Kontrollkästchen sind für '
+          'Hilfstechnologien bedienbar.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

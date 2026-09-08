@@ -77,7 +77,7 @@ void main() {
     // fixed-height lazy ListView that only builds its first ~3 rows, so an
     // older version silently falls out of the built range on the next bump.
     // Update this together with the version — see packages/desktop/CLAUDE.md.
-    expect(find.textContaining('0.10.0'), findsOneWidget);
+    expect(find.textContaining('0.10.1'), findsOneWidget);
   });
 
   testWidgets('help user guide opens with a contents list and search', (
