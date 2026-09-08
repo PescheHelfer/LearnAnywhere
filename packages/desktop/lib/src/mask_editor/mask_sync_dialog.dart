@@ -43,6 +43,67 @@ final class MaskSyncOutcome {
   final (Object error, StackTrace stackTrace)? failure;
 }
 
+/// What the shell should tell the learner about a finished [MaskSyncOutcome],
+/// and whether it should follow that report to the file-operations screen.
+final class MaskSyncReport {
+  /// Creates a report.
+  const MaskSyncReport({required this.text, required this.navigate});
+
+  /// The status text to show, already resolved in the active UI language.
+  final String text;
+
+  /// Whether the shell should navigate to the file-operations screen.
+  final bool navigate;
+}
+
+/// Turns a finished [MaskSyncOutcome] into what the learner is told and
+/// whether the shell follows it there.
+///
+/// A round that wrote nothing has no result worth landing on, and must not
+/// navigate the learner away from wherever they ran the command — the Mask
+/// Editor included, where a route change would strand unsaved edits with no
+/// save prompt. A round that wrote something is a real change worth landing
+/// on, so it does navigate — whether or not the re-scan behind it then
+/// failed; a failure never retracts the writes `written` already lists, so
+/// it never retracts the report of them either. This mirrors the
+/// no-failure decision already made for [LearnAnywhereMessage.maskSyncDone]
+/// and [LearnAnywhereMessage.maskSyncNoneUpdated], extended to the one case
+/// that decision never covered.
+MaskSyncReport describeMaskSyncOutcome(
+  MaskSyncOutcome outcome,
+  LearnAnywhereLocalizations messages,
+) {
+  final (Object, StackTrace)? failure = outcome.failure;
+  if (failure == null) {
+    return outcome.written.isEmpty
+        ? MaskSyncReport(
+            text: messages.message(LearnAnywhereMessage.maskSyncNoneUpdated),
+            navigate: false,
+          )
+        : MaskSyncReport(
+            text: messages
+                .message(LearnAnywhereMessage.maskSyncDone)
+                .replaceAll('{count}', outcome.written.length.toString()),
+            navigate: true,
+          );
+  }
+  final (Object error, StackTrace _) = failure;
+  return outcome.written.isEmpty
+      ? MaskSyncReport(
+          text:
+              '${messages.message(LearnAnywhereMessage.fileOperationFailed)}: '
+              '$error',
+          navigate: false,
+        )
+      : MaskSyncReport(
+          text: messages
+              .message(LearnAnywhereMessage.maskSyncPartialFailure)
+              .replaceAll('{count}', outcome.written.length.toString())
+              .replaceAll('{detail}', '$error'),
+          navigate: true,
+        );
+}
+
 /// Review dialog for tier-2 cross-directory mask sync (Step 7).
 ///
 /// Lists every `.inf`/`.vok` copy of the mask found under the chosen folder

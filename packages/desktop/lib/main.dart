@@ -2466,28 +2466,31 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           );
         });
       }
-      final (Object, StackTrace)? failure = outcome.failure;
-      if (failure != null) {
-        final (Object error, StackTrace stackTrace) = failure;
-        Error.throwWithStackTrace(error, stackTrace);
-      }
       // Reported even when nothing was written: Cancel, Escape and the
       // barrier all reach here with an empty list, and that "nothing was
       // written" outcome gets its own message rather than reusing "Synced 0
       // copy(ies)" — the same stale-evidence problem the dialog was reworked
       // to end, and the reason how it was closed must not change what the
-      // learner is told. Uses `_showStatus`, not `_setFileStatus`: closing
-      // having written nothing must not navigate the learner away from
-      // wherever they ran the command — the Mask Editor included, where a
-      // route change would strand unsaved edits with no save prompt.
-      if (outcome.written.isEmpty) {
-        _showStatus(LearnAnywhereMessage.maskSyncNoneUpdated);
-      } else {
-        _setFileStatus(
-          LearnAnywhereMessage.maskSyncDone,
-          count: outcome.written.length,
-        );
-      }
+      // learner is told. A round that wrote nothing must not navigate the
+      // learner away from wherever they ran the command — the Mask Editor
+      // included, where a route change would strand unsaved edits with no
+      // save prompt — whether or not the round also failed to re-scan;
+      // `describeMaskSyncOutcome` makes that call, folding in the failure
+      // text rather than letting it escape as a raw throw that would lose
+      // the write count and navigate unconditionally.
+      final MaskSyncReport report = describeMaskSyncOutcome(
+        outcome,
+        LearnAnywhereLocalizations.of(context),
+      );
+      setState(() {
+        _lastFileStatus = report.text;
+        if (report.navigate) {
+          _route = _DesktopRoute.fileOperations;
+        }
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(report.text)));
     });
   }
 

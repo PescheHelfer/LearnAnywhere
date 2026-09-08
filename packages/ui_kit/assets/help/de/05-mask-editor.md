@@ -125,3 +125,11 @@ gemeldet wird, sodass sich ein Abbruch von einem stillen Fehlschlag und davon
 unterscheidet, den Befehl nie ausgeführt zu haben. Diese Meldung lässt Sie genau dort,
 von wo aus Sie den Befehl aufgerufen haben — auch im Mask Editor, ungespeicherte
 Änderungen eingeschlossen —, statt Sie anderswohin zu schicken.
+
+Kann der Ordner nach einer Runde von Schreibvorgängen nicht erneut durchsucht werden —
+etwa weil er entfernt wurde oder nicht mehr erreichbar ist —, wird trotzdem gemeldet,
+wie viele Kopien vorher noch geschrieben wurden, zusammen mit dem Fehlschlag. Zur
+Dateioperationen-Ansicht gelangen Sie nur, wenn mindestens eine Kopie tatsächlich
+geschrieben wurde; eine Runde, die ohne Schreibvorgang nicht erneut durchsucht werden
+konnte, lässt Sie genau dort, von wo aus Sie den Befehl aufgerufen haben — wie bei einem
+Abbruch.

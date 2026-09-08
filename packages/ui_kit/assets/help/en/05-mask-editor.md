@@ -110,3 +110,9 @@ successful sync is reported, so cancelling reads differently from a silent failu
 from never having run the command at all. Reporting it this way leaves you exactly where
 you ran the command from — the mask editor included, unsaved edits and all — rather than
 sending you anywhere else.
+
+If the folder cannot be searched again after a round of writes — it was removed or became
+unreachable, for instance — you are still told how many copies were written before that
+happened, alongside the failure. You are taken to the file operations screen only when at
+least one copy was actually written; a round that failed to search again without having
+written anything leaves you exactly where you ran the command from, the same as cancelling.

@@ -1263,6 +1263,10 @@ enum LearnAnywhereMessage {
   /// Cancel, Escape and the barrier all reach this, indistinguishably.
   maskSyncNoneUpdated,
 
+  /// Status shown when a sync round wrote at least one copy and the re-scan
+  /// behind it then failed. Placeholders: {count}, {detail}.
+  maskSyncPartialFailure,
+
   /// Cancel action.
   actionCancel,
 
@@ -1646,7 +1650,8 @@ final class LearnAnywhereCatalog {
           'dialog stays open after a rescan, correct shell names, fields '
           'table fits its frame, sync reference follows the open editor, '
           'cancel no longer leaves the Mask Editor, a failed rescan keeps '
-          'the written ledger, row checkboxes reachable by assistive tech.',
+          'the written ledger and only leaves the Mask Editor when it wrote '
+          'something, row checkboxes reachable by assistive tech.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1997,6 +2002,9 @@ final class LearnAnywhereCatalog {
           'No other copies of this mask were found under {folder}',
       LearnAnywhereMessage.maskSyncDone: 'Synced {count} copy(ies)',
       LearnAnywhereMessage.maskSyncNoneUpdated: 'No copies were updated',
+      LearnAnywhereMessage.maskSyncPartialFailure:
+          'Synced {count} copy(ies); the folder could not be re-scanned '
+          'afterwards: {detail}',
       LearnAnywhereMessage.actionCancel: 'Cancel',
       LearnAnywhereMessage.actionContinue: 'Continue',
       LearnAnywhereMessage.actionClear: 'Clear',
@@ -2309,7 +2317,8 @@ final class LearnAnywhereCatalog {
           'korrekte Shell-Namen, Feldtabelle passt in ihren Rahmen, '
           'Sync-Referenz folgt dem offenen Editor, Abbrechen verlässt den '
           'Mask-Editor nicht mehr, ein fehlgeschlagener Rescan behält das '
-          'geschriebene Journal, Kontrollkästchen sind für '
+          'geschriebene Journal und verlässt den Mask-Editor nur, wenn '
+          'etwas geschrieben wurde, Kontrollkästchen sind für '
           'Hilfstechnologien bedienbar.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
@@ -2687,6 +2696,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.maskSyncDone: '{count} Kopie(n) synchronisiert',
       LearnAnywhereMessage.maskSyncNoneUpdated:
           'Es wurden keine Kopien aktualisiert',
+      LearnAnywhereMessage.maskSyncPartialFailure:
+          '{count} Kopie(n) synchronisiert; der Ordner konnte anschließend '
+          'nicht erneut eingelesen werden: {detail}',
       LearnAnywhereMessage.actionCancel: 'Abbruch',
       LearnAnywhereMessage.actionContinue: 'Weiter',
       LearnAnywhereMessage.actionClear: 'Löschen',
