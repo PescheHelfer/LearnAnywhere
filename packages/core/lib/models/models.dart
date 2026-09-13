@@ -178,6 +178,7 @@ final class RichTextRun {
     this.strikethrough = false,
     this.color,
     this.highlight,
+    this.correctionMark = false,
   });
 
   /// The run text.
@@ -201,6 +202,12 @@ final class RichTextRun {
   /// Optional highlight color as `#RRGGBB`.
   final String? highlight;
 
+  /// Whether the run is a correction mark painted by `buildDiffRuns`.
+  ///
+  /// Display-only: the renderer draws it in the theme's correction colour, and
+  /// serialization never writes it, so a mark can't leak into a saved deck.
+  final bool correctionMark;
+
   /// Returns a copy with selected fields changed.
   RichTextRun copyWith({
     String? text,
@@ -210,6 +217,7 @@ final class RichTextRun {
     bool? strikethrough,
     String? color,
     String? highlight,
+    bool? correctionMark,
   }) {
     return RichTextRun(
       text: text ?? this.text,
@@ -219,6 +227,7 @@ final class RichTextRun {
       strikethrough: strikethrough ?? this.strikethrough,
       color: color ?? this.color,
       highlight: highlight ?? this.highlight,
+      correctionMark: correctionMark ?? this.correctionMark,
     );
   }
 
@@ -231,12 +240,21 @@ final class RichTextRun {
         other.underline == underline &&
         other.strikethrough == strikethrough &&
         other.color == color &&
-        other.highlight == highlight;
+        other.highlight == highlight &&
+        other.correctionMark == correctionMark;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(text, bold, italic, underline, strikethrough, color, highlight);
+  int get hashCode => Object.hash(
+    text,
+    bold,
+    italic,
+    underline,
+    strikethrough,
+    color,
+    highlight,
+    correctionMark,
+  );
 }
 
 /// A stored field value, either plain text or rich text runs.

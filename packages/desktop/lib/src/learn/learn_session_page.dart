@@ -2212,8 +2212,6 @@ final class _SessionView extends StatelessWidget {
             builder: (BuildContext ctx) {
               final FieldDefinition field = visibleFields[i];
               final FieldRole role = field.roleFor(item.direction);
-              final double bgOpacity =
-                  Theme.of(ctx).brightness == Brightness.light ? 0.15 : 0.10;
 
               final bool showUserAnswer =
                   role == FieldRole.answer &&
@@ -2231,18 +2229,18 @@ final class _SessionView extends StatelessWidget {
                 bgColor = rowColors.surfaceContainerHighest;
                 displayValue = FieldValue.plain(enteredAnswers[field.id] ?? '');
               } else {
-                accentColor = switch (role) {
-                  FieldRole.question => const Color.fromRGBO(0, 150, 180, 1),
-                  FieldRole.answer => const Color.fromRGBO(0, 160, 80, 1),
-                  FieldRole.remark => const Color.fromRGBO(200, 140, 0, 1),
-                };
-                bgColor = accentColor.withValues(alpha: bgOpacity);
+                accentColor = LearnAnywhereFieldAccents.accentFor(role);
+                bgColor = LearnAnywhereFieldAccents.backgroundFor(
+                  role,
+                  Theme.of(ctx).brightness,
+                );
                 final FieldValue expectedValue = unit.valueForFieldId(field.id);
                 // On the correction view, overlay the student's mistakes on
-                // the answer field's runs (substitutions red, missing chars
-                // as red "_", extras as red strikethrough). A fully correct
-                // answer diffs to the unchanged solution. The plain solution
-                // view always shows the expected value with no diff marks.
+                // the answer field's runs (substituted and missing characters
+                // marked, missing ones underlined, extras struck through), in
+                // the theme's correction colour. A fully correct answer diffs
+                // to the unchanged solution. The plain solution view always
+                // shows the expected value with no diff marks.
                 displayValue =
                     (viewMode == _AnswerViewMode.correction &&
                         role == FieldRole.answer &&

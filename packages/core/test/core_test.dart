@@ -1822,6 +1822,35 @@ void main() {
       expect(restored.units.single.fields[0], value);
     });
 
+    test('encoding a deck never writes a correction mark', () {
+      // Correction marks are display-only: a diff result that somehow reached
+      // a saved deck must come back as the plain formatting underneath.
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{
+              0: FieldValue.rich(<RichTextRun>[
+                const RichTextRun(text: 'ok'),
+                const RichTextRun(text: 'x', bold: true, correctionMark: true),
+              ]),
+            },
+          ),
+        ],
+      );
+
+      final String json = encodeDeckJson(deck);
+      expect(json, isNot(contains('correction')));
+      expect(
+        decodeDeckJson(json).units.single.fields[0],
+        FieldValue.rich(<RichTextRun>[
+          const RichTextRun(text: 'ok'),
+          const RichTextRun(text: 'x', bold: true),
+        ]),
+      );
+    });
+
     test('a decoded run without strikethrough defaults to false', () {
       const RichTextRun run = RichTextRun(text: 'plain');
       expect(run.strikethrough, isFalse);
@@ -1915,7 +1944,7 @@ void main() {
       expect(extra.single.enteredIndex, 3);
     });
 
-    test('buildDiffRuns paints only the substituted character red', () {
+    test('buildDiffRuns marks only the substituted character', () {
       final List<RichTextRun> runs = buildDiffRuns(
         expectedRuns: <RichTextRun>[
           const RichTextRun(text: 'ca', bold: true),
@@ -1923,18 +1952,20 @@ void main() {
         ],
         enteredPlain: 'cot',
       );
-      // Expected plain stays "cat"; the 'a'→'o' substitution reddens only 'a'.
+      // Expected plain stays "cat"; the 'a'→'o' substitution marks only 'a'.
       expect(runsText(runs), 'cat');
       RunFormat formatAtChar(int index) => formatsFromRuns(runs)[index];
-      expect(formatAtChar(0).color, isNull); // 'c' untouched
+      expect(formatAtChar(0).correctionMark, isFalse); // 'c' untouched
       expect(formatAtChar(0).bold, isTrue); // original bold kept
-      expect(formatAtChar(1).color, kDiffMarkColor); // 'a' reddened
+      expect(formatAtChar(1).correctionMark, isTrue); // 'a' marked
       expect(formatAtChar(1).bold, isTrue); // formatting otherwise preserved
-      expect(formatAtChar(2).color, isNull); // 't' untouched
+      expect(formatAtChar(2).correctionMark, isFalse); // 't' untouched
       expect(formatAtChar(2).italic, isTrue);
+      // A mark is not a text colour: the run's own colour stays unset.
+      expect(runs.every((RichTextRun r) => r.color == null), isTrue);
     });
 
-    test('buildDiffRuns shows a missing character in red and underlined', () {
+    test('buildDiffRuns marks a missing character and underlines it', () {
       final List<RichTextRun> runs = buildDiffRuns(
         expectedRuns: <RichTextRun>[const RichTextRun(text: 'hello')],
         enteredPlain: 'helo',
@@ -1947,7 +1978,7 @@ void main() {
       final List<RunFormat> formats = formatsFromRuns(runs);
       final Iterable<int> marked = <int>[
         for (int i = 0; i < formats.length; i++)
-          if (formats[i].color == kDiffMarkColor) i,
+          if (formats[i].correctionMark) i,
       ];
       expect(marked, hasLength(1));
       final int missing = marked.single;
@@ -1955,7 +1986,7 @@ void main() {
       expect(text[missing], 'l');
     });
 
-    test('buildDiffRuns marks a trailing extra as red strikethrough', () {
+    test('buildDiffRuns marks a trailing extra and strikes it through', () {
       final List<RichTextRun> runs = buildDiffRuns(
         expectedRuns: <RichTextRun>[const RichTextRun(text: 'cat')],
         enteredPlain: 'cats',
@@ -1964,7 +1995,8 @@ void main() {
       final RichTextRun extra = runs.last;
       expect(extra.text, 's');
       expect(extra.strikethrough, isTrue);
-      expect(extra.color, kDiffMarkColor);
+      expect(extra.correctionMark, isTrue);
+      expect(extra.color, isNull);
     });
 
     test('buildDiffRuns keeps an extra character in place, not at the end', () {
@@ -1986,7 +2018,7 @@ void main() {
       final int extra = struck.single;
       expect(text[extra], 's');
       expect(extra, lessThan(text.length - 1));
-      expect(formats[extra].color, kDiffMarkColor);
+      expect(formats[extra].correctionMark, isTrue);
     });
 
     test(
@@ -2002,7 +2034,7 @@ void main() {
           enteredPlain: 'cafe',
         );
         expect(runs, expected);
-        expect(runs.every((RichTextRun r) => r.color == null), isTrue);
+        expect(runs.every((RichTextRun r) => !r.correctionMark), isTrue);
       },
     );
 

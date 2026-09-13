@@ -153,20 +153,4 @@ final class LearnAnywherePalette {
     }
     return _lightToDarkHighlight[hex.toUpperCase()] ?? hex;
   }
-
-  /// Dark-mode replacement for [kDiffMarkColor]: a warm amber/yellow reads more
-  /// clearly than red against a dark surface.
-  static const String _darkDiffMarkColor = '#FFC107';
-
-  /// Returns the diff/correction mark color readable under [brightness].
-  ///
-  /// In light mode the stored red ([kDiffMarkColor]) is used unchanged; in dark
-  /// mode (including the Dark and Dark Blue themes) it is swapped for a warmer
-  /// amber so corrections stay legible without clashing with dark surfaces.
-  static String diffMarkColorForBrightness(String hex, Brightness brightness) {
-    if (brightness != Brightness.dark || hex.toUpperCase() != kDiffMarkColor) {
-      return hex;
-    }
-    return _darkDiffMarkColor;
-  }
 }

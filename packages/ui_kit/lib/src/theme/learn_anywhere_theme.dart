@@ -67,6 +67,50 @@ final class LearnAnywhereChromeTheme
   }
 }
 
+/// The colours a rich-text value's formatting is drawn in, chosen per theme.
+///
+/// Unlike [LearnAnywhereChromeTheme] this is not opt-in: every theme builder
+/// sets it, because a formatting colour has no [ColorScheme] role that would
+/// stay legible on all four themes. [of] falls back only for a bare
+/// [ThemeData] that none of the builders made (a test's default theme).
+@immutable
+final class LearnAnywhereFormatColours
+    extends ThemeExtension<LearnAnywhereFormatColours> {
+  /// Creates a format colours theme extension.
+  const LearnAnywhereFormatColours({required this.correction});
+
+  /// Colour of a correction mark — a mistyped, missing or extra character in
+  /// the Correction view (`RichTextRun.correctionMark`).
+  final Color correction;
+
+  /// Resolves the format colours for [theme]: the extension when the theme
+  /// carries one, otherwise [ColorScheme.error] as the correction colour.
+  static LearnAnywhereFormatColours of(ThemeData theme) {
+    return theme.extension<LearnAnywhereFormatColours>() ??
+        LearnAnywhereFormatColours(correction: theme.colorScheme.error);
+  }
+
+  @override
+  LearnAnywhereFormatColours copyWith({Color? correction}) {
+    return LearnAnywhereFormatColours(
+      correction: correction ?? this.correction,
+    );
+  }
+
+  @override
+  LearnAnywhereFormatColours lerp(
+    ThemeExtension<LearnAnywhereFormatColours>? other,
+    double t,
+  ) {
+    if (other is! LearnAnywhereFormatColours) {
+      return this;
+    }
+    return LearnAnywhereFormatColours(
+      correction: Color.lerp(correction, other.correction, t) ?? correction,
+    );
+  }
+}
+
 /// Shared light and dark theme definitions for Learn Anywhere shells.
 final class LearnAnywhereTheme {
   const LearnAnywhereTheme._();
@@ -77,7 +121,13 @@ final class LearnAnywhereTheme {
       seedColor: const Color(0xFF29615C),
       brightness: Brightness.light,
     );
-    return _base(colors, zoomPercent);
+    return _base(
+      colors,
+      zoomPercent,
+      extensions: const <ThemeExtension<dynamic>>[
+        LearnAnywhereFormatColours(correction: Color(0xFFD32F2F)),
+      ],
+    );
   }
 
   /// Dark theme used by desktop and mobile until user preferences are wired.
@@ -86,7 +136,14 @@ final class LearnAnywhereTheme {
       seedColor: const Color(0xFF5DB3A9),
       brightness: Brightness.dark,
     );
-    return _base(colors, zoomPercent);
+    return _base(
+      colors,
+      zoomPercent,
+      extensions: const <ThemeExtension<dynamic>>[
+        // Warm amber reads more clearly than red against a dark surface.
+        LearnAnywhereFormatColours(correction: Color(0xFFFFC107)),
+      ],
+    );
   }
 
   /// Dark Blue theme — inspired by VS Code "Tomorrow Night Blue".
@@ -111,7 +168,9 @@ final class LearnAnywhereTheme {
       outline: const Color(0xFF1D3B6E),
       outlineVariant: const Color(0xFF1D3B6E),
     );
-    return _base(colors, zoomPercent).copyWith(
+    return _base(
+      colors,
+      zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
         LearnAnywhereChromeTheme(
           separatorColor: Color(0xFFFFC600),
@@ -122,6 +181,11 @@ final class LearnAnywhereTheme {
           // one step lighter.
           mutedForeground: Color(0xFF9DB2E8),
         ),
+        // Not the Dark theme's amber: that is a near twin of this theme's
+        // yellow primary (#FFC600), so a mark would read as accented chrome.
+        // A light coral stays well clear of it in hue and of the navy ground
+        // in contrast.
+        LearnAnywhereFormatColours(correction: Color(0xFFFF8A80)),
       ],
     );
   }
@@ -147,7 +211,13 @@ final class LearnAnywhereTheme {
       outline: const Color(0xFFB3CFFF),
       outlineVariant: const Color(0xFFB3CFFF),
     );
-    return _base(colors, zoomPercent);
+    return _base(
+      colors,
+      zoomPercent,
+      extensions: const <ThemeExtension<dynamic>>[
+        LearnAnywhereFormatColours(correction: Color(0xFFD32F2F)),
+      ],
+    );
   }
 
   /// Builds a theme whose every text size is multiplied by the zoom factor.
@@ -159,7 +229,11 @@ final class LearnAnywhereTheme {
   /// render text larger than the box measured for it and clip every field.
   /// Scaling the theme keeps measurement and rendering in agreement. See
   /// `docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md`.
-  static ThemeData _base(ColorScheme colors, int zoomPercent) {
+  static ThemeData _base(
+    ColorScheme colors,
+    int zoomPercent, {
+    required List<ThemeExtension<dynamic>> extensions,
+  }) {
     final Typography typography = Typography.material2021();
     // The colour theme (`black`) carries no font sizes at all — those live in
     // the geometry (`englishLike`), which Flutter normally merges in later,
@@ -188,6 +262,7 @@ final class LearnAnywhereTheme {
       inputDecorationTheme: const InputDecorationTheme(
         border: OutlineInputBorder(),
       ),
+      extensions: extensions,
     );
   }
 }

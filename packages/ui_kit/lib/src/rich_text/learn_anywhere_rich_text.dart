@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 
+import '../theme/learn_anywhere_theme.dart';
 import 'learn_anywhere_palette.dart';
 
 /// Builds Flutter text spans from Learn Anywhere portable rich-text values.
@@ -9,13 +10,14 @@ final class LearnAnywhereRichTextRenderer {
 
   /// Converts a stored [FieldValue] into a [TextSpan].
   ///
-  /// [brightness] selects how stored highlight colors are mapped so they stay
-  /// readable: light-mode highlights (including legacy plain yellow) are
-  /// remapped to dark equivalents when [brightness] is [Brightness.dark].
+  /// [theme] resolves correction marks through [LearnAnywhereFormatColours],
+  /// and its brightness selects how stored highlight colors are mapped so they
+  /// stay readable: light-mode highlights (including legacy plain yellow) are
+  /// remapped to dark equivalents on a dark theme.
   static TextSpan spanForFieldValue(
     FieldValue value, {
+    required ThemeData theme,
     TextStyle? baseStyle,
-    Brightness brightness = Brightness.light,
   }) {
     return switch (value) {
       PlainFieldValue(:final String text) => TextSpan(
@@ -28,7 +30,7 @@ final class LearnAnywhereRichTextRenderer {
             .map(
               (RichTextRun run) => spanForRun(
                 run,
-                brightness: brightness,
+                theme: theme,
                 fallbackDecorationColor: baseStyle?.color,
               ),
             )
@@ -39,16 +41,21 @@ final class LearnAnywhereRichTextRenderer {
 
   /// Converts a single rich-text run into a [TextSpan].
   ///
+  /// A [RichTextRun.correctionMark] is drawn in [theme]'s correction colour,
+  /// over any text colour the run stores.
+  ///
   /// [fallbackDecorationColor] is used as the underline colour when the run
   /// carries no explicit text colour. Pass the parent span's resolved text
   /// colour so the decoration follows the inherited foreground instead of
   /// defaulting to black.
   static TextSpan spanForRun(
     RichTextRun run, {
-    Brightness brightness = Brightness.light,
+    required ThemeData theme,
     Color? fallbackDecorationColor,
   }) {
-    final Color? explicitColor = _colorFromHex(run.color, brightness);
+    final Color? explicitColor = run.correctionMark
+        ? LearnAnywhereFormatColours.of(theme).correction
+        : _colorFromHex(run.color);
     // Underline and strikethrough can both be on; combine them so neither is
     // dropped.
     final List<TextDecoration> decorations = <TextDecoration>[
@@ -65,18 +72,16 @@ final class LearnAnywhereRichTextRenderer {
             : TextDecoration.combine(decorations),
         decorationColor: explicitColor ?? fallbackDecorationColor,
         color: explicitColor,
-        backgroundColor: _highlightColor(run.highlight, brightness),
+        backgroundColor: _highlightColor(run.highlight, theme.brightness),
       ),
     );
   }
 
-  static Color? _colorFromHex(String? value, Brightness brightness) {
+  static Color? _colorFromHex(String? value) {
     if (value == null) {
       return null;
     }
-    return colorFromHex(
-      LearnAnywherePalette.diffMarkColorForBrightness(value, brightness),
-    );
+    return colorFromHex(value);
   }
 
   static Color? _highlightColor(String? value, Brightness brightness) {
@@ -124,7 +129,7 @@ final class LearnAnywhereRichText extends StatelessWidget {
       text: LearnAnywhereRichTextRenderer.spanForFieldValue(
         value,
         baseStyle: effectiveStyle,
-        brightness: Theme.of(context).brightness,
+        theme: Theme.of(context),
       ),
       textAlign: textAlign ?? TextAlign.start,
       maxLines: maxLines,

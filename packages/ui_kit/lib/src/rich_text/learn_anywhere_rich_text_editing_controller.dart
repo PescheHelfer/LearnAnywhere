@@ -141,7 +141,7 @@ final class LearnAnywhereRichTextEditingController extends TextEditingController
         withComposing: withComposing,
       );
     }
-    final Brightness brightness = Theme.of(context).brightness;
+    final ThemeData theme = Theme.of(context);
     final Color? fallbackDecorationColor =
         style?.color ?? DefaultTextStyle.of(context).style.color;
     return TextSpan(
@@ -150,7 +150,7 @@ final class LearnAnywhereRichTextEditingController extends TextEditingController
           .map(
             (RichTextRun run) => LearnAnywhereRichTextRenderer.spanForRun(
               run,
-              brightness: brightness,
+              theme: theme,
               fallbackDecorationColor: fallbackDecorationColor,
             ),
           )

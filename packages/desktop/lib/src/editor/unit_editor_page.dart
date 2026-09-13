@@ -1159,20 +1159,13 @@ final class _GridRowState extends State<_GridRow> {
 
   @override
   Widget build(BuildContext context) {
-    final double bgOpacity = Theme.of(context).brightness == Brightness.light
-        ? 0.15
-        : 0.10;
-
-    final Color accentColor;
-    switch (widget.field.role1) {
-      case FieldRole.question:
-        accentColor = const Color.fromRGBO(0, 150, 180, 1);
-      case FieldRole.answer:
-        accentColor = const Color.fromRGBO(0, 160, 80, 1);
-      case FieldRole.remark:
-        accentColor = const Color.fromRGBO(200, 140, 0, 1);
-    }
-    final Color bgColor = accentColor.withValues(alpha: bgOpacity);
+    final Color accentColor = LearnAnywhereFieldAccents.accentFor(
+      widget.field.role1,
+    );
+    final Color bgColor = LearnAnywhereFieldAccents.backgroundFor(
+      widget.field.role1,
+      Theme.of(context).brightness,
+    );
 
     final TextStyle valueStyle = LearnAnywhereTokens.monospace(
       Theme.of(context).textTheme.bodyMedium,

@@ -1,6 +1,7 @@
 /// Shared Flutter UI primitives for Learn Anywhere.
 library;
 
+export 'src/fields/field_accents.dart';
 export 'src/fields/field_row.dart';
 export 'src/fields/field_row_grid.dart';
 export 'src/help/help_content.dart';

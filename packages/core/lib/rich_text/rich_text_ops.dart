@@ -21,6 +21,7 @@ final class RunFormat {
     this.strikethrough = false,
     this.color,
     this.highlight,
+    this.correctionMark = false,
   });
 
   /// Extracts the formatting of [run], dropping its text.
@@ -32,6 +33,7 @@ final class RunFormat {
       strikethrough: run.strikethrough,
       color: run.color,
       highlight: run.highlight,
+      correctionMark: run.correctionMark,
     );
   }
 
@@ -53,6 +55,10 @@ final class RunFormat {
   /// Optional highlight color as `#RRGGBB`.
   final String? highlight;
 
+  /// Whether the run is a display-only correction mark; see
+  /// [RichTextRun.correctionMark].
+  final bool correctionMark;
+
   /// The unformatted default.
   static const RunFormat none = RunFormat();
 
@@ -63,7 +69,8 @@ final class RunFormat {
       !underline &&
       !strikethrough &&
       color == null &&
-      highlight == null;
+      highlight == null &&
+      !correctionMark;
 
   /// Returns a run combining this formatting with [text].
   RichTextRun applyTo(String text) {
@@ -75,6 +82,7 @@ final class RunFormat {
       strikethrough: strikethrough,
       color: color,
       highlight: highlight,
+      correctionMark: correctionMark,
     );
   }
 
@@ -87,6 +95,7 @@ final class RunFormat {
     bool? italic,
     bool? underline,
     bool? strikethrough,
+    bool? correctionMark,
   }) {
     return RunFormat(
       bold: bold ?? this.bold,
@@ -95,6 +104,7 @@ final class RunFormat {
       strikethrough: strikethrough ?? this.strikethrough,
       color: color,
       highlight: highlight,
+      correctionMark: correctionMark ?? this.correctionMark,
     );
   }
 
@@ -107,6 +117,7 @@ final class RunFormat {
       strikethrough: strikethrough,
       color: value,
       highlight: highlight,
+      correctionMark: correctionMark,
     );
   }
 
@@ -119,6 +130,7 @@ final class RunFormat {
       strikethrough: strikethrough,
       color: color,
       highlight: value,
+      correctionMark: correctionMark,
     );
   }
 
@@ -130,12 +142,20 @@ final class RunFormat {
         other.underline == underline &&
         other.strikethrough == strikethrough &&
         other.color == color &&
-        other.highlight == highlight;
+        other.highlight == highlight &&
+        other.correctionMark == correctionMark;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(bold, italic, underline, strikethrough, color, highlight);
+  int get hashCode => Object.hash(
+    bold,
+    italic,
+    underline,
+    strikethrough,
+    color,
+    highlight,
+    correctionMark,
+  );
 }
 
 /// The total plain-text length of [runs] (in UTF-16 code units).
@@ -317,20 +337,18 @@ List<RichTextRun> reconcileRuns({
   return runsFromFormats(newText, formats);
 }
 
-/// The colour used to mark diff deviations on the reveal screen (`#RRGGBB`).
-const String kDiffMarkColor = '#D32F2F';
-
 /// Overlays the student's mistakes onto the expected value's rich-text runs.
 ///
 /// Returns the expected [expectedRuns] with the diff against [enteredPlain]
 /// painted on top, preserving every original run attribute except where a
-/// deviation is flagged:
-/// - a **substituted** character keeps its formatting but its `color` is set to
-///   [kDiffMarkColor];
-/// - a **missing** character (in the solution, absent from the entry) is marked
-///   by a synthetic red `_` run inserted at that position;
+/// deviation is flagged. Every flagged character carries
+/// [RichTextRun.correctionMark], which the renderer draws in the current
+/// theme's correction colour — the mark is never written as a text colour:
+/// - a **substituted** character keeps its formatting and is marked;
+/// - a **missing** character (in the solution, absent from the entry) is shown
+///   as its real letter, marked and underlined;
 /// - **extra** characters the student typed are shown in place, at the position
-///   they were typed, as a red, struck-through run.
+///   they were typed, marked and struck through.
 ///
 /// Alignment runs on [normalizeForDiff] of both texts (the same case/accent
 /// folding used for scoring), so a difference the evaluator ignores — a case or
@@ -358,18 +376,16 @@ List<RichTextRun> buildDiffRuns({
       case DiffOpKind.substitute:
         result.add(
           expectedFormats[op.expectedIndex]
-              .withColor(kDiffMarkColor)
+              .copyWith(correctionMark: true)
               .applyTo(expected[op.expectedIndex]),
         );
       case DiffOpKind.delete:
         // The expected character is missing from the entry. Show the actual
-        // character (so the complete solution stays visible), marked in the
-        // diff colour and underlined to signal it was omitted rather than
-        // mistyped.
+        // character (so the complete solution stays visible), marked and
+        // underlined to signal it was omitted rather than mistyped.
         result.add(
           expectedFormats[op.expectedIndex]
-              .withColor(kDiffMarkColor)
-              .copyWith(underline: true)
+              .copyWith(correctionMark: true, underline: true)
               .applyTo(expected[op.expectedIndex]),
         );
       case DiffOpKind.insert:
@@ -379,7 +395,7 @@ List<RichTextRun> buildDiffRuns({
         result.add(
           RichTextRun(
             text: enteredPlain[op.enteredIndex],
-            color: kDiffMarkColor,
+            correctionMark: true,
             strikethrough: true,
           ),
         );

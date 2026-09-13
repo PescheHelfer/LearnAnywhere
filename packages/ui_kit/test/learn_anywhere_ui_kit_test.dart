@@ -540,6 +540,7 @@ void main() {
     test('renders plain values as a single text span', () {
       final TextSpan span = LearnAnywhereRichTextRenderer.spanForFieldValue(
         const FieldValue.plain('plain'),
+        theme: LearnAnywhereTheme.light(),
         baseStyle: const TextStyle(fontSize: 18),
       );
 
@@ -560,6 +561,7 @@ void main() {
             highlight: '#FFFF00',
           ),
         ]),
+        theme: LearnAnywhereTheme.light(),
       );
       final TextSpan child = span.children!.single as TextSpan;
 
@@ -576,6 +578,7 @@ void main() {
     test('underline without explicit color inherits fallback decoration color', () {
       final TextSpan span = LearnAnywhereRichTextRenderer.spanForRun(
         const RichTextRun(text: 'x', underline: true),
+        theme: LearnAnywhereTheme.light(),
         fallbackDecorationColor: const Color(0xFFFFFFFF),
       );
       expect(span.style?.decorationColor, const Color(0xFFFFFFFF));
@@ -598,14 +601,86 @@ void main() {
     test('remaps legacy yellow highlight to a dark equivalent in dark mode', () {
       final TextSpan light = LearnAnywhereRichTextRenderer.spanForRun(
         const RichTextRun(text: 'x', highlight: '#FFFF00'),
+        theme: LearnAnywhereTheme.light(),
       );
       expect(light.style?.backgroundColor, const Color(0xFFFFFF00));
 
       final TextSpan dark = LearnAnywhereRichTextRenderer.spanForRun(
         const RichTextRun(text: 'x', highlight: '#FFFF00'),
-        brightness: Brightness.dark,
+        theme: LearnAnywhereTheme.dark(),
       );
       expect(dark.style?.backgroundColor, colorFromHex('#8D6E00'));
+    });
+
+    final Map<String, ThemeData Function()> themeBuilders =
+        <String, ThemeData Function()>{
+          'Light': LearnAnywhereTheme.light,
+          'Dark': LearnAnywhereTheme.dark,
+          'Dark Blue': LearnAnywhereTheme.darkBlue,
+          'Light Blue': LearnAnywhereTheme.lightBlue,
+        };
+
+    for (final MapEntry<String, ThemeData Function()> entry
+        in themeBuilders.entries) {
+      test('a correction mark resolves to ${entry.key}\'s correction colour', () {
+        final ThemeData theme = entry.value();
+        final LearnAnywhereFormatColours? colours = theme
+            .extension<LearnAnywhereFormatColours>();
+        expect(colours, isNotNull);
+
+        final TextSpan span = LearnAnywhereRichTextRenderer.spanForRun(
+          // A stored colour under the mark must not win over the mark.
+          const RichTextRun(
+            text: 'x',
+            underline: true,
+            color: '#CC0000',
+            correctionMark: true,
+          ),
+          theme: theme,
+        );
+        expect(span.style?.color, colours!.correction);
+        // The missing-character underline is drawn in the mark's colour too.
+        expect(span.style?.decorationColor, colours.correction);
+      });
+    }
+
+    test('Dark Blue\'s correction colour is not its yellow primary', () {
+      // Dark Blue's primary (#FFC600) is almost the old dark-theme amber, so a
+      // mark in that amber would read as ordinary accented chrome.
+      final ThemeData theme = LearnAnywhereTheme.darkBlue();
+      final Color correction = theme
+          .extension<LearnAnywhereFormatColours>()!
+          .correction;
+      final double hueGap =
+          (HSVColor.fromColor(correction).hue -
+                  HSVColor.fromColor(theme.colorScheme.primary).hue)
+              .abs();
+      expect(math.min(hueGap, 360 - hueGap), greaterThan(30));
+    });
+
+    testWidgets('the widget draws a correction mark from the ambient theme', (
+      WidgetTester tester,
+    ) async {
+      final ThemeData theme = LearnAnywhereTheme.darkBlue();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: LearnAnywhereRichText(
+            value: FieldValue.rich(<RichTextRun>[
+              const RichTextRun(text: 'ok'),
+              const RichTextRun(text: 'x', correctionMark: true),
+            ]),
+          ),
+        ),
+      );
+
+      final RichText richText = tester.widget(find.byType(RichText));
+      final TextSpan mark =
+          (richText.text as TextSpan).children!.last as TextSpan;
+      expect(
+        mark.style?.color,
+        theme.extension<LearnAnywhereFormatColours>()!.correction,
+      );
     });
   });
 
