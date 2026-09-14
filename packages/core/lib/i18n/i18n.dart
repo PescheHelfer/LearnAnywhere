@@ -423,6 +423,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.10.1.
   aboutVersion101,
 
+  /// About page version history entry for 0.11.0.
+  aboutVersion110,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1607,6 +1610,10 @@ final class LearnAnywhereCatalog {
           'cancel no longer leaves the Mask Editor, a failed rescan keeps '
           'the written ledger and only leaves the Mask Editor when it wrote '
           'something, row checkboxes reachable by assistive tech.',
+      LearnAnywhereMessage.aboutVersion110:
+          '0.11.0 – Text colour and highlight now follow the theme: one '
+          'toggle each in the editor, and the Correction view hides a '
+          'field\'s own formatting where it has a mistake.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2260,6 +2267,10 @@ final class LearnAnywhereCatalog {
           'geschriebene Journal und verlässt den Mask-Editor nur, wenn '
           'etwas geschrieben wurde, Kontrollkästchen sind für '
           'Hilfstechnologien bedienbar.',
+      LearnAnywhereMessage.aboutVersion110:
+          '0.11.0 – Textfarbe und Hervorhebung folgen jetzt dem Thema: je '
+          'ein Umschalter im Editor, und die Korrektur-Ansicht blendet die '
+          'eigene Formatierung eines Feldes mit Fehler aus.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

@@ -234,7 +234,7 @@ One pub workspace, four packages:
 ## Status
 
 The two applications ship separately, on independent version tracks and with different
-feature sets. The desktop application is at 0.10.1; the Android companion is at 0.5.0 and
+feature sets. The desktop application is at 0.11.0; the Android companion is at 0.6.0 and
 is distributed as a sideloaded APK.
 
 ## Credits
