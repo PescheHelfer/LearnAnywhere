@@ -449,6 +449,56 @@ void main() {
       final LearningDeck reloaded = decodeDeckJson(encodeDeckJson(result));
       expect(reloaded.units.single.valueForFieldId(1).plainText, 'mai');
     });
+
+    test('applyMaskToDeck truncation keeps a run\'s text colour token', () {
+      final LearningDeck deck = LearningDeck(
+        mask: compatMask(),
+        units: <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{
+              1: FieldValue.rich(<RichTextRun>[
+                const RichTextRun(text: 'ma'),
+                const RichTextRun(text: 'ison', color: TextColourToken.text1),
+              ]),
+            },
+          ),
+        ],
+      );
+      final CategoryDefinition noun = compatMask().categories.first;
+      final LearningMask shortened = compatMask().copyWith(
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: noun.id,
+            name: noun.name,
+            fields: <FieldDefinition>[
+              for (final FieldDefinition field in noun.fields)
+                if (field.id == 1)
+                  FieldDefinition(
+                    id: field.id,
+                    name: field.name,
+                    length: 3,
+                    equalGroup: field.equalGroup,
+                    role1: field.role1,
+                    role2: field.role2,
+                  )
+                else
+                  field,
+            ],
+          ),
+          ...compatMask().categories.skip(1),
+        ],
+      );
+
+      final LearningDeck result = applyMaskToDeck(deck, shortened);
+      expect(
+        result.units.single.valueForFieldId(1),
+        FieldValue.rich(<RichTextRun>[
+          const RichTextRun(text: 'ma'),
+          const RichTextRun(text: 'i', color: TextColourToken.text1),
+        ]),
+      );
+    });
   });
 
   group('i18n', () {
@@ -1303,7 +1353,11 @@ void main() {
         fields: <int, FieldValue>{
           0: const FieldValue.plain('Haus'),
           1: FieldValue.rich(<RichTextRun>[
-            const RichTextRun(text: 'maison', bold: true, color: '#CC0000'),
+            const RichTextRun(
+              text: 'maison',
+              bold: true,
+              color: TextColourToken.text1,
+            ),
           ]),
           3: const FieldValue.plain(''),
         },
@@ -1671,9 +1725,12 @@ void main() {
         <RichTextRun>[const RichTextRun(text: 'hello')],
         0,
         3,
-        (RunFormat f) => f.withColor('#1565C0'),
+        (RunFormat f) => f.withColor(TextColourToken.text1),
       );
-      expect(colored.first, const RichTextRun(text: 'hel', color: '#1565C0'));
+      expect(
+        colored.first,
+        const RichTextRun(text: 'hel', color: TextColourToken.text1),
+      );
 
       final List<RichTextRun> cleared = applyFormatToRange(
         colored,
@@ -1683,7 +1740,7 @@ void main() {
       );
       expect(runsText(cleared), 'hello');
       expect(formatAt(cleared, 2).color, isNull);
-      expect(formatAt(cleared, 1).color, '#1565C0');
+      expect(formatAt(cleared, 1).color, TextColourToken.text1);
     });
 
     test('applyFormatToRange returns a normalized copy for empty ranges', () {
@@ -1776,7 +1833,8 @@ void main() {
             <RichTextRun>[const RichTextRun(text: 'mixed format')],
             0,
             5,
-            (RunFormat f) => f.copyWith(bold: true).withColor('#B00020'),
+            (RunFormat f) =>
+                f.copyWith(bold: true).withColor(TextColourToken.text1),
           ),
           6,
           12,
@@ -1805,7 +1863,7 @@ void main() {
           text: 'struck',
           strikethrough: true,
           underline: true,
-          color: '#D32F2F',
+          color: TextColourToken.text1,
         ),
       ]);
       final LearningDeck deck = LearningDeck(
@@ -1849,6 +1907,55 @@ void main() {
           const RichTextRun(text: 'x', bold: true),
         ]),
       );
+    });
+
+    test('a text colour is stored as the token "text1" and round-trips', () {
+      final LearningDeck deck = sampleDeck();
+      final String json = encodeDeckJson(deck);
+      expect(json, contains('"color": "text1"'));
+      expect(
+        decodeDeckJson(json).units[1].fields[1], // FR1
+        FieldValue.rich(<RichTextRun>[
+          const RichTextRun(
+            text: 'très important',
+            bold: true,
+            color: TextColourToken.text1,
+          ),
+        ]),
+      );
+    });
+
+    test('a hex or unknown text colour fails to load, naming the run path', () {
+      final String json = encodeDeckJson(sampleDeck());
+      for (final String stored in <String>['#CC0000', 'text2', 'Text1', '']) {
+        expect(
+          () => decodeDeckJson(
+            json.replaceFirst('"color": "text1"', '"color": "$stored"'),
+          ),
+          throwsA(
+            isA<ValidationException>().having(
+              (ValidationException e) => e.path,
+              'path',
+              r'$.units[1].fields.1[0].color',
+            ),
+          ),
+          reason: stored,
+        );
+      }
+    });
+
+    test('a deck without colours re-encodes byte-for-byte', () {
+      // The canonical example minus its one colour: no colour means no
+      // `color` key at all, so a plain deck's bytes are the same as before
+      // text colours became tokens, and it needs no conversion.
+      const String colourLine = ',\n            "color": "text1"';
+      final String withColour = File(
+        'test/fixtures/example.vok',
+      ).readAsStringSync();
+      expect(withColour, contains(colourLine));
+      final String colourless = withColour.replaceFirst(colourLine, '');
+
+      expect(encodeDeckJson(decodeDeckJson(colourless)), colourless);
     });
 
     test('a decoded run without strikethrough defaults to false', () {
@@ -2052,7 +2159,11 @@ void main() {
         'typo, keeping bold, italic and the marks', () {
       final List<RichTextRun> runs = buildCorrectionRuns(
         expectedRuns: <RichTextRun>[
-          const RichTextRun(text: 'ca', bold: true, color: '#1565C0'),
+          const RichTextRun(
+            text: 'ca',
+            bold: true,
+            color: TextColourToken.text1,
+          ),
           const RichTextRun(
             text: 't',
             italic: true,
@@ -2101,7 +2212,7 @@ void main() {
     test('buildCorrectionRuns returns a fully correct answer unchanged', () {
       const List<RichTextRun> expected = <RichTextRun>[
         RichTextRun(text: 'ri', underline: true, highlight: '#FFF59D'),
-        RichTextRun(text: 'ght', italic: true, color: '#1565C0'),
+        RichTextRun(text: 'ght', italic: true, color: TextColourToken.text1),
       ];
       expect(
         buildCorrectionRuns(expectedRuns: expected, enteredPlain: 'right'),
@@ -3632,7 +3743,7 @@ LearningDeck sampleDeck() {
             const RichTextRun(
               text: 'tr\u00E8s important',
               bold: true,
-              color: '#CC0000',
+              color: TextColourToken.text1,
             ),
           ]), // FR1
           2: const FieldValue.plain(''), // FR2

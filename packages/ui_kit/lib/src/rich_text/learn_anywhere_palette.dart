@@ -24,46 +24,9 @@ final class LearnAnywhereColorSwatch {
   Color? get color => hex == null ? null : colorFromHex(hex!);
 }
 
-/// Curated, theme-aware color palettes for the rich-text editor.
+/// Curated, theme-aware highlight palettes for the rich-text editor.
 final class LearnAnywherePalette {
   const LearnAnywherePalette._();
-
-  /// Foreground text color options, including a default/inherit option first.
-  static const List<LearnAnywhereColorSwatch> textColors =
-      <LearnAnywhereColorSwatch>[
-        LearnAnywhereColorSwatch(
-          label: LearnAnywhereMessage.colorDefault,
-          hex: null,
-        ),
-        LearnAnywhereColorSwatch(
-          label: LearnAnywhereMessage.colorRed,
-          hex: '#B00020',
-        ),
-        LearnAnywhereColorSwatch(
-          label: LearnAnywhereMessage.colorOrange,
-          hex: '#E65100',
-        ),
-        LearnAnywhereColorSwatch(
-          label: LearnAnywhereMessage.colorGreen,
-          hex: '#2E7D32',
-        ),
-        LearnAnywhereColorSwatch(
-          label: LearnAnywhereMessage.colorBlue,
-          hex: '#1565C0',
-        ),
-        LearnAnywhereColorSwatch(
-          label: LearnAnywhereMessage.colorPurple,
-          hex: '#6A1B9A',
-        ),
-        LearnAnywhereColorSwatch(
-          label: LearnAnywhereMessage.colorBlack,
-          hex: '#000000',
-        ),
-        LearnAnywhereColorSwatch(
-          label: LearnAnywhereMessage.colorWhite,
-          hex: '#FFFFFF',
-        ),
-      ];
 
   /// Highlight options tuned for light mode (dark text on a light fill).
   static const List<LearnAnywhereColorSwatch> lightHighlights =

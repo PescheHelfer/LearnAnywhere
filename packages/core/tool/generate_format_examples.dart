@@ -114,7 +114,11 @@ void main() {
         fields: <int, FieldValue>{
           0: const FieldValue.plain('der Mond'),
           1: FieldValue.rich(<RichTextRun>[
-            const RichTextRun(text: 'la lune', bold: true, color: '#3366CC'),
+            const RichTextRun(
+              text: 'la lune',
+              bold: true,
+              color: TextColourToken.text1,
+            ),
           ]),
         },
       ),

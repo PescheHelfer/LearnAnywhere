@@ -49,8 +49,8 @@ final class RunFormat {
   /// Whether the run is struck through.
   final bool strikethrough;
 
-  /// Optional foreground color as `#RRGGBB`.
-  final String? color;
+  /// Optional text colour, resolved from the theme when drawn.
+  final TextColourToken? color;
 
   /// Optional highlight color as `#RRGGBB`.
   final String? highlight;
@@ -108,8 +108,8 @@ final class RunFormat {
     );
   }
 
-  /// Returns a copy with the foreground color set to [value] (nullable).
-  RunFormat withColor(String? value) {
+  /// Returns a copy with the text colour set to [value] (nullable).
+  RunFormat withColor(TextColourToken? value) {
     return RunFormat(
       bold: bold,
       italic: italic,

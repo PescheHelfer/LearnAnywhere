@@ -167,6 +167,31 @@ enum FieldRole {
   }
 }
 
+/// Which of the current theme's text colours a rich-text run is drawn in.
+///
+/// A deck stores the token, never a colour: the program resolves it from the
+/// theme every time the text is drawn, so switching the theme re-colours it.
+/// The numbered name leaves room for a second choice without a format change.
+enum TextColourToken {
+  /// The theme's one text colour.
+  text1('text1');
+
+  const TextColourToken(this.wireName);
+
+  /// The stable name written to a `.vok` run's `color` field.
+  final String wireName;
+
+  /// The token stored as [value], or `null` when no token has that name.
+  static TextColourToken? tryParse(String value) {
+    for (final TextColourToken token in values) {
+      if (token.wireName == value) {
+        return token;
+      }
+    }
+    return null;
+  }
+}
+
 /// One formatting run inside a rich text field value.
 final class RichTextRun {
   /// Creates a rich text run.
@@ -196,8 +221,8 @@ final class RichTextRun {
   /// Whether the run is struck through.
   final bool strikethrough;
 
-  /// Optional foreground color as `#RRGGBB`.
-  final String? color;
+  /// Optional text colour, resolved from the theme when drawn.
+  final TextColourToken? color;
 
   /// Optional highlight color as `#RRGGBB`.
   final String? highlight;
@@ -215,7 +240,7 @@ final class RichTextRun {
     bool? italic,
     bool? underline,
     bool? strikethrough,
-    String? color,
+    TextColourToken? color,
     String? highlight,
     bool? correctionMark,
   }) {

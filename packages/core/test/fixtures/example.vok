@@ -89,7 +89,7 @@
           {
             "text": "la lune",
             "bold": true,
-            "color": "#3366CC"
+            "color": "text1"
           }
         ]
       }

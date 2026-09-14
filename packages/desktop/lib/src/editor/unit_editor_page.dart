@@ -766,9 +766,15 @@ final class _EditorBodyState extends State<_EditorBody> {
     _activeFocusNode?.requestFocus();
   }
 
-  void _applyColor(String? hex) {
-    _activeColorMemory?.lastTextColor = hex;
-    _activeController?.formatSelection((RunFormat f) => f.withColor(hex));
+  void _toggleTextColour() {
+    final LearnAnywhereRichTextEditingController? c = _activeController;
+    if (c == null) return;
+    final bool active = c.selectionSatisfies(
+      (RunFormat f) => f.color == TextColourToken.text1,
+    );
+    c.formatSelection(
+      (RunFormat f) => f.withColor(active ? null : TextColourToken.text1),
+    );
     _activeFocusNode?.requestFocus();
   }
 
@@ -865,17 +871,20 @@ final class _EditorBodyState extends State<_EditorBody> {
                             false,
                         onPressed: ac != null ? _toggleUnderline : null,
                       ),
-                      _ColorPickerButton(
+                      _FormatIconButton(
                         tooltip: messages.message(
                           LearnAnywhereMessage.editorColor,
                         ),
                         icon: Icons.format_color_text,
-                        swatches: LearnAnywherePalette.textColors,
-                        selectedHex: activeFormat.color,
-                        indicator: activeFormat.color == null
-                            ? null
-                            : colorFromHex(activeFormat.color!),
-                        onSelected: ac != null ? _applyColor : null,
+                        iconColor: LearnAnywhereFormatColours.of(
+                          Theme.of(context),
+                        ).text1,
+                        selected:
+                            ac?.selectionSatisfies(
+                              (RunFormat f) => f.color == TextColourToken.text1,
+                            ) ??
+                            false,
+                        onPressed: ac != null ? _toggleTextColour : null,
                       ),
                       _ColorPickerButton(
                         tooltip: messages.message(
@@ -1286,12 +1295,17 @@ final class _FormatIconButton extends StatefulWidget {
     required this.icon,
     required this.selected,
     required this.onPressed,
+    this.iconColor,
   });
 
   final String tooltip;
   final IconData icon;
   final bool selected;
   final VoidCallback? onPressed;
+
+  /// The colour the icon previews, e.g. the theme's text colour; `null` keeps
+  /// the button's own foreground. Ignored while the button is disabled.
+  final Color? iconColor;
 
   @override
   State<_FormatIconButton> createState() => _FormatIconButtonState();
@@ -1311,6 +1325,7 @@ final class _FormatIconButtonState extends State<_FormatIconButton> {
 
   @override
   Widget build(BuildContext context) {
+    final Color? iconColor = widget.onPressed == null ? null : widget.iconColor;
     return IconButton(
       focusNode: _focusNode,
       tooltip: widget.tooltip,
@@ -1319,17 +1334,14 @@ final class _FormatIconButtonState extends State<_FormatIconButton> {
       iconSize: 15,
       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
       padding: const EdgeInsets.all(8.5),
-      icon: Icon(widget.icon),
-      selectedIcon: Icon(widget.icon),
+      icon: Icon(widget.icon, color: iconColor),
+      selectedIcon: Icon(widget.icon, color: iconColor),
     );
   }
 }
 
-/// Session-scoped, in-memory record of the last colors the user picked.
+/// Session-scoped, in-memory record of the last highlight the user picked.
 final class _ColorMemory {
-  /// Last-used text color hex, or null for the default option.
-  String? lastTextColor;
-
   /// Last-used highlight hex, or null for the no-highlight option.
   String? lastHighlight;
 }

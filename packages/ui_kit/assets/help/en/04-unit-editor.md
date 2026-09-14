@@ -56,13 +56,20 @@ Select some text inside a field to format it:
 | Bold | **Bold** |
 | Italic | *Italic* |
 | Underline | Underlined |
-| Text color | One of: Default, Red, Blue, Green, Orange, Purple, Black, White, Yellow, Cyan, Lime, Pink, Amber, Teal |
-| Highlight | Same colour list, applied as a background instead |
+| Text color | Colours the selection in the theme's text colour; press it again to remove it |
+| Highlight | One of a short list of background colours for light or dark themes, or None |
 | Clear formatting | Removes bold/italic/underline/colour/highlight from the selection |
 
-With nothing selected, turning on Bold, Italic or Underline arms it for the *next* text
-you type — useful for typing a whole word in italics without selecting it afterwards.
-Formatting is stored with the unit and travels with it wherever the deck goes.
+**Text color** works like **Bold**: it has no palette, and it shows as pressed when the
+selection is already coloured. Each theme offers one text colour, chosen to stay readable
+on that theme's fields and to look nothing like the colour of a correction mark; the
+button's icon is drawn in it. The deck stores only *that* the text is coloured, not the
+colour itself, so switching the theme re-colours it everywhere — in the editor, in a
+learning session and on Android.
+
+With nothing selected, turning on Bold, Italic, Underline or Text color arms it for the
+*next* text you type — useful for typing a whole word in italics without selecting it
+afterwards. Formatting is stored with the unit and travels with it wherever the deck goes.
 
 ## Finishing
 

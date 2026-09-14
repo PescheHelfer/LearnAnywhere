@@ -498,12 +498,14 @@ Object _encodeFieldValue(FieldValue value) {
 
 RichTextRun _decodeRichTextRun(Object? value, String path) {
   final Map<String, Object?> json = _asMap(value, path);
-  final String? color = _nullableString(json['color'], '$path.color');
+  final TextColourToken? color = _decodeTextColour(
+    _nullableString(json['color'], '$path.color'),
+    '$path.color',
+  );
   final String? highlight = _nullableString(
     json['highlight'],
     '$path.highlight',
   );
-  _validateColor(color, '$path.color');
   _validateColor(highlight, '$path.highlight');
   return RichTextRun(
     text: _asString(json['text'], '$path.text'),
@@ -531,7 +533,7 @@ Map<String, Object?> _encodeRichTextRun(RichTextRun run) {
     json['strikethrough'] = true;
   }
   if (run.color != null) {
-    json['color'] = run.color;
+    json['color'] = run.color!.wireName;
   }
   if (run.highlight != null) {
     json['highlight'] = run.highlight;
@@ -778,6 +780,25 @@ bool _optionalBool(Object? value, String path) {
     return value;
   }
   throw ValidationException('Expected a boolean.', path: path);
+}
+
+/// The text colour token stored as [value]. An old `#RRGGBB` colour is not
+/// read: there is no nearest-token guess, the deck fails to load at [path].
+TextColourToken? _decodeTextColour(String? value, String path) {
+  if (value == null) {
+    return null;
+  }
+  final TextColourToken? token = TextColourToken.tryParse(value);
+  if (token == null) {
+    final String expected = TextColourToken.values
+        .map((TextColourToken token) => '"${token.wireName}"')
+        .join(', ');
+    throw ValidationException(
+      'Expected a text colour token ($expected).',
+      path: path,
+    );
+  }
+  return token;
 }
 
 void _validateColor(String? value, String path) {

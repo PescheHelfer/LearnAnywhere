@@ -87,6 +87,90 @@ void main() {
   );
 
   testWidgets(
+    'Text color stores text1 on the selection and removes it when pressed '
+    'again, drawing its icon in the theme\'s colour',
+    (WidgetTester tester) async {
+      final ThemeData theme = LearnAnywhereTheme.darkBlue();
+      LearningDeck deck = const LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{0: FieldValue.plain('bonjour')},
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return UnitEditorPage(
+                  deck: deck,
+                  onChanged:
+                      (LearningDeck value, {int? insertedAt, int? deletedAt}) {
+                        setState(() => deck = value);
+                      },
+                  onDone: () {},
+                  onCancel: () {},
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final Color text1 = theme.extension<LearnAnywhereFormatColours>()!.text1;
+      expect(
+        tester.widget<Icon>(find.byIcon(Icons.format_color_text)).color,
+        text1,
+      );
+
+      tester
+          .widget<EditableText>(find.byType(EditableText))
+          .controller
+          .selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 3,
+      );
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Text color'));
+      await tester.pumpAndSettle();
+      expect(
+        deck.units.single.valueForFieldId(0),
+        FieldValue.rich(<RichTextRun>[
+          const RichTextRun(text: 'bon', color: TextColourToken.text1),
+          const RichTextRun(text: 'jour'),
+        ]),
+      );
+      expect(
+        tester
+            .widget<IconButton>(
+              find.ancestor(
+                of: find.byIcon(Icons.format_color_text),
+                matching: find.byType(IconButton),
+              ),
+            )
+            .isSelected,
+        isTrue,
+      );
+
+      await tester.tap(find.byTooltip('Text color'));
+      await tester.pumpAndSettle();
+      expect(
+        deck.units.single.valueForFieldId(0),
+        const FieldValue.plain('bonjour'),
+      );
+    },
+  );
+
+  testWidgets(
     'field value containers render with the BUNDLED monospace family',
     (WidgetTester tester) async {
       // The PRD's fixed-width containers size themselves by measuring one

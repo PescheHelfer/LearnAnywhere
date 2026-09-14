@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learn_anywhere_core/core.dart';
 
 import 'learn_anywhere_tokens.dart';
 import 'learn_anywhere_zoom.dart';
@@ -77,22 +78,45 @@ final class LearnAnywhereChromeTheme
 final class LearnAnywhereFormatColours
     extends ThemeExtension<LearnAnywhereFormatColours> {
   /// Creates a format colours theme extension.
-  const LearnAnywhereFormatColours({required this.correction});
+  const LearnAnywhereFormatColours({
+    required this.text1,
+    required this.correction,
+  });
+
+  /// The theme's one text colour, drawn for a run stored as
+  /// `TextColourToken.text1`.
+  ///
+  /// At least 4.5:1 against every background a formatted value sits on, and
+  /// clearly apart in hue from [correction], so a coloured remark can't pass
+  /// for a mistake beside it.
+  final Color text1;
 
   /// Colour of a correction mark — a mistyped, missing or extra character in
   /// the Correction view (`RichTextRun.correctionMark`).
   final Color correction;
 
   /// Resolves the format colours for [theme]: the extension when the theme
-  /// carries one, otherwise [ColorScheme.error] as the correction colour.
+  /// carries one, otherwise [ColorScheme.primary] as the text colour and
+  /// [ColorScheme.error] as the correction colour.
   static LearnAnywhereFormatColours of(ThemeData theme) {
     return theme.extension<LearnAnywhereFormatColours>() ??
-        LearnAnywhereFormatColours(correction: theme.colorScheme.error);
+        LearnAnywhereFormatColours(
+          text1: theme.colorScheme.primary,
+          correction: theme.colorScheme.error,
+        );
+  }
+
+  /// The colour [token] is drawn in under this theme.
+  Color textColour(TextColourToken token) {
+    return switch (token) {
+      TextColourToken.text1 => text1,
+    };
   }
 
   @override
-  LearnAnywhereFormatColours copyWith({Color? correction}) {
+  LearnAnywhereFormatColours copyWith({Color? text1, Color? correction}) {
     return LearnAnywhereFormatColours(
+      text1: text1 ?? this.text1,
       correction: correction ?? this.correction,
     );
   }
@@ -106,6 +130,7 @@ final class LearnAnywhereFormatColours
       return this;
     }
     return LearnAnywhereFormatColours(
+      text1: Color.lerp(text1, other.text1, t) ?? text1,
       correction: Color.lerp(correction, other.correction, t) ?? correction,
     );
   }
@@ -125,7 +150,12 @@ final class LearnAnywhereTheme {
       colors,
       zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
-        LearnAnywhereFormatColours(correction: Color(0xFFD32F2F)),
+        // A deep blue: far from the red correction colour in hue, and dark
+        // enough for the tinted field backgrounds.
+        LearnAnywhereFormatColours(
+          text1: Color(0xFF0D47A1),
+          correction: Color(0xFFD32F2F),
+        ),
       ],
     );
   }
@@ -140,8 +170,12 @@ final class LearnAnywhereTheme {
       colors,
       zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
-        // Warm amber reads more clearly than red against a dark surface.
-        LearnAnywhereFormatColours(correction: Color(0xFFFFC107)),
+        // Warm amber reads more clearly than red against a dark surface; the
+        // text colour is a pale blue, opposite it on the colour wheel.
+        LearnAnywhereFormatColours(
+          text1: Color(0xFFB3D4FF),
+          correction: Color(0xFFFFC107),
+        ),
       ],
     );
   }
@@ -184,8 +218,12 @@ final class LearnAnywhereTheme {
         // Not the Dark theme's amber: that is a near twin of this theme's
         // yellow primary (#FFC600), so a mark would read as accented chrome.
         // A light coral stays well clear of it in hue and of the navy ground
-        // in contrast.
-        LearnAnywhereFormatColours(correction: Color(0xFFFF8A80)),
+        // in contrast. The text colour is a mint green: any blue would sink
+        // into the navy, and yellow is the primary.
+        LearnAnywhereFormatColours(
+          text1: Color(0xFF69F0AE),
+          correction: Color(0xFFFF8A80),
+        ),
       ],
     );
   }
@@ -215,7 +253,11 @@ final class LearnAnywhereTheme {
       colors,
       zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
-        LearnAnywhereFormatColours(correction: Color(0xFFD32F2F)),
+        // A deep purple: blue text would read as this theme's blue chrome.
+        LearnAnywhereFormatColours(
+          text1: Color(0xFF6A1B9A),
+          correction: Color(0xFFD32F2F),
+        ),
       ],
     );
   }

@@ -60,13 +60,21 @@ Markieren Sie Text innerhalb eines Feldes, um ihn zu formatieren:
 | Fett | **Fett** |
 | Kursiv | *Kursiv* |
 | Unterstrichen | Unterstrichen |
-| Textfarbe | Eine von: Standard, Rot, Blau, Grün, Orange, Violett, Schwarz, Weiß, Gelb, Cyan, Hellgrün, Rosa, Bernstein, Blaugrün |
-| Markierung | Dieselbe Farbliste, als Hintergrund statt als Textfarbe angewendet |
+| Textfarbe | Färbt den markierten Text in der Textfarbe der Darstellung; erneutes Klicken entfernt sie |
+| Markierung | Eine aus wenigen Hintergrundfarben für helle oder dunkle Darstellungen, oder Keine |
 | Formatierung löschen | Entfernt Fett/Kursiv/Unterstrichen/Farbe/Markierung aus der Markierung |
 
-Ist nichts markiert, wirkt das Einschalten von Fett, Kursiv oder Unterstrichen auf den
-*nächsten* getippten Text — praktisch, um ein ganzes Wort kursiv zu tippen, ohne es
-danach markieren zu müssen. Formatierung wird mit der Einheit gespeichert und bleibt
+**Textfarbe** funktioniert wie **Fett**: es gibt keine Farbauswahl, und die Schaltfläche
+erscheint gedrückt, wenn der markierte Text schon gefärbt ist. Jede Darstellung bietet
+genau eine Textfarbe, gewählt, damit sie auf deren Feldern gut lesbar bleibt und nie wie
+die Farbe einer Korrekturmarke aussieht; das Symbol der Schaltfläche ist in ihr
+gezeichnet. Die Lern-Datei speichert nur, *dass* der Text gefärbt ist, nicht die Farbe
+selbst — ein Wechsel der Darstellung färbt ihn deshalb überall neu: im Editor, in einer
+Lernsitzung und auf Android.
+
+Ist nichts markiert, wirkt das Einschalten von Fett, Kursiv, Unterstrichen oder Textfarbe
+auf den *nächsten* getippten Text — praktisch, um ein ganzes Wort kursiv zu tippen, ohne
+es danach markieren zu müssen. Formatierung wird mit der Einheit gespeichert und bleibt
 erhalten, wohin auch immer die Lern-Datei geht.
 
 ## Abschließen

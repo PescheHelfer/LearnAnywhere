@@ -279,6 +279,35 @@ void main() {
       },
     );
 
+    test('text colour 1 is legible on every background a formatted value sits '
+        'on, and distinct in hue from the correction colour', () {
+      for (final (String name, ThemeData theme) in <(String, ThemeData)>[
+        ('Light', LearnAnywhereTheme.light()),
+        ('Dark', LearnAnywhereTheme.dark()),
+        ('Dark Blue', LearnAnywhereTheme.darkBlue()),
+        ('Light Blue', LearnAnywhereTheme.lightBlue()),
+      ]) {
+        final LearnAnywhereFormatColours colours = theme
+            .extension<LearnAnywhereFormatColours>()!;
+        for (final (String background, Color colour)
+            in _formattedValueBackgrounds(theme)) {
+          final double ratio = _contrastRatio(colours.text1, colour);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason:
+                '$name: text colour 1 on $background is '
+                '${ratio.toStringAsFixed(2)}:1',
+          );
+        }
+        expect(
+          _hueDistance(colours.text1, colours.correction),
+          greaterThanOrEqualTo(60),
+          reason: '$name: text colour 1 vs the correction colour',
+        );
+      }
+    });
+
     test('every theme scales, and 100 per cent changes nothing', () {
       for (final ThemeData Function({int zoomPercent}) build
           in <ThemeData Function({int zoomPercent})>[
@@ -557,21 +586,24 @@ void main() {
             bold: true,
             italic: true,
             underline: true,
-            color: '#CC0000',
+            color: TextColourToken.text1,
             highlight: '#FFFF00',
           ),
         ]),
         theme: LearnAnywhereTheme.light(),
       );
       final TextSpan child = span.children!.single as TextSpan;
+      final Color text1 = LearnAnywhereTheme.light()
+          .extension<LearnAnywhereFormatColours>()!
+          .text1;
 
       expect(child.text, 'lapin');
       expect(child.style?.fontWeight, FontWeight.bold);
       expect(child.style?.fontStyle, FontStyle.italic);
       expect(child.style?.decoration, TextDecoration.underline);
-      expect(child.style?.color, const Color(0xFFCC0000));
+      expect(child.style?.color, text1);
       // decorationColor should match explicit text color so underline is visible.
-      expect(child.style?.decorationColor, const Color(0xFFCC0000));
+      expect(child.style?.decorationColor, text1);
       expect(child.style?.backgroundColor, const Color(0xFFFFFF00));
     });
 
@@ -622,6 +654,25 @@ void main() {
 
     for (final MapEntry<String, ThemeData Function()> entry
         in themeBuilders.entries) {
+      test('a text1 run resolves to ${entry.key}\'s text colour 1', () {
+        final ThemeData theme = entry.value();
+        final LearnAnywhereFormatColours? colours = theme
+            .extension<LearnAnywhereFormatColours>();
+        expect(colours, isNotNull);
+
+        final TextSpan span = LearnAnywhereRichTextRenderer.spanForRun(
+          const RichTextRun(
+            text: 'x',
+            underline: true,
+            color: TextColourToken.text1,
+          ),
+          theme: theme,
+          fallbackDecorationColor: const Color(0xFF000000),
+        );
+        expect(span.style?.color, colours!.text1);
+        expect(span.style?.decorationColor, colours.text1);
+      });
+
       test('a correction mark resolves to ${entry.key}\'s correction colour', () {
         final ThemeData theme = entry.value();
         final LearnAnywhereFormatColours? colours = theme
@@ -633,7 +684,7 @@ void main() {
           const RichTextRun(
             text: 'x',
             underline: true,
-            color: '#CC0000',
+            color: TextColourToken.text1,
             correctionMark: true,
           ),
           theme: theme,
@@ -651,11 +702,10 @@ void main() {
       final Color correction = theme
           .extension<LearnAnywhereFormatColours>()!
           .correction;
-      final double hueGap =
-          (HSVColor.fromColor(correction).hue -
-                  HSVColor.fromColor(theme.colorScheme.primary).hue)
-              .abs();
-      expect(math.min(hueGap, 360 - hueGap), greaterThan(30));
+      expect(
+        _hueDistance(correction, theme.colorScheme.primary),
+        greaterThan(30),
+      );
     });
 
     testWidgets('the widget draws a correction mark from the ambient theme', (
@@ -881,7 +931,7 @@ void main() {
       );
     });
 
-    test('applies and clears a text color across a partial selection', () {
+    test('applies a text color across a partial selection', () {
       final LearnAnywhereRichTextEditingController controller =
           LearnAnywhereRichTextEditingController(
             value: const FieldValue.plain('hello'),
@@ -889,13 +939,15 @@ void main() {
       addTearDown(controller.dispose);
 
       controller.selection = const TextSelection(baseOffset: 1, extentOffset: 4);
-      controller.formatSelection((RunFormat f) => f.withColor('#1565C0'));
+      controller.formatSelection(
+        (RunFormat f) => f.withColor(TextColourToken.text1),
+      );
 
       expect(
         controller.fieldValue,
         FieldValue.rich(<RichTextRun>[
           const RichTextRun(text: 'h'),
-          const RichTextRun(text: 'ell', color: '#1565C0'),
+          const RichTextRun(text: 'ell', color: TextColourToken.text1),
           const RichTextRun(text: 'o'),
         ]),
       );
@@ -926,6 +978,34 @@ double _contrastRatio(Color a, Color b) {
   final double lighter = lumA > lumB ? lumA : lumB;
   final double darker = lumA > lumB ? lumB : lumA;
   return (lighter + 0.05) / (darker + 0.05);
+}
+
+/// Every background a formatted value is drawn on in [theme], by name.
+///
+/// The desktop learn session and unit editor paint each field's accent tint
+/// over `surface`; the Android session paints its panels on
+/// `surfaceContainerHighest` or, when highlighted, `primaryContainer`.
+List<(String, Color)> _formattedValueBackgrounds(ThemeData theme) {
+  final ColorScheme colors = theme.colorScheme;
+  return <(String, Color)>[
+    for (final FieldRole role in FieldRole.values)
+      (
+        'the desktop ${role.name} field tint',
+        Color.alphaBlend(
+          LearnAnywhereFieldAccents.backgroundFor(role, theme.brightness),
+          colors.surface,
+        ),
+      ),
+    ('the mobile surfaceContainerHighest panel', colors.surfaceContainerHighest),
+    ('the mobile primaryContainer panel', colors.primaryContainer),
+  ];
+}
+
+/// The angle between two colours' hues on the colour wheel, 0–180 degrees.
+double _hueDistance(Color a, Color b) {
+  final double gap = (HSVColor.fromColor(a).hue - HSVColor.fromColor(b).hue)
+      .abs();
+  return math.min(gap, 360 - gap);
 }
 
 /// WCAG relative luminance of an sRGB color.

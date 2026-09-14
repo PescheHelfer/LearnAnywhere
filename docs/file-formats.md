@@ -76,8 +76,11 @@ Top-level `format` is `learn-anywhere/lessons`, `version` `1`, then:
 - **`units`** — each has a `categoryId` (referencing a category `id`) and a
   `fields` object whose **keys are field ids serialized as JSON strings**
   (`"0"`, `"1"`, …), never field names. A value is either a plain string or a
-  list of rich-text runs (`{text, bold?, italic?, underline?, color?, highlight?}`
-  with `#RRGGBB` colors). Fields may be omitted; absent = empty.
+  list of rich-text runs (`{text, bold?, italic?, underline?, strikethrough?, color?,
+  highlight?}`). `color` is not a colour but the formatting token `"text1"`: the
+  program draws it in the current theme's text colour, so it changes with the theme.
+  Any other `color` value, an old `#RRGGBB` included, fails to load with the run's
+  path. `highlight` is still a `#RRGGBB` colour. Fields may be omitted; absent = empty.
 
 Only `attempts` + `correct` per unit+direction are stored (in the separate
 `.sta` sidecar), and the super-query active pool is always a derived view.

@@ -169,10 +169,11 @@ A field value is **either**:
 - an **array of runs** when formatting is present. Each run:
   ```json
   { "text": "lapin", "bold": true, "italic": false, "underline": false,
-    "color": "#CC0000", "highlight": null }
+    "color": "text1", "highlight": null }
   ```
-  Only these attributes are supported: `bold`, `italic`, `underline`, `color` (hex or null),
-  `highlight` (hex or null). Absent attributes default to off/null. **No font family or size.**
+  Only these attributes are supported: `bold`, `italic`, `underline`, `color` (the token
+  `"text1"` or null — the current theme decides the actual colour, and any other value is
+  rejected), `highlight` (hex or null). Absent attributes default to off/null. **No font family or size.**
 
 The `ui_kit` renderer maps runs → Flutter `TextSpan`. The desktop editor maps editor state ↔ runs.
 You may use a rich-text editor package internally, but **storage MUST use this run model** so files
@@ -223,7 +224,7 @@ stay portable and round-trip losslessly across desktop and Android.
       "fields": {
         "DEUTSCH": "wichtig",
         "FRANZÖSISCH": [
-          { "text": "important", "bold": true, "color": "#CC0000" }
+          { "text": "important", "bold": true, "color": "text1" }
         ]
       }
     }

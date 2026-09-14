@@ -10,10 +10,11 @@ final class LearnAnywhereRichTextRenderer {
 
   /// Converts a stored [FieldValue] into a [TextSpan].
   ///
-  /// [theme] resolves correction marks through [LearnAnywhereFormatColours],
-  /// and its brightness selects how stored highlight colors are mapped so they
-  /// stay readable: light-mode highlights (including legacy plain yellow) are
-  /// remapped to dark equivalents on a dark theme.
+  /// [theme] resolves text colours and correction marks through
+  /// [LearnAnywhereFormatColours], and its brightness selects how stored
+  /// highlight colors are mapped so they stay readable: light-mode highlights
+  /// (including legacy plain yellow) are remapped to dark equivalents on a
+  /// dark theme.
   static TextSpan spanForFieldValue(
     FieldValue value, {
     required ThemeData theme,
@@ -41,8 +42,9 @@ final class LearnAnywhereRichTextRenderer {
 
   /// Converts a single rich-text run into a [TextSpan].
   ///
-  /// A [RichTextRun.correctionMark] is drawn in [theme]'s correction colour,
-  /// over any text colour the run stores.
+  /// A run's text colour token is drawn in [theme]'s colour for it, and a
+  /// [RichTextRun.correctionMark] in [theme]'s correction colour, over any
+  /// text colour the run stores.
   ///
   /// [fallbackDecorationColor] is used as the underline colour when the run
   /// carries no explicit text colour. Pass the parent span's resolved text
@@ -53,9 +55,15 @@ final class LearnAnywhereRichTextRenderer {
     required ThemeData theme,
     Color? fallbackDecorationColor,
   }) {
+    final LearnAnywhereFormatColours colours = LearnAnywhereFormatColours.of(
+      theme,
+    );
+    final TextColourToken? token = run.color;
     final Color? explicitColor = run.correctionMark
-        ? LearnAnywhereFormatColours.of(theme).correction
-        : _colorFromHex(run.color);
+        ? colours.correction
+        : token == null
+        ? null
+        : colours.textColour(token);
     // Underline and strikethrough can both be on; combine them so neither is
     // dropped.
     final List<TextDecoration> decorations = <TextDecoration>[
@@ -75,13 +83,6 @@ final class LearnAnywhereRichTextRenderer {
         backgroundColor: _highlightColor(run.highlight, theme.brightness),
       ),
     );
-  }
-
-  static Color? _colorFromHex(String? value) {
-    if (value == null) {
-      return null;
-    }
-    return colorFromHex(value);
   }
 
   static Color? _highlightColor(String? value, Brightness brightness) {

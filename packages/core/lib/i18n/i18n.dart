@@ -480,9 +480,6 @@ enum LearnAnywhereMessage {
   /// Unit editor clear formatting action.
   editorClearFormatting,
 
-  /// Default (inherited) text color option label.
-  colorDefault,
-
   /// No highlight option label.
   colorNone,
 
@@ -492,20 +489,11 @@ enum LearnAnywhereMessage {
   /// Blue color label.
   colorBlue,
 
-  /// Green color label.
-  colorGreen,
-
   /// Orange color label.
   colorOrange,
 
   /// Purple color label.
   colorPurple,
-
-  /// Black color label.
-  colorBlack,
-
-  /// White color label.
-  colorWhite,
 
   /// Yellow color label.
   colorYellow,
@@ -1674,15 +1662,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorColor: 'Text color',
       LearnAnywhereMessage.editorHighlight: 'Highlight',
       LearnAnywhereMessage.editorClearFormatting: 'Clear formatting',
-      LearnAnywhereMessage.colorDefault: 'Default',
       LearnAnywhereMessage.colorNone: 'None',
       LearnAnywhereMessage.colorRed: 'Red',
       LearnAnywhereMessage.colorBlue: 'Blue',
-      LearnAnywhereMessage.colorGreen: 'Green',
       LearnAnywhereMessage.colorOrange: 'Orange',
       LearnAnywhereMessage.colorPurple: 'Purple',
-      LearnAnywhereMessage.colorBlack: 'Black',
-      LearnAnywhereMessage.colorWhite: 'White',
       LearnAnywhereMessage.colorYellow: 'Yellow',
       LearnAnywhereMessage.colorCyan: 'Cyan',
       LearnAnywhereMessage.colorLime: 'Lime',
@@ -2342,15 +2326,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorColor: 'Textfarbe',
       LearnAnywhereMessage.editorHighlight: 'Markierung',
       LearnAnywhereMessage.editorClearFormatting: 'Formatierung löschen',
-      LearnAnywhereMessage.colorDefault: 'Standard',
       LearnAnywhereMessage.colorNone: 'Keine',
       LearnAnywhereMessage.colorRed: 'Rot',
       LearnAnywhereMessage.colorBlue: 'Blau',
-      LearnAnywhereMessage.colorGreen: 'Grün',
       LearnAnywhereMessage.colorOrange: 'Orange',
       LearnAnywhereMessage.colorPurple: 'Violett',
-      LearnAnywhereMessage.colorBlack: 'Schwarz',
-      LearnAnywhereMessage.colorWhite: 'Weiß',
       LearnAnywhereMessage.colorYellow: 'Gelb',
       LearnAnywhereMessage.colorCyan: 'Cyan',
       LearnAnywhereMessage.colorLime: 'Hellgrün',
