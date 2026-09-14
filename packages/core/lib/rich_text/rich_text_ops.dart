@@ -403,3 +403,35 @@ List<RichTextRun> buildDiffRuns({
   }
   return normalizeRuns(result);
 }
+
+/// The runs the **Correction** view shows for one answer field.
+///
+/// When [enteredPlain] has at least one mistake against [expectedRuns] under
+/// [options], the unit's own colour, highlight, underline and strikethrough are
+/// removed before the marks of [buildDiffRuns] are painted, so no stored
+/// formatting can hide a mark or pass for one (a custom underline looks exactly
+/// like a missing character). Bold and italic are kept. A field with nothing to
+/// correct — including a difference [options] ignore — returns [expectedRuns]
+/// unchanged.
+List<RichTextRun> buildCorrectionRuns({
+  required List<RichTextRun> expectedRuns,
+  required String enteredPlain,
+  TextMatchOptions options = const TextMatchOptions(),
+}) {
+  final List<RichTextRun> marked = buildDiffRuns(
+    expectedRuns: expectedRuns,
+    enteredPlain: enteredPlain,
+    options: options,
+  );
+  if (!marked.any((RichTextRun run) => run.correctionMark)) {
+    return expectedRuns;
+  }
+  return buildDiffRuns(
+    expectedRuns: <RichTextRun>[
+      for (final RichTextRun run in expectedRuns)
+        RichTextRun(text: run.text, bold: run.bold, italic: run.italic),
+    ],
+    enteredPlain: enteredPlain,
+    options: options,
+  );
+}

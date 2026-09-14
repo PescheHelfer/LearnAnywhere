@@ -2235,19 +2235,18 @@ final class _SessionView extends StatelessWidget {
                   Theme.of(ctx).brightness,
                 );
                 final FieldValue expectedValue = unit.valueForFieldId(field.id);
-                // On the correction view, overlay the student's mistakes on
-                // the answer field's runs (substituted and missing characters
-                // marked, missing ones underlined, extras struck through), in
-                // the theme's correction colour. A fully correct answer diffs
-                // to the unchanged solution. The plain solution view always
-                // shows the expected value with no diff marks.
+                // On the correction view, an answer field shows the student's
+                // mistakes marked on the solution; a field with a mistake
+                // hides its own conflicting formatting, a correct one keeps
+                // it. The plain solution view always shows the expected value
+                // with no diff marks.
                 displayValue =
                     (viewMode == _AnswerViewMode.correction &&
                         role == FieldRole.answer &&
                         evaluation != null &&
                         parameters.withInput)
                     ? FieldValue.rich(
-                        buildDiffRuns(
+                        buildCorrectionRuns(
                           expectedRuns: _runsOf(expectedValue),
                           enteredPlain: enteredAnswers[field.id] ?? '',
                           options: options.evaluationOptions,

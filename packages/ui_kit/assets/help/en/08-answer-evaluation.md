@@ -39,6 +39,12 @@ highlighted (**Correction**), the plain **Solution**, or **Your answer** unmarke
 between them with `F9` during a session; see
 [Learning sessions](06-learning-sessions.md#during-a-session).
 
+In **Correction**, an answer field with at least one mistake drops the unit's own
+**Text color**, **Highlight**, **Underline** and strikethrough, so they can't hide a
+marked character or be mistaken for the marks of a missing or extra one. **Bold** and
+**Italic** stay. A field with nothing to correct, the question and remark fields, and
+the **Solution** view keep all their formatting.
+
 ## Rating the attempt
 
 After a check, a row of up to three buttons lets you confirm or overrule the automatic

@@ -2047,6 +2047,89 @@ void main() {
         expected,
       );
     });
+
+    test('buildCorrectionRuns hides conflicting formatting in a field with a '
+        'typo, keeping bold, italic and the marks', () {
+      final List<RichTextRun> runs = buildCorrectionRuns(
+        expectedRuns: <RichTextRun>[
+          const RichTextRun(text: 'ca', bold: true, color: '#1565C0'),
+          const RichTextRun(
+            text: 't',
+            italic: true,
+            underline: true,
+            highlight: '#FFF59D',
+          ),
+          const RichTextRun(text: 's', strikethrough: true),
+        ],
+        enteredPlain: 'cots',
+      );
+      expect(runsText(runs), 'cats');
+      final List<RunFormat> formats = formatsFromRuns(runs);
+      expect(formats.every((RunFormat f) => f.color == null), isTrue);
+      expect(formats.every((RunFormat f) => f.highlight == null), isTrue);
+      // Nothing here is missing or extra, so no underline or strikethrough is
+      // left: the unit's own ones are gone and no mark needed one.
+      expect(formats.every((RunFormat f) => !f.underline), isTrue);
+      expect(formats.every((RunFormat f) => !f.strikethrough), isTrue);
+      expect(formats[0].bold, isTrue);
+      expect(formats[1].bold, isTrue);
+      expect(formats[2].italic, isTrue);
+      expect(<bool>[
+        for (final RunFormat f in formats) f.correctionMark,
+      ], <bool>[false, true, false, false]);
+    });
+
+    test('buildCorrectionRuns still underlines a missing character and strikes '
+        'an extra one after hiding the formatting', () {
+      const List<RichTextRun> expected = <RichTextRun>[
+        RichTextRun(text: 'sausage', highlight: '#FFF59D'),
+      ];
+      for (final (String entered, bool Function(RunFormat) mark)
+          in <(String, bool Function(RunFormat))>[
+            ('sausge', (RunFormat f) => f.underline),
+            ('saussage', (RunFormat f) => f.strikethrough),
+          ]) {
+        final List<RunFormat> formats = formatsFromRuns(
+          buildCorrectionRuns(expectedRuns: expected, enteredPlain: entered),
+        );
+        expect(formats.where(mark), hasLength(1), reason: entered);
+        expect(formats.where(mark).single.correctionMark, isTrue);
+        expect(formats.every((RunFormat f) => f.highlight == null), isTrue);
+      }
+    });
+
+    test('buildCorrectionRuns returns a fully correct answer unchanged', () {
+      const List<RichTextRun> expected = <RichTextRun>[
+        RichTextRun(text: 'ri', underline: true, highlight: '#FFF59D'),
+        RichTextRun(text: 'ght', italic: true, color: '#1565C0'),
+      ];
+      expect(
+        buildCorrectionRuns(expectedRuns: expected, enteredPlain: 'right'),
+        expected,
+      );
+    });
+
+    test('buildCorrectionRuns keeps formatting when the only difference is '
+        'one the match options ignore', () {
+      const List<RichTextRun> expected = <RichTextRun>[
+        RichTextRun(text: 'Café', strikethrough: true, highlight: '#FFF59D'),
+      ];
+      expect(
+        buildCorrectionRuns(expectedRuns: expected, enteredPlain: 'cafe'),
+        expected,
+      );
+      // The same entry is a mistake once case and accents count.
+      final List<RichTextRun> strict = buildCorrectionRuns(
+        expectedRuns: expected,
+        enteredPlain: 'cafe',
+        options: const TextMatchOptions(
+          caseSensitive: true,
+          accentSensitive: true,
+        ),
+      );
+      expect(strict.every((RichTextRun r) => r.highlight == null), isTrue);
+      expect(strict.any((RichTextRun r) => r.correctionMark), isTrue);
+    });
   });
 
   group('session item ordering', () {

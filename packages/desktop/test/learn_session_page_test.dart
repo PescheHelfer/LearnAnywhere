@@ -6,6 +6,17 @@ import 'package:learn_anywhere_desktop/src/learn/desktop_query_options.dart';
 import 'package:learn_anywhere_desktop/src/learn/learn_session_page.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
+/// Whether [span] or any span below it has a style matching [test].
+bool _anySpan(InlineSpan span, bool Function(TextStyle style) test) {
+  var found = false;
+  span.visitChildren((InlineSpan child) {
+    final TextStyle? style = child.style;
+    found = style != null && test(style);
+    return !found;
+  });
+  return found;
+}
+
 void main() {
   const LearningMask mask = LearningMask(
     maskId: 'm_new_learn-session-fixture',
@@ -110,6 +121,111 @@ void main() {
       expect(find.textContaining('Use all units'), findsNothing);
       expect(find.textContaining('Unit 1/2'), findsOneWidget);
       expect(activeReports, <bool>[true]);
+    },
+  );
+
+  testWidgets(
+    'Correction hides the highlight of an answer with a typo, while the same '
+    'answer typed correctly keeps it',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      FieldDefinition field(int id, FieldRole role) => FieldDefinition(
+        id: id,
+        name: 'Field $id',
+        length: 40,
+        equalGroup: 0,
+        role1: role,
+        role2: role,
+      );
+      final FieldValue highlighted = FieldValue.rich(const <RichTextRun>[
+        RichTextRun(text: 'house', highlight: '#FFF59D'),
+      ]);
+      final LearningDeck highlightDeck = LearningDeck(
+        mask: LearningMask(
+          maskId: 'm_new_correction-formatting',
+          name: 'Fixture',
+          direction1Label: 'A',
+          direction2Label: 'B',
+          categories: <CategoryDefinition>[
+            CategoryDefinition(
+              id: 0,
+              name: 'Cat',
+              fields: <FieldDefinition>[
+                field(0, FieldRole.question),
+                field(1, FieldRole.answer),
+                field(2, FieldRole.answer),
+              ],
+            ),
+          ],
+        ),
+        units: <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{
+              0: const FieldValue.plain('Haus'),
+              1: highlighted,
+              2: highlighted,
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: LearnSessionPage(
+              startSessionOnOpen: true,
+              deck: highlightDeck,
+              statistics: const <UnitStats>[],
+              options: const DesktopQueryOptions(),
+              parameters: const SessionParameters(
+                mode: SessionMode.onceThrough,
+                directionSelection: DirectionSelection.direction1,
+                shuffle: false,
+              ),
+              onParametersChanged: (SessionParameters _) {},
+              onStatisticsChanged: (List<UnitStats> _) {},
+              onOpenEditor: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).at(0), 'hause');
+      await tester.enterText(find.byType(TextField).at(1), 'house');
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+
+      // Whether each displayed "house", in field order, draws a highlight.
+      List<bool> highlightedAnswers() {
+        return <bool>[
+          for (final RichText text in tester.widgetList<RichText>(
+            find.byType(RichText),
+          ))
+            if (text.text.toPlainText() == 'house')
+              _anySpan(
+                text.text,
+                (TextStyle style) => style.backgroundColor != null,
+              ),
+        ];
+      }
+
+      // A wrong answer opens on Correction.
+      expect(highlightedAnswers(), <bool>[false, true]);
+
+      // The Solution view keeps the formatting of both.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f9);
+      await tester.pumpAndSettle();
+      expect(highlightedAnswers(), <bool>[true, true]);
     },
   );
 

@@ -45,6 +45,13 @@ Unterschieden zeigen (**Korrektur**), die reine **Lösung**, oder **Ihre Antwort
 unmarkiert — mit `F9` während einer Sitzung durchschalten; siehe
 [Lernsitzungen](06-learning-sessions.md#whrend-einer-sitzung).
 
+In der **Korrektur** verliert ein Antwortfeld mit mindestens einem Fehler die eigene
+**Textfarbe**, **Markierung**, **Unterstrichen** und Durchstreichung der Einheit, damit
+sie kein hervorgehobenes Zeichen verdecken und nicht mit den Zeichen für einen
+fehlenden oder überzähligen Buchstaben verwechselt werden. **Fett** und **Kursiv**
+bleiben. Ein Feld ohne Fehler, die Frage- und Bemerkungsfelder sowie die Ansicht
+**Lösung** behalten ihre gesamte Formatierung.
+
 ## Den Versuch bewerten
 
 Nach einer Prüfung lässt eine Reihe von bis zu drei Schaltflächen Sie das automatische
