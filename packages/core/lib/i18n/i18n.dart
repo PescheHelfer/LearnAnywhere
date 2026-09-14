@@ -1599,21 +1599,15 @@ final class LearnAnywhereCatalog {
           'configurable start folder; zoom (75–200%) via Ctrl+/-/0; '
           'optional content centring on wide screens.',
       LearnAnywhereMessage.aboutVersion100:
-          '0.10.0 – Fields can be read aloud in a session: a speaker icon '
-          'per field, automatic speech at reveal, F4 to replay, voice and '
-          'speed set in Options; the Android companion speaks too. Windows '
-          'only; Linux ships mute.',
+          '0.10.0 – Session speech with per-field buttons, automatic reveal, '
+          'F4 replay, and voice and speed options; also on Android. Windows '
+          'only on desktop.',
       LearnAnywhereMessage.aboutVersion101:
-          '0.10.1 – Mask Sync fixes: readable contrast, real write counts, '
-          'dialog stays open after a rescan, correct shell names, fields '
-          'table fits its frame, sync reference follows the open editor, '
-          'cancel no longer leaves the Mask Editor, a failed rescan keeps '
-          'the written ledger and only leaves the Mask Editor when it wrote '
-          'something, row checkboxes reachable by assistive tech.',
+          '0.10.1 – Mask Sync fixes for contrast, write counts, rescans, '
+          'editor state, layout, and accessibility.',
       LearnAnywhereMessage.aboutVersion110:
-          '0.11.0 – Text colour and highlight now follow the theme: one '
-          'toggle each in the editor, and the Correction view hides a '
-          'field\'s own formatting where it has a mistake.',
+          '0.11.0 – Theme-aware text colours and highlights; Correction '
+          'hides formatting in fields with mistakes.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2253,24 +2247,16 @@ final class LearnAnywhereCatalog {
           'Strg+/-/0; Option zum Zentrieren des Inhalts auf breiten '
           'Bildschirmen.',
       LearnAnywhereMessage.aboutVersion100:
-          '0.10.0 – Felder können in einer Lern-Sitzung vorgelesen werden: '
-          'Lautsprecher-Symbol pro Feld, automatisches Vorlesen beim '
-          'Aufdecken, F4 zum Wiederholen, Stimme und Geschwindigkeit in den '
-          'Optionen; die Android-Begleit-App spricht ebenfalls. Nur '
-          'Windows; Linux bleibt stumm.',
+          '0.10.0 – Sprachausgabe mit Schaltflächen pro Feld, automatisch '
+          'beim Aufdecken, F4-Wiederholung sowie Stimm- und Tempooptionen; '
+          'auch auf Android. Am Desktop nur unter Windows.',
       LearnAnywhereMessage.aboutVersion101:
-          '0.10.1 – Mask-Sync-Korrekturen: lesbarer Kontrast, korrekte '
-          'Schreib-Zählung, Dialog bleibt nach erneutem Scan offen, '
-          'korrekte Shell-Namen, Feldtabelle passt in ihren Rahmen, '
-          'Sync-Referenz folgt dem offenen Editor, Abbrechen verlässt den '
-          'Mask-Editor nicht mehr, ein fehlgeschlagener Rescan behält das '
-          'geschriebene Journal und verlässt den Mask-Editor nur, wenn '
-          'etwas geschrieben wurde, Kontrollkästchen sind für '
-          'Hilfstechnologien bedienbar.',
+          '0.10.1 – Mask-Sync-Korrekturen bei Kontrast, Schreibzählung, '
+          'erneutem Scan, Editorstatus, Layout und Barrierefreiheit.',
       LearnAnywhereMessage.aboutVersion110:
-          '0.11.0 – Textfarbe und Hervorhebung folgen jetzt dem Thema: je '
-          'ein Umschalter im Editor, und die Korrektur-Ansicht blendet die '
-          'eigene Formatierung eines Feldes mit Fehler aus.',
+          '0.11.0 – Themenabhängige Textfarben und Hervorhebungen; die '
+          'Korrektur-Ansicht blendet Formatierungen in fehlerhaften Feldern '
+          'aus.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
