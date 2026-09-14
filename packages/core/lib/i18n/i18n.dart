@@ -480,39 +480,6 @@ enum LearnAnywhereMessage {
   /// Unit editor clear formatting action.
   editorClearFormatting,
 
-  /// No highlight option label.
-  colorNone,
-
-  /// Red color label.
-  colorRed,
-
-  /// Blue color label.
-  colorBlue,
-
-  /// Orange color label.
-  colorOrange,
-
-  /// Purple color label.
-  colorPurple,
-
-  /// Yellow color label.
-  colorYellow,
-
-  /// Cyan color label.
-  colorCyan,
-
-  /// Lime color label.
-  colorLime,
-
-  /// Pink color label.
-  colorPink,
-
-  /// Amber color label.
-  colorAmber,
-
-  /// Teal color label.
-  colorTeal,
-
   /// Unit editor category chooser title.
   editorChooseCategoryTitle,
 
@@ -1662,17 +1629,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorColor: 'Text color',
       LearnAnywhereMessage.editorHighlight: 'Highlight',
       LearnAnywhereMessage.editorClearFormatting: 'Clear formatting',
-      LearnAnywhereMessage.colorNone: 'None',
-      LearnAnywhereMessage.colorRed: 'Red',
-      LearnAnywhereMessage.colorBlue: 'Blue',
-      LearnAnywhereMessage.colorOrange: 'Orange',
-      LearnAnywhereMessage.colorPurple: 'Purple',
-      LearnAnywhereMessage.colorYellow: 'Yellow',
-      LearnAnywhereMessage.colorCyan: 'Cyan',
-      LearnAnywhereMessage.colorLime: 'Lime',
-      LearnAnywhereMessage.colorPink: 'Pink',
-      LearnAnywhereMessage.colorAmber: 'Amber',
-      LearnAnywhereMessage.colorTeal: 'Teal',
       LearnAnywhereMessage.editorChooseCategoryTitle: 'Choose category',
       LearnAnywhereMessage.editorJumpTitle: 'Jump to unit',
       LearnAnywhereMessage.editorJumpLabel: 'Unit number',
@@ -2326,17 +2282,6 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorColor: 'Textfarbe',
       LearnAnywhereMessage.editorHighlight: 'Markierung',
       LearnAnywhereMessage.editorClearFormatting: 'Formatierung löschen',
-      LearnAnywhereMessage.colorNone: 'Keine',
-      LearnAnywhereMessage.colorRed: 'Rot',
-      LearnAnywhereMessage.colorBlue: 'Blau',
-      LearnAnywhereMessage.colorOrange: 'Orange',
-      LearnAnywhereMessage.colorPurple: 'Violett',
-      LearnAnywhereMessage.colorYellow: 'Gelb',
-      LearnAnywhereMessage.colorCyan: 'Cyan',
-      LearnAnywhereMessage.colorLime: 'Hellgrün',
-      LearnAnywhereMessage.colorPink: 'Rosa',
-      LearnAnywhereMessage.colorAmber: 'Bernstein',
-      LearnAnywhereMessage.colorTeal: 'Blaugrün',
       LearnAnywhereMessage.editorChooseCategoryTitle: 'Kategorie wählen',
       LearnAnywhereMessage.editorJumpTitle: 'Zu Einheit springen',
       LearnAnywhereMessage.editorJumpLabel: 'Einheitsnummer',

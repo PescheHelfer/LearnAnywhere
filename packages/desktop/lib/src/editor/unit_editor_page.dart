@@ -219,7 +219,6 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
   int _currentIndex = 0;
   CategoryDefinition? _lastUsedCategory;
   final FocusNode _rootFocusNode = FocusNode();
-  final _ColorMemory _colorMemory = _ColorMemory();
 
   @override
   void initState() {
@@ -325,7 +324,6 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
                 : _EditorBody(
                     deck: widget.deck,
                     currentIndex: _currentIndex,
-                    colorMemory: _colorMemory,
                     onFieldChanged: _updateCurrentUnitField,
                     onPrevious: _previous,
                     onNext: _next,
@@ -666,7 +664,6 @@ final class _EditorBody extends StatefulWidget {
   const _EditorBody({
     required this.deck,
     required this.currentIndex,
-    required this.colorMemory,
     required this.onFieldChanged,
     required this.onPrevious,
     required this.onNext,
@@ -680,7 +677,6 @@ final class _EditorBody extends StatefulWidget {
 
   final LearningDeck deck;
   final int currentIndex;
-  final _ColorMemory colorMemory;
   final void Function(int fieldId, FieldValue value) onFieldChanged;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
@@ -698,7 +694,6 @@ final class _EditorBody extends StatefulWidget {
 final class _EditorBodyState extends State<_EditorBody> {
   // The controller and focus node that currently have keyboard focus — drive toolbar state.
   LearnAnywhereRichTextEditingController? _activeController;
-  _ColorMemory? _activeColorMemory;
   FocusNode? _activeFocusNode;
 
   final ScrollController _scrollController = ScrollController();
@@ -711,7 +706,6 @@ final class _EditorBodyState extends State<_EditorBody> {
     if (widget.currentIndex != oldWidget.currentIndex) {
       _activeController?.removeListener(_onActiveControllerChanged);
       _activeController = null;
-      _activeColorMemory = null;
     }
   }
 
@@ -724,13 +718,11 @@ final class _EditorBodyState extends State<_EditorBody> {
 
   void _registerActive(
     LearnAnywhereRichTextEditingController controller,
-    _ColorMemory colorMemory,
     FocusNode focusNode,
   ) {
     if (_activeController == controller) return;
     _activeController?.removeListener(_onActiveControllerChanged);
     _activeController = controller;
-    _activeColorMemory = colorMemory;
     _activeFocusNode = focusNode;
     _activeController!.addListener(_onActiveControllerChanged);
     if (mounted) setState(() {});
@@ -778,9 +770,16 @@ final class _EditorBodyState extends State<_EditorBody> {
     _activeFocusNode?.requestFocus();
   }
 
-  void _applyHighlight(String? hex) {
-    _activeColorMemory?.lastHighlight = hex;
-    _activeController?.formatSelection((RunFormat f) => f.withHighlight(hex));
+  void _toggleHighlight() {
+    final LearnAnywhereRichTextEditingController? c = _activeController;
+    if (c == null) return;
+    final bool active = c.selectionSatisfies(
+      (RunFormat f) => f.highlight == HighlightToken.highlight1,
+    );
+    c.formatSelection(
+      (RunFormat f) =>
+          f.withHighlight(active ? null : HighlightToken.highlight1),
+    );
     _activeFocusNode?.requestFocus();
   }
 
@@ -794,7 +793,8 @@ final class _EditorBodyState extends State<_EditorBody> {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    final Brightness brightness = Theme.of(context).brightness;
+    final LearnAnywhereFormatColours formatColours =
+        LearnAnywhereFormatColours.of(Theme.of(context));
 
     final LearningUnit unit = widget.deck.units[widget.currentIndex];
     final CategoryDefinition category = widget.deck.categoryForUnit(unit);
@@ -818,7 +818,6 @@ final class _EditorBodyState extends State<_EditorBody> {
     }
 
     final LearnAnywhereRichTextEditingController? ac = _activeController;
-    final RunFormat activeFormat = ac?.activeFormat ?? RunFormat.none;
 
     final double labelWidth = computeFieldLabelWidth(context, widget.deck.mask);
 
@@ -876,9 +875,7 @@ final class _EditorBodyState extends State<_EditorBody> {
                           LearnAnywhereMessage.editorColor,
                         ),
                         icon: Icons.format_color_text,
-                        iconColor: LearnAnywhereFormatColours.of(
-                          Theme.of(context),
-                        ).text1,
+                        iconColor: formatColours.text1,
                         selected:
                             ac?.selectionSatisfies(
                               (RunFormat f) => f.color == TextColourToken.text1,
@@ -886,24 +883,19 @@ final class _EditorBodyState extends State<_EditorBody> {
                             false,
                         onPressed: ac != null ? _toggleTextColour : null,
                       ),
-                      _ColorPickerButton(
+                      _FormatIconButton(
                         tooltip: messages.message(
                           LearnAnywhereMessage.editorHighlight,
                         ),
                         icon: Icons.format_color_fill,
-                        swatches: LearnAnywherePalette.highlightsFor(
-                          brightness,
-                        ),
-                        selectedHex: activeFormat.highlight,
-                        indicator: activeFormat.highlight == null
-                            ? null
-                            : colorFromHex(
-                                LearnAnywherePalette.highlightForBrightness(
-                                  activeFormat.highlight!,
-                                  brightness,
-                                ),
-                              ),
-                        onSelected: ac != null ? _applyHighlight : null,
+                        iconColor: formatColours.highlight1,
+                        selected:
+                            ac?.selectionSatisfies(
+                              (RunFormat f) =>
+                                  f.highlight == HighlightToken.highlight1,
+                            ) ??
+                            false,
+                        onPressed: ac != null ? _toggleHighlight : null,
                       ),
                       _FormatIconButton(
                         tooltip: messages.message(
@@ -946,7 +938,6 @@ final class _EditorBodyState extends State<_EditorBody> {
                     ),
                     field: fields[i],
                     value: unit.valueForFieldId(fields[i].id),
-                    colorMemory: widget.colorMemory,
                     labelWidth: labelWidth,
                     autofocus: i == autoFocusIndex,
                     moveToEnd: allFilled && i == autoFocusIndex,
@@ -1034,7 +1025,6 @@ final class _GridRow extends StatefulWidget {
   const _GridRow({
     required this.field,
     required this.value,
-    required this.colorMemory,
     required this.labelWidth,
     required this.onChanged,
     required this.onFocusGained,
@@ -1046,7 +1036,6 @@ final class _GridRow extends StatefulWidget {
 
   final FieldDefinition field;
   final FieldValue value;
-  final _ColorMemory colorMemory;
 
   /// Shared label-column width, computed once for the whole mask.
   final double labelWidth;
@@ -1056,7 +1045,6 @@ final class _GridRow extends StatefulWidget {
   /// track which controller is currently active.
   final void Function(
     LearnAnywhereRichTextEditingController,
-    _ColorMemory,
     FocusNode,
   )
   onFocusGained;
@@ -1122,7 +1110,7 @@ final class _GridRowState extends State<_GridRow> {
 
   void _onFocusChanged() {
     if (_focusNode.hasFocus) {
-      widget.onFocusGained(_controller, widget.colorMemory, _focusNode);
+      widget.onFocusGained(_controller, _focusNode);
       // Keep the edited field visible when a long (wide) field would otherwise
       // sit past the horizontally-scrolled grid's right edge.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1303,8 +1291,8 @@ final class _FormatIconButton extends StatefulWidget {
   final bool selected;
   final VoidCallback? onPressed;
 
-  /// The colour the icon previews, e.g. the theme's text colour; `null` keeps
-  /// the button's own foreground. Ignored while the button is disabled.
+  /// The colour the icon previews, e.g. the theme's text colour or highlight;
+  /// `null` keeps the button's own foreground. Ignored while disabled.
   final Color? iconColor;
 
   @override
@@ -1336,127 +1324,6 @@ final class _FormatIconButtonState extends State<_FormatIconButton> {
       padding: const EdgeInsets.all(8.5),
       icon: Icon(widget.icon, color: iconColor),
       selectedIcon: Icon(widget.icon, color: iconColor),
-    );
-  }
-}
-
-/// Session-scoped, in-memory record of the last highlight the user picked.
-final class _ColorMemory {
-  /// Last-used highlight hex, or null for the no-highlight option.
-  String? lastHighlight;
-}
-
-/// A toolbar button that opens a palette popover and applies the chosen color.
-///
-/// Selecting a swatch applies that color to the current selection (or stores it
-/// as the active insertion-point color when nothing is selected).
-final class _ColorPickerButton extends StatefulWidget {
-  const _ColorPickerButton({
-    required this.tooltip,
-    required this.icon,
-    required this.swatches,
-    required this.selectedHex,
-    required this.indicator,
-    required this.onSelected,
-  });
-
-  final String tooltip;
-  final IconData icon;
-  final List<LearnAnywhereColorSwatch> swatches;
-  final String? selectedHex;
-  final Color? indicator;
-  final ValueChanged<String?>? onSelected;
-
-  @override
-  State<_ColorPickerButton> createState() => _ColorPickerButtonState();
-}
-
-final class _ColorPickerButtonState extends State<_ColorPickerButton> {
-  final FocusNode _focusNode = FocusNode(
-    skipTraversal: true,
-    canRequestFocus: false,
-  );
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
-      context,
-    );
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    return MenuAnchor(
-      menuChildren: widget.swatches
-          .map((LearnAnywhereColorSwatch swatch) {
-            final bool selected = swatch.hex == widget.selectedHex;
-            return MenuItemButton(
-              leadingIcon: _SwatchDot(color: swatch.color, selected: selected),
-              onPressed: widget.onSelected == null
-                  ? null
-                  : () => widget.onSelected!(swatch.hex),
-              child: Text(messages.message(swatch.label)),
-            );
-          })
-          .toList(growable: false),
-      builder:
-          (BuildContext context, MenuController controller, Widget? child) {
-            return IconButton(
-              focusNode: _focusNode,
-              tooltip: widget.tooltip,
-              onPressed: () =>
-                  controller.isOpen ? controller.close() : controller.open(),
-              iconSize: 15,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              padding: const EdgeInsets.all(8.5),
-              icon: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(widget.icon, size: 15),
-                  Container(
-                    width: 14,
-                    height: 2,
-                    margin: const EdgeInsets.only(top: 1),
-                    color: widget.indicator ?? colors.outlineVariant,
-                  ),
-                ],
-              ),
-            );
-          },
-    );
-  }
-}
-
-/// A small color dot used inside the picker palette, with a checkered backdrop
-/// for the default/none (null color) entry.
-final class _SwatchDot extends StatelessWidget {
-  const _SwatchDot({required this.color, required this.selected});
-
-  final Color? color;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color ?? colors.surface,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: selected ? colors.primary : colors.outline,
-          width: selected ? 3 : 1,
-        ),
-      ),
-      child: SizedBox(
-        width: 18,
-        height: 18,
-        child: color == null
-            ? Icon(Icons.format_color_reset, size: 12, color: colors.outline)
-            : null,
-      ),
     );
   }
 }

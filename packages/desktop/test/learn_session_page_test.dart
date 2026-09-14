@@ -142,7 +142,7 @@ void main() {
         role2: role,
       );
       final FieldValue highlighted = FieldValue.rich(const <RichTextRun>[
-        RichTextRun(text: 'house', highlight: '#FFF59D'),
+        RichTextRun(text: 'house', highlight: HighlightToken.highlight1),
       ]);
       final LearningDeck highlightDeck = LearningDeck(
         mask: LearningMask(

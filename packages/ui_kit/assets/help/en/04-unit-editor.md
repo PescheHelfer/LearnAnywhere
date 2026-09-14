@@ -57,19 +57,22 @@ Select some text inside a field to format it:
 | Italic | *Italic* |
 | Underline | Underlined |
 | Text color | Colours the selection in the theme's text colour; press it again to remove it |
-| Highlight | One of a short list of background colours for light or dark themes, or None |
+| Highlight | Highlights the selection in the theme's highlight; press it again to remove it |
 | Clear formatting | Removes bold/italic/underline/colour/highlight from the selection |
 
-**Text color** works like **Bold**: it has no palette, and it shows as pressed when the
-selection is already coloured. Each theme offers one text colour, chosen to stay readable
-on that theme's fields and to look nothing like the colour of a correction mark; the
-button's icon is drawn in it. The deck stores only *that* the text is coloured, not the
+**Text color** and **Highlight** work like **Bold**: neither has a palette, and each shows
+as pressed when the selection already carries it. Each theme offers one text colour and
+one highlight. The text colour is chosen to stay readable on that theme's fields and to
+look nothing like the colour of a correction mark; the highlight to stand out from those
+fields while the theme's normal text stays readable on it. Each button's icon is drawn in
+its colour. The deck stores only *that* the text is coloured or highlighted, not the
 colour itself, so switching the theme re-colours it everywhere — in the editor, in a
 learning session and on Android.
 
-With nothing selected, turning on Bold, Italic, Underline or Text color arms it for the
-*next* text you type — useful for typing a whole word in italics without selecting it
-afterwards. Formatting is stored with the unit and travels with it wherever the deck goes.
+With nothing selected, turning on Bold, Italic, Underline, Text color or Highlight arms it
+for the *next* text you type — useful for typing a whole word in italics without selecting
+it afterwards. Formatting is stored with the unit and travels with it wherever the deck
+goes.
 
 ## Finishing
 

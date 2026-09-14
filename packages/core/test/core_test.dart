@@ -450,7 +450,8 @@ void main() {
       expect(reloaded.units.single.valueForFieldId(1).plainText, 'mai');
     });
 
-    test('applyMaskToDeck truncation keeps a run\'s text colour token', () {
+    test('applyMaskToDeck truncation keeps a run\'s text colour and '
+        'highlight tokens', () {
       final LearningDeck deck = LearningDeck(
         mask: compatMask(),
         units: <LearningUnit>[
@@ -459,7 +460,11 @@ void main() {
             fields: <int, FieldValue>{
               1: FieldValue.rich(<RichTextRun>[
                 const RichTextRun(text: 'ma'),
-                const RichTextRun(text: 'ison', color: TextColourToken.text1),
+                const RichTextRun(
+                  text: 'ison',
+                  color: TextColourToken.text1,
+                  highlight: HighlightToken.highlight1,
+                ),
               ]),
             },
           ),
@@ -495,7 +500,11 @@ void main() {
         result.units.single.valueForFieldId(1),
         FieldValue.rich(<RichTextRun>[
           const RichTextRun(text: 'ma'),
-          const RichTextRun(text: 'i', color: TextColourToken.text1),
+          const RichTextRun(
+            text: 'i',
+            color: TextColourToken.text1,
+            highlight: HighlightToken.highlight1,
+          ),
         ]),
       );
     });
@@ -1838,7 +1847,7 @@ void main() {
           ),
           6,
           12,
-          (RunFormat f) => f.withHighlight('#FFE066'),
+          (RunFormat f) => f.withHighlight(HighlightToken.highlight1),
         ),
       );
 
@@ -1937,6 +1946,44 @@ void main() {
               (ValidationException e) => e.path,
               'path',
               r'$.units[1].fields.1[0].color',
+            ),
+          ),
+          reason: stored,
+        );
+      }
+    });
+
+    test('a highlight is stored as the token "highlight1" and round-trips', () {
+      final LearningDeck deck = highlightedDeck();
+      final String json = encodeDeckJson(deck);
+      expect(json, contains('"highlight": "highlight1"'));
+      expect(
+        decodeDeckJson(json).units.single.fields[0],
+        deck.units.single.fields[0],
+      );
+    });
+
+    test('a hex or unknown highlight fails to load, naming the run path', () {
+      final String json = encodeDeckJson(highlightedDeck());
+      for (final String stored in <String>[
+        '#FFE066',
+        'highlight2',
+        'Highlight1',
+        'text1',
+        '',
+      ]) {
+        expect(
+          () => decodeDeckJson(
+            json.replaceFirst(
+              '"highlight": "highlight1"',
+              '"highlight": "$stored"',
+            ),
+          ),
+          throwsA(
+            isA<ValidationException>().having(
+              (ValidationException e) => e.path,
+              'path',
+              r'$.units[0].fields.0[1].highlight',
             ),
           ),
           reason: stored,
@@ -2168,7 +2215,7 @@ void main() {
             text: 't',
             italic: true,
             underline: true,
-            highlight: '#FFF59D',
+            highlight: HighlightToken.highlight1,
           ),
           const RichTextRun(text: 's', strikethrough: true),
         ],
@@ -2193,7 +2240,7 @@ void main() {
     test('buildCorrectionRuns still underlines a missing character and strikes '
         'an extra one after hiding the formatting', () {
       const List<RichTextRun> expected = <RichTextRun>[
-        RichTextRun(text: 'sausage', highlight: '#FFF59D'),
+        RichTextRun(text: 'sausage', highlight: HighlightToken.highlight1),
       ];
       for (final (String entered, bool Function(RunFormat) mark)
           in <(String, bool Function(RunFormat))>[
@@ -2211,7 +2258,11 @@ void main() {
 
     test('buildCorrectionRuns returns a fully correct answer unchanged', () {
       const List<RichTextRun> expected = <RichTextRun>[
-        RichTextRun(text: 'ri', underline: true, highlight: '#FFF59D'),
+        RichTextRun(
+          text: 'ri',
+          underline: true,
+          highlight: HighlightToken.highlight1,
+        ),
         RichTextRun(text: 'ght', italic: true, color: TextColourToken.text1),
       ];
       expect(
@@ -2223,7 +2274,11 @@ void main() {
     test('buildCorrectionRuns keeps formatting when the only difference is '
         'one the match options ignore', () {
       const List<RichTextRun> expected = <RichTextRun>[
-        RichTextRun(text: 'Café', strikethrough: true, highlight: '#FFF59D'),
+        RichTextRun(
+          text: 'Café',
+          strikethrough: true,
+          highlight: HighlightToken.highlight1,
+        ),
       ];
       expect(
         buildCorrectionRuns(expectedRuns: expected, enteredPlain: 'cafe'),
@@ -3717,6 +3772,27 @@ LearningMask sampleMask() {
             role2: FieldRole.remark,
           ),
         ],
+      ),
+    ],
+  );
+}
+
+/// A one-unit deck whose DE field has one highlighted run, the second.
+LearningDeck highlightedDeck() {
+  return LearningDeck(
+    mask: sampleMask(),
+    units: <LearningUnit>[
+      LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{
+          0: FieldValue.rich(<RichTextRun>[
+            const RichTextRun(text: 'ganz '),
+            const RichTextRun(
+              text: 'wichtig',
+              highlight: HighlightToken.highlight1,
+            ),
+          ]),
+        },
       ),
     ],
   );

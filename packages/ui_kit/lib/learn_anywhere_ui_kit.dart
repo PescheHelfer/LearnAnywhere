@@ -10,7 +10,6 @@ export 'src/i18n/learn_anywhere_localizations.dart';
 export 'src/layout/content_frame.dart';
 export 'src/menu/menu_accelerator_builder.dart';
 export 'src/menu/menu_accelerator_display_label.dart';
-export 'src/rich_text/learn_anywhere_palette.dart';
 export 'src/rich_text/learn_anywhere_rich_text.dart';
 export 'src/rich_text/learn_anywhere_rich_text_editing_controller.dart';
 export 'src/speech/flutter_tts_engine.dart';

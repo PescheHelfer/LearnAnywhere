@@ -80,6 +80,7 @@ final class LearnAnywhereFormatColours
   /// Creates a format colours theme extension.
   const LearnAnywhereFormatColours({
     required this.text1,
+    required this.highlight1,
     required this.correction,
   });
 
@@ -91,17 +92,27 @@ final class LearnAnywhereFormatColours
   /// for a mistake beside it.
   final Color text1;
 
+  /// The theme's one highlight, drawn behind a run stored as
+  /// `HighlightToken.highlight1`.
+  ///
+  /// The theme's default text ([ColorScheme.onSurface]) reaches at least
+  /// 4.5:1 on it, and it stands out at least 1.5:1 and clearly apart in hue
+  /// from every background a formatted value sits on.
+  final Color highlight1;
+
   /// Colour of a correction mark — a mistyped, missing or extra character in
   /// the Correction view (`RichTextRun.correctionMark`).
   final Color correction;
 
   /// Resolves the format colours for [theme]: the extension when the theme
-  /// carries one, otherwise [ColorScheme.primary] as the text colour and
+  /// carries one, otherwise [ColorScheme.primary] as the text colour,
+  /// [ColorScheme.tertiaryContainer] as the highlight and
   /// [ColorScheme.error] as the correction colour.
   static LearnAnywhereFormatColours of(ThemeData theme) {
     return theme.extension<LearnAnywhereFormatColours>() ??
         LearnAnywhereFormatColours(
           text1: theme.colorScheme.primary,
+          highlight1: theme.colorScheme.tertiaryContainer,
           correction: theme.colorScheme.error,
         );
   }
@@ -113,10 +124,22 @@ final class LearnAnywhereFormatColours
     };
   }
 
+  /// The colour [token] is drawn in under this theme.
+  Color highlightColour(HighlightToken token) {
+    return switch (token) {
+      HighlightToken.highlight1 => highlight1,
+    };
+  }
+
   @override
-  LearnAnywhereFormatColours copyWith({Color? text1, Color? correction}) {
+  LearnAnywhereFormatColours copyWith({
+    Color? text1,
+    Color? highlight1,
+    Color? correction,
+  }) {
     return LearnAnywhereFormatColours(
       text1: text1 ?? this.text1,
+      highlight1: highlight1 ?? this.highlight1,
       correction: correction ?? this.correction,
     );
   }
@@ -131,6 +154,7 @@ final class LearnAnywhereFormatColours
     }
     return LearnAnywhereFormatColours(
       text1: Color.lerp(text1, other.text1, t) ?? text1,
+      highlight1: Color.lerp(highlight1, other.highlight1, t) ?? highlight1,
       correction: Color.lerp(correction, other.correction, t) ?? correction,
     );
   }
@@ -151,9 +175,12 @@ final class LearnAnywhereTheme {
       zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
         // A deep blue: far from the red correction colour in hue, and dark
-        // enough for the tinted field backgrounds.
+        // enough for the tinted field backgrounds. The highlight is an
+        // orchid pink: a yellow one would melt into the amber remark tint,
+        // and pink stands apart from the teal, green and amber tints alike.
         LearnAnywhereFormatColours(
           text1: Color(0xFF0D47A1),
+          highlight1: Color(0xFFE88AB8),
           correction: Color(0xFFD32F2F),
         ),
       ],
@@ -171,9 +198,13 @@ final class LearnAnywhereTheme {
       zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
         // Warm amber reads more clearly than red against a dark surface; the
-        // text colour is a pale blue, opposite it on the colour wheel.
+        // text colour is a pale blue, opposite it on the colour wheel. The
+        // highlight is a plum: dark enough under the pale default text, yet
+        // light enough to show on the teal primaryContainer. That window is
+        // narrow on this theme, so re-run the contrast test after any nudge.
         LearnAnywhereFormatColours(
           text1: Color(0xFFB3D4FF),
+          highlight1: Color(0xFF96448A),
           correction: Color(0xFFFFC107),
         ),
       ],
@@ -219,9 +250,11 @@ final class LearnAnywhereTheme {
         // yellow primary (#FFC600), so a mark would read as accented chrome.
         // A light coral stays well clear of it in hue and of the navy ground
         // in contrast. The text colour is a mint green: any blue would sink
-        // into the navy, and yellow is the primary.
+        // into the navy, and yellow is the primary. The highlight is a
+        // magenta, for the same reasons.
         LearnAnywhereFormatColours(
           text1: Color(0xFF69F0AE),
+          highlight1: Color(0xFFA63399),
           correction: Color(0xFFFF8A80),
         ),
       ],
@@ -254,8 +287,10 @@ final class LearnAnywhereTheme {
       zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
         // A deep purple: blue text would read as this theme's blue chrome.
+        // The highlight is Light's orchid pink, for the same reason.
         LearnAnywhereFormatColours(
           text1: Color(0xFF6A1B9A),
+          highlight1: Color(0xFFE88AB8),
           correction: Color(0xFFD32F2F),
         ),
       ],

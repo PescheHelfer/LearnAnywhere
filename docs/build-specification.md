@@ -172,8 +172,9 @@ A field value is **either**:
     "color": "text1", "highlight": null }
   ```
   Only these attributes are supported: `bold`, `italic`, `underline`, `color` (the token
-  `"text1"` or null — the current theme decides the actual colour, and any other value is
-  rejected), `highlight` (hex or null). Absent attributes default to off/null. **No font family or size.**
+  `"text1"` or null), `highlight` (the token `"highlight1"` or null). The current theme
+  decides the actual colours, and any other value is rejected. Absent attributes default
+  to off/null. **No font family or size.**
 
 The `ui_kit` renderer maps runs → Flutter `TextSpan`. The desktop editor maps editor state ↔ runs.
 You may use a rich-text editor package internally, but **storage MUST use this run model** so files

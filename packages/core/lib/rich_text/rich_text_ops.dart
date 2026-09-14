@@ -52,8 +52,8 @@ final class RunFormat {
   /// Optional text colour, resolved from the theme when drawn.
   final TextColourToken? color;
 
-  /// Optional highlight color as `#RRGGBB`.
-  final String? highlight;
+  /// Optional highlight, resolved from the theme when drawn.
+  final HighlightToken? highlight;
 
   /// Whether the run is a display-only correction mark; see
   /// [RichTextRun.correctionMark].
@@ -121,8 +121,8 @@ final class RunFormat {
     );
   }
 
-  /// Returns a copy with the highlight color set to [value] (nullable).
-  RunFormat withHighlight(String? value) {
+  /// Returns a copy with the highlight set to [value] (nullable).
+  RunFormat withHighlight(HighlightToken? value) {
     return RunFormat(
       bold: bold,
       italic: italic,

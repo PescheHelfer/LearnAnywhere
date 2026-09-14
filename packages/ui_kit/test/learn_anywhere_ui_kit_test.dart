@@ -308,6 +308,47 @@ void main() {
       }
     });
 
+    test('highlight 1 keeps the theme\'s default text legible and stands '
+        'out in lightness and hue from every background a formatted value '
+        'sits on', () {
+      for (final (String name, ThemeData theme) in <(String, ThemeData)>[
+        ('Light', LearnAnywhereTheme.light()),
+        ('Dark', LearnAnywhereTheme.dark()),
+        ('Dark Blue', LearnAnywhereTheme.darkBlue()),
+        ('Light Blue', LearnAnywhereTheme.lightBlue()),
+      ]) {
+        final LearnAnywhereFormatColours colours = theme
+            .extension<LearnAnywhereFormatColours>()!;
+        final double onHighlight = _contrastRatio(
+          theme.colorScheme.onSurface,
+          colours.highlight1,
+        );
+        expect(
+          onHighlight,
+          greaterThanOrEqualTo(4.5),
+          reason:
+              '$name: onSurface on highlight 1 is '
+              '${onHighlight.toStringAsFixed(2)}:1',
+        );
+        for (final (String background, Color colour)
+            in _formattedValueBackgrounds(theme)) {
+          final double ratio = _contrastRatio(colours.highlight1, colour);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(1.5),
+            reason:
+                '$name: highlight 1 on $background is '
+                '${ratio.toStringAsFixed(2)}:1',
+          );
+          expect(
+            _hueDistance(colours.highlight1, colour),
+            greaterThanOrEqualTo(60),
+            reason: '$name: highlight 1 vs $background in hue',
+          );
+        }
+      }
+    });
+
     test('every theme scales, and 100 per cent changes nothing', () {
       for (final ThemeData Function({int zoomPercent}) build
           in <ThemeData Function({int zoomPercent})>[
@@ -587,15 +628,15 @@ void main() {
             italic: true,
             underline: true,
             color: TextColourToken.text1,
-            highlight: '#FFFF00',
+            highlight: HighlightToken.highlight1,
           ),
         ]),
         theme: LearnAnywhereTheme.light(),
       );
       final TextSpan child = span.children!.single as TextSpan;
-      final Color text1 = LearnAnywhereTheme.light()
-          .extension<LearnAnywhereFormatColours>()!
-          .text1;
+      final LearnAnywhereFormatColours colours = LearnAnywhereTheme.light()
+          .extension<LearnAnywhereFormatColours>()!;
+      final Color text1 = colours.text1;
 
       expect(child.text, 'lapin');
       expect(child.style?.fontWeight, FontWeight.bold);
@@ -604,7 +645,7 @@ void main() {
       expect(child.style?.color, text1);
       // decorationColor should match explicit text color so underline is visible.
       expect(child.style?.decorationColor, text1);
-      expect(child.style?.backgroundColor, const Color(0xFFFFFF00));
+      expect(child.style?.backgroundColor, colours.highlight1);
     });
 
     test('underline without explicit color inherits fallback decoration color', () {
@@ -628,20 +669,6 @@ void main() {
 
       final RichText richText = tester.widget(find.byType(RichText));
       expect(richText.text.toPlainText(), 'visible');
-    });
-
-    test('remaps legacy yellow highlight to a dark equivalent in dark mode', () {
-      final TextSpan light = LearnAnywhereRichTextRenderer.spanForRun(
-        const RichTextRun(text: 'x', highlight: '#FFFF00'),
-        theme: LearnAnywhereTheme.light(),
-      );
-      expect(light.style?.backgroundColor, const Color(0xFFFFFF00));
-
-      final TextSpan dark = LearnAnywhereRichTextRenderer.spanForRun(
-        const RichTextRun(text: 'x', highlight: '#FFFF00'),
-        theme: LearnAnywhereTheme.dark(),
-      );
-      expect(dark.style?.backgroundColor, colorFromHex('#8D6E00'));
     });
 
     final Map<String, ThemeData Function()> themeBuilders =
@@ -671,6 +698,21 @@ void main() {
         );
         expect(span.style?.color, colours!.text1);
         expect(span.style?.decorationColor, colours.text1);
+      });
+
+      test('a highlight1 run resolves to ${entry.key}\'s highlight 1', () {
+        final ThemeData theme = entry.value();
+        final LearnAnywhereFormatColours? colours = theme
+            .extension<LearnAnywhereFormatColours>();
+        expect(colours, isNotNull);
+
+        final TextSpan span = LearnAnywhereRichTextRenderer.spanForRun(
+          const RichTextRun(text: 'x', highlight: HighlightToken.highlight1),
+          theme: theme,
+        );
+        expect(span.style?.backgroundColor, colours!.highlight1);
+        // The highlight changes the ground only; the text keeps the theme's.
+        expect(span.style?.color, isNull);
       });
 
       test('a correction mark resolves to ${entry.key}\'s correction colour', () {
@@ -730,35 +772,6 @@ void main() {
       expect(
         mark.style?.color,
         theme.extension<LearnAnywhereFormatColours>()!.correction,
-      );
-    });
-  });
-
-  group('highlight palette', () {
-    test('selects a distinct palette per brightness', () {
-      expect(
-        LearnAnywherePalette.highlightsFor(Brightness.light),
-        same(LearnAnywherePalette.lightHighlights),
-      );
-      expect(
-        LearnAnywherePalette.highlightsFor(Brightness.dark),
-        same(LearnAnywherePalette.darkHighlights),
-      );
-    });
-
-    test('maps light highlights to dark equivalents only in dark mode', () {
-      expect(
-        LearnAnywherePalette.highlightForBrightness('#FFE066', Brightness.light),
-        '#FFE066',
-      );
-      expect(
-        LearnAnywherePalette.highlightForBrightness('#FFE066', Brightness.dark),
-        '#8D6E00',
-      );
-      // Unknown (already dark) values pass through untouched.
-      expect(
-        LearnAnywherePalette.highlightForBrightness('#0D47A1', Brightness.dark),
-        '#0D47A1',
       );
     });
   });
@@ -956,7 +969,7 @@ void main() {
     test('preserves a loaded rich value as its field value', () {
       final FieldValue original = FieldValue.rich(<RichTextRun>[
         const RichTextRun(text: 'ab', bold: true),
-        const RichTextRun(text: 'cd', highlight: '#FFE066'),
+        const RichTextRun(text: 'cd', highlight: HighlightToken.highlight1),
       ]);
       final LearnAnywhereRichTextEditingController controller =
           LearnAnywhereRichTextEditingController(value: original);

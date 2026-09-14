@@ -502,11 +502,10 @@ RichTextRun _decodeRichTextRun(Object? value, String path) {
     _nullableString(json['color'], '$path.color'),
     '$path.color',
   );
-  final String? highlight = _nullableString(
-    json['highlight'],
+  final HighlightToken? highlight = _decodeHighlight(
+    _nullableString(json['highlight'], '$path.highlight'),
     '$path.highlight',
   );
-  _validateColor(highlight, '$path.highlight');
   return RichTextRun(
     text: _asString(json['text'], '$path.text'),
     bold: _optionalBool(json['bold'], '$path.bold'),
@@ -536,7 +535,7 @@ Map<String, Object?> _encodeRichTextRun(RichTextRun run) {
     json['color'] = run.color!.wireName;
   }
   if (run.highlight != null) {
-    json['highlight'] = run.highlight;
+    json['highlight'] = run.highlight!.wireName;
   }
   return json;
 }
@@ -801,14 +800,23 @@ TextColourToken? _decodeTextColour(String? value, String path) {
   return token;
 }
 
-void _validateColor(String? value, String path) {
+/// The highlight token stored as [value]. Like [_decodeTextColour], an old
+/// `#RRGGBB` highlight is not read: the deck fails to load at [path].
+HighlightToken? _decodeHighlight(String? value, String path) {
   if (value == null) {
-    return;
+    return null;
   }
-  final RegExp hexColor = RegExp(r'^#[0-9A-Fa-f]{6}$');
-  if (!hexColor.hasMatch(value)) {
-    throw ValidationException('Expected a #RRGGBB color.', path: path);
+  final HighlightToken? token = HighlightToken.tryParse(value);
+  if (token == null) {
+    final String expected = HighlightToken.values
+        .map((HighlightToken token) => '"${token.wireName}"')
+        .join(', ');
+    throw ValidationException(
+      'Expected a highlight token ($expected).',
+      path: path,
+    );
   }
+  return token;
 }
 
 String _prettyJson(Object? value) {

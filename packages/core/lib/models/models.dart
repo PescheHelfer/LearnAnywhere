@@ -192,6 +192,30 @@ enum TextColourToken {
   }
 }
 
+/// Which of the current theme's highlights a rich-text run is drawn on.
+///
+/// Stored and resolved like [TextColourToken]: the deck names the highlight,
+/// the theme decides its colour.
+enum HighlightToken {
+  /// The theme's one highlight.
+  highlight1('highlight1');
+
+  const HighlightToken(this.wireName);
+
+  /// The stable name written to a `.vok` run's `highlight` field.
+  final String wireName;
+
+  /// The token stored as [value], or `null` when no token has that name.
+  static HighlightToken? tryParse(String value) {
+    for (final HighlightToken token in values) {
+      if (token.wireName == value) {
+        return token;
+      }
+    }
+    return null;
+  }
+}
+
 /// One formatting run inside a rich text field value.
 final class RichTextRun {
   /// Creates a rich text run.
@@ -224,8 +248,8 @@ final class RichTextRun {
   /// Optional text colour, resolved from the theme when drawn.
   final TextColourToken? color;
 
-  /// Optional highlight color as `#RRGGBB`.
-  final String? highlight;
+  /// Optional highlight, resolved from the theme when drawn.
+  final HighlightToken? highlight;
 
   /// Whether the run is a correction mark painted by `buildDiffRuns`.
   ///
@@ -241,7 +265,7 @@ final class RichTextRun {
     bool? underline,
     bool? strikethrough,
     TextColourToken? color,
-    String? highlight,
+    HighlightToken? highlight,
     bool? correctionMark,
   }) {
     return RichTextRun(

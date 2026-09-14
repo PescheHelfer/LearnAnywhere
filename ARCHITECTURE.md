@@ -56,8 +56,8 @@ All loaders are strict about required schema rules:
 - A category may have at most 20 fields.
 - Category names may be at most 40 characters.
 - Statistics counters must be non-negative, with `correct <= attempts`.
-- A rich-text run's `color` must be the token `text1` when present; its `highlight` must
-  be `#RRGGBB`.
+- A rich-text run's `color` must be the token `text1` and its `highlight` the token
+  `highlight1` when present.
 
 Unknown future fields are ignored so newer files can remain forward-tolerant. Validation errors are reported as `ValidationException` with a JSON path and human-readable message.
 
