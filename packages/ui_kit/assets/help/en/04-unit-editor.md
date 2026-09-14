@@ -63,7 +63,7 @@ Select some text inside a field to format it:
 **Text color** and **Highlight** work like **Bold**: neither has a palette, and each shows
 as pressed when the selection already carries it. Each theme offers one text colour and
 one highlight. The text colour is chosen to stay readable on that theme's fields and to
-look nothing like the colour of a correction mark; the highlight to stand out from those
+stand out clearly from the normal text; the highlight to stand out from those
 fields while the theme's normal text stays readable on it. Each button's icon is drawn in
 its colour. The deck stores only *that* the text is coloured or highlighted, not the
 colour itself, so switching the theme re-colours it everywhere — in the editor, in a

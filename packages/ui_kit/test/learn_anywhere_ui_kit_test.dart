@@ -280,7 +280,8 @@ void main() {
     );
 
     test('text colour 1 is legible on every background a formatted value sits '
-        'on, and distinct in hue from the correction colour', () {
+        'on, stands out from the normal text, and never shares the correction '
+        'colour\'s hue', () {
       for (final (String name, ThemeData theme) in <(String, ThemeData)>[
         ('Light', LearnAnywhereTheme.light()),
         ('Dark', LearnAnywhereTheme.dark()),
@@ -300,9 +301,28 @@ void main() {
                 '${ratio.toStringAsFixed(2)}:1',
           );
         }
+        // Small dark text loses its colour, so a light theme needs more
+        // separation than a dark one to show it: Light's #0D47A1 (0.25) and
+        // Light Blue's #6A1B9A (0.22) read as the normal text, while Dark
+        // Blue's mint (0.20) stands out clearly.
+        final double fromText = _oklabDistance(
+          colours.text1,
+          theme.colorScheme.onSurface,
+        );
+        expect(
+          fromText,
+          greaterThanOrEqualTo(
+            theme.brightness == Brightness.light ? 0.30 : 0.18,
+          ),
+          reason:
+              '$name: text colour 1 is only ${fromText.toStringAsFixed(3)} '
+              'from the normal text in OKLab',
+        );
+        // Only a guard against the very same hue: a field with mistakes never
+        // shows its own formatting, so the two are not drawn side by side.
         expect(
           _hueDistance(colours.text1, colours.correction),
-          greaterThanOrEqualTo(60),
+          greaterThanOrEqualTo(20),
           reason: '$name: text colour 1 vs the correction colour',
         );
       }
@@ -1019,6 +1039,43 @@ double _hueDistance(Color a, Color b) {
   final double gap = (HSVColor.fromColor(a).hue - HSVColor.fromColor(b).hue)
       .abs();
   return math.min(gap, 360 - gap);
+}
+
+/// Euclidean distance between two colours in OKLab, a perceptual colour space
+/// where equal distances look roughly equally different.
+double _oklabDistance(Color first, Color second) {
+  final (double l1, double a1, double b1) = _oklab(first);
+  final (double l2, double a2, double b2) = _oklab(second);
+  return math.sqrt(
+    math.pow(l1 - l2, 2) + math.pow(a1 - a2, 2) + math.pow(b1 - b2, 2),
+  );
+}
+
+/// OKLab coordinates (lightness, a, b) of an sRGB colour.
+(double, double, double) _oklab(Color color) {
+  double linear(double srgb) {
+    return srgb <= 0.04045
+        ? srgb / 12.92
+        : math.pow((srgb + 0.055) / 1.055, 2.4).toDouble();
+  }
+
+  final double r = linear(color.r);
+  final double g = linear(color.g);
+  final double b = linear(color.b);
+  final double l = math
+      .pow(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b, 1 / 3)
+      .toDouble();
+  final double m = math
+      .pow(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b, 1 / 3)
+      .toDouble();
+  final double s = math
+      .pow(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b, 1 / 3)
+      .toDouble();
+  return (
+    0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s,
+  );
 }
 
 /// WCAG relative luminance of an sRGB color.

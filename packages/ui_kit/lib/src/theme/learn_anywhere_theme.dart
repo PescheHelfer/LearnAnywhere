@@ -87,9 +87,10 @@ final class LearnAnywhereFormatColours
   /// The theme's one text colour, drawn for a run stored as
   /// `TextColourToken.text1`.
   ///
-  /// At least 4.5:1 against every background a formatted value sits on, and
-  /// clearly apart in hue from [correction], so a coloured remark can't pass
-  /// for a mistake beside it.
+  /// At least 4.5:1 against every background a formatted value sits on, yet
+  /// clearly apart from the theme's normal text ([ColorScheme.onSurface]), so
+  /// a coloured word reads as coloured rather than as a darker or paler copy
+  /// of the text around it.
   final Color text1;
 
   /// The theme's one highlight, drawn behind a run stored as
@@ -174,12 +175,13 @@ final class LearnAnywhereTheme {
       colors,
       zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
-        // A deep blue: far from the red correction colour in hue, and dark
-        // enough for the tinted field backgrounds. The highlight is an
-        // orchid pink: a yellow one would melt into the amber remark tint,
-        // and pink stands apart from the teal, green and amber tints alike.
+        // A vivid purple, only just dark enough for the tinted fields: a
+        // deeper colour reads as the near-black normal text at text size. The
+        // highlight is an orchid pink: a yellow one would melt into the amber
+        // remark tint, and pink stands apart from the teal, green and amber
+        // tints alike.
         LearnAnywhereFormatColours(
-          text1: Color(0xFF0D47A1),
+          text1: Color(0xFF9C27B0),
           highlight1: Color(0xFFE88AB8),
           correction: Color(0xFFD32F2F),
         ),
@@ -197,13 +199,14 @@ final class LearnAnywhereTheme {
       colors,
       zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
-        // Warm amber reads more clearly than red against a dark surface; the
-        // text colour is a pale blue, opposite it on the colour wheel. The
+        // Warm amber reads more clearly than red against a dark surface. The
+        // text colour is a saturated orchid, only just bright enough for the
+        // fields: a paler one melts into the near-white normal text. The
         // highlight is a plum: dark enough under the pale default text, yet
         // light enough to show on the teal primaryContainer. That window is
         // narrow on this theme, so re-run the contrast test after any nudge.
         LearnAnywhereFormatColours(
-          text1: Color(0xFFB3D4FF),
+          text1: Color(0xFFF29CFF),
           highlight1: Color(0xFF96448A),
           correction: Color(0xFFFFC107),
         ),
@@ -286,10 +289,12 @@ final class LearnAnywhereTheme {
       colors,
       zoomPercent,
       extensions: const <ThemeExtension<dynamic>>[
-        // A deep purple: blue text would read as this theme's blue chrome.
-        // The highlight is Light's orchid pink, for the same reason.
+        // A vivid purple, only just dark enough for the tinted fields: a
+        // deeper one reads as the navy normal text, and blue as the chrome.
+        // The highlight is Light's orchid pink, kept off blue for the same
+        // reason.
         LearnAnywhereFormatColours(
-          text1: Color(0xFF6A1B9A),
+          text1: Color(0xFF9C27B0),
           highlight1: Color(0xFFE88AB8),
           correction: Color(0xFFD32F2F),
         ),

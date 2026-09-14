@@ -67,8 +67,8 @@ Markieren Sie Text innerhalb eines Feldes, um ihn zu formatieren:
 **Textfarbe** und **Markierung** funktionieren wie **Fett**: es gibt keine Farbauswahl,
 und die Schaltfläche erscheint gedrückt, wenn der markierte Text sie schon trägt. Jede
 Darstellung bietet genau eine Textfarbe und eine Markierung. Die Textfarbe ist so
-gewählt, dass sie auf deren Feldern gut lesbar bleibt und nie wie die Farbe einer
-Korrekturmarke aussieht; die Markierung so, dass sie sich von diesen Feldern abhebt und
+gewählt, dass sie auf deren Feldern gut lesbar bleibt und sich deutlich vom normalen
+Text abhebt; die Markierung so, dass sie sich von diesen Feldern abhebt und
 der normale Text der Darstellung auf ihr lesbar bleibt. Das Symbol jeder Schaltfläche ist
 in ihrer Farbe gezeichnet. Die Lern-Datei speichert nur, *dass* der Text gefärbt oder
 markiert ist, nicht die Farbe selbst — ein Wechsel der Darstellung färbt ihn deshalb
