@@ -172,11 +172,16 @@ chmod +x Learn_Anywhere-*.AppImage
 
 Build details for the AppImage are in [`packaging/linux/README.md`](packaging/linux/README.md).
 
-**Android.** The companion app is sideloaded, not published on the Play Store. Download
-the newest **Android** release, whose tag is named `android-v*`, and take the
-`app-arm64-v8a-release.apk` file: it is the right build for essentially every phone sold
-in the last decade. Open it with your file manager and allow the installation when
+**Android.** The companion app is sideloaded, not published on the Play Store. From the
+[Releases page](https://github.com/PescheHelfer/LearnAnywhere/releases), take the
+`*-arm64-v8a.apk` file of the newest release that carries one: it is the right build for
+essentially every phone sold in the last decade. The other two APKs are for older 32-bit
+phones and for emulators. Open it with your file manager and allow the installation when
 Android asks. Installing a newer APK over an older one keeps your library and statistics.
+
+The companion carries its own version number, independent of the desktop app's, so one
+release can pair desktop 0.11.0 with companion 0.6.0. The number in the APK's name is the
+companion's.
 
 Android refuses to install a build whose version is older than the installed one, and
 says so only as a generic failure. If an install is rejected on a phone that already has
