@@ -95,6 +95,19 @@ filling its width, and one button, **Show answer**. A short prompt and a long on
 the card the same shape; a prompt too long to fit shrinks to fit and then scrolls, so
 nothing is cut off.
 
+Above the prompt, a line says what the answer is made of: the unit's **category**,
+followed by one small rounded box per field the answer expects. On a simple category
+that is a single box; on a verbs category it may be three, so you rehearse the
+infinitive, the participle *and* the auxiliary instead of stopping at the first. Each
+field name is its own box, so a name containing a space is one field and not two. The
+list describes the direction you are practising, and fields the deck's author hid are
+left out. It disappears the moment you reveal the solution — by then the solution itself
+names every field beside its value. On a category whose answer has no fields at all,
+nothing is shown.
+
+Because this line takes room from the card, a prompt on a category with many fields may
+be set one step smaller than it would otherwise be.
+
 **Second tap.** The card now shows the **Solution** and any **Remarks**, with a
 **Prompt** / **Solution** switch above them and three rating buttons underneath:
 
@@ -121,6 +134,16 @@ same direction only. These match the desktop's own live readouts for the same de
 direction; the phone's Statistics screen always shows the combined figure, since it has
 no direction view of its own, so it only matches exactly when you practise **Both**
 directions.
+
+Between those deck-wide figures and the card sits the unit's own line: **Unit x/y**, then
+**This unit** — the attempts recorded against *this* unit in the direction being asked,
+as a fraction and a percentage, exactly as the desktop shows it. Do not confuse the two:
+**Accuracy** is the whole deck, **This unit** is the card in front of you. A unit you
+have never been asked reads **0/0 (0%)**, so "new to me" is never a blank. The figure
+comes from the deck's saved statistics rather than from the run you are in, so it
+survives leaving the session and closing the app — and it updates the moment you rate the
+card. In a **Both** directions session it changes when the same unit comes round the
+other way, because each direction keeps its own record.
 
 When a Drill or Once-through session runs out of cards, the app says so and offers
 **Extend session** to keep going.

@@ -106,6 +106,20 @@ die volle Breite, und eine Schaltfläche, **Antwort zeigen**. Eine kurze und ein
 Frage lassen die Karte gleich aussehen; eine Frage, die nicht auf die Karte passt,
 schrumpft zunächst und lässt sich dann scrollen, sodass nichts abgeschnitten wird.
 
+Über der Frage sagt eine Zeile, woraus die Antwort besteht: die **Kategorie** der
+Einheit, danach ein kleines abgerundetes Feld je Feld, das die Antwort erwartet. Bei
+einer einfachen Kategorie ist das ein einziges Kästchen; bei einer Verb-Kategorie können
+es drei sein, sodass Sie Infinitiv, Partizip *und* Hilfsverb vorbereiten, statt beim
+ersten aufzuhören. Jeder Feldname steht in einem eigenen Kästchen, damit ein Name mit
+einem Leerzeichen als ein Feld und nicht als zwei gelesen wird. Die Liste beschreibt die
+Richtung, die Sie gerade üben, und Felder, die der Autor der Lern-Datei ausgeblendet hat,
+fehlen darin. Sobald Sie die Lösung anzeigen, verschwindet sie — dann benennt die Lösung
+selbst jedes Feld neben seinem Wert. Bei einer Kategorie, deren Antwort gar keine Felder
+hat, wird nichts angezeigt.
+
+Da diese Zeile der Karte Platz wegnimmt, kann eine Frage bei einer Kategorie mit vielen
+Feldern eine Stufe kleiner gesetzt sein, als sie es sonst wäre.
+
 **Zweites Antippen.** Die Karte zeigt nun die **Lösung** und etwaige **Bemerkungen**, mit
 einem Umschalter **Frage** / **Lösung** darüber und drei Bewertungsschaltflächen
 darunter:
@@ -134,6 +148,18 @@ Diese Zahlen stimmen mit den Live-Anzeigen des Desktops für dieselbe Datei und 
 überein; die Statistik des Telefons zeigt immer die kombinierte Zahl, da sie keine eigene
 Richtungsansicht hat, und stimmt deshalb nur genau überein, wenn Sie **Beide** Richtungen
 üben.
+
+Zwischen diesen Zahlen zur ganzen Lern-Datei und der Karte steht die Zeile zur Einheit
+selbst: **Einheit x/y**, dann **Diese Einheit** — die Versuche, die für *diese* Einheit
+in der gefragten Richtung aufgezeichnet sind, als Bruch und als Prozentzahl, genau wie
+der Desktop sie zeigt. Verwechseln Sie die beiden nicht: **Korrekt** meint die ganze
+Lern-Datei, **Diese Einheit** die Karte vor Ihnen. Eine noch nie gefragte Einheit zeigt
+**0/0 (0%)**, damit "noch nie geübt" nie eine Lücke ist. Die Zahl stammt aus der
+gespeicherten Statistik der Lern-Datei und nicht aus dem laufenden Durchgang, übersteht
+also das Verlassen der Sitzung und das Schließen der App — und sie ändert sich in dem
+Moment, in dem Sie die Karte bewerten. In einer Sitzung über **Beide** Richtungen ändert
+sie sich, wenn dieselbe Einheit andersherum drankommt, denn jede Richtung führt ihre
+eigene Aufzeichnung.
 
 Gehen einer Drill-Sitzung oder einem Durchgang die Karten aus, sagt die App das und
 bietet **Sitzung erweitern** an, um weiterzumachen.

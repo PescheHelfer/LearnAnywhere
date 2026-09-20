@@ -347,6 +347,298 @@ void main() {
   );
 
   testWidgets(
+    'the unit line carries the counter and this unit\'s own accuracy',
+    (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final LearningDeck deck = _deck();
+      final List<UnitStats> recorded = <UnitStats>[
+        UnitStats(
+          index: 1,
+          direction1: const DirectionStats(attempts: 3, correct: 2),
+          // The other direction of the same unit is a different figure, and
+          // must not leak into a direction-1 session's readout.
+          direction2: const DirectionStats(attempts: 9, correct: 0),
+        ),
+      ];
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck(
+          'mobile_sample.vok',
+          deck,
+          statistics: withUnitHashes(deck, recorded),
+        );
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('mobile_sample'));
+      await tester.pumpAndSettle();
+      // Direction 1 ("Forward") is the first-run default. Endless mode, so
+      // rating the deck's only unit serves it again instead of ending the
+      // session — which is how the figure below can be read twice.
+      expect(find.text('Forward'), findsOneWidget);
+      await tester.tap(find.text('Drill mode'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Endless mode').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // One line, joined exactly as the desktop joins it: the counter, then
+      // this unit's working record in the served direction.
+      expect(find.text('Unit 1/1 - This unit: 2/3 (67%)'), findsOneWidget);
+      // The deck-wide chip stays distinguishable: same deck, different label
+      // and a different population (both directions are recorded).
+      expect(find.text('Accuracy: 2/3 (67%)'), findsOneWidget);
+
+      await tester.tap(find.text('Show answer'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Knew it'));
+      await tester.pumpAndSettle();
+
+      // Rating updates it at once, because it is read back from the working
+      // record rather than held in a per-sitting counter.
+      expect(find.text('Unit 1/1 - This unit: 3/4 (75%)'), findsOneWidget);
+    },
+  );
+
+  testWidgets('a never-attempted unit reads as a zero, not a blank', (
+    WidgetTester tester,
+  ) async {
+    await _setPhoneSurface(tester);
+    final _FakeMobileFileService fileService = _FakeMobileFileService()
+      ..seedDeck('mobile_sample.vok', _deck(), statistics: const <UnitStats>[]);
+
+    await tester.pumpWidget(
+      LearnAnywhereMobileApp(
+        prefs: await _fakePrefs(),
+        fileService: fileService,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('mobile_sample'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start session'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unit 1/1 - This unit: 0/0 (0%)'), findsOneWidget);
+  });
+
+  testWidgets(
+    'the prompt names its category and the fields the answer is made of',
+    (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck('mobile_sample.vok', _deck(), statistics: const <UnitStats>[]);
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('mobile_sample'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // Direction 1: the answer is the one answer-role field, named beside
+      // the category so the two read as one statement about this card.
+      expect(find.text('Solution - Words:'), findsOneWidget);
+      expect(_previewLists(tester), <String>['Answer field']);
+      // Neither the question side nor the remark is something to recall —
+      // "Prompt field" is on screen once, as the prompt card's own label.
+      expect(find.text('Prompt field'), findsOneWidget);
+      expect(find.text('Remark field'), findsNothing);
+
+      // Gone on the solution stage, which already names every answer field
+      // beside its value.
+      await tester.tap(find.text('Show answer'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('learnAnswerPreview')), findsNothing);
+      expect(find.text('Solution - Words:'), findsNothing);
+      expect(find.text('Answer field'), findsOneWidget); // the solution's own
+    },
+  );
+
+  testWidgets(
+    'the listed fields follow the direction and leave hidden fields out',
+    (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final LearningDeck deck = LearningDeck(
+        mask: const LearningMask(
+          maskId: 'm_new_verbs-fixture',
+          name: 'Verbs',
+          direction1Label: 'Forward',
+          direction2Label: 'Backward',
+          categories: <CategoryDefinition>[
+            CategoryDefinition(
+              id: 1,
+              name: 'Strong verbs',
+              fields: <FieldDefinition>[
+                FieldDefinition(
+                  id: 0,
+                  name: 'German',
+                  length: 40,
+                  equalGroup: 0,
+                  role1: FieldRole.question,
+                  role2: FieldRole.answer,
+                ),
+                FieldDefinition(
+                  id: 1,
+                  name: 'Partizip Perfekt',
+                  length: 40,
+                  equalGroup: 0,
+                  role1: FieldRole.answer,
+                  role2: FieldRole.question,
+                ),
+                FieldDefinition(
+                  id: 2,
+                  name: 'Hilfsverb',
+                  length: 40,
+                  equalGroup: 0,
+                  role1: FieldRole.answer,
+                  role2: FieldRole.remark,
+                ),
+                // Hidden: an unnamed field the deck author suppressed. It
+                // holds the answer role in direction 1 and must still be left
+                // out of what the learner is asked to recall.
+                FieldDefinition(
+                  id: 3,
+                  name: '',
+                  length: 40,
+                  equalGroup: 0,
+                  role1: FieldRole.answer,
+                  role2: FieldRole.answer,
+                ),
+              ],
+            ),
+          ],
+        ),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{
+              0: PlainFieldValue('gehen'),
+              1: PlainFieldValue('gegangen'),
+              2: PlainFieldValue('sein'),
+              3: PlainFieldValue('suppressed'),
+            },
+          ),
+        ],
+      );
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck('verbs.vok', deck, statistics: const <UnitStats>[]);
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('verbs'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // Direction 1 expects two things, each its own element — a field name
+      // with a space in it must not read as two fields — and the hidden one
+      // is absent rather than present as an empty element.
+      expect(find.text('Solution - Strong verbs:'), findsOneWidget);
+      expect(_previewLists(tester), <String>['Partizip Perfekt', 'Hilfsverb']);
+
+      // Direction 2 asks the other way round, so the listed fields are that
+      // direction's answers.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Forward'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Backward').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      expect(_previewLists(tester), <String>['German']);
+    },
+  );
+
+  testWidgets('a category with no answer fields renders no empty heading', (
+    WidgetTester tester,
+  ) async {
+    await _setPhoneSurface(tester);
+    final LearningDeck deck = LearningDeck(
+      mask: const LearningMask(
+        maskId: 'm_new_noanswer-fixture',
+        name: 'Reading',
+        direction1Label: 'Forward',
+        direction2Label: 'Backward',
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 1,
+            name: 'Passages',
+            fields: <FieldDefinition>[
+              FieldDefinition(
+                id: 0,
+                name: 'Passage',
+                length: 40,
+                equalGroup: 0,
+                role1: FieldRole.question,
+                role2: FieldRole.question,
+              ),
+              FieldDefinition(
+                id: 1,
+                name: 'Note',
+                length: 40,
+                equalGroup: 0,
+                role1: FieldRole.remark,
+                role2: FieldRole.remark,
+              ),
+            ],
+          ),
+        ],
+      ),
+      units: const <LearningUnit>[
+        LearningUnit(
+          categoryId: 1,
+          fields: <int, FieldValue>{
+            0: PlainFieldValue('a passage'),
+            1: PlainFieldValue('a note'),
+          },
+        ),
+      ],
+    );
+    final _FakeMobileFileService fileService = _FakeMobileFileService()
+      ..seedDeck('reading.vok', deck, statistics: const <UnitStats>[]);
+
+    await tester.pumpWidget(
+      LearnAnywhereMobileApp(
+        prefs: await _fakePrefs(),
+        fileService: fileService,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('reading'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start session'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('learnAnswerPreview')), findsNothing);
+    expect(find.text('Solution - Passages:'), findsNothing);
+    expect(find.textContaining('Unit 1/1'), findsOneWidget);
+  });
+
+  testWidgets(
     'the accuracy chip is a deck total that matches the statistics screen',
     (WidgetTester tester) async {
       await _setPhoneSurface(tester);
@@ -1177,6 +1469,25 @@ Future<MobilePrefs> _fakePrefs() async {
 /// controller rather than the rendered value.
 String _textOf(WidgetTester tester, Finder finder) {
   return tester.widget<TextField>(finder).controller!.text;
+}
+
+/// The field names the prompt's answer preview lists, in order.
+///
+/// Scoped to the preview itself: the prompt card below it labels its own
+/// question field, so a bare text finder could not tell a listed field from
+/// that label. The first text in the preview is the category heading, which
+/// every caller asserts separately.
+List<String> _previewLists(WidgetTester tester) {
+  return tester
+      .widgetList<Text>(
+        find.descendant(
+          of: find.byKey(const Key('learnAnswerPreview')),
+          matching: find.byType(Text),
+        ),
+      )
+      .skip(1)
+      .map((Text text) => text.data!)
+      .toList();
 }
 
 bool _hasAnyRichText(WidgetTester tester, List<String> values) {

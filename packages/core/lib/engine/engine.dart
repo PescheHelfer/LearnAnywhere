@@ -1700,6 +1700,41 @@ DirectionStats statsForDirectionView(
   };
 }
 
+/// Returns the counters recorded against unit [unitIndex] in [direction].
+///
+/// Defensive by design: a unit with no entry in [statistics] answers with
+/// zeroed counters rather than throwing. The list is only normalised
+/// ([resizeUnitStats]) when a deck is opened or an attempt recorded, so a
+/// session can legitimately serve a unit that has never been written down.
+///
+/// Looked up by [UnitStats.index], not by list position, so an unsorted or
+/// partial list still answers correctly.
+DirectionStats unitDirectionStats({
+  required List<UnitStats> statistics,
+  required int unitIndex,
+  required QueryDirection direction,
+}) {
+  for (final UnitStats stats in statistics) {
+    if (stats.index == unitIndex) {
+      return stats.statsFor(direction);
+    }
+  }
+  return const DirectionStats();
+}
+
+/// Returns [stats] as a whole-number percentage, zero when nothing was asked.
+///
+/// The one place the readout rounding rule lives, so the two shells cannot
+/// drift apart on what a percentage means: `correct / attempts`, scaled and
+/// rounded half away from zero, with no attempts reading as a definite `0`
+/// rather than a blank or a division error.
+int accuracyPercent(DirectionStats stats) {
+  if (stats.attempts == 0) {
+    return 0;
+  }
+  return ((stats.correct / stats.attempts) * 100).round();
+}
+
 // --- Live readout scope -----------------------------------------------------
 //
 // The rule the live readouts follow: attempts, accuracy, what is mastered, what

@@ -3181,6 +3181,99 @@ void main() {
     });
   });
 
+  group('per-unit accuracy readout', () {
+    test('a recorded unit answers with the counters for that direction', () {
+      final List<UnitStats> statistics = <UnitStats>[
+        UnitStats(
+          index: 1,
+          direction1: const DirectionStats(attempts: 4, correct: 3),
+          direction2: const DirectionStats(attempts: 2, correct: 0),
+        ),
+      ];
+
+      expect(
+        unitDirectionStats(
+          statistics: statistics,
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+        ),
+        const DirectionStats(attempts: 4, correct: 3),
+      );
+      // The other direction of the same unit is a different figure — that is
+      // parity with the desktop, not a defect.
+      expect(
+        unitDirectionStats(
+          statistics: statistics,
+          unitIndex: 1,
+          direction: QueryDirection.direction2,
+        ),
+        const DirectionStats(attempts: 2, correct: 0),
+      );
+    });
+
+    test('a unit with no entry yields zeroed counters rather than throwing', () {
+      // The statistics list is not normalised until the first attempt is
+      // recorded, so a session can serve a unit that has no entry at all.
+      expect(
+        unitDirectionStats(
+          statistics: const <UnitStats>[],
+          unitIndex: 7,
+          direction: QueryDirection.direction1,
+        ),
+        const DirectionStats(),
+      );
+      expect(
+        unitDirectionStats(
+          statistics: <UnitStats>[
+            UnitStats(
+              index: 2,
+              direction1: const DirectionStats(attempts: 1, correct: 1),
+            ),
+          ],
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+        ),
+        const DirectionStats(),
+      );
+    });
+
+    test('an unsorted list is looked up by index, not by position', () {
+      final List<UnitStats> statistics = <UnitStats>[
+        UnitStats(
+          index: 3,
+          direction1: const DirectionStats(attempts: 3, correct: 1),
+        ),
+        UnitStats(
+          index: 1,
+          direction1: const DirectionStats(attempts: 1, correct: 1),
+        ),
+      ];
+
+      expect(
+        unitDirectionStats(
+          statistics: statistics,
+          unitIndex: 3,
+          direction: QueryDirection.direction1,
+        ),
+        const DirectionStats(attempts: 3, correct: 1),
+      );
+    });
+
+    test('zero attempts is a definite zero, not a division error', () {
+      expect(accuracyPercent(const DirectionStats()), 0);
+      expect(accuracyPercent(const DirectionStats(attempts: 0, correct: 0)), 0);
+    });
+
+    test('the percentage rounds half away from zero, as desktop rounds', () {
+      expect(accuracyPercent(const DirectionStats(attempts: 3, correct: 2)), 67);
+      expect(accuracyPercent(const DirectionStats(attempts: 3, correct: 1)), 33);
+      expect(accuracyPercent(const DirectionStats(attempts: 2, correct: 1)), 50);
+      expect(accuracyPercent(const DirectionStats(attempts: 8, correct: 7)), 88);
+      expect(accuracyPercent(const DirectionStats(attempts: 1, correct: 1)), 100);
+      expect(accuracyPercent(const DirectionStats(attempts: 4, correct: 0)), 0);
+    });
+  });
+
   group('live readout scope', () {
     test('the deck-wide scope drops the unit range and keeps everything else', () {
       const SessionParameters restricted = SessionParameters(

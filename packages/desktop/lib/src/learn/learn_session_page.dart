@@ -2006,16 +2006,13 @@ final class _SessionView extends StatelessWidget {
   /// segment (e.g. "This unit: 3/4 (75%)"). Always numeric, including
   /// `0/0 (0%)` before the unit has been attempted in this scope.
   String _unitAccuracyLabel(LearnAnywhereLocalizations messages) {
-    final UnitStats unitStats = statistics.firstWhere(
-      (UnitStats s) => s.index == item.unitIndex,
-      orElse: () => UnitStats(index: item.unitIndex),
+    final DirectionStats stats = unitDirectionStats(
+      statistics: statistics,
+      unitIndex: item.unitIndex,
+      direction: item.direction,
     );
-    final DirectionStats stats = unitStats.statsFor(item.direction);
-    final int pct = stats.attempts == 0
-        ? 0
-        : ((stats.correct / stats.attempts) * 100).round();
     return '${messages.message(LearnAnywhereMessage.learnUnitAccuracy)}: '
-        '${stats.correct}/${stats.attempts} ($pct%)';
+        '${stats.correct}/${stats.attempts} (${accuracyPercent(stats)}%)';
   }
 
   /// The rich-text runs of [value] (a plain value becomes a single run), used as

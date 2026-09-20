@@ -508,6 +508,10 @@ final class _PromptView extends StatelessWidget {
       item: item,
       child: Column(
         children: <Widget>[
+          // Above the flexible region, not inside the card: the context costs
+          // the card ordinary layout height, so the card's own shrink-to-fit
+          // budget stays exactly as it was.
+          _AnswerPreview(deck: document.deck, item: item),
           Expanded(
             child: _QuestionPanel(
               document: document,
@@ -530,6 +534,92 @@ final class _PromptView extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// What this card's answer is made of, shown before the learner commits to
+/// one: the unit's category, then one element per field the answer expects.
+///
+/// Prompt stage only. Once the solution is up it disappears, because the
+/// solution itself already names every answer field beside its value.
+///
+/// The fields are the category's answer-role fields **in the direction being
+/// served**, so the hint always describes the question in front of the
+/// learner; that accessor already drops hidden fields, so nothing here filters
+/// them again. A category with no answer fields renders nothing rather than a
+/// heading over an empty row.
+final class _AnswerPreview extends StatelessWidget {
+  const _AnswerPreview({required this.deck, required this.item});
+
+  final LearningDeck deck;
+  final SessionItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final CategoryDefinition category = deck.categoryForUnit(
+      deck.units[item.unitIndex - 1],
+    );
+    final List<FieldDefinition> expected = category.fieldsForRole(
+      item.direction,
+      FieldRole.answer,
+    );
+    if (expected.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    return Padding(
+      // Keyed so a test can ask what the *preview* lists: the prompt card
+      // below labels its own question field, so a bare text finder cannot
+      // tell a chip from that label.
+      key: const Key('learnAnswerPreview'),
+      padding: const EdgeInsets.fromLTRB(
+        LearnAnywhereTokens.gapMedium,
+        LearnAnywhereTokens.gapSmall,
+        LearnAnywhereTokens.gapMedium,
+        0,
+      ),
+      child: Wrap(
+        spacing: LearnAnywhereTokens.gapSmall,
+        runSpacing: LearnAnywhereTokens.gapSmall,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: <Widget>[
+          Text(
+            '${messages.message(LearnAnywhereMessage.learnSolution)} - '
+            '${category.name}:',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          // One rounded element per field, never a text separator: a field
+          // named "Partizip Perfekt" must not read as two fields.
+          for (final FieldDefinition field in expected)
+            _ExpectedFieldChip(name: field.name),
+        ],
+      ),
+    );
+  }
+}
+
+final class _ExpectedFieldChip extends StatelessWidget {
+  const _ExpectedFieldChip({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: LearnAnywhereTokens.smallRadius,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: LearnAnywhereTokens.gapSmall,
+          vertical: 2,
+        ),
+        child: Text(name, style: Theme.of(context).textTheme.labelMedium),
       ),
     );
   }
@@ -802,14 +892,17 @@ final class _UnitScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LearningUnit unit = document.deck.units[item.unitIndex - 1];
-    final String header = _learnUnitHeader(
-      LearnAnywhereLocalizations.of(context),
-      item.unitIndex,
-      document.deck.units.length,
-      document.deck.categoryForUnit(unit).name,
-      _directionLabel(document.deck, item.direction),
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
     );
+    // Built by joining parts, exactly as the desktop builds it. The shared
+    // learnUnitHeader template carries the index and total and nothing else,
+    // so a substitution for anything more would render literal placeholder
+    // text on the desktop.
+    final String header = <String>[
+      _learnUnitHeader(messages, item.unitIndex, document.deck.units.length),
+      _unitAccuracyLabel(messages, document.statistics, item),
+    ].join(' - ');
     return Column(
       children: <Widget>[
         Padding(
@@ -819,10 +912,14 @@ final class _UnitScaffold extends StatelessWidget {
             LearnAnywhereTokens.gapMedium,
             0,
           ),
-          child: Text(
-            header,
-            style: Theme.of(context).textTheme.labelLarge,
-            textAlign: TextAlign.center,
+          child: SizedBox(
+            width: double.infinity,
+            child: Text(
+              header,
+              style: Theme.of(context).textTheme.labelLarge,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         Expanded(child: child),
@@ -1007,25 +1104,35 @@ final class _FieldGroup extends StatelessWidget {
   }
 }
 
-String _directionLabel(LearningDeck deck, QueryDirection direction) {
-  return switch (direction) {
-    QueryDirection.direction1 => deck.mask.direction1Label,
-    QueryDirection.direction2 => deck.mask.direction2Label,
-  };
-}
-
 String _learnUnitHeader(
   LearnAnywhereLocalizations messages,
   int index,
   int total,
-  String category,
-  String direction,
 ) {
   return messages
       .message(LearnAnywhereMessage.learnUnitHeader)
       .replaceAll('{index}', index.toString())
-      .replaceAll('{total}', total.toString())
-      .replaceAll('{category}', category)
-      .replaceAll('{direction}', direction);
+      .replaceAll('{total}', total.toString());
+}
+
+/// This unit's own accuracy in the direction being served, as a fraction and
+/// a whole-number percentage.
+///
+/// The **working record** — the deck's `.sta` counters, which persist across
+/// sittings and app restarts — never a per-sitting tally and never the
+/// lifetime record. Read through the core helpers so the phone and the
+/// desktop cannot drift apart on the lookup or the rounding.
+String _unitAccuracyLabel(
+  LearnAnywhereLocalizations messages,
+  List<UnitStats> statistics,
+  SessionItem item,
+) {
+  final DirectionStats stats = unitDirectionStats(
+    statistics: statistics,
+    unitIndex: item.unitIndex,
+    direction: item.direction,
+  );
+  return '${messages.message(LearnAnywhereMessage.learnUnitAccuracy)}: '
+      '${stats.correct}/${stats.attempts} (${accuracyPercent(stats)}%)';
 }
 
