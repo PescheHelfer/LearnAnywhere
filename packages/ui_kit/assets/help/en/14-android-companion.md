@@ -59,6 +59,13 @@ edge of the row. Everywhere else — **Practice setup** and the learning session
 is named by its file name alone. Tapping an entry opens it; tapping the delete icon
 offers **Delete**, which removes the deck **and its statistics from this device**.
 
+**The list is ordered by when you last practised each deck, newest first**, so the deck
+you are working through is at the top and resuming takes one tap. Decks you have never
+practised come first of all — a deck you have just imported is the one you came to the
+app to open. Within either group, decks are ordered by name, so the list does not
+reshuffle between two visits when nothing has changed. There is nothing to configure and
+no dates are shown: the order itself is the information.
+
 **Importing a deck you already have replaces it and keeps its statistics.** This is the
 normal way to update a deck you have edited on the computer: export it again, import it
 again, and your accuracy figures survive. The app matches your old statistics to the new

@@ -188,6 +188,36 @@ void main() {
     },
   );
 
+  test('listDecks orders by the session file\'s modification time', () async {
+    // Proves the service feeds real modification times into the shared
+    // function; the ordering rules themselves are exercised exhaustively and
+    // without a file system in library_entries_test.dart.
+    for (final String name in <String>['older', 'newer', 'untouched']) {
+      File(
+        '${library.path}/$name.vok',
+      ).writeAsStringSync(encodeDeckJson(_deck()));
+    }
+    const StatisticsFile empty = StatisticsFile(
+      deckRef: 'placeholder.vok',
+      perUnit: <UnitStats>[],
+    );
+    File('${library.path}/older.sta')
+      ..writeAsStringSync(encodeStatisticsJson(empty))
+      ..setLastModifiedSync(DateTime(2026, 1, 1));
+    File('${library.path}/newer.sta')
+      ..writeAsStringSync(encodeStatisticsJson(empty))
+      ..setLastModifiedSync(DateTime(2026, 9, 1));
+
+    final List<LibraryDeckEntry> entries = await service.listDecks();
+
+    expect(entries.map((LibraryDeckEntry e) => e.name).toList(), <String>[
+      // No session file at all: never practised, so it leads.
+      'untouched',
+      'newer',
+      'older',
+    ]);
+  });
+
   test('deleteDeck removes both the deck and its sidecar', () async {
     File(
       '${library.path}/sample.vok',

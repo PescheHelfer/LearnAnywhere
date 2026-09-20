@@ -61,31 +61,78 @@ final class LibraryDeckEntry {
   final int unitCount;
 }
 
-/// Turns loaded decks, keyed by their library path, into the ordered list
-/// the library screen shows: one entry per deck, titled by its file's base
-/// name, sorted case-insensitively by that name.
+/// One deck of the library as it stands before it is named and ordered: its
+/// path, the deck read from it, and when it was last practised.
+final class LibraryDeckSource {
+  /// Creates a library deck source.
+  const LibraryDeckSource({
+    required this.path,
+    required this.deck,
+    this.lastPractised,
+  });
+
+  /// Path to the deck's `.vok` file in the library.
+  final String path;
+
+  /// The deck read from that file.
+  final LearningDeck deck;
+
+  /// When this deck was last practised, or `null` when it never was.
+  ///
+  /// Derived from the deck's session file rather than stored — see
+  /// `docs/adr/0001-library-recency-from-the-session-file.md`. It orders the
+  /// listing and is deliberately not carried onto [LibraryDeckEntry]: nothing
+  /// renders a date, so nothing needs to hold one.
+  final DateTime? lastPractised;
+}
+
+/// Turns loaded decks into the ordered list the library screen shows: one
+/// entry per deck, titled by its file's base name, **most recently practised
+/// first**, with decks never practised ahead of all of them.
+///
+/// A deck the learner has never practised is the one they most likely came to
+/// the app for — freshly imported, above all — so it leads rather than sinking
+/// beneath everything with a history. Within either group, and whenever two
+/// decks were last practised at the same moment, the deck name breaks the tie
+/// case-insensitively, so two visits that changed nothing list the same order.
 ///
 /// Pure — no file-system access — so both [MobileFileService.listDecks] and
 /// its widget-test fake can share this one rule instead of each keeping
-/// their own copy of the naming and sort logic.
-List<LibraryDeckEntry> libraryDeckEntries(
-  Iterable<MapEntry<String, LearningDeck>> decks,
-) {
-  final List<LibraryDeckEntry> entries = decks
+/// their own copy of the naming and ordering logic.
+List<LibraryDeckEntry> libraryDeckEntries(Iterable<LibraryDeckSource> decks) {
+  final List<LibraryDeckSource> ordered = decks.toList()
+    ..sort(_byLastPractisedThenName);
+  return ordered
       .map(
-        (MapEntry<String, LearningDeck> entry) => LibraryDeckEntry(
-          path: entry.key,
-          name: DeckPaths.baseName(entry.key),
-          maskName: entry.value.mask.name,
-          unitCount: entry.value.units.length,
+        (LibraryDeckSource source) => LibraryDeckEntry(
+          path: source.path,
+          name: DeckPaths.baseName(source.path),
+          maskName: source.deck.mask.name,
+          unitCount: source.deck.units.length,
         ),
       )
       .toList();
-  entries.sort(
-    (LibraryDeckEntry a, LibraryDeckEntry b) =>
-        a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-  );
-  return entries;
+}
+
+int _byLastPractisedThenName(LibraryDeckSource a, LibraryDeckSource b) {
+  final DateTime? practisedA = a.lastPractised;
+  final DateTime? practisedB = b.lastPractised;
+  if (practisedA == null && practisedB != null) {
+    return -1;
+  }
+  if (practisedA != null && practisedB == null) {
+    return 1;
+  }
+  if (practisedA != null && practisedB != null) {
+    // Newest first: b against a, not a against b.
+    final int byRecency = practisedB.compareTo(practisedA);
+    if (byRecency != 0) {
+      return byRecency;
+    }
+  }
+  return DeckPaths.baseName(
+    a.path,
+  ).toLowerCase().compareTo(DeckPaths.baseName(b.path).toLowerCase());
 }
 
 /// Handles the on-device deck library: import, open, delete, and statistics
@@ -127,26 +174,47 @@ class MobileFileService {
     return Directory(p.join(documents.path, 'library'));
   }
 
-  /// Lists the decks currently in the library, sorted by name.
+  /// Lists the decks currently in the library, most recently practised first.
+  ///
+  /// "Last practised" is the modification time of the deck's session file.
+  /// Saving statistics rewrites that sidecar on every rated card, so its
+  /// timestamp already is the answer — no timestamp is stored anywhere for
+  /// this, and a deck with no session file has never been practised. See
+  /// `docs/adr/0001-library-recency-from-the-session-file.md`.
   ///
   /// A file that fails to decode is skipped rather than surfaced as an
   /// error: one damaged deck should not make the whole library unusable.
   Future<List<LibraryDeckEntry>> listDecks() async {
     final Directory dir = await libraryDirectory();
-    final List<MapEntry<String, LearningDeck>> decks =
-        <MapEntry<String, LearningDeck>>[];
+    final List<LibraryDeckSource> decks = <LibraryDeckSource>[];
     for (final FileSystemEntity entity in dir.listSync()) {
       if (entity is! File || !DeckPaths.hasExtension(entity.path, deckExtension)) {
         continue;
       }
       try {
         final LearningDeck deck = decodeDeckJson(await entity.readAsString());
-        decks.add(MapEntry<String, LearningDeck>(entity.path, deck));
+        decks.add(
+          LibraryDeckSource(
+            path: entity.path,
+            deck: deck,
+            lastPractised: await _lastPractised(entity.path),
+          ),
+        );
       } on Object {
         continue;
       }
     }
     return libraryDeckEntries(decks);
+  }
+
+  /// When the deck at [deckPath] was last practised, or `null` when its
+  /// session file does not exist because it never has been.
+  Future<DateTime?> _lastPractised(String deckPath) async {
+    final File sidecar = File(statisticsSidecarPath(deckPath));
+    if (!await sidecar.exists()) {
+      return null;
+    }
+    return sidecar.lastModified();
   }
 
   /// Opens the deck at [path] in the library, loading its `.sta` sidecar

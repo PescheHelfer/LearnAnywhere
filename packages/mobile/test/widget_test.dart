@@ -1559,6 +1559,10 @@ LearningDeck _deck({List<LearningUnit> extraUnits = const <LearningUnit>[]}) {
 final class _FakeMobileFileService extends MobileFileService {
   final Map<String, LearningDeck> _decks = <String, LearningDeck>{};
   final Map<String, List<UnitStats>> _statistics = <String, List<UnitStats>>{};
+  // Stands in for the session file's modification time, which is what the
+  // real service reads. A deck with no entry here has no session file, i.e.
+  // has never been practised.
+  final Map<String, DateTime> _lastPractised = <String, DateTime>{};
   LearnAnywhereSettings _settings = const LearnAnywhereSettings();
 
   /// Files the next [importDecks] call "picks", keyed by library file name.
@@ -1569,10 +1573,14 @@ final class _FakeMobileFileService extends MobileFileService {
     String path,
     LearningDeck deck, {
     List<UnitStats>? statistics,
+    DateTime? lastPractised,
   }) {
     _decks[path] = deck;
     if (statistics != null) {
       _statistics[path] = statistics;
+    }
+    if (lastPractised != null) {
+      _lastPractised[path] = lastPractised;
     }
   }
 
@@ -1587,7 +1595,14 @@ final class _FakeMobileFileService extends MobileFileService {
 
   @override
   Future<List<LibraryDeckEntry>> listDecks() async {
-    return libraryDeckEntries(_decks.entries);
+    return libraryDeckEntries(<LibraryDeckSource>[
+      for (final MapEntry<String, LearningDeck> deck in _decks.entries)
+        LibraryDeckSource(
+          path: deck.key,
+          deck: deck.value,
+          lastPractised: _lastPractised[deck.key],
+        ),
+    ]);
   }
 
   @override
@@ -1620,6 +1635,7 @@ final class _FakeMobileFileService extends MobileFileService {
   Future<void> deleteDeck(String path) async {
     _decks.remove(path);
     _statistics.remove(path);
+    _lastPractised.remove(path);
   }
 
   @override
@@ -1628,6 +1644,10 @@ final class _FakeMobileFileService extends MobileFileService {
     List<UnitStats> statistics,
   ) async {
     _statistics[document.deckPath] = withUnitHashes(document.deck, statistics);
+    // The real service rewrites the session file here, which is what makes
+    // its modification time "last practised"; stamping it the same way keeps
+    // the fake honest about the Library's order after a rated card.
+    _lastPractised[document.deckPath] = DateTime.now();
   }
 
   @override

@@ -36,6 +36,8 @@ counter moves.
 | [`docs/adr/0004-flutter-tts-first-linux-mute.md`](docs/adr/0004-flutter-tts-first-linux-mute.md) | Why the simpler speech engine ships first, and why Linux ships mute. |
 | [`packages/desktop/CONTEXT.md`](packages/desktop/CONTEXT.md) | Desktop shell vocabulary — start folder, content frame, zoom level, recent decks. |
 | [`packages/mobile/CONTEXT.md`](packages/mobile/CONTEXT.md) | Android companion vocabulary — the Library, and the deck title (a file's base name, never its mask's). |
+| [`packages/mobile/docs/adr/0001-library-recency-from-the-session-file.md`](packages/mobile/docs/adr/0001-library-recency-from-the-session-file.md) | Why the Library's order is derived from the session file's modification time and no timestamp is stored. |
 
-The other contexts have no `CONTEXT.md` or `docs/adr/` yet. That is not a gap to fill
+Anything not listed above does not exist yet — `packages/ui_kit` has no `CONTEXT.md`, and
+only `packages/mobile` has a context-scoped `docs/adr/`. That is not a gap to fill
 upfront — they get written when a term or a decision actually needs pinning down.

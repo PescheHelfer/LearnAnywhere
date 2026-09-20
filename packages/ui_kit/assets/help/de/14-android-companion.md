@@ -67,6 +67,14 @@ der Lernsitzung — wird eine Lern-Datei allein mit ihrem Dateinamen benannt. Ei
 öffnet den Eintrag; das Papierkorb-Symbol bietet **Löschen** an, wodurch die Lern-Datei
 **und ihre Statistik von diesem Gerät** entfernt werden.
 
+**Die Liste ist danach geordnet, wann Sie eine Lern-Datei zuletzt geübt haben, die
+zuletzt geübte zuoberst**, damit die Datei, an der Sie gerade arbeiten, oben steht und
+das Weitermachen ein einziges Antippen kostet. Noch nie geübte Lern-Dateien stehen ganz
+oben — eine soeben importierte Datei ist die, für die Sie die App geöffnet haben.
+Innerhalb beider Gruppen wird nach Namen geordnet, sodass sich die Liste zwischen zwei
+Besuchen nicht umsortiert, wenn sich nichts geändert hat. Es gibt nichts einzustellen,
+und es werden keine Datumsangaben angezeigt: die Reihenfolge selbst ist die Information.
+
 **Importieren Sie eine Lern-Datei erneut, die es schon gibt, wird sie ersetzt und ihre
 Statistik bleibt erhalten.** Das ist der normale Weg, eine am Computer bearbeitete
 Lern-Datei nachzuziehen: erneut exportieren, erneut importieren, und Ihre Trefferquoten

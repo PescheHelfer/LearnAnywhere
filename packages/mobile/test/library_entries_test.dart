@@ -7,12 +7,12 @@ import 'package:learn_anywhere_mobile/src/mobile_file_service.dart';
 // that MobileFileService.listDecks() and the widget-test fake both defer to.
 void main() {
   test('returns an empty list for an empty library', () {
-    expect(libraryDeckEntries(const <MapEntry<String, LearningDeck>>[]), isEmpty);
+    expect(libraryDeckEntries(const <LibraryDeckSource>[]), isEmpty);
   });
 
   test('titles each entry by file base name and carries mask name/unit count', () {
-    final List<LibraryDeckEntry> entries = libraryDeckEntries(<MapEntry<String, LearningDeck>>[
-      MapEntry<String, LearningDeck>('/library/my_french.vok', _deck('French', unitCount: 2)),
+    final List<LibraryDeckEntry> entries = libraryDeckEntries(<LibraryDeckSource>[
+      _source('/library/my_french.vok', _deck('French', unitCount: 2)),
     ]);
 
     expect(entries, hasLength(1));
@@ -23,28 +23,93 @@ void main() {
   });
 
   test('keeps decks sharing one mask apart', () {
-    final List<LibraryDeckEntry> entries = libraryDeckEntries(<MapEntry<String, LearningDeck>>[
-      MapEntry<String, LearningDeck>('/library/b.vok', _deck('Verbs')),
-      MapEntry<String, LearningDeck>('/library/a.vok', _deck('Verbs')),
+    final List<LibraryDeckEntry> entries = libraryDeckEntries(<LibraryDeckSource>[
+      _source('/library/b.vok', _deck('Verbs')),
+      _source('/library/a.vok', _deck('Verbs')),
     ]);
 
     expect(entries.map((LibraryDeckEntry e) => e.name).toList(), <String>['a', 'b']);
     expect(entries.map((LibraryDeckEntry e) => e.maskName).toSet(), <String>{'Verbs'});
   });
 
-  test('sorts entries case-insensitively by file name, not mask name or input order', () {
-    final List<LibraryDeckEntry> entries = libraryDeckEntries(<MapEntry<String, LearningDeck>>[
-      MapEntry<String, LearningDeck>('/library/cherries.vok', _deck('A mask')),
-      MapEntry<String, LearningDeck>('/library/Apples.vok', _deck('Z mask')),
-      MapEntry<String, LearningDeck>('/library/bananas.vok', _deck('M mask')),
+  test('never-practised decks sort above every practised deck', () {
+    // A deck imported thirty seconds ago is the one the learner came to the
+    // app to open; burying it under twenty practised decks is the worst case
+    // on a phone.
+    final List<LibraryDeckEntry> entries = libraryDeckEntries(<LibraryDeckSource>[
+      _source('/library/worked_on.vok', _deck('A mask'), practisedAt: DateTime(2026, 9, 20)),
+      _source('/library/zebra.vok', _deck('A mask')),
+      _source('/library/older.vok', _deck('A mask'), practisedAt: DateTime(2026, 1, 1)),
+      _source('/library/apple.vok', _deck('A mask')),
     ]);
 
     expect(entries.map((LibraryDeckEntry e) => e.name).toList(), <String>[
+      // Never practised, among themselves by name.
+      'apple',
+      'zebra',
+      // Then practised, newest first.
+      'worked_on',
+      'older',
+    ]);
+  });
+
+  test('practised decks come newest first, whatever order they arrive in', () {
+    final List<LibraryDeckEntry> entries = libraryDeckEntries(<LibraryDeckSource>[
+      _source('/library/middle.vok', _deck('A mask'), practisedAt: DateTime(2026, 5, 5)),
+      _source('/library/oldest.vok', _deck('A mask'), practisedAt: DateTime(2025, 1, 1)),
+      _source('/library/newest.vok', _deck('A mask'), practisedAt: DateTime(2026, 9, 20, 14, 30)),
+    ]);
+
+    expect(entries.map((LibraryDeckEntry e) => e.name).toList(), <String>[
+      'newest',
+      'middle',
+      'oldest',
+    ]);
+  });
+
+  test('equal times tie-break on the deck name, so the order is stable', () {
+    final DateTime sameMoment = DateTime(2026, 9, 20, 9);
+    List<String> namesFrom(List<LibraryDeckSource> sources) =>
+        libraryDeckEntries(sources).map((LibraryDeckEntry e) => e.name).toList();
+
+    final List<LibraryDeckSource> sources = <LibraryDeckSource>[
+      _source('/library/cherries.vok', _deck('A mask'), practisedAt: sameMoment),
+      _source('/library/Apples.vok', _deck('Z mask'), practisedAt: sameMoment),
+      _source('/library/bananas.vok', _deck('M mask'), practisedAt: sameMoment),
+    ];
+
+    expect(namesFrom(sources), <String>['Apples', 'bananas', 'cherries']);
+    // The same set in a different arrival order gives the same list: nothing
+    // reshuffles under the learner's finger between two visits.
+    expect(namesFrom(sources.reversed.toList()), <String>[
       'Apples',
       'bananas',
       'cherries',
     ]);
   });
+
+  test('the mask name orders nothing, in either group', () {
+    final List<LibraryDeckEntry> entries = libraryDeckEntries(<LibraryDeckSource>[
+      _source('/library/b.vok', _deck('A mask'), practisedAt: DateTime(2026, 1, 1)),
+      _source('/library/a.vok', _deck('Z mask'), practisedAt: DateTime(2026, 6, 1)),
+    ]);
+
+    // By time, not by either name: the newer deck leads although its mask
+    // name sorts last and its file name would have sorted first anyway.
+    expect(entries.map((LibraryDeckEntry e) => e.name).toList(), <String>['a', 'b']);
+    expect(entries.map((LibraryDeckEntry e) => e.maskName).toList(), <String>[
+      'Z mask',
+      'A mask',
+    ]);
+  });
+}
+
+LibraryDeckSource _source(
+  String path,
+  LearningDeck deck, {
+  DateTime? practisedAt,
+}) {
+  return LibraryDeckSource(path: path, deck: deck, lastPractised: practisedAt);
 }
 
 LearningDeck _deck(String maskName, {int unitCount = 1}) {
