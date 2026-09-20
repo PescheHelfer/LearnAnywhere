@@ -1237,20 +1237,7 @@ final class _FakeMobileFileService extends MobileFileService {
 
   @override
   Future<List<LibraryDeckEntry>> listDecks() async {
-    final List<LibraryDeckEntry> entries = _decks.entries
-        .map(
-          (MapEntry<String, LearningDeck> entry) => LibraryDeckEntry(
-            path: entry.key,
-            name: entry.value.mask.name,
-            unitCount: entry.value.units.length,
-          ),
-        )
-        .toList();
-    entries.sort(
-      (LibraryDeckEntry a, LibraryDeckEntry b) =>
-          a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-    );
-    return entries;
+    return libraryDeckEntries(_decks.entries);
   }
 
   @override

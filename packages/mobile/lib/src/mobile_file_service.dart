@@ -53,6 +53,32 @@ final class LibraryDeckEntry {
   final int unitCount;
 }
 
+/// Turns loaded decks, keyed by their library path, into the ordered list
+/// the library screen shows: one entry per deck, titled by its mask name,
+/// sorted case-insensitively by that name.
+///
+/// Pure — no file-system access — so both [MobileFileService.listDecks] and
+/// its widget-test fake can share this one rule instead of each keeping
+/// their own copy of the naming and sort logic.
+List<LibraryDeckEntry> libraryDeckEntries(
+  Iterable<MapEntry<String, LearningDeck>> decks,
+) {
+  final List<LibraryDeckEntry> entries = decks
+      .map(
+        (MapEntry<String, LearningDeck> entry) => LibraryDeckEntry(
+          path: entry.key,
+          name: entry.value.mask.name,
+          unitCount: entry.value.units.length,
+        ),
+      )
+      .toList();
+  entries.sort(
+    (LibraryDeckEntry a, LibraryDeckEntry b) =>
+        a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+  );
+  return entries;
+}
+
 /// Handles the on-device deck library: import, open, delete, and statistics
 /// sidecar persistence.
 ///
@@ -98,29 +124,20 @@ class MobileFileService {
   /// error: one damaged deck should not make the whole library unusable.
   Future<List<LibraryDeckEntry>> listDecks() async {
     final Directory dir = await libraryDirectory();
-    final List<LibraryDeckEntry> entries = <LibraryDeckEntry>[];
+    final List<MapEntry<String, LearningDeck>> decks =
+        <MapEntry<String, LearningDeck>>[];
     for (final FileSystemEntity entity in dir.listSync()) {
       if (entity is! File || !DeckPaths.hasExtension(entity.path, deckExtension)) {
         continue;
       }
       try {
         final LearningDeck deck = decodeDeckJson(await entity.readAsString());
-        entries.add(
-          LibraryDeckEntry(
-            path: entity.path,
-            name: deck.mask.name,
-            unitCount: deck.units.length,
-          ),
-        );
+        decks.add(MapEntry<String, LearningDeck>(entity.path, deck));
       } on Object {
         continue;
       }
     }
-    entries.sort(
-      (LibraryDeckEntry a, LibraryDeckEntry b) =>
-          a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-    );
-    return entries;
+    return libraryDeckEntries(decks);
   }
 
   /// Opens the deck at [path] in the library, loading its `.sta` sidecar
