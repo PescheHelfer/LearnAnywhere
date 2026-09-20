@@ -209,12 +209,21 @@ class MobileFileService {
 
   /// When the deck at [deckPath] was last practised, or `null` when its
   /// session file does not exist because it never has been.
+  ///
+  /// Swallows its own I/O failures rather than letting them reach the
+  /// listing's `catch`, which exists to skip an *undecodable deck*: a sidecar
+  /// that vanishes between the two calls, or that cannot be stat-ed, must
+  /// cost the deck its place in the order and never its place in the list.
   Future<DateTime?> _lastPractised(String deckPath) async {
     final File sidecar = File(statisticsSidecarPath(deckPath));
-    if (!await sidecar.exists()) {
+    try {
+      if (!await sidecar.exists()) {
+        return null;
+      }
+      return await sidecar.lastModified();
+    } on Object {
       return null;
     }
-    return sidecar.lastModified();
   }
 
   /// Opens the deck at [path] in the library, loading its `.sta` sidecar

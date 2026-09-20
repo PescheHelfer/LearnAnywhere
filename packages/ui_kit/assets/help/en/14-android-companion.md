@@ -102,8 +102,9 @@ filling its width, and one button, **Show answer**. A short prompt and a long on
 the card the same shape; a prompt too long to fit shrinks to fit and then scrolls, so
 nothing is cut off.
 
-Above the prompt, a line says what the answer is made of: the unit's **category**,
-followed by one small rounded box per field the answer expects. On a simple category
+Above the prompt, a line says what the answer is made of. It reads **Solution** — the
+same word that heads the answer itself on the next screen — then the unit's **category**,
+then one small rounded box per field the answer expects. On a simple category
 that is a single box; on a verbs category it may be three, so you rehearse the
 infinitive, the participle *and* the auxiliary instead of stopping at the first. Each
 field name is its own box, so a name containing a space is one field and not two. The

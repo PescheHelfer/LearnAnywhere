@@ -114,8 +114,10 @@ die volle Breite, und eine Schaltfläche, **Antwort zeigen**. Eine kurze und ein
 Frage lassen die Karte gleich aussehen; eine Frage, die nicht auf die Karte passt,
 schrumpft zunächst und lässt sich dann scrollen, sodass nichts abgeschnitten wird.
 
-Über der Frage sagt eine Zeile, woraus die Antwort besteht: die **Kategorie** der
-Einheit, danach ein kleines abgerundetes Feld je Feld, das die Antwort erwartet. Bei
+Über der Frage sagt eine Zeile, woraus die Antwort besteht. Sie beginnt mit **Lösung** —
+demselben Wort, das auf dem nächsten Bildschirm über der Antwort selbst steht —, dann
+folgt die **Kategorie** der Einheit und danach ein kleines abgerundetes Feld je Feld, das
+die Antwort erwartet. Bei
 einer einfachen Kategorie ist das ein einziges Kästchen; bei einer Verb-Kategorie können
 es drei sein, sodass Sie Infinitiv, Partizip *und* Hilfsverb vorbereiten, statt beim
 ersten aufzuhören. Jeder Feldname steht in einem eigenen Kästchen, damit ein Name mit

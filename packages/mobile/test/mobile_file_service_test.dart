@@ -218,6 +218,21 @@ void main() {
     ]);
   });
 
+  test('a deck whose sidecar is not a readable file still lists', () async {
+    // The listing's catch exists to skip an undecodable *deck*. Reading the
+    // session file's timestamp must never reach it: a sidecar the service
+    // cannot stat costs the deck its place in the order, never its place in
+    // the list, or one odd file on the phone would hide a deck entirely.
+    File('${library.path}/sample.vok').writeAsStringSync(encodeDeckJson(_deck()));
+    Directory('${library.path}/sample.sta').createSync();
+
+    final List<LibraryDeckEntry> entries = await service.listDecks();
+
+    expect(entries.map((LibraryDeckEntry e) => e.name).toList(), <String>[
+      'sample',
+    ]);
+  });
+
   test('deleteDeck removes both the deck and its sidecar', () async {
     File(
       '${library.path}/sample.vok',
