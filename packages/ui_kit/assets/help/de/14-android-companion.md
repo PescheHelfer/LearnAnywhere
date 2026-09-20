@@ -59,7 +59,11 @@ Zwei Dinge sind dabei zu wissen:
   Androids Dateiauswahl übergibt der App nur einen Anzeigenamen und keinen Ordnerpfad,
   die Struktur lässt sich also nicht rekonstruieren.
 
-Jeder Eintrag zeigt den Namen der Lern-Datei und die Anzahl **Einheiten**. Ein Tippen
+Jeder Eintrag trägt den Dateinamen der Lern-Datei als Titel, ohne die Endung `.vok`.
+Darunter steht der Name der Maske, aus der die Lern-Datei erstellt wurde; Lern-Dateien
+aus derselben Maske erkennen Sie also an ihren Dateinamen. Die Anzahl der Einheiten
+steht am rechten Rand der Zeile. Überall sonst — in **Übung einrichten** und in
+der Lernsitzung — wird eine Lern-Datei allein mit ihrem Dateinamen benannt. Ein Tippen
 öffnet den Eintrag; das Papierkorb-Symbol bietet **Löschen** an, wodurch die Lern-Datei
 **und ihre Statistik von diesem Gerät** entfernt werden.
 

@@ -52,9 +52,12 @@ Two things to know about the copies:
   on the phone they are one list, identified by file name. Android's picker hands the
   app a display name and no folder path, so the structure cannot be reconstructed.
 
-Each entry shows the deck's name and its **Units** count. Tapping an entry opens it;
-tapping the delete icon offers **Delete**, which removes the deck **and its statistics
-from this device**.
+Each entry is titled by the deck's file name, without the `.vok` extension. Beneath it
+is the name of the mask the deck was built from, so decks made from the same mask are
+told apart by their file names. The number of units in the deck sits at the right-hand
+edge of the row. Everywhere else — **Practice setup** and the learning session — a deck
+is named by its file name alone. Tapping an entry opens it; tapping the delete icon
+offers **Delete**, which removes the deck **and its statistics from this device**.
 
 **Importing a deck you already have replaces it and keeps its statistics.** This is the
 normal way to update a deck you have edited on the computer: export it again, import it

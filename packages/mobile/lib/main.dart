@@ -455,17 +455,28 @@ final class _LibraryList extends StatelessWidget {
               return ListTile(
                 leading: const Icon(Icons.school_outlined),
                 title: Text(entry.name),
-                subtitle: Text(
-                  '${messages.message(LearnAnywhereMessage.mobileUnits)}: '
-                  '${entry.unitCount}',
-                ),
+                subtitle: Text(entry.maskName),
                 onTap: () => onOpen(entry),
-                trailing: IconButton(
-                  tooltip: messages.message(
-                    LearnAnywhereMessage.mobileDeleteDeck,
-                  ),
-                  onPressed: () => onDelete(entry),
-                  icon: const Icon(Icons.delete_outline),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    // Right-aligned in a fixed-width slot so counts line up as
+                    // one column down the list.
+                    SizedBox(
+                      width: 40,
+                      child: Text(
+                        '${entry.unitCount}',
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: messages.message(
+                        LearnAnywhereMessage.mobileDeleteDeck,
+                      ),
+                      onPressed: () => onDelete(entry),
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                  ],
                 ),
               );
             },

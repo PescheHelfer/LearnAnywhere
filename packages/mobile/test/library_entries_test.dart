@@ -10,22 +10,33 @@ void main() {
     expect(libraryDeckEntries(const <MapEntry<String, LearningDeck>>[]), isEmpty);
   });
 
-  test('titles each entry with the deck mask name and carries path/unit count', () {
+  test('titles each entry by file base name and carries mask name/unit count', () {
     final List<LibraryDeckEntry> entries = libraryDeckEntries(<MapEntry<String, LearningDeck>>[
-      MapEntry<String, LearningDeck>('/library/french.vok', _deck('French', unitCount: 2)),
+      MapEntry<String, LearningDeck>('/library/my_french.vok', _deck('French', unitCount: 2)),
     ]);
 
     expect(entries, hasLength(1));
-    expect(entries.single.path, '/library/french.vok');
-    expect(entries.single.name, 'French');
+    expect(entries.single.path, '/library/my_french.vok');
+    expect(entries.single.name, 'my_french');
+    expect(entries.single.maskName, 'French');
     expect(entries.single.unitCount, 2);
   });
 
-  test('sorts entries case-insensitively by mask name, not input order', () {
+  test('keeps decks sharing one mask apart', () {
     final List<LibraryDeckEntry> entries = libraryDeckEntries(<MapEntry<String, LearningDeck>>[
-      MapEntry<String, LearningDeck>('/library/c.vok', _deck('cherries')),
-      MapEntry<String, LearningDeck>('/library/a.vok', _deck('Apples')),
-      MapEntry<String, LearningDeck>('/library/b.vok', _deck('bananas')),
+      MapEntry<String, LearningDeck>('/library/b.vok', _deck('Verbs')),
+      MapEntry<String, LearningDeck>('/library/a.vok', _deck('Verbs')),
+    ]);
+
+    expect(entries.map((LibraryDeckEntry e) => e.name).toList(), <String>['a', 'b']);
+    expect(entries.map((LibraryDeckEntry e) => e.maskName).toSet(), <String>{'Verbs'});
+  });
+
+  test('sorts entries case-insensitively by file name, not mask name or input order', () {
+    final List<LibraryDeckEntry> entries = libraryDeckEntries(<MapEntry<String, LearningDeck>>[
+      MapEntry<String, LearningDeck>('/library/cherries.vok', _deck('A mask')),
+      MapEntry<String, LearningDeck>('/library/Apples.vok', _deck('Z mask')),
+      MapEntry<String, LearningDeck>('/library/bananas.vok', _deck('M mask')),
     ]);
 
     expect(entries.map((LibraryDeckEntry e) => e.name).toList(), <String>[

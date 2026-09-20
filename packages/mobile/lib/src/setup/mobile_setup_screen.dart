@@ -91,12 +91,8 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
   }
 
   Future<void> _reload() async {
-    final String? path = _document.deckPath;
-    if (path == null) {
-      return;
-    }
     final MobileDeckDocument reloaded = await widget.fileService.openDeck(
-      path,
+      _document.deckPath,
     );
     if (!mounted) {
       return;
@@ -180,7 +176,7 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
     final bool isDrill = settings.mode == SessionMode.superQuery;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_document.deck.mask.name),
+        title: Text(_document.deckTitle),
         actions: <Widget>[
           // On a host with no engine, this entry does not appear at all —
           // mirroring the desktop, where the Speech screen is unreachable

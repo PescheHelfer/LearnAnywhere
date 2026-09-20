@@ -413,7 +413,7 @@ final class _MobileSessionHeader extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  document.deck.mask.name,
+                  document.deckTitle,
                   style: Theme.of(context).textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),

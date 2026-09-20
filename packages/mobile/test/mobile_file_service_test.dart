@@ -44,7 +44,8 @@ void main() {
     expect(File('${library.path}/sample.vok').existsSync(), isTrue);
     final List<LibraryDeckEntry> entries = await service.listDecks();
     expect(entries, hasLength(1));
-    expect(entries.single.name, 'Mobile sample');
+    expect(entries.single.name, 'sample');
+    expect(entries.single.maskName, 'Mobile sample');
     expect(entries.single.unitCount, 1);
   });
 
@@ -122,7 +123,7 @@ void main() {
       expect(File('${library.path}/sample.vok').existsSync(), isTrue);
       final List<LibraryDeckEntry> entries = await service.listDecks();
       expect(entries, hasLength(1));
-      expect(entries.single.name, 'Mobile sample');
+      expect(entries.single.name, 'sample');
     },
   );
 

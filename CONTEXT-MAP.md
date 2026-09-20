@@ -35,6 +35,7 @@ counter moves.
 | [`docs/adr/0003-spoken-language-belongs-to-the-field.md`](docs/adr/0003-spoken-language-belongs-to-the-field.md) | Why a spoken language is a property of a field and never of a direction or a deck. |
 | [`docs/adr/0004-flutter-tts-first-linux-mute.md`](docs/adr/0004-flutter-tts-first-linux-mute.md) | Why the simpler speech engine ships first, and why Linux ships mute. |
 | [`packages/desktop/CONTEXT.md`](packages/desktop/CONTEXT.md) | Desktop shell vocabulary — start folder, content frame, zoom level, recent decks. |
+| [`packages/mobile/CONTEXT.md`](packages/mobile/CONTEXT.md) | Android companion vocabulary — the Library, and the deck title (a file's base name, never its mask's). |
 
 The other contexts have no `CONTEXT.md` or `docs/adr/` yet. That is not a gap to fill
 upfront — they get written when a term or a decision actually needs pinning down.

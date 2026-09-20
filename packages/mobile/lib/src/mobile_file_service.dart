@@ -12,14 +12,17 @@ final class MobileDeckDocument {
   const MobileDeckDocument({
     required this.deck,
     required this.statistics,
-    this.deckPath,
+    required this.deckPath,
   });
 
   /// Current read-only deck.
   final LearningDeck deck;
 
   /// Path to the deck's `.vok` file in the on-device library.
-  final String? deckPath;
+  final String deckPath;
+
+  /// The deck's title: its file's base name, never its mask's name.
+  String get deckTitle => DeckPaths.baseName(deckPath);
 
   /// Per-unit statistics loaded from, or saved to, the `.sta` sidecar.
   final List<UnitStats> statistics;
@@ -40,22 +43,27 @@ final class LibraryDeckEntry {
   const LibraryDeckEntry({
     required this.path,
     required this.name,
+    required this.maskName,
     required this.unitCount,
   });
 
   /// Path to the deck's `.vok` file in the library.
   final String path;
 
-  /// Deck (mask) name, shown as the entry's title.
+  /// The deck's name: its file's base name, without the extension.
   final String name;
+
+  /// Name of the mask the deck was built from, shown as the entry's subtitle.
+  /// Several decks can share one mask, so this never identifies a deck.
+  final String maskName;
 
   /// Number of units in the deck.
   final int unitCount;
 }
 
 /// Turns loaded decks, keyed by their library path, into the ordered list
-/// the library screen shows: one entry per deck, titled by its mask name,
-/// sorted case-insensitively by that name.
+/// the library screen shows: one entry per deck, titled by its file's base
+/// name, sorted case-insensitively by that name.
 ///
 /// Pure — no file-system access — so both [MobileFileService.listDecks] and
 /// its widget-test fake can share this one rule instead of each keeping
@@ -67,7 +75,8 @@ List<LibraryDeckEntry> libraryDeckEntries(
       .map(
         (MapEntry<String, LearningDeck> entry) => LibraryDeckEntry(
           path: entry.key,
-          name: entry.value.mask.name,
+          name: DeckPaths.baseName(entry.key),
+          maskName: entry.value.mask.name,
           unitCount: entry.value.units.length,
         ),
       )
@@ -260,15 +269,12 @@ class MobileFileService {
     }
   }
 
-  /// Saves [statistics] beside [document]'s deck when a path is available.
+  /// Saves [statistics] beside [document]'s deck.
   Future<void> saveStatistics(
     MobileDeckDocument document,
     List<UnitStats> statistics,
   ) async {
-    final String? deckPath = document.deckPath;
-    if (deckPath == null) {
-      return;
-    }
+    final String deckPath = document.deckPath;
     await File(statisticsSidecarPath(deckPath)).writeAsString(
       encodeStatisticsJson(
         // Store the deck's file name only (not the absolute device path), to

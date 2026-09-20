@@ -40,8 +40,47 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1 deck(s) imported.'), findsOneWidget);
+    expect(find.text('mobile_sample'), findsOneWidget);
     expect(find.text('Mobile sample'), findsOneWidget);
-    expect(find.text('Units: 1'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(ListTile), matching: find.text('1')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Units'), findsNothing);
+  });
+
+  testWidgets('decks built from one mask are told apart by file name', (
+    WidgetTester tester,
+  ) async {
+    await _setPhoneSurface(tester);
+    final _FakeMobileFileService fileService = _FakeMobileFileService()
+      ..seedDeck('verbs_a.vok', _deck(), statistics: const <UnitStats>[])
+      ..seedDeck('verbs_b.vok', _deck(), statistics: const <UnitStats>[]);
+
+    await tester.pumpWidget(
+      LearnAnywhereMobileApp(
+        prefs: await _fakePrefs(),
+        fileService: fileService,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('verbs_a'), findsOneWidget);
+    expect(find.text('verbs_b'), findsOneWidget);
+    expect(find.text('Mobile sample'), findsNWidgets(2));
+
+    await tester.tap(find.text('verbs_b'));
+    await tester.pumpAndSettle();
+
+    // Setup names the deck by its file and never by its mask.
+    expect(find.text('verbs_b'), findsOneWidget);
+    expect(find.text('Mobile sample'), findsNothing);
+
+    await tester.tap(find.text('Start session'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('verbs_b'), findsOneWidget);
+    expect(find.text('Mobile sample'), findsNothing);
   });
 
   testWidgets('deleting a deck removes it and its statistics', (
@@ -59,7 +98,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Mobile sample'), findsOneWidget);
+    expect(find.text('mobile_sample'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Delete'));
     await tester.pumpAndSettle();
@@ -118,7 +157,7 @@ void main() {
       await tester.tap(find.byTooltip('Import decks'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Units: 2'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
 
       final List<UnitStats> realigned = fileService.savedStatistics(
         'mobile_sample.vok',
@@ -160,7 +199,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
 
     expect(find.text('Practice setup'), findsOneWidget);
@@ -198,7 +237,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Forward'));
@@ -240,7 +279,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
 
     final Finder endUnit = find.widgetWithText(TextField, 'End unit');
@@ -277,7 +316,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Mobile sample'));
+      await tester.tap(find.text('mobile_sample'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Start session'));
       await tester.pumpAndSettle();
@@ -351,7 +390,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Mobile sample'));
+      await tester.tap(find.text('mobile_sample'));
       await tester.pumpAndSettle();
 
       // Both directions, so the deck total (not just direction 1) is on
@@ -417,7 +456,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Mobile sample'));
+      await tester.tap(find.text('mobile_sample'));
       await tester.pumpAndSettle();
 
       // Direction 1 ("Forward") is the first-run default. Direction 2's wrong
@@ -475,7 +514,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Mobile sample'));
+      await tester.tap(find.text('mobile_sample'));
       await tester.pumpAndSettle();
 
       // Restrict the range to unit 2 only — this narrows what is asked, not
@@ -511,7 +550,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Mobile sample'));
+      await tester.tap(find.text('mobile_sample'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Start session'));
       await tester.pumpAndSettle();
@@ -582,7 +621,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Mobile sample'));
+      await tester.tap(find.text('mobile_sample'));
       await tester.pumpAndSettle();
 
       // Deterministic order: Once through, shuffle off.
@@ -652,7 +691,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Statistics'));
     await tester.pumpAndSettle();
@@ -836,7 +875,7 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Mobile sample'));
+      await tester.tap(find.text('mobile_sample'));
       await tester.pumpAndSettle();
       // One direction only, so the pool holds exactly one item: with both
       // directions in scope, the still-unqueried second item alone would keep
@@ -876,7 +915,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
 
     // First run: Drill mode and direction 1, taken from LearnAnywhereSettings'
@@ -907,7 +946,7 @@ void main() {
     // always fell back to the hardcoded Endless default.
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
 
     expect(find.text('Once through'), findsOneWidget);
@@ -923,7 +962,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
 
     expect(find.text('Once through'), findsOneWidget);
@@ -944,7 +983,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
 
     // Drill is the default, so the threshold row is on screen at its stored
@@ -1004,7 +1043,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Start session'));
     await tester.pumpAndSettle();
@@ -1048,7 +1087,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mobile sample'));
+    await tester.tap(find.text('mobile_sample'));
     await tester.pumpAndSettle();
 
     // Direction 1 ("Forward") is the default, so each unit contributes one
@@ -1277,11 +1316,7 @@ final class _FakeMobileFileService extends MobileFileService {
     MobileDeckDocument document,
     List<UnitStats> statistics,
   ) async {
-    final String? path = document.deckPath;
-    if (path == null) {
-      return;
-    }
-    _statistics[path] = withUnitHashes(document.deck, statistics);
+    _statistics[document.deckPath] = withUnitHashes(document.deck, statistics);
   }
 
   @override
