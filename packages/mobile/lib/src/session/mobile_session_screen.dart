@@ -431,27 +431,39 @@ final class _MobileSessionHeader extends StatelessWidget {
             borderRadius: const BorderRadius.all(Radius.circular(4)),
           ),
           const SizedBox(height: LearnAnywhereTokens.gapSmall),
-          Wrap(
-            spacing: LearnAnywhereTokens.gapSmall,
-            runSpacing: LearnAnywhereTokens.gapSmall,
-            children: <Widget>[
-              _InfoChip(
-                label: messages.message(LearnAnywhereMessage.learnLiveMastered),
-                value: mastered.toString(),
-              ),
-              _InfoChip(
-                label: messages.message(
-                  LearnAnywhereMessage.learnLiveRemaining,
+          // Full width, so WrapAlignment has room to centre in: this column
+          // aligns its children to the start (the deck-title row above is
+          // deliberately two-ended), which would otherwise leave the Wrap
+          // hugging its own content on the left.
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: LearnAnywhereTokens.gapSmall,
+              runSpacing: LearnAnywhereTokens.gapSmall,
+              children: <Widget>[
+                _InfoChip(
+                  label: messages.message(
+                    LearnAnywhereMessage.learnLiveMastered,
+                  ),
+                  value: mastered.toString(),
                 ),
-                value: remaining.toString(),
-              ),
-              _InfoChip(
-                label: messages.message(LearnAnywhereMessage.learnLiveAccuracy),
-                value:
-                    '${summary.totalCorrect}/${summary.totalAttempts} '
-                    '($accuracyPct%)',
-              ),
-            ],
+                _InfoChip(
+                  label: messages.message(
+                    LearnAnywhereMessage.learnLiveRemaining,
+                  ),
+                  value: remaining.toString(),
+                ),
+                _InfoChip(
+                  label: messages.message(
+                    LearnAnywhereMessage.learnLiveAccuracy,
+                  ),
+                  value:
+                      '${summary.totalCorrect}/${summary.totalAttempts} '
+                      '($accuracyPct%)',
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -508,10 +520,11 @@ final class _PromptView extends StatelessWidget {
       item: item,
       child: Column(
         children: <Widget>[
-          // Above the flexible region, not inside the card: the context costs
-          // the card ordinary layout height, so the card's own shrink-to-fit
-          // budget stays exactly as it was.
-          _AnswerPreview(deck: document.deck, item: item),
+          // The card's context, split either side of it: which kind of entry
+          // this is, then the card, then what the answer is made of. Both
+          // sit outside the flexible region, so they cost the card ordinary
+          // layout height and its own shrink-to-fit budget is untouched.
+          _CategoryLine(deck: document.deck, item: item),
           Expanded(
             child: _QuestionPanel(
               document: document,
@@ -520,6 +533,7 @@ final class _PromptView extends StatelessWidget {
               onSpeak: onSpeak,
             ),
           ),
+          _ExpectedFieldsLine(deck: document.deck, item: item),
           Padding(
             padding: const EdgeInsets.all(LearnAnywhereTokens.gapMedium),
             child: SizedBox(
@@ -539,8 +553,53 @@ final class _PromptView extends StatelessWidget {
   }
 }
 
-/// What this card's answer is made of, shown before the learner commits to
-/// one: the unit's category, then one element per field the answer expects.
+/// Which kind of entry this card is: the unit's category, above the prompt.
+///
+/// Prompt stage only, like [_ExpectedFieldsLine]. It carries the distinction
+/// the deck's author encoded in the category — a "Synonyms" category, where
+/// the order of recalled answers does not matter, against a two-line one,
+/// where it does — which nothing else on the card states.
+///
+/// Always renders: every unit has a category, whatever its answer looks like.
+final class _CategoryLine extends StatelessWidget {
+  const _CategoryLine({required this.deck, required this.item});
+
+  final LearningDeck deck;
+  final SessionItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final CategoryDefinition category = deck.categoryForUnit(
+      deck.units[item.unitIndex - 1],
+    );
+    return Padding(
+      key: const Key('learnCategoryLine'),
+      padding: const EdgeInsets.fromLTRB(
+        LearnAnywhereTokens.gapMedium,
+        LearnAnywhereTokens.gapSmall,
+        LearnAnywhereTokens.gapMedium,
+        0,
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: Text(
+          '${messages.message(LearnAnywhereMessage.learnUnitCategory)}: '
+          '${category.name}',
+          style: Theme.of(context).textTheme.labelLarge,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
+/// What this card's answer is made of, below the prompt: one element per
+/// field the learner is expected to recall.
 ///
 /// Prompt stage only. Once the solution is up it disappears, because the
 /// solution itself already names every answer field beside its value.
@@ -549,9 +608,10 @@ final class _PromptView extends StatelessWidget {
 /// served**, so the hint always describes the question in front of the
 /// learner; that accessor already drops hidden fields, so nothing here filters
 /// them again. A category with no answer fields renders nothing rather than a
-/// heading over an empty row.
-final class _AnswerPreview extends StatelessWidget {
-  const _AnswerPreview({required this.deck, required this.item});
+/// heading over an empty row — unlike [_CategoryLine], which always has
+/// something to say.
+final class _ExpectedFieldsLine extends StatelessWidget {
+  const _ExpectedFieldsLine({required this.deck, required this.item});
 
   final LearningDeck deck;
   final SessionItem item;
@@ -572,10 +632,10 @@ final class _AnswerPreview extends StatelessWidget {
       context,
     );
     return Padding(
-      // Keyed so a test can ask what the *preview* lists: the prompt card
-      // below labels its own question field, so a bare text finder cannot
-      // tell a chip from that label.
-      key: const Key('learnAnswerPreview'),
+      // Keyed so a test can ask what this line lists: the prompt card above
+      // labels its own question field, so a bare text finder cannot tell a
+      // chip from that label.
+      key: const Key('learnExpectedFields'),
       padding: const EdgeInsets.fromLTRB(
         LearnAnywhereTokens.gapMedium,
         LearnAnywhereTokens.gapSmall,
@@ -583,13 +643,13 @@ final class _AnswerPreview extends StatelessWidget {
         0,
       ),
       child: Wrap(
+        alignment: WrapAlignment.center,
         spacing: LearnAnywhereTokens.gapSmall,
         runSpacing: LearnAnywhereTokens.gapSmall,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: <Widget>[
           Text(
-            '${messages.message(LearnAnywhereMessage.learnSolution)} - '
-            '${category.name}:',
+            '${messages.message(LearnAnywhereMessage.learnExpectedFields)}:',
             style: Theme.of(context).textTheme.labelLarge,
           ),
           // One rounded element per field, never a text separator: a field
@@ -917,6 +977,7 @@ final class _UnitScaffold extends StatelessWidget {
             child: Text(
               header,
               style: Theme.of(context).textTheme.labelLarge,
+              textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),

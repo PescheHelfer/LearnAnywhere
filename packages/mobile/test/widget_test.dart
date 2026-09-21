@@ -449,22 +449,24 @@ void main() {
       await tester.tap(find.text('Start session'));
       await tester.pumpAndSettle();
 
-      // Direction 1: the answer is the one answer-role field, named beside
-      // the category so the two read as one statement about this card.
-      expect(find.text('Solution - Words:'), findsOneWidget);
-      expect(_previewLists(tester), <String>['Answer field']);
+      // The category sits above the prompt, the expected fields below it —
+      // two separate statements, not one line carrying both.
+      expect(find.text('Category: Words'), findsOneWidget);
+      expect(find.text('Expected solution fields:'), findsOneWidget);
+      expect(_expectedFieldsListed(tester), <String>['Answer field']);
       // Neither the question side nor the remark is something to recall —
       // "Prompt field" is on screen once, as the prompt card's own label.
       expect(find.text('Prompt field'), findsOneWidget);
       expect(find.text('Remark field'), findsNothing);
 
-      // Gone on the solution stage, which already names every answer field
-      // beside its value.
+      // Both are gone on the solution stage, which already names every answer
+      // field beside its value.
       await tester.tap(find.text('Show answer'));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('learnAnswerPreview')), findsNothing);
-      expect(find.text('Solution - Words:'), findsNothing);
+      expect(find.byKey(const Key('learnCategoryLine')), findsNothing);
+      expect(find.byKey(const Key('learnExpectedFields')), findsNothing);
+      expect(find.text('Category: Words'), findsNothing);
       expect(find.text('Answer field'), findsOneWidget); // the solution's own
     },
   );
@@ -554,8 +556,11 @@ void main() {
       // Direction 1 expects two things, each its own element — a field name
       // with a space in it must not read as two fields — and the hidden one
       // is absent rather than present as an empty element.
-      expect(find.text('Solution - Strong verbs:'), findsOneWidget);
-      expect(_previewLists(tester), <String>['Partizip Perfekt', 'Hilfsverb']);
+      expect(find.text('Category: Strong verbs'), findsOneWidget);
+      expect(_expectedFieldsListed(tester), <String>[
+        'Partizip Perfekt',
+        'Hilfsverb',
+      ]);
 
       // Direction 2 asks the other way round, so the listed fields are that
       // direction's answers.
@@ -568,7 +573,7 @@ void main() {
       await tester.tap(find.text('Start session'));
       await tester.pumpAndSettle();
 
-      expect(_previewLists(tester), <String>['German']);
+      expect(_expectedFieldsListed(tester), <String>['German']);
     },
   );
 
@@ -633,8 +638,11 @@ void main() {
     await tester.tap(find.text('Start session'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('learnAnswerPreview')), findsNothing);
-    expect(find.text('Solution - Passages:'), findsNothing);
+    // Nothing to recall, so no heading over an empty row — but the card still
+    // says which kind of entry it is, because every unit has a category.
+    expect(find.byKey(const Key('learnExpectedFields')), findsNothing);
+    expect(find.text('Expected solution fields:'), findsNothing);
+    expect(find.text('Category: Passages'), findsOneWidget);
     expect(find.textContaining('Unit 1/1'), findsOneWidget);
   });
 
@@ -1471,17 +1479,17 @@ String _textOf(WidgetTester tester, Finder finder) {
   return tester.widget<TextField>(finder).controller!.text;
 }
 
-/// The field names the prompt's answer preview lists, in order.
+/// The field names the prompt's expected-fields line lists, in order.
 ///
-/// Scoped to the preview itself: the prompt card below it labels its own
-/// question field, so a bare text finder could not tell a listed field from
-/// that label. The first text in the preview is the category heading, which
-/// every caller asserts separately.
-List<String> _previewLists(WidgetTester tester) {
+/// Scoped to that line: the prompt card above it labels its own question
+/// field, so a bare text finder could not tell a listed field from that
+/// label. The first text in the line is its heading, which every caller
+/// asserts separately.
+List<String> _expectedFieldsListed(WidgetTester tester) {
   return tester
       .widgetList<Text>(
         find.descendant(
-          of: find.byKey(const Key('learnAnswerPreview')),
+          of: find.byKey(const Key('learnExpectedFields')),
           matching: find.byType(Text),
         ),
       )

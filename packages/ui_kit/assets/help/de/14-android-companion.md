@@ -114,21 +114,28 @@ die volle Breite, und eine Schaltfläche, **Antwort zeigen**. Eine kurze und ein
 Frage lassen die Karte gleich aussehen; eine Frage, die nicht auf die Karte passt,
 schrumpft zunächst und lässt sich dann scrollen, sodass nichts abgeschnitten wird.
 
-Über der Frage sagt eine Zeile, woraus die Antwort besteht. Sie beginnt mit **Lösung** —
-demselben Wort, das auf dem nächsten Bildschirm über der Antwort selbst steht —, dann
-folgt die **Kategorie** der Einheit und danach ein kleines abgerundetes Feld je Feld, das
-die Antwort erwartet. Bei
-einer einfachen Kategorie ist das ein einziges Kästchen; bei einer Verb-Kategorie können
-es drei sein, sodass Sie Infinitiv, Partizip *und* Hilfsverb vorbereiten, statt beim
-ersten aufzuhören. Jeder Feldname steht in einem eigenen Kästchen, damit ein Name mit
-einem Leerzeichen als ein Feld und nicht als zwei gelesen wird. Die Liste beschreibt die
-Richtung, die Sie gerade üben, und Felder, die der Autor der Lern-Datei ausgeblendet hat,
-fehlen darin. Sobald Sie die Lösung anzeigen, verschwindet sie — dann benennt die Lösung
-selbst jedes Feld neben seinem Wert. Bei einer Kategorie, deren Antwort gar keine Felder
-hat, wird nichts angezeigt.
+Die Karte wird von zwei Zeilen eingerahmt, die sagen, wonach sie fragt.
 
-Da diese Zeile der Karte Platz wegnimmt, kann eine Frage bei einer Kategorie mit vielen
-Feldern eine Stufe kleiner gesetzt sein, als sie es sonst wäre.
+**Darüber** benennt **Kategorie** die Kategorie der Einheit — die Art des Eintrags. So
+erkennen Sie, ob es sich um eine Kategorie handelt, die der Autor der Lern-Datei
+"Synonyme" genannt hat und bei der die Reihenfolge Ihrer Antworten keine Rolle spielt,
+oder um eine zweizeilige Kategorie, bei der sie es tut.
+
+**Darunter** listet **Erwartete Lösungsfelder:** auf, woraus die Antwort besteht, mit
+einem kleinen abgerundeten Kästchen je Feld. Bei einer einfachen Kategorie ist das ein
+einziges Kästchen; bei einer Verb-Kategorie können es drei sein, sodass Sie Infinitiv,
+Partizip *und* Hilfsverb vorbereiten, statt beim ersten aufzuhören. Jeder Feldname steht
+in einem eigenen Kästchen, damit ein Name mit einem Leerzeichen als ein Feld und nicht
+als zwei gelesen wird. Die Liste beschreibt die Richtung, die Sie gerade üben, und
+Felder, die der Autor der Lern-Datei ausgeblendet hat, fehlen darin. Bei einer Kategorie,
+deren Antwort gar keine Felder hat, entfällt die Zeile — die Kategorie über der Karte
+bleibt aber stehen.
+
+Sobald Sie die Lösung anzeigen, verschwinden beide: dann benennt die Lösung selbst jedes
+Feld neben seinem Wert.
+
+Da diese beiden Zeilen der Karte Platz wegnehmen, kann eine Frage bei einer Kategorie mit
+vielen Feldern eine Stufe kleiner gesetzt sein, als sie es sonst wäre.
 
 **Zweites Antippen.** Die Karte zeigt nun die **Lösung** und etwaige **Bemerkungen**, mit
 einem Umschalter **Frage** / **Lösung** darüber und drei Bewertungsschaltflächen

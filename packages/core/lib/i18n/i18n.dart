@@ -616,6 +616,12 @@ enum LearnAnywhereMessage {
   /// Solution section label.
   learnSolution,
 
+  /// Label naming the category of the unit on screen, above the prompt.
+  learnUnitCategory,
+
+  /// Heading over the list of fields the answer expects, below the prompt.
+  learnExpectedFields,
+
   /// Corrected-answer (diff highlighted) section label.
   learnCorrection,
 
@@ -1697,6 +1703,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnPrompt: 'Prompt',
       LearnAnywhereMessage.learnYourAnswer: 'Your answer',
       LearnAnywhereMessage.learnSolution: 'Solution',
+      LearnAnywhereMessage.learnUnitCategory: 'Category',
+      LearnAnywhereMessage.learnExpectedFields: 'Expected solution fields',
       LearnAnywhereMessage.learnCorrection: 'Correction',
       LearnAnywhereMessage.learnSwitchHint: 'Switch',
       LearnAnywhereMessage.learnRemarks: 'Remarks',
@@ -2352,6 +2360,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnPrompt: 'Frage',
       LearnAnywhereMessage.learnYourAnswer: 'Ihre Antwort',
       LearnAnywhereMessage.learnSolution: 'Lösung',
+      LearnAnywhereMessage.learnUnitCategory: 'Kategorie',
+      LearnAnywhereMessage.learnExpectedFields: 'Erwartete Lösungsfelder',
       LearnAnywhereMessage.learnCorrection: 'Korrektur',
       LearnAnywhereMessage.learnSwitchHint: 'Wechseln',
       LearnAnywhereMessage.learnRemarks: 'Bemerkungen',
