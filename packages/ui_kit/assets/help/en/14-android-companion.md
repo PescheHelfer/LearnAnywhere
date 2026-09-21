@@ -144,9 +144,10 @@ no direction view of its own, so it only matches exactly when you practise **Bot
 directions.
 
 Between those deck-wide figures and the card sits the unit's own line: **Unit x/y**, then
-**This unit** — the attempts recorded against *this* unit in the direction being asked,
-as a fraction and a percentage, exactly as the desktop shows it. Do not confuse the two:
-**Accuracy** is the whole deck, **This unit** is the card in front of you. A unit you
+**Unit accuracy** — the attempts recorded against *this* unit in the direction being
+asked, as a fraction and a percentage, exactly as the desktop shows it. Do not confuse
+the two: **Accuracy** is the whole deck, **Unit accuracy** is the card in front of you. A
+unit you
 have never been asked reads **0/0 (0%)**, so "new to me" is never a blank. The figure
 comes from the deck's saved statistics rather than from the run you are in, so it
 survives leaving the session and closing the app — and it updates the moment you rate the

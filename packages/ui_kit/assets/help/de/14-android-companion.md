@@ -160,10 +160,10 @@ Richtungsansicht hat, und stimmt deshalb nur genau überein, wenn Sie **Beide** 
 üben.
 
 Zwischen diesen Zahlen zur ganzen Lern-Datei und der Karte steht die Zeile zur Einheit
-selbst: **Einheit x/y**, dann **Diese Einheit** — die Versuche, die für *diese* Einheit
+selbst: **Einheit x/y**, dann **Einheit korrekt** — die Versuche, die für *diese* Einheit
 in der gefragten Richtung aufgezeichnet sind, als Bruch und als Prozentzahl, genau wie
 der Desktop sie zeigt. Verwechseln Sie die beiden nicht: **Korrekt** meint die ganze
-Lern-Datei, **Diese Einheit** die Karte vor Ihnen. Eine noch nie gefragte Einheit zeigt
+Lern-Datei, **Einheit korrekt** die Karte vor Ihnen. Eine noch nie gefragte Einheit zeigt
 **0/0 (0%)**, damit "noch nie geübt" nie eine Lücke ist. Die Zahl stammt aus der
 gespeicherten Statistik der Lern-Datei und nicht aus dem laufenden Durchgang, übersteht
 also das Verlassen der Sitzung und das Schließen der App — und sie ändert sich in dem

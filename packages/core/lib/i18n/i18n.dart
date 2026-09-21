@@ -426,6 +426,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.11.0.
   aboutVersion110,
 
+  /// About page version history entry for 0.11.1.
+  aboutVersion111,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1608,6 +1611,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.aboutVersion110:
           '0.11.0 – Theme-aware text colours and highlights; Correction '
           'hides formatting in fields with mistakes.',
+      LearnAnywhereMessage.aboutVersion111:
+          '0.11.1 – Session header names the per-unit figure "Unit accuracy".',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -1715,7 +1720,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveMastered: 'Mastered',
       LearnAnywhereMessage.learnLiveRemaining: 'Remaining',
       LearnAnywhereMessage.learnLiveAccuracy: 'Accuracy',
-      LearnAnywhereMessage.learnUnitAccuracy: 'This unit',
+      LearnAnywhereMessage.learnUnitAccuracy: 'Unit accuracy',
       LearnAnywhereMessage.learnSpeakField: 'Read this field aloud',
       LearnAnywhereMessage.learnSpeakNoVoice:
           'No installed voice speaks {language}. The "Speech" chapter of the '
@@ -2257,6 +2262,8 @@ final class LearnAnywhereCatalog {
           '0.11.0 – Themenabhängige Textfarben und Hervorhebungen; die '
           'Korrektur-Ansicht blendet Formatierungen in fehlerhaften Feldern '
           'aus.',
+      LearnAnywhereMessage.aboutVersion111:
+          '0.11.1 – Sitzungskopf benennt die Einheitenzahl "Einheit korrekt".',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',
@@ -2368,7 +2375,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveMastered: 'Beherrscht',
       LearnAnywhereMessage.learnLiveRemaining: 'Übrig',
       LearnAnywhereMessage.learnLiveAccuracy: 'Korrekt',
-      LearnAnywhereMessage.learnUnitAccuracy: 'Diese Einheit',
+      LearnAnywhereMessage.learnUnitAccuracy: 'Einheit korrekt',
       LearnAnywhereMessage.learnSpeakField: 'Dieses Feld vorlesen',
       LearnAnywhereMessage.learnSpeakNoVoice:
           'Keine installierte Stimme spricht {language}. Das Kapitel '

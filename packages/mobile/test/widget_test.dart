@@ -390,7 +390,7 @@ void main() {
 
       // One line, joined exactly as the desktop joins it: the counter, then
       // this unit's working record in the served direction.
-      expect(find.text('Unit 1/1 - This unit: 2/3 (67%)'), findsOneWidget);
+      expect(find.text('Unit 1/1 - Unit accuracy: 2/3 (67%)'), findsOneWidget);
       // The deck-wide chip stays distinguishable: same deck, different label
       // and a different population (both directions are recorded).
       expect(find.text('Accuracy: 2/3 (67%)'), findsOneWidget);
@@ -402,7 +402,7 @@ void main() {
 
       // Rating updates it at once, because it is read back from the working
       // record rather than held in a per-sitting counter.
-      expect(find.text('Unit 1/1 - This unit: 3/4 (75%)'), findsOneWidget);
+      expect(find.text('Unit 1/1 - Unit accuracy: 3/4 (75%)'), findsOneWidget);
     },
   );
 
@@ -426,7 +426,7 @@ void main() {
     await tester.tap(find.text('Start session'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Unit 1/1 - This unit: 0/0 (0%)'), findsOneWidget);
+    expect(find.text('Unit 1/1 - Unit accuracy: 0/0 (0%)'), findsOneWidget);
   });
 
   testWidgets(

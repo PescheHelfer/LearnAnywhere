@@ -69,14 +69,14 @@ With **automatic speech** switched on, the answer reads itself out at every reve
 right or wrong, and `F4` reads it again whenever you want it — see
 [Reading the answer automatically](15-speech.md#reading-the-answer-automatically).
 
-A live panel tracks **Attempts**, **Mastered**, **Remaining**, **Accuracy**, the current
-unit's own accuracy, and — if enabled in
-[Settings](11-settings.md#learning-options) — elapsed **Time**.
+A live panel tracks **Attempts**, **Mastered**, **Remaining**, **Accuracy**, **Unit
+accuracy** — the current unit's own figure — and, if enabled in
+[Settings](11-settings.md#learning-options), elapsed **Time**.
 
 **Attempts**, **Mastered**, **Remaining** and **Accuracy** each describe **the whole deck,
 in the direction this session asks** — not the sitting, and not the unit range. (The two
-readouts after them are deliberately narrower: the current unit's own accuracy is about
-that unit, and **Time** is this sitting's clock.) Restricting the range narrows what you
+readouts after them are deliberately narrower: **Unit accuracy** is about that one unit,
+and **Time** is this sitting's clock.) Restricting the range narrows what you
 are asked, never what is counted, so the four figures standing side by side always describe
 the same population: a session on units 5–10 of a 200-unit deck still reports **Mastered**
 and **Remaining** out of all 200. With one of the mask's two directions chosen under

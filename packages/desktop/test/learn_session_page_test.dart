@@ -360,7 +360,7 @@ void main() {
       // segment. (This harness's `statistics` prop is static, so the value
       // never changes regardless of interaction — the point here is the
       // presence and formatting of the segment, not live updates.)
-      expect(find.textContaining('This unit: 0/0 (0%)'), findsOneWidget);
+      expect(find.textContaining('Unit accuracy: 0/0 (0%)'), findsOneWidget);
 
       // Leaving mid-session (Esc) must exit immediately — no "Please
       // confirm" dialog, unlike the old confirmation prompt.
@@ -1061,7 +1061,8 @@ void main() {
       await tester.tap(find.text('Start session'));
       await tester.pumpAndSettle();
 
-      /// The header of the card on screen ("Unit 3/6 - Cat - A - This unit: …").
+      /// The header of the card on screen
+      /// ("Unit 3/6 - Cat - A - Unit accuracy: …").
       String header() => tester
           .widgetList<Text>(find.textContaining('Unit '))
           .map((Text text) => text.data ?? '')

@@ -74,14 +74,14 @@ Aufdecken selbst vor, richtig oder falsch, und `F4` liest sie erneut vor, wann i
 wollen — siehe
 [Die Antwort automatisch vorlesen](15-speech.md#die-antwort-automatisch-vorlesen).
 
-Eine Live-Anzeige verfolgt **Versuche**, **Beherrscht**, **Übrig**, **Korrekt**, die
-Trefferquote der aktuellen Einheit sowie — falls in den
-[Einstellungen](11-settings.md#lernoptionen) eingeschaltet — die verstrichene **Zeit**.
+Eine Live-Anzeige verfolgt **Versuche**, **Beherrscht**, **Übrig**, **Korrekt**, **Einheit
+korrekt** — die Zahl der aktuellen Einheit — sowie, falls in den
+[Einstellungen](11-settings.md#lernoptionen) eingeschaltet, die verstrichene **Zeit**.
 
 **Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben jeweils **die ganze
 Lern-Datei in der Richtung, in der diese Sitzung fragt** — nicht die Sitzung und nicht den
-Einheitenbereich. (Die beiden folgenden Anzeigen sind bewusst enger: die Trefferquote der
-aktuellen Einheit gilt nur dieser Einheit, und **Zeit** ist die Uhr dieser Sitzung.) Ein
+Einheitenbereich. (Die beiden folgenden Anzeigen sind bewusst enger: **Einheit korrekt**
+gilt nur dieser einen Einheit, und **Zeit** ist die Uhr dieser Sitzung.) Ein
 eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das, was gezählt wird; die
 vier nebeneinanderstehenden Zahlen beschreiben also immer dieselbe Menge: eine Sitzung über
 die Einheiten 5–10 einer Datei mit 200 Einheiten weist **Beherrscht** und **Übrig**

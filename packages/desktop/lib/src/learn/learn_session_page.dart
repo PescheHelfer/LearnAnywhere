@@ -2003,7 +2003,7 @@ final class _SessionView extends StatelessWidget {
   bool get _isLevelLearning => parameters.mode == SessionMode.levelLearning;
 
   /// The current unit's own accuracy for the active direction, as a header
-  /// segment (e.g. "This unit: 3/4 (75%)"). Always numeric, including
+  /// segment (e.g. "Unit accuracy: 3/4 (75%)"). Always numeric, including
   /// `0/0 (0%)` before the unit has been attempted in this scope.
   String _unitAccuracyLabel(LearnAnywhereLocalizations messages) {
     final DirectionStats stats = unitDirectionStats(
