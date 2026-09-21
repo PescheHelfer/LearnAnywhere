@@ -114,21 +114,21 @@ die volle Breite, und eine Schaltfläche, **Antwort zeigen**. Eine kurze und ein
 Frage lassen die Karte gleich aussehen; eine Frage, die nicht auf die Karte passt,
 schrumpft zunächst und lässt sich dann scrollen, sodass nichts abgeschnitten wird.
 
-Die Karte wird von zwei Zeilen eingerahmt, die sagen, wonach sie fragt.
+Direkt unter der Karte, an ihrer Unterkante, sagen zwei Zeilen, wonach sie fragt.
 
-**Darüber** benennt **Kategorie** die Kategorie der Einheit — die Art des Eintrags. So
+**Kategorie** benennt die Kategorie der Einheit — die Art des Eintrags. So
 erkennen Sie, ob es sich um eine Kategorie handelt, die der Autor der Lern-Datei
 "Synonyme" genannt hat und bei der die Reihenfolge Ihrer Antworten keine Rolle spielt,
 oder um eine zweizeilige Kategorie, bei der sie es tut.
 
-**Darunter** listet **Erwartete Lösungsfelder:** auf, woraus die Antwort besteht, mit
+**Erwartete Lösungsfelder:** listet auf, woraus die Antwort besteht, mit
 einem kleinen abgerundeten Kästchen je Feld. Bei einer einfachen Kategorie ist das ein
 einziges Kästchen; bei einer Verb-Kategorie können es drei sein, sodass Sie Infinitiv,
 Partizip *und* Hilfsverb vorbereiten, statt beim ersten aufzuhören. Jeder Feldname steht
 in einem eigenen Kästchen, damit ein Name mit einem Leerzeichen als ein Feld und nicht
 als zwei gelesen wird. Die Liste beschreibt die Richtung, die Sie gerade üben, und
 Felder, die der Autor der Lern-Datei ausgeblendet hat, fehlen darin. Bei einer Kategorie,
-deren Antwort gar keine Felder hat, entfällt die Zeile — die Kategorie über der Karte
+deren Antwort gar keine Felder hat, entfällt die Zeile — die Zeile mit der Kategorie
 bleibt aber stehen.
 
 Sobald Sie die Lösung anzeigen, verschwinden beide: dann benennt die Lösung selbst jedes
@@ -155,11 +155,14 @@ eigener Schritt zum Weiterblättern entfällt. Das entspricht dem Desktop, wo Si
 Lösung anzeigen und dann eine von drei Tasten drücken. Die nächste Karte beginnt immer
 wieder bei der Frage, unabhängig davon, wie der Umschalter bei der vorigen Karte stand.
 
-Über der Karte beschreiben eine Fortschrittsleiste und drei Zahlen — **Beherrscht**,
-**Übrig** und **Korrekt** — **die ganze Lern-Datei in der Richtung, in der diese Sitzung
+Über der Karte beschreiben eine Fortschrittsleiste und zwei Zahlen — **Beherrscht** und
+**Korrekt** — **die ganze Lern-Datei in der Richtung, in der diese Sitzung
 fragt**, nicht den laufenden Durchgang und nicht den gewählten Einheitenbereich: ein
 eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das, was hier gezählt
-wird, sodass die Leiste beim Einschränken des Bereichs nicht springt. **Korrekt** —
+wird, sodass die Leiste beim Einschränken des Bereichs nicht springt. **Beherrscht** ist
+ein Anteil an der ganzen Lern-Datei; was übrig bleibt, ist also der Rest davon — und die
+Fortschrittsleiste darüber zeigt dasselbe als Balken. Der Desktop, der ein breiteres
+Fenster zu füllen hat, weist diesen Rest als eigene Zahl aus. **Korrekt** —
 korrekte Versuche von allen Versuchen, mit einer Prozentzahl — zählt nur diese Richtung.
 Diese Zahlen stimmen mit den Live-Anzeigen des Desktops für dieselbe Datei und Richtung
 überein; die Statistik des Telefons zeigt immer die kombinierte Zahl, da sie keine eigene

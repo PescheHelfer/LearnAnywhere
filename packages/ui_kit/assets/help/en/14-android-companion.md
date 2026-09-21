@@ -102,19 +102,19 @@ filling its width, and one button, **Show answer**. A short prompt and a long on
 the card the same shape; a prompt too long to fit shrinks to fit and then scrolls, so
 nothing is cut off.
 
-The card is framed by two lines that tell you what it is asking.
+Directly beneath the card, against its lower edge, two lines tell you what it is asking.
 
-**Above it**, **Category** names the unit's category — the kind of entry this is. That is
-how you tell a category the deck's author called "Synonyms", where the order of your
-recalled answers does not matter, from a two-line category, where it does.
+**Category** names the unit's category — the kind of entry this is. That is how you tell
+a category the deck's author called "Synonyms", where the order of your recalled answers
+does not matter, from a two-line category, where it does.
 
-**Below it**, **Expected solution fields:** lists what the answer is made of, one small
-rounded box per field. On a simple category that is a single box; on a verbs category it
-may be three, so you rehearse the infinitive, the participle *and* the auxiliary instead
-of stopping at the first. Each field name is its own box, so a name containing a space is
-one field and not two. The list describes the direction you are practising, and fields
-the deck's author hid are left out. On a category whose answer has no fields at all, the
-line is not shown — but the category above the card still is.
+**Expected solution fields:** lists what the answer is made of, one small rounded box per
+field. On a simple category that is a single box; on a verbs category it may be three, so
+you rehearse the infinitive, the participle *and* the auxiliary instead of stopping at
+the first. Each field name is its own box, so a name containing a space is one field and
+not two. The list describes the direction you are practising, and fields the deck's
+author hid are left out. On a category whose answer has no fields at all, the line is not
+shown — but the category line still is.
 
 Both disappear the moment you reveal the solution: by then the solution itself names
 every field beside its value.
@@ -139,11 +139,14 @@ there is no separate "next" step. This mirrors the desktop, where you reveal the
 and then press one of three keys. The next card always starts back on the question,
 however the switch was left on the one before.
 
-Above the card, a progress bar and three figures — **Mastered**, **Remaining** and
-**Accuracy** — describe **the whole deck, in the direction this session asks**, not the
-run you are in and not the unit range you chose: restricting the range narrows what you
-are asked, never what these count, so the bar does not jump when you narrow it.
-**Accuracy** — correct attempts out of total attempts, with a percentage — counts that
+Above the card, a progress bar and two figures — **Mastered** and **Accuracy** — describe
+**the whole deck, in the direction this session asks**, not the run you are in and not
+the unit range you chose: restricting the range narrows what you are asked, never what
+these count, so the bar does not jump when you narrow it. **Mastered** is a fraction of
+the whole deck, so how much is left is the rest of it — and the progress bar above shows
+the same thing as a bar. The desktop, which has a wider window to fill, spells that
+remainder out as a figure of its own. **Accuracy** — correct attempts out of total
+attempts, with a percentage — counts that
 same direction only. These match the desktop's own live readouts for the same deck and
 direction; the phone's Statistics screen always shows the combined figure, since it has
 no direction view of its own, so it only matches exactly when you practise **Both**

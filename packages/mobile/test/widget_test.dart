@@ -298,7 +298,10 @@ void main() {
     await tester.tap(find.text('Start session'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('/45'), findsOneWidget);
+    // The unit line still counts out of the whole 45-unit deck. Matched on
+    // the unit counter rather than a bare '/45', which the Mastered pill also
+    // carries now that it names the deck total.
+    expect(find.textContaining(RegExp(r'Unit \d+/45')), findsOneWidget);
   });
 
   testWidgets(
@@ -767,13 +770,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Accuracy: 1/1 (100%)'), findsOneWidget);
-      expect(find.text('Mastered: 1'), findsOneWidget);
-      expect(find.text('Remaining: 0'), findsOneWidget);
+      expect(find.text('Mastered: 1/1'), findsOneWidget);
     },
   );
 
   testWidgets(
-    'Mastered and Remaining are deck totals, not narrowed by the unit range',
+    'the Mastered figure is a deck total, not narrowed by the unit range',
     (WidgetTester tester) async {
       await _setPhoneSurface(tester);
       final LearningDeck deck = _deck(
@@ -828,9 +830,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Deck-wide (2 units, direction 1 only): unit 1 mastered, unit 2 not —
-      // even though the session itself only ever serves unit 2.
-      expect(find.text('Mastered: 1'), findsOneWidget);
-      expect(find.text('Remaining: 1'), findsOneWidget);
+      // even though the session itself only ever serves unit 2. The
+      // denominator is the proof: it counts the whole deck, not the range.
+      expect(find.text('Mastered: 1/2'), findsOneWidget);
       expect(find.textContaining('Unit 2/2'), findsOneWidget);
     },
   );

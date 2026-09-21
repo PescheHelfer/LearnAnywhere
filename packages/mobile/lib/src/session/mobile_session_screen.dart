@@ -442,17 +442,16 @@ final class _MobileSessionHeader extends StatelessWidget {
               spacing: LearnAnywhereTokens.gapSmall,
               runSpacing: LearnAnywhereTokens.gapSmall,
               children: <Widget>[
+                // Two pills, not three: on a phone the third pushed the row
+                // onto a second line, and shrinking the figures to buy that
+                // back would cost more than it saved. Mastered carries the
+                // total, exactly as the desktop's own drill pill does, so
+                // what is left is read off it and off the bar above.
                 _InfoChip(
                   label: messages.message(
                     LearnAnywhereMessage.learnLiveMastered,
                   ),
-                  value: mastered.toString(),
-                ),
-                _InfoChip(
-                  label: messages.message(
-                    LearnAnywhereMessage.learnLiveRemaining,
-                  ),
-                  value: remaining.toString(),
+                  value: '$mastered/$total',
                 ),
                 _InfoChip(
                   label: messages.message(
@@ -520,20 +519,37 @@ final class _PromptView extends StatelessWidget {
       item: item,
       child: Column(
         children: <Widget>[
-          // The card's context, split either side of it: which kind of entry
-          // this is, then the card, then what the answer is made of. Both
-          // sit outside the flexible region, so they cost the card ordinary
-          // layout height and its own shrink-to-fit budget is untouched.
-          _CategoryLine(deck: document.deck, item: item),
           Expanded(
-            child: _QuestionPanel(
-              document: document,
-              item: item,
-              speechPlan: speechPlan,
-              onSpeak: onSpeak,
+            child: Column(
+              children: <Widget>[
+                // Flexible, not Expanded: the card takes only the height it
+                // needs, so the two context lines sit against its bottom edge
+                // instead of stranded at the foot of the screen. The slack
+                // falls below them, and the button stays pinned by the outer
+                // Expanded.
+                //
+                // Deliberately no Spacer after the context lines — a Spacer is
+                // itself flexible, so the column would split the free space
+                // with the card and the prompt would step down a size for no
+                // reason. This column absorbs the slack after its last child
+                // instead.
+                //
+                // The card's own budget is unchanged: an inflexible child is
+                // laid out first, so the panel is still handed the region
+                // minus these two lines, exactly as when they sat outside it.
+                Flexible(
+                  child: _QuestionPanel(
+                    document: document,
+                    item: item,
+                    speechPlan: speechPlan,
+                    onSpeak: onSpeak,
+                  ),
+                ),
+                _CategoryLine(deck: document.deck, item: item),
+                _ExpectedFieldsLine(deck: document.deck, item: item),
+              ],
             ),
           ),
-          _ExpectedFieldsLine(deck: document.deck, item: item),
           Padding(
             padding: const EdgeInsets.all(LearnAnywhereTokens.gapMedium),
             child: SizedBox(
