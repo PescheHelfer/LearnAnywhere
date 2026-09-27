@@ -60,6 +60,37 @@ record's counters; nothing else does.
 **Mastery** — a unit having met the criteria that take it out of the practice pool.
 Decided from the current statistics only.
 
+## Difficult units
+
+**Difficult** — a unit the learner should drill again, whatever their statistics say
+now. A unit is difficult when it carries a manual flag, an automatic flag, or both;
+nothing else makes it difficult. It is a property of the unit and travels with the deck,
+so it outlives clearing either record. In German **schwierig**; a flag is a
+**Kennzeichnung** (*als schwierig gekennzeichnet*), never *Markierung*, which the German
+interface already uses for text highlight.
+
+**Manual flag** — the learner's own verdict that a unit is difficult. Set and removed
+only by the learner; never by the program. It is the only record of that verdict.
+
+**Automatic flag** — the program's verdict that a unit is difficult, judged from the
+unit's lifetime record alone against thresholds the learner can set, never from how the
+rest of the deck is going. It is added when a learning session ends, if the learner has
+not switched detection off, and removed only by the learner: by recomputing the
+automatic flags, or by unmarking a unit, which says "not difficult" and so removes both
+flags. It can always be derived again from the lifetime record, so losing one is not
+losing data.
+
+**Last edited** — when a deck's units last changed: a field value or a unit's category,
+or a unit added or removed. Changing a flag is not an edit, and neither is a change to
+the deck's mask.
+
+**Last learned** — when a deck was last practised, taken from its statistics files. It is
+never stored as a date of its own.
+
+Avoid "label" for either flag: in this project a label is a piece of interface text.
+Avoid "mark" as a noun for the manual flag; the learner *marks* a unit, and what that
+leaves behind is a manual flag.
+
 ## Speech
 
 **Spoken language** — the language a *field* holds, as a BCP-47 tag (`fr-FR`), stored in
