@@ -30,6 +30,77 @@ void main() {
   );
 
   testWidgets(
+    'F12 reports the current unit\'s one-based position, and the badge '
+    'follows the flag on navigation',
+    (WidgetTester tester) async {
+      LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{0: FieldValue.plain('one')},
+          ),
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{0: FieldValue.plain('two')},
+            manualDifficult: true,
+          ),
+        ],
+      );
+      final List<int> toggled = <int>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return UnitEditorPage(
+                  deck: deck,
+                  onChanged: (LearningDeck value, {int? insertedAt, int? deletedAt}) {
+                    setState(() => deck = value);
+                  },
+                  onDone: () {},
+                  onCancel: () {},
+                  onToggleDifficult: (int unitIndex) {
+                    toggled.add(unitIndex);
+                    setState(
+                      () => deck = toggleDifficultAt(deck, unitIndex),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // First unit carries no flag.
+      expect(find.text('Difficult (manual flag)'), findsNothing);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f3);
+      await tester.pumpAndSettle();
+      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await tester.pumpAndSettle();
+      expect(toggled, <int>[2]);
+      expect(find.text('Difficult (manual flag)'), findsNothing);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f2);
+      await tester.pumpAndSettle();
+      expect(find.text('Difficult (manual flag)'), findsNothing);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await tester.pumpAndSettle();
+      expect(toggled, <int>[2, 1]);
+      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'deleting the last unit leaves the empty editor focusable '
     '(Enter still opens the category chooser)',
     (WidgetTester tester) async {
@@ -57,6 +128,7 @@ void main() {
                   },
                   onDone: () {},
                   onCancel: () {},
+                  onToggleDifficult: (int _) {},
                 );
               },
             ),
@@ -117,6 +189,7 @@ void main() {
                       },
                   onDone: () {},
                   onCancel: () {},
+                  onToggleDifficult: (int _) {},
                 );
               },
             ),
@@ -201,6 +274,7 @@ void main() {
                       },
                   onDone: () {},
                   onCancel: () {},
+                  onToggleDifficult: (int _) {},
                 );
               },
             ),
@@ -288,6 +362,7 @@ void main() {
                   (LearningDeck value, {int? insertedAt, int? deletedAt}) {},
               onDone: () {},
               onCancel: () {},
+              onToggleDifficult: (int _) {},
             ),
           ),
         ),

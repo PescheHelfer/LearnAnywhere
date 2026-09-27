@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
+import '../widgets/difficult_badge.dart';
+
 /// Desktop deck/unit editor with legacy shortcut parity.
 final class UnitEditorPage extends StatefulWidget {
   /// Creates a unit editor for [deck].
@@ -13,6 +15,7 @@ final class UnitEditorPage extends StatefulWidget {
     required this.onChanged,
     required this.onDone,
     required this.onCancel,
+    required this.onToggleDifficult,
     this.initialIndex,
     this.onCurrentIndexChanged,
     super.key,
@@ -28,6 +31,14 @@ final class UnitEditorPage extends StatefulWidget {
   /// null for an in-place field edit or an append (the host keeps/pads stats).
   final void Function(LearningDeck deck, {int? insertedAt, int? deletedAt})
   onChanged;
+
+  /// Called with the current unit's 1-based position when F12 toggles its
+  /// difficulty flag.
+  ///
+  /// Unlike [onChanged], this does not mark the pending edit as content: a
+  /// flag-only save must leave the deck's last-edited date alone, so the host
+  /// applies the toggle without touching that tracking.
+  final void Function(int unitIndex) onToggleDifficult;
 
   /// Called when the user finishes editing (F10/Done), keeping changes.
   final VoidCallback onDone;
@@ -214,6 +225,7 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
         SingleActivator(LogicalKeyboardKey.f8): _InsertIntent(),
         SingleActivator(LogicalKeyboardKey.f10): _DoneIntent(),
         SingleActivator(LogicalKeyboardKey.escape): _CancelIntent(),
+        SingleActivator(LogicalKeyboardKey.f12): _ToggleDifficultIntent(),
       };
 
   int _currentIndex = 0;
@@ -311,6 +323,14 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
           _CancelIntent: CallbackAction<_CancelIntent>(
             onInvoke: (_) {
               widget.onCancel();
+              return null;
+            },
+          ),
+          _ToggleDifficultIntent: CallbackAction<_ToggleDifficultIntent>(
+            onInvoke: (_) {
+              if (widget.deck.units.isNotEmpty) {
+                widget.onToggleDifficult(_currentIndex + 1);
+              }
               return null;
             },
           ),
@@ -908,6 +928,10 @@ final class _EditorBodyState extends State<_EditorBody> {
                   ),
                 ),
                 const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                if (unit.isDifficult) ...<Widget>[
+                  DifficultBadge(unit: unit),
+                  const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                ],
                 Flexible(
                   child: Text(
                     _unitHeader(
@@ -1374,6 +1398,10 @@ final class _DoneIntent extends Intent {
 
 final class _CancelIntent extends Intent {
   const _CancelIntent();
+}
+
+final class _ToggleDifficultIntent extends Intent {
+  const _ToggleDifficultIntent();
 }
 
 final class _ChooseCategoryConfirmIntent extends Intent {

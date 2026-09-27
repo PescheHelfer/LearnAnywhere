@@ -79,6 +79,28 @@ Markierung auf den *nächsten* getippten Text — praktisch, um ein ganzes Wort 
 tippen, ohne es danach markieren zu müssen. Formatierung wird mit der Einheit gespeichert
 und bleibt erhalten, wohin auch immer die Lern-Datei geht.
 
+## Eine Einheit als schwierig kennzeichnen
+
+Die Kopfzeile zeigt, ob die aktuelle Einheit schwierig ist, mit demselben Abzeichen wie
+in einer Lernsitzung, und aktualisiert es, sobald Sie zwischen Einheiten wechseln:
+
+- **Schwierig (manuelle Kennzeichnung)** — Sie selbst.
+- **Schwierig (automatische Kennzeichnung)** — das Programm, anhand der
+  Allzeit-Statistik der Einheit.
+- **Schwierig (manuelle und automatische Kennzeichnung)** — beide.
+
+`F12` schaltet sie hier genauso um wie in einer
+[Lernsitzung](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen): Auf
+einer schwierigen Einheit hebt es beide Kennzeichnungen auf; auf einer nicht
+schwierigen setzt es Ihre manuelle Kennzeichnung.
+
+Anders als in einer Sitzung wird die Änderung nicht sofort geschrieben. Sie ist Teil der
+vorgenommenen Bearbeitung, wie ein Feldwert, bleibt also nur im Speicher, bis Sie
+speichern, und geht beim Abbrechen mit jeder anderen ungespeicherten Änderung verloren.
+Ein Speichern, dessen einzige Änderung eine Kennzeichnung ist, lässt das Datum
+**Zuletzt bearbeitet** der Lern-Datei unverändert; ein Speichern, das auch den Inhalt
+eines Feldes ändert, datiert die Lern-Datei wie gewohnt.
+
 ## Abschließen
 
 - `F10` — **Fertig**. Behält jede vorgenommene Änderung und kehrt zum Arbeitsbereich

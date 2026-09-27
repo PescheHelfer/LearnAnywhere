@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
+import '../widgets/difficult_badge.dart';
 import 'desktop_query_options.dart';
 
 /// Desktop learning session page.
@@ -2578,7 +2579,7 @@ final class _SessionView extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
                 Text(headerText, style: Theme.of(context).textTheme.titleSmall),
-                if (unit.isDifficult) _DifficultBadge(unit: unit),
+                if (unit.isDifficult) DifficultBadge(unit: unit),
               ],
             ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),
@@ -3722,54 +3723,6 @@ final class _DifficultPillState extends State<_DifficultPill> {
               icon: const Icon(Icons.outlined_flag),
               label: label,
             ),
-    );
-  }
-}
-
-/// The badge on a difficult unit's header line, naming which flag it carries.
-final class _DifficultBadge extends StatelessWidget {
-  const _DifficultBadge({required this.unit});
-
-  final LearningUnit unit;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    final LearnAnywhereMessage text = switch ((
-      unit.manualDifficult,
-      unit.autoDifficult,
-    )) {
-      (true, true) => LearnAnywhereMessage.learnDifficultBadgeBoth,
-      (true, false) => LearnAnywhereMessage.learnDifficultBadgeManual,
-      _ => LearnAnywhereMessage.learnDifficultBadgeAutomatic,
-    };
-    return DecoratedBox(
-      key: const Key('learnDifficultBadge'),
-      decoration: BoxDecoration(
-        color: colors.tertiaryContainer,
-        borderRadius: LearnAnywhereTokens.smallRadius,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: LearnAnywhereTokens.gapSmall,
-          vertical: LearnAnywhereTokens.gapSmall / 2,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(Icons.flag, size: 16, color: colors.onTertiaryContainer),
-            const SizedBox(width: LearnAnywhereTokens.gapSmall / 2),
-            Flexible(
-              child: Text(
-                LearnAnywhereLocalizations.of(context).message(text),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: colors.onTertiaryContainer,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -103,6 +103,7 @@ void main() {
                 onChanged: (LearningDeck _, {int? insertedAt, int? deletedAt}) {},
                 onDone: () {},
                 onCancel: () {},
+                onToggleDifficult: (int _) {},
               );
             },
           ),
@@ -255,6 +256,7 @@ void main() {
               onChanged: (LearningDeck _, {int? insertedAt, int? deletedAt}) {},
               onDone: () {},
               onCancel: () {},
+              onToggleDifficult: (int _) {},
             ),
           ),
         ),

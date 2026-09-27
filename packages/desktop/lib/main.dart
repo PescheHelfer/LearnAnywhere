@@ -2782,6 +2782,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onChanged: _updateDeckFromEditor,
         onDone: _finishEditor,
         onCancel: _cancelEditor,
+        onToggleDifficult: _toggleDifficultInEditor,
       ),
       _DesktopRoute.maskEditor => MaskEditorPage(
         // Edits the linked `.inf` mask, never the deck's embedded cache.
@@ -2988,6 +2989,29 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     });
   }
 
+  /// Applies the core toggle rule to the unit at the one-based [unitIndex],
+  /// in memory only. Shared by [_toggleDifficultInEditor] and
+  /// [_toggleDifficult], which differ only in whether — and when — the
+  /// result is written to disk.
+  void _applyDifficultToggle(int unitIndex) {
+    setState(() {
+      _document = _document.copyWith(
+        deck: toggleDifficultAt(_document.deck, unitIndex),
+      );
+    });
+  }
+
+  /// Toggles the difficulty of the unit at the one-based [unitIndex] in the
+  /// unit editor, in memory only.
+  ///
+  /// Unlike [_toggleDifficult], this never writes: the editor's own rule is
+  /// that nothing reaches disk until the next save (F10/Done keeps the
+  /// change in memory; Esc/Cancel can still discard it). It also leaves
+  /// [DesktopDocument.unitsEdited] as it found it, so a save whose only
+  /// change is this flag does not date the deck, while one that also has a
+  /// pending field edit still does.
+  void _toggleDifficultInEditor(int unitIndex) => _applyDifficultToggle(unitIndex);
+
   // Flag writes from a session are serialized through this chain, so two F12
   // presses in quick succession land on disk in the order they were made.
   Future<void> _difficultWriteChain = Future<void>.value();
@@ -3004,11 +3028,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// A deck that has never been saved has no file yet: its flags ride along
   /// with the first save.
   void _toggleDifficult(int unitIndex) {
-    setState(() {
-      _document = _document.copyWith(
-        deck: toggleDifficultAt(_document.deck, unitIndex),
-      );
-    });
+    _applyDifficultToggle(unitIndex);
     _difficultWriteChain = _difficultWriteChain.then((_) async {
       // Read when the write runs, not when it was queued: a later toggle
       // already in memory goes out now rather than being overwritten by an

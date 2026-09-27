@@ -263,6 +263,111 @@ void main() {
       expect(find.text('Check'), findsOneWidget);
     });
   });
+
+  testWidgets('F12 in the unit editor writes nothing until the editor '
+      'saves, and a flag-only save leaves the last-edited date unchanged', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'editor.vok');
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(_deck().copyWith(lastEdited: edited)),
+    );
+    await tester.runAsync(() async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final _ScriptedFilePicker picker = _ScriptedFilePicker()
+        ..nextOpenPath = deckPath;
+      await tester.pumpWidget(
+        LearnAnywhereDesktopApp(
+          prefs: prefs,
+          filePicker: picker,
+          settingsPath: p.join(temp.path, 'settings.json'),
+        ),
+      );
+      await settleAfterIo(tester);
+      await pickMenuItem(tester, 'File', 'Load deck...');
+      await pickMenuItem(tester, 'Edit', 'Unit editor');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await settle(tester);
+      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      // Nothing reaches disk from the editor on its own.
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult'), isFalse);
+
+      // Cancelling drops the flag change along with everything else pending.
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(tester);
+      expect(find.text('Please confirm'), findsOneWidget);
+      await tester.tap(find.text('Continue'));
+      await settle(tester);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult'), isFalse);
+
+      await pickMenuItem(tester, 'Edit', 'Unit editor');
+      expect(find.text('Difficult (manual flag)'), findsNothing);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await settle(tester);
+      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+
+      await tester.tap(find.text('Done'));
+      await settle(tester);
+      // Still not written: Done keeps the change in memory only.
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult'), isFalse);
+
+      await pickMenuItem(tester, 'File', 'Save deck');
+      await untilOnDisk(tester, deckPath, 'manualDifficult', present: true);
+      final LearningDeck onDisk = decodeDeckJson(
+        File(deckPath).readAsStringSync(),
+      );
+      expect(onDisk.units.single.manualDifficult, isTrue);
+      // A flag is not an edit: the stored date is the one it had.
+      expect(onDisk.lastEdited, edited);
+    });
+  });
+
+  testWidgets('a save with both a flag change and a content edit dates the '
+      'deck and keeps both', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'editor_pending.vok');
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(_deck().copyWith(lastEdited: edited)),
+    );
+    await tester.runAsync(() async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final _ScriptedFilePicker picker = _ScriptedFilePicker()
+        ..nextOpenPath = deckPath;
+      await tester.pumpWidget(
+        LearnAnywhereDesktopApp(
+          prefs: prefs,
+          filePicker: picker,
+          settingsPath: p.join(temp.path, 'settings.json'),
+        ),
+      );
+      await settleAfterIo(tester);
+      await pickMenuItem(tester, 'File', 'Load deck...');
+      await pickMenuItem(tester, 'Edit', 'Unit editor');
+
+      await tester.enterText(find.byType(TextField).first, 'home');
+      await settle(tester);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await settle(tester);
+      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      await tester.tap(find.text('Done'));
+      await settle(tester);
+
+      await pickMenuItem(tester, 'File', 'Save deck');
+      await untilOnDisk(tester, deckPath, 'manualDifficult', present: true);
+      final LearningDeck onDisk = decodeDeckJson(
+        File(deckPath).readAsStringSync(),
+      );
+      expect(onDisk.units.single.manualDifficult, isTrue);
+      expect(onDisk.units.single.valueForFieldId(0).plainText, 'home');
+      expect(onDisk.lastEdited, isNot(edited));
+      expect(onDisk.lastEdited!.instant.isAfter(edited.instant), isTrue);
+    });
+  });
 }
 
 LearningDeck _deck({bool autoDifficult = false}) {

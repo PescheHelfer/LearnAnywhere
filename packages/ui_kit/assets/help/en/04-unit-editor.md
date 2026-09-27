@@ -74,6 +74,26 @@ for the *next* text you type — useful for typing a whole word in italics witho
 it afterwards. Formatting is stored with the unit and travels with it wherever the deck
 goes.
 
+## Marking a unit difficult
+
+The header line shows whether the current unit is difficult, with the same badge a
+learning session uses, and updates it as you move between units:
+
+- **Difficult (manual flag)** — you marked it.
+- **Difficult (automatic flag)** — the program found it hard from the unit's all-time
+  statistics.
+- **Difficult (manual and automatic flag)** — both.
+
+`F12` toggles it here exactly as it does in a
+[learning session](06-learning-sessions.md#marking-a-unit-difficult): on a difficult
+unit it clears both flags; on one that is not difficult it sets your manual flag.
+
+Unlike in a session, the change is not written at once. It is part of the pending edit,
+like a field value, so it is kept only in memory until you save, and is dropped along
+with any other unsaved change if you cancel. A save whose only change is a flag leaves
+the deck's **Last edited** date as it is; a save that also changes a field's content
+dates the deck as usual.
+
 ## Finishing
 
 - `F10` — **Done**. Keeps every change you made and returns to the workspace.
