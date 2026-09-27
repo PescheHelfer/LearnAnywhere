@@ -183,4 +183,85 @@ void main() {
       expect(toggled.mask, same(deck.mask));
     });
   });
+
+  group('marking a selection', () {
+    final LocalTimestamp edited = LocalTimestamp.tryParse(
+      '2026-09-25T16:32:11+02:00',
+    )!;
+    LearningDeck deck() => LearningDeck(
+      mask: mask,
+      units: <LearningUnit>[
+        unit(),
+        unit(manual: true),
+        unit(automatic: true),
+        unit(manual: true, automatic: true),
+        unit(),
+      ],
+      lastEdited: edited,
+    );
+    List<(bool, bool)> flags(LearningDeck deck) => <(bool, bool)>[
+      for (final LearningUnit unit in deck.units)
+        (unit.manualDifficult, unit.autoDifficult),
+    ];
+
+    test('mark sets the manual flag on each selected unit and keeps any '
+        'automatic one', () {
+      final LearningDeck marked = markDifficultAt(deck(), <int>{1, 2, 3, 4});
+      expect(flags(marked), <(bool, bool)>[
+        (true, false),
+        (true, false),
+        (true, true),
+        (true, true),
+        (false, false),
+      ]);
+    });
+
+    test('unmark clears both flags on each selected unit', () {
+      final LearningDeck unmarked = unmarkDifficultAt(
+        deck(),
+        <int>{1, 2, 3, 4},
+      );
+      expect(flags(unmarked), <(bool, bool)>[
+        (false, false),
+        (false, false),
+        (false, false),
+        (false, false),
+        (false, false),
+      ]);
+    });
+
+    test('units outside the selection are untouched', () {
+      final LearningDeck marked = markDifficultAt(deck(), <int>{5});
+      expect(flags(marked), <(bool, bool)>[
+        (false, false),
+        (true, false),
+        (false, true),
+        (true, true),
+        (true, false),
+      ]);
+      final LearningDeck unmarked = unmarkDifficultAt(deck(), <int>{3});
+      expect(flags(unmarked), <(bool, bool)>[
+        (false, false),
+        (true, false),
+        (false, false),
+        (true, true),
+        (false, false),
+      ]);
+    });
+
+    test('neither is an edit: the deck keeps its last-edited date and its '
+        'unit content', () {
+      final LearningDeck before = deck();
+      for (final LearningDeck after in <LearningDeck>[
+        markDifficultAt(before, <int>{1, 5}),
+        unmarkDifficultAt(before, <int>{2, 4}),
+      ]) {
+        expect(after.lastEdited, edited);
+        expect(after.mask, same(before.mask));
+        for (var i = 0; i < before.units.length; i += 1) {
+          expect(after.units[i].fields, same(before.units[i].fields));
+        }
+      }
+    });
+  });
 }

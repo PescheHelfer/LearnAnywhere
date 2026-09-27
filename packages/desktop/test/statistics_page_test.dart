@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_desktop/src/statistics/statistics_page.dart';
@@ -102,6 +103,141 @@ void main() {
     await tester.tap(find.text('Accuracy'));
     await tester.pumpAndSettle();
     expect(_unitColumn(tester), <String>['1', '2']);
+  });
+
+  testWidgets('the unit list shows which flag makes a unit difficult, and '
+      'sorts by it', (WidgetTester tester) async {
+    widenSurface(tester);
+    await tester.pumpWidget(
+      buildPage(deck: flaggedDeck(), statistics: flaggedStatistics),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit list'));
+    await tester.pumpAndSettle();
+
+    // One indicator per flagged unit, named as the session badge names it;
+    // unit 1 carries no flag and shows none.
+    expect(find.byTooltip('Difficult (manual flag)'), findsOneWidget);
+    expect(find.byTooltip('Difficult (automatic flag)'), findsOneWidget);
+    expect(
+      find.byTooltip('Difficult (manual and automatic flag)'),
+      findsOneWidget,
+    );
+
+    // Unflagged first, then automatic, manual, both.
+    await tester.tap(find.text('Difficult'));
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['1', '3', '2', '4']);
+  });
+
+  testWidgets('Difficult only narrows the list together with the bucket chips '
+      'and Min %, and Select visible then takes only what it shows', (
+    WidgetTester tester,
+  ) async {
+    widenSurface(tester);
+    List<int> marked = <int>[];
+    List<int> unmarked = <int>[];
+    await tester.pumpWidget(
+      buildPage(
+        deck: flaggedDeck(),
+        statistics: flaggedStatistics,
+        onMarkSelectedUnits: (List<int> unitIndices) async {
+          marked = unitIndices;
+        },
+        onUnmarkSelectedUnits: (List<int> unitIndices) async {
+          unmarked = unitIndices;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit list'));
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['1', '2', '3', '4']);
+
+    await tester.tap(find.text('Difficult only'));
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['2', '3', '4']);
+
+    // Hiding the Perfect bucket drops unit 4 (both flags, 100 %).
+    await tester.tap(find.widgetWithText(FilterChip, 'Perfect'));
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['2', '3']);
+
+    // A minimum drops unit 2, which has never been practised.
+    await tester.enterText(find.widgetWithText(TextField, 'Min %'), '40');
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['3']);
+
+    await tester.tap(find.text('Select visible'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mark selected'));
+    await tester.pumpAndSettle();
+    expect(marked, <int>[3]);
+
+    // Clearing the other filters and switching the toggle off shows every
+    // unit again: off is no difficulty filter, not "not difficult".
+    await tester.enterText(find.widgetWithText(TextField, 'Min %'), '');
+    await tester.tap(find.widgetWithText(FilterChip, 'Perfect'));
+    await tester.tap(find.text('Difficult only'));
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['1', '2', '3', '4']);
+
+    // Ctrl+click is an ordinary click here: it switches the toggle on and
+    // isolates nothing, so every bucket still shows.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.tap(find.text('Difficult only'));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['2', '3', '4']);
+
+    await tester.tap(find.text('Select visible'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unmark selected'));
+    await tester.pumpAndSettle();
+    expect(unmarked, <int>[2, 3, 4]);
+  });
+
+  testWidgets('the Level x Bucket drill-down offers Difficult only and the '
+      'marking actions too', (WidgetTester tester) async {
+    widenSurface(tester);
+    List<int> marked = <int>[];
+    await tester.pumpWidget(
+      buildPage(
+        deck: flaggedDeck(),
+        levelStatistics: const <LevelUnitStats>[
+          LevelUnitStats(
+            index: 1,
+            dir1: _levelZeroPerfect,
+            dir2: _levelZeroPerfect,
+          ),
+          LevelUnitStats(
+            index: 2,
+            dir1: _levelZeroPerfect,
+            dir2: _levelZeroPerfect,
+          ),
+        ],
+        onMarkSelectedUnits: (List<int> unitIndices) async {
+          marked = unitIndices;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Level Learning'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2 (100%)').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Champion — Perfect'), findsOneWidget);
+    expect(_unitColumn(tester), <String>['1', '2']);
+
+    await tester.tap(find.text('Difficult only'));
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['2']);
+
+    await tester.tap(find.text('Select visible'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mark selected'));
+    await tester.pumpAndSettle();
+    expect(marked, <int>[2]);
   });
 
   testWidgets('the level learning drill-down omits the level-zero caption', (
@@ -328,11 +464,11 @@ void main() {
     // Unit list — the all-time attempts, per unit.
     await tester.tap(find.text('Unit list'));
     await tester.pumpAndSettle();
-    expect(_column(tester, 5), <String>['6', '4']);
+    expect(_columnNamed(tester, 'Attempts'), <String>['6', '4']);
 
     await tester.tap(find.text('Current'));
     await tester.pumpAndSettle();
-    expect(_column(tester, 5), <String>['1', '0']);
+    expect(_columnNamed(tester, 'Attempts'), <String>['1', '0']);
 
     // Level Learning — the current record has unit 1 on the Learner rung and
     // nothing at Champion; the all-time record has both units' last level at
@@ -502,14 +638,17 @@ Widget buildPage({
   List<UnitStats> allTimeStatistics = const <UnitStats>[],
   List<LevelUnitStats> allTimeLevelStatistics = const <LevelUnitStats>[],
   bool allTimeIsRefused = false,
-  SaveSelectedUnitsCallback? onSaveSelectedUnits,
+  SelectedUnitsCallback? onSaveSelectedUnits,
+  SelectedUnitsCallback? onMarkSelectedUnits,
+  SelectedUnitsCallback? onUnmarkSelectedUnits,
   Future<void> Function()? onClearAllTimeStatistics,
+  LearningDeck? deck,
 }) {
   return MaterialApp(
     localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
     supportedLocales: LearnAnywhereLocalizations.supportedLocales,
     home: StatisticsPage(
-      deck: sampleDeck(),
+      deck: deck ?? sampleDeck(),
       statistics: statistics,
       levelStatistics: levelStatistics,
       allTimeStatistics: allTimeStatistics,
@@ -523,6 +662,10 @@ Widget buildPage({
           onClearAllTimeStatistics ?? () async {},
       onSaveSelectedUnits:
           onSaveSelectedUnits ?? (List<int> unitIndices) async {},
+      onMarkSelectedUnits:
+          onMarkSelectedUnits ?? (List<int> unitIndices) async {},
+      onUnmarkSelectedUnits:
+          onUnmarkSelectedUnits ?? (List<int> unitIndices) async {},
       onSaveStatisticsAs: () async {},
       onClose: () {},
     ),
@@ -540,6 +683,17 @@ String _cellText(DataCell cell) {
 /// Read off the [DataTable] itself rather than via finders so the assertion is
 /// about row *order*, which finders do not preserve.
 List<String> _unitColumn(WidgetTester tester) => _column(tester, 1);
+
+/// The column headed [label] in the visible [DataTable], top to bottom.
+List<String> _columnNamed(WidgetTester tester, String label) {
+  final DataTable table = tester.widget<DataTable>(find.byType(DataTable));
+  final int index = table.columns.indexWhere(
+    (DataColumn column) =>
+        column.label is Text && (column.label as Text).data == label,
+  );
+  expect(index, isNonNegative, reason: 'no column headed "$label"');
+  return _column(tester, index);
+}
 
 /// Column [index] of the visible [DataTable], top to bottom.
 List<String> _column(WidgetTester tester, int index) {
@@ -561,6 +715,36 @@ String _matrixLevelHeader(WidgetTester tester) {
   final DataTable table = tester.widget<DataTable>(find.byType(DataTable));
   return (table.columns.first.label as Text).data!;
 }
+
+/// [sampleDeck]'s mask with four units: 1 unflagged, 2 manually flagged,
+/// 3 automatically flagged, 4 carrying both flags.
+LearningDeck flaggedDeck() {
+  final LearningUnit template = sampleDeck().units.first;
+  LearningUnit unit(String question, {bool manual = false, bool auto = false}) {
+    return template.copyWith(
+      fields: <int, FieldValue>{0: FieldValue.plain(question)},
+      manualDifficult: manual,
+      autoDifficult: auto,
+    );
+  }
+
+  return sampleDeck().copyWith(
+    units: <LearningUnit>[
+      unit('Q1'),
+      unit('Q2', manual: true),
+      unit('Q3', auto: true),
+      unit('Q4', manual: true, auto: true),
+    ],
+  );
+}
+
+/// [flaggedDeck]'s current record: unit 1 Perfect, unit 2 never practised,
+/// unit 3 Fair (50 %), unit 4 Perfect.
+const List<UnitStats> flaggedStatistics = <UnitStats>[
+  UnitStats(index: 1, direction1: DirectionStats(attempts: 2, correct: 2)),
+  UnitStats(index: 3, direction1: DirectionStats(attempts: 2, correct: 1)),
+  UnitStats(index: 4, direction1: DirectionStats(attempts: 2, correct: 2)),
+];
 
 LearningDeck sampleDeck() {
   return const LearningDeck(

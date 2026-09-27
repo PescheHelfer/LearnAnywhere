@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
-/// Saves selected units from the statistics page.
-typedef SaveSelectedUnitsCallback =
-    Future<void> Function(List<int> unitIndices);
+import '../widgets/difficult_badge.dart';
+
+/// Acts on the units selected in the statistics unit list, given by their
+/// one-based indices in ascending order.
+typedef SelectedUnitsCallback = Future<void> Function(List<int> unitIndices);
 
 /// Desktop statistics page with bucket tables, chart, and unit export.
 final class StatisticsPage extends StatefulWidget {
@@ -26,6 +28,8 @@ final class StatisticsPage extends StatefulWidget {
     required this.onClearStatistics,
     required this.onClearAllTimeStatistics,
     required this.onSaveSelectedUnits,
+    required this.onMarkSelectedUnits,
+    required this.onUnmarkSelectedUnits,
     required this.onClose,
     super.key,
   });
@@ -78,7 +82,14 @@ final class StatisticsPage extends StatefulWidget {
   final Future<void> Function() onClearAllTimeStatistics;
 
   /// Saves selected unit indices as a new deck.
-  final SaveSelectedUnitsCallback onSaveSelectedUnits;
+  final SelectedUnitsCallback onSaveSelectedUnits;
+
+  /// Sets the manual difficulty flag on the selected units and writes the
+  /// deck; the list shows the result once [deck] comes back changed.
+  final SelectedUnitsCallback onMarkSelectedUnits;
+
+  /// Clears both difficulty flags on the selected units and writes the deck.
+  final SelectedUnitsCallback onUnmarkSelectedUnits;
 
   /// Called when the user closes this page.
   final VoidCallback onClose;
@@ -240,6 +251,8 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       selectedUnitIndices: _selectedUnitIndices,
                       onSelectionChanged: _replaceSelection,
                       onSaveSelected: _saveSelected,
+                      onMarkSelected: _markSelected,
+                      onUnmarkSelected: _unmarkSelected,
                       showBucketColumn: true,
                       unitIndices: null,
                     ),
@@ -252,6 +265,8 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       selectedUnitIndices: _selectedUnitIndices,
                       onSelectionChanged: _replaceSelection,
                       onSaveSelected: _saveSelected,
+                      onMarkSelected: _markSelected,
+                      onUnmarkSelected: _unmarkSelected,
                     ),
                   ],
                 ),
@@ -271,9 +286,14 @@ final class _StatisticsPageState extends State<StatisticsPage> {
     });
   }
 
-  Future<void> _saveSelected() async {
-    await widget.onSaveSelectedUnits(_selectedUnitIndices.toList()..sort());
-  }
+  List<int> get _sortedSelection => _selectedUnitIndices.toList()..sort();
+
+  Future<void> _saveSelected() => widget.onSaveSelectedUnits(_sortedSelection);
+
+  Future<void> _markSelected() => widget.onMarkSelectedUnits(_sortedSelection);
+
+  Future<void> _unmarkSelected() =>
+      widget.onUnmarkSelectedUnits(_sortedSelection);
 }
 
 final class _DirectionViewMenu extends StatelessWidget {
@@ -373,6 +393,8 @@ final class _PracticeList extends StatefulWidget {
     required this.selectedUnitIndices,
     required this.onSelectionChanged,
     required this.onSaveSelected,
+    required this.onMarkSelected,
+    required this.onUnmarkSelected,
     this.showBucketColumn = true,
     this.unitIndices,
     this.levelStatsOverride,
@@ -384,6 +406,8 @@ final class _PracticeList extends StatefulWidget {
   final Set<int> selectedUnitIndices;
   final ValueChanged<Set<int>> onSelectionChanged;
   final VoidCallback onSaveSelected;
+  final VoidCallback onMarkSelected;
+  final VoidCallback onUnmarkSelected;
 
   /// Whether to show the Bucket column (hidden when the bucket is constant
   /// for all shown rows, e.g. a Level×Bucket cell). The bucket filter chips are
@@ -412,6 +436,10 @@ final class _PracticeListState extends State<_PracticeList> {
   final TextEditingController _minController = TextEditingController();
   final TextEditingController _maxController = TextEditingController();
 
+  /// Whether only difficult units (either flag) are shown. Off means no
+  /// difficulty filter at all, not "only units that are not difficult".
+  bool _difficultOnly = false;
+
   /// Column the table is sorted by, and its direction.
   _PracticeSortKey _sortKey = _PracticeSortKey.unit;
   bool _sortAscending = true;
@@ -431,6 +459,7 @@ final class _PracticeListState extends State<_PracticeList> {
   /// position here plus one.
   List<_PracticeSortKey> get _sortableKeys => <_PracticeSortKey>[
     _PracticeSortKey.unit,
+    _PracticeSortKey.difficult,
     _PracticeSortKey.question,
     _PracticeSortKey.answer,
     if (widget.showBucketColumn) _PracticeSortKey.bucket,
@@ -467,6 +496,9 @@ final class _PracticeListState extends State<_PracticeList> {
     sorted.sort((_UnitStatisticsRow a, _UnitStatisticsRow b) {
       final int result = switch (_sortKey) {
         _PracticeSortKey.unit => a.index.compareTo(b.index),
+        _PracticeSortKey.difficult => _difficultRank(
+          a.unit,
+        ).compareTo(_difficultRank(b.unit)),
         _PracticeSortKey.question => a.question.toLowerCase().compareTo(
           b.question.toLowerCase(),
         ),
@@ -489,13 +521,17 @@ final class _PracticeListState extends State<_PracticeList> {
     return sorted;
   }
 
-  /// Returns rows passing the active bucket and numeric hit-rate filters.
+  /// Returns rows passing the active bucket, difficulty and numeric
+  /// hit-rate filters, which all have to agree.
   List<_UnitStatisticsRow> _applyFilters(List<_UnitStatisticsRow> rows) {
     final double? min = _parsePercent(_minController.text);
     final double? max = _parsePercent(_maxController.text);
     final bool numericActive = min != null || max != null;
     return rows.where((_UnitStatisticsRow row) {
       if (!_visibleBuckets.contains(row.bucket)) {
+        return false;
+      }
+      if (_difficultOnly && !row.unit.isDifficult) {
         return false;
       }
       if (!numericActive) {
@@ -557,6 +593,12 @@ final class _PracticeListState extends State<_PracticeList> {
                 ),
                 DataColumn(
                   label: Text(
+                    messages.message(LearnAnywhereMessage.statisticsDifficult),
+                  ),
+                  onSort: _sortBy,
+                ),
+                DataColumn(
+                  label: Text(
                     messages.message(LearnAnywhereMessage.statisticsQuestion),
                   ),
                   onSort: _sortBy,
@@ -612,6 +654,7 @@ final class _PracticeListState extends State<_PracticeList> {
                           ),
                         ),
                         _tipCell(row.tooltip, Text(row.index.toString())),
+                        DataCell(DifficultFlagIndicator(unit: row.unit)),
                         _tipCell(row.tooltip, Text(row.question)),
                         _tipCell(row.tooltip, Text(row.answer)),
                         if (widget.showBucketColumn)
@@ -654,6 +697,22 @@ final class _PracticeListState extends State<_PracticeList> {
                 label: Text(
                   messages.message(
                     LearnAnywhereMessage.statisticsClearSelection,
+                  ),
+                ),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: widget.onMarkSelected,
+                icon: const Icon(Icons.flag),
+                label: Text(
+                  messages.message(LearnAnywhereMessage.statisticsMarkSelected),
+                ),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: widget.onUnmarkSelected,
+                icon: const Icon(Icons.outlined_flag),
+                label: Text(
+                  messages.message(
+                    LearnAnywhereMessage.statisticsUnmarkSelected,
                   ),
                 ),
               ),
@@ -715,6 +774,19 @@ final class _PracticeListState extends State<_PracticeList> {
                     });
                   },
                 ),
+            // Not a bucket: shown in every view, the Level x Bucket
+            // drill-down included, and a plain two-state toggle that
+            // Ctrl+click does nothing special to.
+            FilterChip(
+              avatar: const Icon(Icons.flag),
+              label: Text(
+                messages.message(LearnAnywhereMessage.statisticsDifficultOnly),
+              ),
+              selected: _difficultOnly,
+              onSelected: (bool selected) {
+                setState(() => _difficultOnly = selected);
+              },
+            ),
             SizedBox(
               width: LearnAnywhereZoom.scaleBox(context, 90),
               child: TextField(
@@ -768,6 +840,8 @@ final class _LevelLearningStats extends StatefulWidget {
     required this.selectedUnitIndices,
     required this.onSelectionChanged,
     required this.onSaveSelected,
+    required this.onMarkSelected,
+    required this.onUnmarkSelected,
   });
 
   final LearningDeck deck;
@@ -788,6 +862,8 @@ final class _LevelLearningStats extends StatefulWidget {
   final Set<int> selectedUnitIndices;
   final ValueChanged<Set<int>> onSelectionChanged;
   final VoidCallback onSaveSelected;
+  final VoidCallback onMarkSelected;
+  final VoidCallback onUnmarkSelected;
 
   @override
   State<_LevelLearningStats> createState() => _LevelLearningStatsState();
@@ -1018,6 +1094,8 @@ final class _LevelLearningStatsState extends State<_LevelLearningStats> {
             selectedUnitIndices: widget.selectedUnitIndices,
             onSelectionChanged: widget.onSelectionChanged,
             onSaveSelected: widget.onSaveSelected,
+            onMarkSelected: widget.onMarkSelected,
+            onUnmarkSelected: widget.onUnmarkSelected,
             showBucketColumn: false,
             unitIndices: unitIndices,
             levelStatsOverride: override,
@@ -1414,11 +1492,24 @@ final class _StatPill extends StatelessWidget {
 }
 
 /// Sortable columns of the Keep-practicing table, in display order.
-enum _PracticeSortKey { unit, question, answer, bucket, attempts, accuracy }
+enum _PracticeSortKey {
+  unit,
+  difficult,
+  question,
+  answer,
+  bucket,
+  attempts,
+  accuracy,
+}
+
+/// Sort rank of [unit]'s flags: unflagged, automatic, manual, both.
+int _difficultRank(LearningUnit unit) =>
+    (unit.manualDifficult ? 2 : 0) + (unit.autoDifficult ? 1 : 0);
 
 final class _UnitStatisticsRow {
   const _UnitStatisticsRow({
     required this.index,
+    required this.unit,
     required this.bucket,
     required this.stats,
     required this.question,
@@ -1427,6 +1518,10 @@ final class _UnitStatisticsRow {
   });
 
   final int index;
+
+  /// The deck's unit, for its difficulty flags.
+  final LearningUnit unit;
+
   final HitRateBucket bucket;
   final DirectionStats stats;
 
@@ -1464,6 +1559,7 @@ List<_UnitStatisticsRow> _rowsFor(
         : statsForDirectionView(unitStats, view);
     return _UnitStatisticsRow(
       index: index,
+      unit: unit,
       bucket: bucketFor(stats),
       stats: stats,
       question: _fieldPreview(

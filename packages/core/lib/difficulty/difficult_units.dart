@@ -25,7 +25,45 @@ LearningUnit toggleDifficult(LearningUnit unit) {
 ///
 /// Changing a flag is not an edit, so the deck keeps its last-edited date.
 LearningDeck toggleDifficultAt(LearningDeck deck, int unitIndex) {
+  return _updateUnitsAt(deck, <int>{unitIndex}, toggleDifficult);
+}
+
+/// Returns [deck] with the manual flag set on each unit at the one-based
+/// [unitIndices]: the unit list's **Mark selected**.
+///
+/// Unlike the toggle, marking a selection never clears anything — a unit the
+/// program already flagged keeps its automatic flag as well.
+LearningDeck markDifficultAt(LearningDeck deck, Set<int> unitIndices) {
+  return _updateUnitsAt(
+    deck,
+    unitIndices,
+    (LearningUnit unit) => unit.copyWith(manualDifficult: true),
+  );
+}
+
+/// Returns [deck] with both flags cleared on each unit at the one-based
+/// [unitIndices]: the unit list's **Unmark selected**, which — like the
+/// toggle — means "not difficult", whoever said it was.
+LearningDeck unmarkDifficultAt(LearningDeck deck, Set<int> unitIndices) {
+  return _updateUnitsAt(
+    deck,
+    unitIndices,
+    (LearningUnit unit) =>
+        unit.copyWith(manualDifficult: false, autoDifficult: false),
+  );
+}
+
+/// Applies [update] to the units at the one-based [unitIndices].
+///
+/// Changing a flag is not an edit, so the deck keeps its last-edited date.
+LearningDeck _updateUnitsAt(
+  LearningDeck deck,
+  Set<int> unitIndices,
+  LearningUnit Function(LearningUnit unit) update,
+) {
   final List<LearningUnit> units = deck.units.toList();
-  units[unitIndex - 1] = toggleDifficult(units[unitIndex - 1]);
+  for (final int index in unitIndices) {
+    units[index - 1] = update(units[index - 1]);
+  }
   return deck.copyWith(units: List<LearningUnit>.unmodifiable(units));
 }

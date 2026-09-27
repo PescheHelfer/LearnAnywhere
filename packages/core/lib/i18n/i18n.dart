@@ -905,6 +905,18 @@ enum LearnAnywhereMessage {
   /// Save selected units action.
   statisticsSaveSelected,
 
+  /// Header of the unit list's column showing each unit's difficulty flag.
+  statisticsDifficult,
+
+  /// Unit list filter chip: show only units carrying either difficulty flag.
+  statisticsDifficultOnly,
+
+  /// Unit list action: set the manual difficulty flag on every selected unit.
+  statisticsMarkSelected,
+
+  /// Unit list action: clear both difficulty flags on every selected unit.
+  statisticsUnmarkSelected,
+
   /// Load statistics action.
   statisticsLoad,
 
@@ -1848,6 +1860,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsSelectAll: 'Select visible',
       LearnAnywhereMessage.statisticsClearSelection: 'Clear selection',
       LearnAnywhereMessage.statisticsSaveSelected: 'Save selected units',
+      LearnAnywhereMessage.statisticsDifficult: 'Difficult',
+      LearnAnywhereMessage.statisticsDifficultOnly: 'Difficult only',
+      LearnAnywhereMessage.statisticsMarkSelected: 'Mark selected',
+      LearnAnywhereMessage.statisticsUnmarkSelected: 'Unmark selected',
       LearnAnywhereMessage.statisticsLoad: 'Load stats...',
       LearnAnywhereMessage.statisticsSave: 'Save stats',
       LearnAnywhereMessage.fileSaveStatsAs: 'Save stats as...',
@@ -2526,6 +2542,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsClearSelection: 'Auswahl leeren',
       LearnAnywhereMessage.statisticsSaveSelected:
           'Ausgewählte Einheiten speichern',
+      LearnAnywhereMessage.statisticsDifficult: 'Schwierig',
+      LearnAnywhereMessage.statisticsDifficultOnly: 'Nur schwierige',
+      LearnAnywhereMessage.statisticsMarkSelected: 'Ausgewählte kennzeichnen',
+      LearnAnywhereMessage.statisticsUnmarkSelected: 'Kennzeichnung entfernen',
       LearnAnywhereMessage.statisticsLoad: 'Statistik laden...',
       LearnAnywhereMessage.statisticsSave: 'Statistik speichern',
       LearnAnywhereMessage.fileSaveStatsAs: 'Statistik speichern unter...',

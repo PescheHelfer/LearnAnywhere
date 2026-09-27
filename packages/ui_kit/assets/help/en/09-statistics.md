@@ -114,19 +114,36 @@ of all units, and percent of practiced units.
 
 ## Unit list — finding what to practice again
 
-A sortable table of every unit: **Unit**, **Question**, **Answer**, **Attempts**,
-**Accuracy**. This is the screen to build a fresh deck out of exactly the units giving
-you trouble:
+A sortable table of every unit: **Unit**, **Difficult**, **Question**, **Answer**,
+**Attempts**, **Accuracy**. This is the screen to build a fresh deck out of exactly the
+units giving you trouble:
 
 1. Narrow the list — click a bucket chip to toggle it, `Ctrl`+click one to isolate it,
-   or set explicit **Min %** / **Max %** bounds.
+   or set explicit **Min %** / **Max %** bounds. Switch on **Difficult only** to show
+   just the difficult units; it combines with the bucket chips and the bounds, and is a
+   plain on/off switch — `Ctrl`+click does nothing special to it.
 2. **Select visible** to select everything currently shown, or click individual rows.
    **Clear selection** starts over.
 3. **Save selected units** writes them out as a brand-new `.vok` deck — your current
-   deck and its statistics are untouched; this only creates a new file.
+   deck and its statistics are untouched; this only creates a new file. Each unit keeps
+   its difficulty flags in the new deck, so **Difficult only**, **Select visible**,
+   **Save selected units** gives you a deck of your difficult units, still flagged.
 
 This works the same way in either scope, so a deck of lifetime problem units is built
 exactly like a deck of this week's.
+
+The **Difficult** column shows which units are
+[difficult](06-learning-sessions.md#marking-a-unit-difficult): a flag for your manual
+flag, a sparkle for the automatic one, and both side by side for both. Hover over it to
+read which — **Difficult (manual flag)**, **Difficult (automatic flag)** or
+**Difficult (manual and automatic flag)**.
+
+To mark units in bulk, select them and press **Mark selected**: each gets your manual
+flag, and an automatic flag it already has stays. **Unmark selected** removes both
+flags from each selected unit — "not difficult" means not difficult, as with `F12` in a
+session. The list shows the change at once and the deck file is written straight away;
+like any flag change, this is not an edit, so the deck's **Last edited** date stays as
+it was. With nothing selected, both say **No units selected.** and change nothing.
 
 A note under the table flags when the figures **include the last level from Level
 Learning** — level-0 results count toward these ordinary statistics too, so a unit
@@ -137,7 +154,8 @@ mastered there is not invisible here.
 A matrix with one row per level and one column per accuracy bucket, plus row and column
 **Total**s, showing how your practice pool is distributed across both dimensions at
 once. Click a cell to drill into the units it represents — the same unit list as above,
-scoped to that level and bucket; **Back** returns to the matrix.
+scoped to that level and bucket, with **Difficult only** and the marking buttons too;
+**Back** returns to the matrix.
 
 This tab only has data once you have practised in
 [Level learning](07-level-learning.md) mode.

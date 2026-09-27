@@ -2904,6 +2904,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onClearStatistics: _clearStatistics,
         onClearAllTimeStatistics: _clearAllTimeStatistics,
         onSaveSelectedUnits: _saveSelectedUnits,
+        onMarkSelectedUnits: (List<int> unitIndices) =>
+            _changeSelectedFlags(unitIndices, markDifficultAt),
+        onUnmarkSelectedUnits: (List<int> unitIndices) =>
+            _changeSelectedFlags(unitIndices, unmarkDifficultAt),
         onClose: () => _selectRoute(_DesktopRoute.home),
       ),
       _DesktopRoute.lexicon => LexiconPage(
@@ -3029,7 +3033,35 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// with the first save.
   void _toggleDifficult(int unitIndex) {
     _applyDifficultToggle(unitIndex);
-    _difficultWriteChain = _difficultWriteChain.then((_) async {
+    unawaited(_writeDifficultFlags());
+  }
+
+  /// Marks or unmarks the units selected in the statistics unit list — [change]
+  /// is the core's [markDifficultAt] or [unmarkDifficultAt] — and writes the
+  /// deck at once, exactly as F12 in a session does.
+  Future<void> _changeSelectedFlags(
+    List<int> unitIndices,
+    LearningDeck Function(LearningDeck deck, Set<int> unitIndices) change,
+  ) {
+    if (unitIndices.isEmpty) {
+      _showStatus(LearnAnywhereMessage.statisticsNoSelection);
+      return Future<void>.value();
+    }
+    setState(() {
+      _document = _document.copyWith(
+        deck: change(_document.deck, unitIndices.toSet()),
+      );
+    });
+    return _writeDifficultFlags();
+  }
+
+  /// Queues a write of the open deck on [_difficultWriteChain], after a flag
+  /// change already made in memory, and completes once it has run.
+  ///
+  /// See [_toggleDifficult] for what the write carries and how a failure is
+  /// reported.
+  Future<void> _writeDifficultFlags() {
+    return _difficultWriteChain = _difficultWriteChain.then((_) async {
       // Read when the write runs, not when it was queued: a later toggle
       // already in memory goes out now rather than being overwritten by an
       // older state.
