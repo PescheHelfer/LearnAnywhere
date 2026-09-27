@@ -137,7 +137,10 @@ neue Lern-Datei genau aus den Einheiten, die Ihnen Schwierigkeiten bereiten:
    schwierigen Einheiten; es wirkt zusammen mit den Bereichs-Chips und den Grenzen und
    ist ein schlichter Ein/Aus-Schalter — `Strg`+Klick bewirkt dort nichts Besonderes.
 2. **Sichtbare auswählen** wählt alles gerade Angezeigte aus, oder einzelne Zeilen
-   anklicken. **Auswahl leeren** setzt zurück.
+   anklicken. **Auswahl leeren** setzt zurück. Die Schaltflächen wirken nur auf
+   ausgewählte Einheiten, die die Liste zeigt — auch auf Zeilen, zu denen Sie erst
+   blättern müssten. Eine durch einen Filter verborgene Einheit bleibt angehakt, es
+   geschieht ihr aber nichts, bis der Filter sie wieder zeigt.
 3. **Ausgewählte Einheiten speichern** schreibt sie als brandneue `.vok`-Lern-Datei —
    die aktuelle Lern-Datei und ihre Statistik bleiben unangetastet; es entsteht nur
    eine neue Datei. Jede Einheit behält dabei ihre Kennzeichnungen; **Nur schwierige**,

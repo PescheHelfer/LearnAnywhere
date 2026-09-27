@@ -8,7 +8,8 @@ import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import '../widgets/difficult_badge.dart';
 
 /// Acts on the units selected in the statistics unit list, given by their
-/// one-based indices in ascending order.
+/// one-based indices in ascending order — only those the list shows under its
+/// current filters, never a ticked unit a filter hides.
 typedef SelectedUnitsCallback = Future<void> Function(List<int> unitIndices);
 
 /// Desktop statistics page with bucket tables, chart, and unit export.
@@ -250,9 +251,9 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       view: _view,
                       selectedUnitIndices: _selectedUnitIndices,
                       onSelectionChanged: _replaceSelection,
-                      onSaveSelected: _saveSelected,
-                      onMarkSelected: _markSelected,
-                      onUnmarkSelected: _unmarkSelected,
+                      onSaveSelected: widget.onSaveSelectedUnits,
+                      onMarkSelected: widget.onMarkSelectedUnits,
+                      onUnmarkSelected: widget.onUnmarkSelectedUnits,
                       showBucketColumn: true,
                       unitIndices: null,
                     ),
@@ -264,9 +265,9 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                       lastLevelColumn: allTime,
                       selectedUnitIndices: _selectedUnitIndices,
                       onSelectionChanged: _replaceSelection,
-                      onSaveSelected: _saveSelected,
-                      onMarkSelected: _markSelected,
-                      onUnmarkSelected: _unmarkSelected,
+                      onSaveSelected: widget.onSaveSelectedUnits,
+                      onMarkSelected: widget.onMarkSelectedUnits,
+                      onUnmarkSelected: widget.onUnmarkSelectedUnits,
                     ),
                   ],
                 ),
@@ -286,14 +287,6 @@ final class _StatisticsPageState extends State<StatisticsPage> {
     });
   }
 
-  List<int> get _sortedSelection => _selectedUnitIndices.toList()..sort();
-
-  Future<void> _saveSelected() => widget.onSaveSelectedUnits(_sortedSelection);
-
-  Future<void> _markSelected() => widget.onMarkSelectedUnits(_sortedSelection);
-
-  Future<void> _unmarkSelected() =>
-      widget.onUnmarkSelectedUnits(_sortedSelection);
 }
 
 final class _DirectionViewMenu extends StatelessWidget {
@@ -405,9 +398,13 @@ final class _PracticeList extends StatefulWidget {
   final StatisticsDirectionView view;
   final Set<int> selectedUnitIndices;
   final ValueChanged<Set<int>> onSelectionChanged;
-  final VoidCallback onSaveSelected;
-  final VoidCallback onMarkSelected;
-  final VoidCallback onUnmarkSelected;
+
+  /// The selection actions. Each is handed only the selected units the list
+  /// shows under its current filters (scrolled out of view or not): a unit a
+  /// filter hides stays ticked, but no action touches it.
+  final SelectedUnitsCallback onSaveSelected;
+  final SelectedUnitsCallback onMarkSelected;
+  final SelectedUnitsCallback onUnmarkSelected;
 
   /// Whether to show the Bucket column (hidden when the bucket is constant
   /// for all shown rows, e.g. a Level×Bucket cell). The bucket filter chips are
@@ -567,6 +564,12 @@ final class _PracticeListState extends State<_PracticeList> {
       statsOverride: widget.levelStatsOverride,
     );
     final List<_UnitStatisticsRow> visibleRows = _applySort(_applyFilters(rows));
+    // What the selection actions act on: the ticked units among those shown,
+    // in unit order.
+    final List<int> shownSelection = <int>[
+      for (final _UnitStatisticsRow row in visibleRows)
+        if (widget.selectedUnitIndices.contains(row.index)) row.index,
+    ]..sort();
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -701,14 +704,14 @@ final class _PracticeListState extends State<_PracticeList> {
                 ),
               ),
               FilledButton.tonalIcon(
-                onPressed: widget.onMarkSelected,
+                onPressed: () => widget.onMarkSelected(shownSelection),
                 icon: const Icon(Icons.flag),
                 label: Text(
                   messages.message(LearnAnywhereMessage.statisticsMarkSelected),
                 ),
               ),
               FilledButton.tonalIcon(
-                onPressed: widget.onUnmarkSelected,
+                onPressed: () => widget.onUnmarkSelected(shownSelection),
                 icon: const Icon(Icons.outlined_flag),
                 label: Text(
                   messages.message(
@@ -717,7 +720,7 @@ final class _PracticeListState extends State<_PracticeList> {
                 ),
               ),
               FilledButton.icon(
-                onPressed: widget.onSaveSelected,
+                onPressed: () => widget.onSaveSelected(shownSelection),
                 icon: const Icon(Icons.save_alt),
                 label: Text(
                   messages.message(LearnAnywhereMessage.statisticsSaveSelected),
@@ -861,9 +864,9 @@ final class _LevelLearningStats extends StatefulWidget {
 
   final Set<int> selectedUnitIndices;
   final ValueChanged<Set<int>> onSelectionChanged;
-  final VoidCallback onSaveSelected;
-  final VoidCallback onMarkSelected;
-  final VoidCallback onUnmarkSelected;
+  final SelectedUnitsCallback onSaveSelected;
+  final SelectedUnitsCallback onMarkSelected;
+  final SelectedUnitsCallback onUnmarkSelected;
 
   @override
   State<_LevelLearningStats> createState() => _LevelLearningStatsState();

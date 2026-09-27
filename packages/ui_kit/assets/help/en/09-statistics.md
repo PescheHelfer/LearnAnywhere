@@ -123,7 +123,9 @@ units giving you trouble:
    just the difficult units; it combines with the bucket chips and the bounds, and is a
    plain on/off switch — `Ctrl`+click does nothing special to it.
 2. **Select visible** to select everything currently shown, or click individual rows.
-   **Clear selection** starts over.
+   **Clear selection** starts over. The buttons act only on selected units the list
+   shows — including rows you would have to scroll to. A unit hidden by a filter stays
+   ticked, but nothing is done to it until the filter shows it again.
 3. **Save selected units** writes them out as a brand-new `.vok` deck — your current
    deck and its statistics are untouched; this only creates a new file. Each unit keeps
    its difficulty flags in the new deck, so **Difficult only**, **Select visible**,

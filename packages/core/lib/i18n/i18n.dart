@@ -1788,7 +1788,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnDifficultBadgeBoth:
           'Difficult (manual and automatic flag)',
       LearnAnywhereMessage.learnDifficultWriteFailed:
-          'Could not write "{file}", so the difficult flag is not saved. Use '
+          'Could not write "{file}", so the flag change is not saved. Use '
           'File ▸ Save deck once the file can be written again, or the change '
           'is lost when you close the program. ({detail})',
       LearnAnywhereMessage.learnLiveTime: 'Time',
@@ -2466,8 +2466,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnDifficultBadgeBoth:
           'Schwierig (manuelle und automatische Kennzeichnung)',
       LearnAnywhereMessage.learnDifficultWriteFailed:
-          '„{file}“ konnte nicht geschrieben werden, die Kennzeichnung ist '
-          'also nicht gespeichert. Wählen Sie Datei ▸ Lerneinheiten speichern, '
+          '„{file}“ konnte nicht geschrieben werden, die Änderung der '
+          'Kennzeichnung ist also nicht gespeichert. Wählen Sie Datei ▸ '
+          'Lerneinheiten speichern, '
           'sobald die Datei wieder beschreibbar ist, sonst geht die Änderung '
           'beim Schließen des Programms verloren. ({detail})',
       LearnAnywhereMessage.learnLiveTime: 'Zeit',

@@ -197,6 +197,66 @@ void main() {
     expect(unmarked, <int>[2, 3, 4]);
   });
 
+  testWidgets('the selection actions leave out selected units a filter hides',
+      (WidgetTester tester) async {
+    widenSurface(tester);
+    List<int> saved = <int>[];
+    List<int> marked = <int>[];
+    List<int> unmarked = <int>[];
+    await tester.pumpWidget(
+      buildPage(
+        deck: flaggedDeck(),
+        statistics: flaggedStatistics,
+        onSaveSelectedUnits: (List<int> unitIndices) async {
+          saved = unitIndices;
+        },
+        onMarkSelectedUnits: (List<int> unitIndices) async {
+          marked = unitIndices;
+        },
+        onUnmarkSelectedUnits: (List<int> unitIndices) async {
+          unmarked = unitIndices;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit list'));
+    await tester.pumpAndSettle();
+
+    // All four selected, then the filter hides unit 1: it stays ticked, but
+    // no action may touch it.
+    await tester.tap(find.text('Select visible'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Difficult only'));
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['2', '3', '4']);
+
+    await tester.tap(find.text('Unmark selected'));
+    await tester.tap(find.text('Mark selected'));
+    await tester.tap(find.text('Save selected units'));
+    await tester.pumpAndSettle();
+    expect(unmarked, <int>[2, 3, 4]);
+    expect(marked, <int>[2, 3, 4]);
+    expect(saved, <int>[2, 3, 4]);
+
+    // A row counts as shown when it is in the list, not when it is on
+    // screen: on a short surface the later rows are scrolled out of view
+    // and are still acted on.
+    await tester.tap(find.text('Difficult only'));
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['1', '2', '3', '4']);
+    tester.view.physicalSize = const Size(1400, 420);
+    await tester.pumpAndSettle();
+    expect(find.text('Q4').hitTestable(), findsNothing);
+    await tester.dragUntilVisible(
+      find.text('Mark selected'),
+      find.byType(SingleChildScrollView).first,
+      const Offset(0, -100),
+    );
+    await tester.tap(find.text('Mark selected'));
+    await tester.pumpAndSettle();
+    expect(marked, <int>[1, 2, 3, 4]);
+  });
+
   testWidgets('the Level x Bucket drill-down offers Difficult only and the '
       'marking actions too', (WidgetTester tester) async {
     widenSurface(tester);
