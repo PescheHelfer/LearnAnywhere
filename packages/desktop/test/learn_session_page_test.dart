@@ -711,6 +711,60 @@ void main() {
   );
 
   testWidgets(
+    'a drill ends once every unit has been answered correctly, instead of '
+    'asking the last one a second time',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        _DrillHarness(
+          deck: drillDeck,
+          statistics: const <UnitStats>[],
+          parameters: const SessionParameters(
+            withInput: false,
+            mode: SessionMode.superQuery,
+            directionSelection: DirectionSelection.direction1,
+            shuffle: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+
+      // One correct answer masters a unit at the default 40 % threshold, so
+      // three units take exactly three answers. The last one used to be drawn
+      // again from statistics that did not yet hold its answer.
+      final Finder completed = find.textContaining(
+        'mastered all learning units',
+      );
+      var answers = 0;
+      while (completed.evaluate().isEmpty && answers < 6) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Knew it'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+        answers += 1;
+      }
+
+      expect(completed, findsOneWidget);
+      expect(answers, 3);
+      final _DrillHarnessState harness = tester.state(
+        find.byType(_DrillHarness),
+      );
+      expect(
+        harness._statistics.map((UnitStats stats) => stats.direction1),
+        everyElement(const DirectionStats(attempts: 1, correct: 1)),
+      );
+    },
+  );
+
+  testWidgets(
     'the live Attempts and Accuracy pills read the deck statistics, so they '
     'open on what is already recorded and ignore an uncounted answer',
     (WidgetTester tester) async {

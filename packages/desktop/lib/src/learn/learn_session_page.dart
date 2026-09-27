@@ -922,10 +922,17 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     widget.onParametersChanged(next);
   }
 
-  void _selectNextItem() {
+  /// Serves the next item, or shows the completion view when none is left.
+  ///
+  /// [statistics] are the ones the pools are drawn from. Right after an answer
+  /// they must be the list just recorded: `widget.statistics` only catches up
+  /// once the shell rebuilds, and until then still counts the last unit of a
+  /// drill as unmastered — which served it a second time.
+  void _selectNextItem({List<UnitStats>? statistics}) {
+    final List<UnitStats> current = statistics ?? widget.statistics;
     final SessionItem? next = switch (_draftParameters.mode) {
-      SessionMode.superQuery => _firstSuperQueryItem(),
-      SessionMode.levelLearning => _firstLevelLearningItem(),
+      SessionMode.superQuery => _firstSuperQueryItem(current),
+      SessionMode.levelLearning => _firstLevelLearningItem(current),
       SessionMode.practice || SessionMode.onceThrough => _nextOrderedItem(),
     };
     if (next == null) {
@@ -1016,11 +1023,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     _order = List<SessionItem>.unmodifiable(reordered);
   }
 
-  SessionItem? _firstSuperQueryItem() {
+  SessionItem? _firstSuperQueryItem(List<UnitStats> statistics) {
     return pickAvoidingRepeat(
       activeSuperQueryPool(
         deck: widget.deck,
-        statistics: widget.statistics,
+        statistics: statistics,
         parameters: _draftParameters,
       ),
       _random,
@@ -1028,11 +1035,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     );
   }
 
-  SessionItem? _firstLevelLearningItem() {
+  SessionItem? _firstLevelLearningItem(List<UnitStats> statistics) {
     return pickAvoidingRepeat(
       activeLevelLearningPool(
         deck: widget.deck,
-        statistics: widget.statistics,
+        statistics: statistics,
         levelStatistics: _levelStats,
         parameters: _draftParameters,
         entryLevelCap: widget.entryLevelCap,
@@ -1418,6 +1425,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     int? level;
     AttemptDelta levelDelta = AttemptDelta.none;
     int? reachedLevel;
+    // The statistics as they stand after this answer, when it recorded into
+    // them. The next item must be drawn from these (see [_selectNextItem]).
+    List<UnitStats>? recorded;
     if (_isLevelLearning) {
       // Level Learning records into the level ladder. Level 0 is free recall —
       // the same thing the drill modes test — so an attempt answered *at*
@@ -1447,6 +1457,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
           updated[item.unitIndex - 1].statsFor(item.direction),
         );
         widget.onStatisticsChanged(updated);
+        recorded = updated;
       }
     } else {
       final List<UnitStats> updated = _recordRating(item, _selectedRating);
@@ -1455,6 +1466,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         updated[item.unitIndex - 1].statsFor(item.direction),
       );
       widget.onStatisticsChanged(updated);
+      recorded = updated;
     }
     widget.onAttemptRecorded?.call(
       RecordedAttempt(
@@ -1470,7 +1482,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     // stats callbacks above so the shell's document already holds this attempt;
     // the shell queues the write asynchronously so it never stalls the cycle.
     widget.onPersistStatistics?.call();
-    _selectNextItem();
+    _selectNextItem(statistics: recorded);
   }
 
   /// The mode-agnostic counters [item] currently stands at.

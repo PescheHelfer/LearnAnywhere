@@ -348,7 +348,9 @@ void main() {
 
     await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
-    await answerOneQuestion(tester);
+    // Endless mode serves its one unit again, so the session — and its live
+    // readouts — are still on screen after the answer.
+    await answerOneQuestion(tester, mode: 'Endless mode');
 
     expect(find.text('Accuracy: 1/1 (100%)'), findsOneWidget);
     expect(find.text('Attempts: 1'), findsOneWidget);
@@ -1232,7 +1234,13 @@ Finder editorPage(Type type) => find
 ///
 /// Splits the first half of [answerOneQuestion] out, for tests that need to
 /// look at the screen on both sides of the Check.
-Future<void> startOneQuestionSession(WidgetTester tester) async {
+///
+/// [mode] is the setup's Mode label to pick; left out, the default Drill mode
+/// runs, which ends as soon as its one unit is answered correctly.
+Future<void> startOneQuestionSession(
+  WidgetTester tester, {
+  String? mode,
+}) async {
   await tester.tap(find.text('Edit'));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Unit editor').last);
@@ -1251,6 +1259,12 @@ Future<void> startOneQuestionSession(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(find.text('Practice setup').last);
   await tester.pumpAndSettle();
+  if (mode != null) {
+    await tester.tap(find.text('Drill mode'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(mode).last);
+    await tester.pumpAndSettle();
+  }
   await tester.drag(find.byType(ListView), const Offset(0, -500));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Start session'));
@@ -1361,8 +1375,8 @@ Future<void> openAllTimeClear(WidgetTester tester) async {
 /// which is what a test about either of them needs to start from. Expects a
 /// freshly pumped app on the home screen and a surface at least 1400 wide —
 /// the practice grid overflows the default 800.
-Future<void> answerOneQuestion(WidgetTester tester) async {
-  await startOneQuestionSession(tester);
+Future<void> answerOneQuestion(WidgetTester tester, {String? mode}) async {
+  await startOneQuestionSession(tester, mode: mode);
   await tester.ensureVisible(find.text('Check'));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Check'));
