@@ -238,11 +238,9 @@ LearningDeck applyMaskToDeck(LearningDeck deck, LearningMask newMask) {
       // never exceed the new length, so this is a no-op there.
       fields[entry.key] = _truncateValue(entry.value, field.length);
     }
+    // A mask change is no verdict on difficulty: both flags travel.
     units.add(
-      LearningUnit(
-        categoryId: unit.categoryId,
-        fields: Map<int, FieldValue>.unmodifiable(fields),
-      ),
+      unit.copyWith(fields: Map<int, FieldValue>.unmodifiable(fields)),
     );
   }
   // A mask change is not an edit of the units, even when a forced one drops

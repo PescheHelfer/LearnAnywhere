@@ -93,8 +93,8 @@ It is set by every write that changes unit content: a field value, a unit's
 category, a unit added or removed (including a merge, and a new deck made with
 **Save selected units** or from Lexicon hits). It is **content only**: a write
 that changes nothing but the embedded mask — propagation, a mask-copy sync,
-adopting the linked `.inf` — keeps the value it had, and so will a flag-only
-write once difficult-unit flags exist. The file's modification time is no
+adopting the linked `.inf` — keeps the value it had, and so does a write that
+changes only a unit's difficulty flags. The file's modification time is no
 substitute, because those writes all move it.
 
 Like the speech keys it is **optional and additive at version `1`**: omit it
@@ -108,6 +108,28 @@ its units were edited.
 "Last learned" is deliberately **not** stored: it is the newest modification
 time among the deck's statistics files (the plain sidecar, the timestamped
 session files, the all-time file), worked out when needed.
+
+A unit may additionally carry, right after its `categoryId`, one or both
+**difficulty flags** (ADR-0005):
+
+- **`manualDifficult`** — `true` when the learner marked the unit difficult
+  (F12 or the **Difficult** pill in a learning session).
+- **`autoDifficult`** — `true` when the program detected the unit as difficult
+  from its lifetime record.
+
+A unit carrying either is **difficult**. Each is written **only when `true`**
+and omitted otherwise (never `false`), so an unflagged deck stays byte-identical
+to what earlier builds produce; both are **additive at version `1`**. A value
+that is not the boolean `true` reads as unflagged rather than failing the load.
+The flags are not unit content: they never enter the per-unit identity `hash`
+in the `.sta` (so marking a unit never resets its statistics), and a write that
+changes only flags does not move `lastEdited`. Propagating a mask keeps them.
+
+**Older builds open a flagged deck but drop every flag when they re-save it**,
+because their encoder writes only `categoryId` and `fields`. Accepted rather
+than bumping the version, which would lock older builds out of the file; update
+every machine that edits a deck. An automatic flag can be recomputed from the
+lifetime record; a manual flag lost this way is gone.
 
 Only `attempts` + `correct` per unit+direction are stored (in the separate
 `.sta` sidecar), and the super-query active pool is always a derived view.

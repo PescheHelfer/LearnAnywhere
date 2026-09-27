@@ -2853,6 +2853,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onSessionStarted: _prepareSessionStart,
         onPersistStatistics: _persistSessionStatistics,
         onAttemptRecorded: _recordAllTimeAttempt,
+        onToggleDifficult: _toggleDifficult,
         onOpenEditor: () => _selectRoute(_DesktopRoute.editor),
         onExit: () => _selectRoute(_DesktopRoute.home),
       ),
@@ -2984,6 +2985,69 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         startIndex: _range.startUnit,
         endIndex: _range.endUnit,
       );
+    });
+  }
+
+  // Flag writes from a session are serialized through this chain, so two F12
+  // presses in quick succession land on disk in the order they were made.
+  Future<void> _difficultWriteChain = Future<void>.value();
+
+  /// Toggles the difficulty of the unit at the one-based [unitIndex] and
+  /// writes the deck at once: the manual flag is the only record of the
+  /// learner's verdict, so it must not wait for a save (ADR-0005).
+  ///
+  /// The write goes through [DesktopFileService.writeDeck] like every other
+  /// write of the open deck, so a flag alone leaves the last-edited date as it
+  /// is, while unit edits still pending from this sitting land with it and are
+  /// dated. A write that fails says so without interrupting the session; the
+  /// flag stays in memory only, and goes out with the next write of the deck.
+  /// A deck that has never been saved has no file yet: its flags ride along
+  /// with the first save.
+  void _toggleDifficult(int unitIndex) {
+    setState(() {
+      _document = _document.copyWith(
+        deck: toggleDifficultAt(_document.deck, unitIndex),
+      );
+    });
+    _difficultWriteChain = _difficultWriteChain.then((_) async {
+      // Read when the write runs, not when it was queued: a later toggle
+      // already in memory goes out now rather than being overwritten by an
+      // older state.
+      final DesktopDocument before = _document;
+      final String? deckPath = before.deckPath;
+      if (deckPath == null) {
+        return;
+      }
+      try {
+        final DesktopDocument written = await _fileService.writeDeck(
+          before,
+          deckPath,
+        );
+        // Adopt what was written only while the deck is still the one that
+        // was written; statistics moving on meanwhile do not matter here.
+        if (mounted && identical(_document.deck, before.deck)) {
+          setState(() {
+            _document = _document.copyWith(
+              deck: written.deck,
+              unitsEdited: false,
+            );
+          });
+        }
+      } on Object catch (error) {
+        if (!mounted) {
+          return;
+        }
+        final String detail = error is FileSystemException
+            ? error.osError?.message ?? error.message
+            : '$error';
+        final String text = LearnAnywhereLocalizations.of(context)
+            .message(LearnAnywhereMessage.learnDifficultWriteFailed)
+            .replaceAll('{file}', _filePicker.fileNameOf(deckPath))
+            .replaceAll('{detail}', detail);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(text)),
+        );
+      }
     });
   }
 

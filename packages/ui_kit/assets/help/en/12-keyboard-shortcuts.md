@@ -73,6 +73,7 @@ See [The unit editor](04-unit-editor.md) for what each of these does in detail.
 | `F7` | Rating button 3 |
 | `F9` | Cycle answer view: Correction → Solution → Your answer |
 | `F10` | Reveal (in Level Learning at level 3: Hide & type, before Reveal) |
+| `F12` | Mark the unit difficult, or remove its difficulty — before and after the answer is shown |
 | `Esc` | Cancel session, back to setup |
 | `Enter` / `Tab` | Next blank, in a multi-blank field |
 | `Backspace` (on an empty blank) | Previous blank |
@@ -88,6 +89,9 @@ rating button means in a given situation.
 aloud — whether automatic speech is switched on or not, and says nothing before the
 answer is revealed. See
 [Reading the answer automatically](15-speech.md#reading-the-answer-automatically).
+
+`F12` writes the change to the deck file straight away. See
+[Marking a unit difficult](06-learning-sessions.md#marking-a-unit-difficult).
 
 ## Options and Mask Editor
 

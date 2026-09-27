@@ -34,6 +34,7 @@ final class LearnSessionPage extends StatefulWidget {
     this.onStartUnitChanged,
     this.onEndUnitChanged,
     this.onExit,
+    this.onToggleDifficult,
     this.speechEngine = const UnavailableTtsEngine(),
     this.speechSettings = const SpeechSettings(),
     super.key,
@@ -117,6 +118,15 @@ final class LearnSessionPage extends StatefulWidget {
   /// Called when the user exits the learn session back to the home screen.
   final VoidCallback? onExit;
 
+  /// Called with the one-based index of the unit on screen when the learner
+  /// toggles its difficulty (F12 or the Difficult pill).
+  ///
+  /// The page only asks: the shell applies the rule, writes the deck and
+  /// hands the changed deck back through [deck], which is what the pill and
+  /// the badge read. Without it the session offers neither the key nor the
+  /// pill.
+  final ValueChanged<int>? onToggleDifficult;
+
   /// The host's speech, injected by the shell.
   ///
   /// Defaults to the engine that cannot speak, so a caller that says nothing
@@ -194,8 +204,8 @@ const List<(LearnAnywhereMessage, String)> _widestStatPills =
 /// must never do is get *squeezed*: the two pill groups are each a
 /// [FittedBox], so a frame narrower than one of them shrinks its text instead
 /// of moving it. This is therefore the widest single unbreakable cluster, not
-/// the sum of a row: the action group, the evaluation group, or one statistic
-/// pill, whichever is widest.
+/// the sum of a row: the action group, the evaluation group, one statistic
+/// pill, or the Difficult pill, whichever is widest.
 ///
 /// Measured, not estimated: every label is measured in the very style it is
 /// painted in, so the figure follows the language, the zoom level and the
@@ -278,7 +288,17 @@ double learnControlGroupWidth(
     );
   }
 
-  return max(actionGroup, max(evaluationGroup, statisticPill));
+  // ── The Difficult pill, a group of its own in both stages ────────────────
+  final double difficultPill =
+      iconPillChrome +
+      labelColumn(say(LearnAnywhereMessage.learnDifficult), 'F12');
+
+  return <double>[
+    actionGroup,
+    evaluationGroup,
+    statisticPill,
+    difficultPill,
+  ].reduce(max);
 }
 
 /// The message naming [mode], used for the toggle button label (which names
@@ -308,6 +328,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         SingleActivator(LogicalKeyboardKey.f7): _LearnRate3Intent(),
         SingleActivator(LogicalKeyboardKey.f9): _LearnToggleViewIntent(),
         SingleActivator(LogicalKeyboardKey.f10): _LearnRevealIntent(),
+        // F12 toggles the unit's difficulty in both stages. Free in the
+        // session and in the menu bar, and never a rating or a reveal.
+        SingleActivator(LogicalKeyboardKey.f12): _LearnToggleDifficultIntent(),
         SingleActivator(LogicalKeyboardKey.escape): _LearnSetupIntent(),
       };
 
@@ -683,6 +706,13 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
                 return null;
               },
             ),
+            _LearnToggleDifficultIntent:
+                CallbackAction<_LearnToggleDifficultIntent>(
+                  onInvoke: (_) {
+                    _toggleDifficult();
+                    return null;
+                  },
+                ),
           },
           child: Focus(
             focusNode: _rootFocusNode,
@@ -818,7 +848,24 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       onRestoreFocus: _rootFocusNode.requestFocus,
       onContinue: _continueAfterRating,
       onCancel: _cancelSession,
+      onToggleDifficult: widget.onToggleDifficult == null
+          ? null
+          : _toggleDifficult,
     );
+  }
+
+  /// Asks the shell to toggle the difficulty of the unit on screen.
+  ///
+  /// Only while a unit is on screen — the question or the answer stage — and
+  /// only when the shell offers it. The stage itself is left exactly as it
+  /// was: marking never rates, reveals or moves on.
+  void _toggleDifficult() {
+    final SessionItem? item = _currentItem;
+    final ValueChanged<int>? onToggle = widget.onToggleDifficult;
+    if (item == null || onToggle == null) {
+      return;
+    }
+    onToggle(item.unitIndex);
   }
 
   Future<void> _startSession() async {
@@ -1941,6 +1988,7 @@ final class _SessionView extends StatelessWidget {
     required this.onRestoreFocus,
     required this.onContinue,
     required this.onCancel,
+    required this.onToggleDifficult,
   });
 
   final LearningDeck deck;
@@ -2000,7 +2048,25 @@ final class _SessionView extends StatelessWidget {
   final VoidCallback onContinue;
   final VoidCallback onCancel;
 
+  /// Toggles the unit's difficulty; `null` hides the Difficult pill.
+  final VoidCallback? onToggleDifficult;
+
   bool get _isLevelLearning => parameters.mode == SessionMode.levelLearning;
+
+  /// The Difficult pill for [unit], or nothing when the shell offers none.
+  List<Widget> _difficultPill(LearningUnit unit) {
+    final VoidCallback? onToggle = onToggleDifficult;
+    if (onToggle == null) {
+      return const <Widget>[];
+    }
+    return <Widget>[
+      _DifficultPill(
+        key: const Key('learnDifficultPill'),
+        difficult: unit.isDifficult,
+        onPressed: onToggle,
+      ),
+    ];
+  }
 
   /// The current unit's own accuracy for the active direction, as a header
   /// segment (e.g. "Unit accuracy: 3/4 (75%)"). Always numeric, including
@@ -2377,6 +2443,7 @@ final class _SessionView extends StatelessWidget {
   Widget _preCheckButtons(
     BuildContext context,
     LearnAnywhereLocalizations messages,
+    LearningUnit unit,
   ) {
     final bool level3Pending =
         _isLevelLearning && activeLevel == kMaxSupportLevel && !level3Memorized;
@@ -2434,6 +2501,7 @@ final class _SessionView extends StatelessWidget {
             ],
           ),
         ),
+        ..._difficultPill(unit),
       ],
     );
   }
@@ -2489,7 +2557,18 @@ final class _SessionView extends StatelessWidget {
               children: _statPills(messages, timeWarning),
             ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),
-            Text(headerText, style: Theme.of(context).textTheme.titleSmall),
+            // The badge sits on the unit's own line, so it reads as part of
+            // the card; the Wrap drops it below the header when both do not
+            // fit.
+            Wrap(
+              spacing: LearnAnywhereTokens.gapMedium,
+              runSpacing: LearnAnywhereTokens.gapSmall,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                Text(headerText, style: Theme.of(context).textTheme.titleSmall),
+                if (unit.isDifficult) _DifficultBadge(unit: unit),
+              ],
+            ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),
             // ── Field grid ────────────────────────────────────────────────
             _fieldGrid(context, visibleFields, unit),
@@ -2601,12 +2680,15 @@ final class _SessionView extends StatelessWidget {
                       ],
                     ],
                   ),
+                  // A group of its own: marking is neither an action on the
+                  // answer nor a rating of it.
+                  ..._difficultPill(unit),
                 ],
               ),
             ] else ...<Widget>[
               const SizedBox(height: LearnAnywhereTokens.gapLarge),
               // ── Pre-check buttons ──────────────────────────────────────
-              _preCheckButtons(context, messages),
+              _preCheckButtons(context, messages, unit),
             ],
           ],
         ),
@@ -3566,6 +3648,120 @@ final class _ToggleViewButtonState extends State<_ToggleViewButton> {
   }
 }
 
+// ─── Difficult pill and badge ────────────────────────────────────────────────
+
+/// The pill that shows whether the unit on screen is difficult and toggles
+/// it, like F12.
+///
+/// Filled while the unit is difficult, outlined while it is not. Its focus
+/// node never takes focus, so clicking it while typing an answer leaves the
+/// cursor in the answer field.
+final class _DifficultPill extends StatefulWidget {
+  const _DifficultPill({
+    super.key,
+    required this.difficult,
+    required this.onPressed,
+  });
+
+  final bool difficult;
+  final VoidCallback onPressed;
+
+  @override
+  State<_DifficultPill> createState() => _DifficultPillState();
+}
+
+final class _DifficultPillState extends State<_DifficultPill> {
+  final FocusNode _focusNode = FocusNode(
+    skipTraversal: true,
+    canRequestFocus: false,
+  );
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget label = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(
+          LearnAnywhereLocalizations.of(
+            context,
+          ).message(LearnAnywhereMessage.learnDifficult),
+        ),
+        Text('F12', style: LearnAnywhereTokens.keyHint(context)),
+      ],
+    );
+    return Semantics(
+      toggled: widget.difficult,
+      child: widget.difficult
+          ? FilledButton.icon(
+              focusNode: _focusNode,
+              onPressed: widget.onPressed,
+              icon: const Icon(Icons.flag),
+              label: label,
+            )
+          : OutlinedButton.icon(
+              focusNode: _focusNode,
+              onPressed: widget.onPressed,
+              icon: const Icon(Icons.outlined_flag),
+              label: label,
+            ),
+    );
+  }
+}
+
+/// The badge on a difficult unit's header line, naming which flag it carries.
+final class _DifficultBadge extends StatelessWidget {
+  const _DifficultBadge({required this.unit});
+
+  final LearningUnit unit;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final LearnAnywhereMessage text = switch ((
+      unit.manualDifficult,
+      unit.autoDifficult,
+    )) {
+      (true, true) => LearnAnywhereMessage.learnDifficultBadgeBoth,
+      (true, false) => LearnAnywhereMessage.learnDifficultBadgeManual,
+      _ => LearnAnywhereMessage.learnDifficultBadgeAutomatic,
+    };
+    return DecoratedBox(
+      key: const Key('learnDifficultBadge'),
+      decoration: BoxDecoration(
+        color: colors.tertiaryContainer,
+        borderRadius: LearnAnywhereTokens.smallRadius,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: LearnAnywhereTokens.gapSmall,
+          vertical: LearnAnywhereTokens.gapSmall / 2,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.flag, size: 16, color: colors.onTertiaryContainer),
+            const SizedBox(width: LearnAnywhereTokens.gapSmall / 2),
+            Flexible(
+              child: Text(
+                LearnAnywhereLocalizations.of(context).message(text),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: colors.onTertiaryContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Intents ──────────────────────────────────────────────────────────────────
 
 final class _LearnContinueIntent extends Intent {
@@ -3598,4 +3794,8 @@ final class _LearnRate3Intent extends Intent {
 
 final class _LearnToggleViewIntent extends Intent {
   const _LearnToggleViewIntent();
+}
+
+final class _LearnToggleDifficultIntent extends Intent {
+  const _LearnToggleDifficultIntent();
 }

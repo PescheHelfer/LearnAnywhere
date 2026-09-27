@@ -81,6 +81,8 @@ void main() {
                 onStatisticsChanged: (List<UnitStats> _) {},
                 onOpenEditor: () {},
                 onExit: () {},
+                // Offered, so the Difficult pill is laid out too.
+                onToggleDifficult: (int _) {},
               );
             },
           ),
@@ -155,6 +157,7 @@ void main() {
       for (final String group in <String>[
         'learnActionPillsGroup',
         'learnEvaluationPillsGroup',
+        'learnDifficultPill',
       ]) {
         final double width = tester.getSize(find.byKey(Key(group))).width;
         expect(

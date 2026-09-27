@@ -97,6 +97,43 @@ not move them either.
 `Esc` ends the session and returns to setup. In Drill mode nothing is lost by doing
 this: the pool is rebuilt from statistics the next time you start.
 
+## Marking a unit difficult
+
+When a unit gives you trouble, say so the moment you feel it: press `F12`, or click the
+**Difficult** button beside the session's other buttons. That works while you are
+answering and after the answer is shown, and it never rates, reveals or moves on — the
+card stays exactly where it was.
+
+A difficult unit shows a badge on its header line. The badge also says who flagged it:
+
+- **Difficult (manual flag)** — you marked it.
+- **Difficult (automatic flag)** — the program found it hard from the unit's all-time
+  statistics.
+- **Difficult (manual and automatic flag)** — both.
+
+The **Difficult** button is filled while the unit is difficult. Pressing `F12` (or the
+button) on a difficult unit removes its difficulty altogether — the automatic flag as
+well as your own — because "not difficult" means not difficult. On a unit that is not
+difficult it sets your manual flag.
+
+The flag belongs to the unit and is stored in the deck file, so clearing either kind of
+statistics does not remove it. It is written to the file **at once**, not at the next
+save, so a forgotten save or a crash cannot lose your verdict. Two things follow from
+that:
+
+- Marking a unit is not an edit: the deck's **Last edited** date on the workspace does
+  not change.
+- The whole deck file is written, so any change you made in the unit editor during the
+  same sitting is saved along with the flag — and that change does move **Last edited**.
+
+If the file cannot be written — it is read-only, or its folder is gone — a message names
+the file and the session carries on. The flag is kept in memory only: use **File ▸ Save
+deck** once the file can be written again, or the change is lost when you close the
+program.
+
+Older versions of Learn Anywhere open a deck with flags, but drop every flag if they
+save it. Update every computer on which you edit your decks.
+
 ## Finishing
 
 Once through and Drill mode both end when there is nothing left to ask —

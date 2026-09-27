@@ -460,9 +460,15 @@ LearningUnit _decodeUnit(
     }
     fields[fieldId] = fieldValue;
   }
+  // The difficulty flags are ADDITIVE at the current format version and read
+  // tolerantly, like the speech keys: anything but `true` means unflagged.
+  final Object? rawManual = json['manualDifficult'];
+  final Object? rawAuto = json['autoDifficult'];
   return LearningUnit(
     categoryId: categoryId,
     fields: Map<int, FieldValue>.unmodifiable(fields),
+    manualDifficult: rawManual is bool && rawManual,
+    autoDifficult: rawAuto is bool && rawAuto,
   );
 }
 
@@ -477,6 +483,11 @@ bool _hasMaskId(Object? maskValue) {
 Map<String, Object?> _encodeUnit(LearningUnit unit) {
   return <String, Object?>{
     'categoryId': unit.categoryId,
+    // Written only when set, so an unflagged deck stays byte-identical to
+    // what builds predating the flags produce. Before `fields`, so a reader
+    // sees them without scrolling past a long unit.
+    if (unit.manualDifficult) 'manualDifficult': true,
+    if (unit.autoDifficult) 'autoDifficult': true,
     'fields': <String, Object?>{
       for (final MapEntry<int, FieldValue> entry in unit.fields.entries)
         entry.key.toString(): _encodeFieldValue(entry.value),

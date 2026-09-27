@@ -578,8 +578,8 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
     final LearningUnit unit = widget.deck.units[_currentIndex];
     final Map<int, FieldValue> fields = Map<int, FieldValue>.from(unit.fields);
     fields[fieldId] = value;
-    final LearningUnit updated = LearningUnit(
-      categoryId: unit.categoryId,
+    // copyWith, so editing a field keeps the unit's difficulty flags.
+    final LearningUnit updated = unit.copyWith(
       fields: Map<int, FieldValue>.unmodifiable(fields),
     );
     final List<LearningUnit> units = widget.deck.units.toList();

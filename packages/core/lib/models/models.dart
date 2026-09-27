@@ -611,7 +611,12 @@ final class LearningMask {
 /// One ordered learning unit in a deck.
 final class LearningUnit {
   /// Creates a learning unit.
-  const LearningUnit({required this.categoryId, required this.fields});
+  const LearningUnit({
+    required this.categoryId,
+    required this.fields,
+    this.manualDifficult = false,
+    this.autoDifficult = false,
+  });
 
   /// Category id this unit belongs to.
   final int categoryId;
@@ -624,9 +629,40 @@ final class LearningUnit {
   /// lives only in the embedded mask.
   final Map<int, FieldValue> fields;
 
+  /// The learner's own verdict that this unit is difficult.
+  ///
+  /// Set and removed only by the learner. Not part of the unit's content: it
+  /// never enters the identity hash and changing it is not an edit.
+  final bool manualDifficult;
+
+  /// The program's verdict, from the unit's lifetime record, that this unit
+  /// is difficult. Independent of [manualDifficult].
+  final bool autoDifficult;
+
+  /// Whether the unit is difficult: it carries either flag, or both.
+  bool get isDifficult => manualDifficult || autoDifficult;
+
   /// Returns the value for the field with [fieldId], or empty when absent.
   FieldValue valueForFieldId(int fieldId) {
     return fields[fieldId] ?? FieldValue.empty;
+  }
+
+  /// Returns a copy with selected properties changed.
+  ///
+  /// Both flags travel unless overridden, so rebuilding a unit's fields never
+  /// drops its difficulty.
+  LearningUnit copyWith({
+    int? categoryId,
+    Map<int, FieldValue>? fields,
+    bool? manualDifficult,
+    bool? autoDifficult,
+  }) {
+    return LearningUnit(
+      categoryId: categoryId ?? this.categoryId,
+      fields: fields ?? this.fields,
+      manualDifficult: manualDifficult ?? this.manualDifficult,
+      autoDifficult: autoDifficult ?? this.autoDifficult,
+    );
   }
 }
 

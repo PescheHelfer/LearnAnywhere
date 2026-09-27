@@ -711,6 +711,24 @@ enum LearnAnywhereMessage {
   /// Carries `{language}`.
   learnSpeakNoVoiceMobile,
 
+  /// The learning-session pill (F12) that shows and toggles whether the unit
+  /// on screen is difficult.
+  learnDifficult,
+
+  /// Badge on the session's unit while it carries only the manual flag.
+  learnDifficultBadgeManual,
+
+  /// Badge on the session's unit while it carries only the automatic flag.
+  learnDifficultBadgeAutomatic,
+
+  /// Badge on the session's unit while it carries both flags.
+  learnDifficultBadgeBoth,
+
+  /// Shown, without interrupting the session, when a flag change could not be
+  /// written to the deck. Carries `{file}` (the deck's file name) and
+  /// `{detail}`.
+  learnDifficultWriteFailed,
+
   /// Live elapsed-time label.
   learnLiveTime,
 
@@ -1750,6 +1768,17 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnSpeakNoVoiceMobile:
           'No installed voice speaks {language}. The user guide, in the '
           'overflow menu, explains how to add one.',
+      LearnAnywhereMessage.learnDifficult: 'Difficult',
+      LearnAnywhereMessage.learnDifficultBadgeManual:
+          'Difficult (manual flag)',
+      LearnAnywhereMessage.learnDifficultBadgeAutomatic:
+          'Difficult (automatic flag)',
+      LearnAnywhereMessage.learnDifficultBadgeBoth:
+          'Difficult (manual and automatic flag)',
+      LearnAnywhereMessage.learnDifficultWriteFailed:
+          'Could not write "{file}", so the difficult flag is not saved. Use '
+          'File ▸ Save deck once the file can be written again, or the change '
+          'is lost when you close the program. ({detail})',
       LearnAnywhereMessage.learnLiveTime: 'Time',
       LearnAnywhereMessage.learnUnitHeader: 'Unit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
@@ -2413,6 +2442,18 @@ final class LearnAnywhereCatalog {
           'Keine installierte Stimme spricht {language}. Das '
           'Benutzerhandbuch, im Überlaufmenü, erklärt, wie Sie eine '
           'hinzufügen.',
+      LearnAnywhereMessage.learnDifficult: 'Schwierig',
+      LearnAnywhereMessage.learnDifficultBadgeManual:
+          'Schwierig (manuelle Kennzeichnung)',
+      LearnAnywhereMessage.learnDifficultBadgeAutomatic:
+          'Schwierig (automatische Kennzeichnung)',
+      LearnAnywhereMessage.learnDifficultBadgeBoth:
+          'Schwierig (manuelle und automatische Kennzeichnung)',
+      LearnAnywhereMessage.learnDifficultWriteFailed:
+          '„{file}“ konnte nicht geschrieben werden, die Kennzeichnung ist '
+          'also nicht gespeichert. Wählen Sie Datei ▸ Lerneinheiten speichern, '
+          'sobald die Datei wieder beschreibbar ist, sonst geht die Änderung '
+          'beim Schließen des Programms verloren. ({detail})',
       LearnAnywhereMessage.learnLiveTime: 'Zeit',
       LearnAnywhereMessage.learnUnitHeader: 'Einheit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',

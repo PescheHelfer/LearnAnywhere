@@ -77,6 +77,7 @@ Was jede dieser Tasten im Einzelnen bewirkt, steht in
 | `F7` | Bewertungsschaltfläche 3 |
 | `F9` | Antwortansicht durchschalten: Korrektur → Lösung → Ihre Antwort |
 | `F10` | Anzeigen (beim Stufenlernen auf Stufe 3: Verdecken & tippen, vor dem Anzeigen) |
+| `F12` | Einheit als schwierig kennzeichnen oder ihre Schwierigkeit aufheben — vor und nach dem Anzeigen der Antwort |
 | `Esc` | Sitzung abbrechen, zurück zur Einrichtung |
 | `Enter` / `Tab` | Nächste Lücke in einem mehrteiligen Feld |
 | `Rücktaste` (bei leerer Lücke) | Vorherige Lücke |
@@ -91,6 +92,9 @@ Was jede Bewertungsschaltfläche in einer gegebenen Situation bedeutet, steht in
 vorgelesen werden dürfen —, ob das automatische Vorlesen eingeschaltet ist oder nicht,
 und sagt vor dem Aufdecken nichts. Siehe
 [Die Antwort automatisch vorlesen](15-speech.md#die-antwort-automatisch-vorlesen).
+
+`F12` schreibt die Änderung sofort in die Lern-Datei. Siehe
+[Eine Einheit als schwierig kennzeichnen](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen).
 
 ## Optionen und Mask Editor
 

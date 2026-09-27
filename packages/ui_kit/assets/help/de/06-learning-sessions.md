@@ -104,6 +104,49 @@ nicht.
 `Esc` beendet die Sitzung und kehrt zur Einrichtung zurück. Im Drill-Modus geht dabei
 nichts verloren: der Pool wird beim nächsten Start aus der Statistik neu aufgebaut.
 
+## Eine Einheit als schwierig kennzeichnen
+
+Macht Ihnen eine Einheit Mühe, halten Sie das in dem Moment fest, in dem Sie es merken:
+Drücken Sie `F12` oder klicken Sie auf die Schaltfläche **Schwierig** neben den übrigen
+Schaltflächen der Sitzung. Das geht beim Antworten ebenso wie nach dem Anzeigen der
+Antwort, und es bewertet nichts, deckt nichts auf und geht nicht weiter — die Karte
+bleibt genau, wo sie war.
+
+Eine schwierige Einheit zeigt in ihrer Kopfzeile ein Abzeichen. Es sagt auch, wer sie
+gekennzeichnet hat:
+
+- **Schwierig (manuelle Kennzeichnung)** — Sie selbst.
+- **Schwierig (automatische Kennzeichnung)** — das Programm, anhand der
+  Allzeit-Statistik der Einheit.
+- **Schwierig (manuelle und automatische Kennzeichnung)** — beide.
+
+Die Schaltfläche **Schwierig** ist gefüllt, solange die Einheit schwierig ist. `F12`
+(oder die Schaltfläche) auf einer schwierigen Einheit hebt ihre Schwierigkeit ganz auf —
+die automatische Kennzeichnung ebenso wie Ihre eigene —, denn „nicht schwierig“ heißt
+nicht schwierig. Auf einer nicht schwierigen Einheit setzt es Ihre manuelle
+Kennzeichnung.
+
+Die Kennzeichnung gehört zur Einheit und steht in der Lern-Datei; das Löschen einer der
+beiden Statistiken entfernt sie also nicht. Sie wird **sofort** in die Datei
+geschrieben, nicht erst beim nächsten Speichern, damit ein vergessenes Speichern oder
+ein Absturz Ihr Urteil nicht verliert. Daraus folgt zweierlei:
+
+- Eine Kennzeichnung ist keine Bearbeitung: das Datum **Zuletzt bearbeitet** im
+  Arbeitsbereich ändert sich nicht.
+- Geschrieben wird die ganze Lern-Datei. Haben Sie in derselben Sitzung in der
+  **Eingabe-Maske** etwas geändert, wird diese Änderung mit der Kennzeichnung
+  gespeichert — und sie verschiebt **Zuletzt bearbeitet** sehr wohl.
+
+Lässt sich die Datei nicht schreiben — sie ist schreibgeschützt, oder ihr Ordner ist
+verschwunden —, nennt eine Meldung die Datei, und die Sitzung geht weiter. Die
+Kennzeichnung ist dann nur im Speicher: Wählen Sie **Datei ▸ Lerneinheiten speichern**,
+sobald die Datei wieder beschreibbar ist, sonst geht die Änderung beim Schließen des
+Programms verloren.
+
+Ältere Versionen von Learn Anywhere öffnen eine Lern-Datei mit Kennzeichnungen, verwerfen
+aber alle Kennzeichnungen, wenn sie sie speichern. Aktualisieren Sie jeden Computer, auf
+dem Sie Ihre Lern-Dateien bearbeiten.
+
 ## Abschluss
 
 Sowohl Einmal durchgehen als auch der Drill-Modus enden, wenn nichts mehr zu fragen
