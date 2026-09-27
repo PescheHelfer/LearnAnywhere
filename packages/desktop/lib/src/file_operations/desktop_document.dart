@@ -14,6 +14,7 @@ final class DesktopDocument {
     this.autoLoadStatistics = false,
     this.autoSaveStatistics = false,
     this.lastSessionMode,
+    this.unitsEdited = false,
   });
 
   /// Current self-contained deck.
@@ -71,6 +72,15 @@ final class DesktopDocument {
   /// differs from this one prompts the student before proceeding.
   final SessionMode? lastSessionMode;
 
+  /// Whether the units have changed in memory since the deck was last read
+  /// from or written to its file — a field value, a unit's category, a unit
+  /// added or removed.
+  ///
+  /// The next write of the deck dates it ([LearningDeck.lastEdited]) and
+  /// clears this. A mask change never sets it: that is not an edit of the
+  /// units, so a deck written back after one keeps its date.
+  final bool unitsEdited;
+
   /// Current embedded mask.
   LearningMask get mask => deck.mask;
 
@@ -99,6 +109,7 @@ final class DesktopDocument {
     bool? autoLoadStatistics,
     bool? autoSaveStatistics,
     SessionMode? lastSessionMode,
+    bool? unitsEdited,
   }) {
     return DesktopDocument(
       deck: deck ?? this.deck,
@@ -117,6 +128,7 @@ final class DesktopDocument {
       lastSessionMode: clearLastSessionMode
           ? null
           : lastSessionMode ?? this.lastSessionMode,
+      unitsEdited: unitsEdited ?? this.unitsEdited,
     );
   }
 }

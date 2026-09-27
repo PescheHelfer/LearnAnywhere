@@ -83,6 +83,19 @@ gehört, der Ordner darüber meist schon. Die `...` stehen für den übrigen Pfa
 ⧉ am Ende kennzeichnet die Zeile als Link. Wenn Sie mit der Maus über einen Eintrag
 fahren, wird der vollständige Pfad angezeigt.
 
+Unter jedem Eintrag stehen zwei Daten. So erkennen Sie, welche Lern-Datei Sie eben erst
+überarbeitet und welche Sie länger nicht mehr angefasst haben:
+
+- **Zuletzt bearbeitet** — wann Sie die Lerneinheiten der Datei zuletzt geändert und
+  gespeichert haben: ein Feld überschrieben, eine Lerneinheit hinzugefügt oder
+  gelöscht. Das Üben zählt nicht, ebenso
+  wenig eine Änderung an der Maske der Datei. Eine Lern-Datei, die zuletzt von einer
+  älteren Version von Learn Anywhere gespeichert wurde, kennt dieses Datum nicht und
+  zeigt **nicht erfasst**, bis Sie sie das nächste Mal bearbeiten und speichern.
+- **Zuletzt gelernt** — wann Sie die Datei zuletzt geübt haben, abgelesen an den
+  Statistik-Dateien daneben. Eine Datei, die Sie noch nie geübt haben, zeigt
+  **noch nicht gelernt**.
+
 Verschieben oder löschen Sie eine Lern-Datei, bleibt sie in der Liste stehen — grau
 dargestellt, statt stillschweigend zu verschwinden. So sehen Sie einen ganzen
 verschobenen Ordner, statt ihn unbemerkt zu verlieren. Ein solcher Eintrag öffnet

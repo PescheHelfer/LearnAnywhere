@@ -78,6 +78,17 @@ to, while the folder above it usually does. The `...` stands for the rest of the
 and the ⧉ at the end marks the line as a link. Hovering over an entry shows the full
 path.
 
+Under each entry are two dates, so you can tell a freshly revised deck from one you
+have been neglecting:
+
+- **Last edited** — when you last changed the deck's units and saved them: typed in a
+  field, added or removed a unit. Practising does not count, and neither does a change
+  to the deck's mask. A deck last saved by an older
+  version of Learn Anywhere has no such date and shows **not recorded** until you next
+  edit and save it.
+- **Last learned** — when you last practised the deck, read from the statistics files
+  beside it. A deck you have never practised shows **not learned yet**.
+
 If you move or delete a deck it stays
 in the list, greyed out, rather than quietly disappearing — that way a whole folder you
 have moved is visible instead of silently gone. Such an entry no longer opens anything:

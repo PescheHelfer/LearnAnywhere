@@ -64,7 +64,8 @@ which wrote the code.
 - **Rich text in fields.** Bold, italic, underline, colour and highlight, stored portably.
 - **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, content centred in the window on a wide screen, and full keyboard operation including ALT menu mnemonics.
 - **Finds your decks.** Up to three recently opened decks are one click away from the
-  welcome screen, and a start folder can be set so every file dialog opens where your
+  welcome screen, each showing when you last edited its units and when you last
+  learned it, and a start folder can be set so every file dialog opens where your
   decks live.
 - **An Android companion.** Import your decks onto a phone and keep practising them
   away from the computer: think-only, two taps per card, with its own statistics.

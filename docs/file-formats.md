@@ -83,6 +83,32 @@ Top-level `format` is `learn-anywhere/lessons`, `version` `1`, then:
   `#RRGGBB` included, fails to load with the run's path. Fields may be omitted;
   absent = empty.
 
+A deck may additionally carry, right after `version`:
+
+- **`lastEdited`** — when the deck's **units** last changed, as local time with
+  its UTC offset, ISO 8601, to the second: `"2026-09-25T16:32:11+02:00"`. No
+  `Z`, no fractional seconds, no missing offset — exactly this shape.
+
+It is set by every write that changes unit content: a field value, a unit's
+category, a unit added or removed (including a merge, and a new deck made with
+**Save selected units** or from Lexicon hits). It is **content only**: a write
+that changes nothing but the embedded mask — propagation, a mask-copy sync,
+adopting the linked `.inf` — keeps the value it had, and so will a flag-only
+write once difficult-unit flags exist. The file's modification time is no
+substitute, because those writes all move it.
+
+Like the speech keys it is **optional and additive at version `1`**: omit it
+when unknown (never write `null` or `""`), so an undated deck stays
+byte-identical to what every shipped build produces. The app reads a value that
+is not a string of that shape as "not recorded" rather than failing the load,
+and drops it on the next save. Builds predating the key ignore it and drop it
+when they re-save. The Converter omits it: a legacy file says nothing about when
+its units were edited.
+
+"Last learned" is deliberately **not** stored: it is the newest modification
+time among the deck's statistics files (the plain sidecar, the timestamped
+session files, the all-time file), worked out when needed.
+
 Only `attempts` + `correct` per unit+direction are stored (in the separate
 `.sta` sidecar), and the super-query active pool is always a derived view.
 

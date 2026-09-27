@@ -245,9 +245,12 @@ LearningDeck applyMaskToDeck(LearningDeck deck, LearningMask newMask) {
       ),
     );
   }
+  // A mask change is not an edit of the units, even when a forced one drops
+  // or truncates values: the deck keeps its last-edited date.
   return LearningDeck(
     mask: newMask,
     units: List<LearningUnit>.unmodifiable(units),
+    lastEdited: deck.lastEdited,
   );
 }
 

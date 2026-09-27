@@ -82,8 +82,7 @@ final class DesktopFileService {
       incoming,
       current.mask,
     );
-    final LearningDeck merged = LearningDeck(
-      mask: current.mask,
+    final LearningDeck merged = current.deck.copyWith(
       units: List<LearningUnit>.unmodifiable(<LearningUnit>[
         ...current.deck.units,
         ...convertedIncoming.units,
@@ -94,6 +93,7 @@ final class DesktopFileService {
     // editor insert/delete, merge never needs levelStatsAfterInsert/Delete.
     return current.copyWith(
       deck: merged,
+      unitsEdited: true,
       statistics: resizeUnitStats(current.statistics, merged.units.length),
       // Re-indexed, never summed: merging adds units, and adding units must
       // not add attempts to a record that counts by live delta.
@@ -120,8 +120,10 @@ final class DesktopFileService {
     if (targetPath == null) {
       throw const FileOperationException(LearnAnywhereMessage.errorNoFilePath);
     }
-    await File(targetPath).writeAsString(encodeDeckJson(current.deck));
-    final DesktopDocument saved = current.copyWith(deckPath: targetPath);
+    final DesktopDocument saved = (await writeDeck(
+      current,
+      targetPath,
+    )).copyWith(deckPath: targetPath);
     await autoSaveStatistics(saved);
     // A deck that had never been saved accumulated its lifetime record in
     // memory; this is the moment it first has somewhere to go.
@@ -147,9 +149,73 @@ final class DesktopFileService {
     );
   }
 
+  /// Writes [current]'s deck, and nothing else, to [path].
+  ///
+  /// Every write of the open deck comes through here, because this is where
+  /// "last edited" is decided: when [DesktopDocument.unitsEdited] says the
+  /// units changed since the file was last read or written, the deck is dated
+  /// now; otherwise it keeps the date it already had. The write is whole-file,
+  /// so any edit still pending lands with it — and is dated — whatever the
+  /// write was for. The returned document holds the deck as written, with
+  /// nothing pending.
+  Future<DesktopDocument> writeDeck(
+    DesktopDocument current,
+    String path,
+  ) async {
+    final LearningDeck deck = current.unitsEdited
+        ? current.deck.copyWith(lastEdited: LocalTimestamp.of(DateTime.now()))
+        : current.deck;
+    await saveDeckSnapshot(deck, path);
+    return current.copyWith(deck: deck, unitsEdited: false);
+  }
+
   /// Saves [deck] to [path] without changing the current desktop document.
   Future<void> saveDeckSnapshot(LearningDeck deck, String path) async {
     await File(path).writeAsString(encodeDeckJson(deck));
+  }
+
+  /// When the deck at [deckPath] was last edited and last learned, for the
+  /// workspace's recent-decks list.
+  ///
+  /// Last edited is the date stored in the deck file. Last learned is core's
+  /// [lastLearned] over the files beside the deck, stat-ed here. Neither
+  /// failing is an error: a deck that is gone, cannot be read or will not
+  /// decode simply has no last-edited date, and a statistics file that cannot
+  /// be stat-ed is left out, so the list can always be drawn.
+  Future<DeckDates> deckDates(String deckPath) async {
+    LocalTimestamp? lastEdited;
+    try {
+      lastEdited = decodeDeckJson(
+        await File(deckPath).readAsString(),
+      ).lastEdited;
+    } on Object {
+      lastEdited = null;
+    }
+    final String folder = p.dirname(deckPath);
+    final List<String> fileNames = <String>[];
+    try {
+      await for (final FileSystemEntity entity in Directory(folder).list()) {
+        if (entity is File) {
+          fileNames.add(DeckPaths.fileName(entity.path));
+        }
+      }
+    } on Object {
+      // A folder that cannot be listed has no statistics to offer.
+    }
+    return DeckDates(
+      lastEdited: lastEdited,
+      lastLearned: lastLearned(
+        deckPath: deckPath,
+        statisticsFileNames: fileNames,
+        timeOf: (String fileName) {
+          try {
+            return File(p.join(folder, fileName)).lastModifiedSync();
+          } on Object {
+            return null;
+          }
+        },
+      ),
+    );
   }
 
   /// Recursively loads every `.vok` deck under [folder] (including subfolders),
@@ -884,6 +950,19 @@ enum AllTimeWriteOutcome {
   /// A lifetime file is already there and this record is not entitled to
   /// replace it — it never read that file. The file is left exactly as it was.
   refused,
+}
+
+/// When a deck was last edited and last learned; `null` for either means it
+/// has no record of that.
+final class DeckDates {
+  /// Creates a deck's dates.
+  const DeckDates({this.lastEdited, this.lastLearned});
+
+  /// The date stored in the deck file for its last unit edit.
+  final LocalTimestamp? lastEdited;
+
+  /// The newest modification time among the deck's statistics files.
+  final DateTime? lastLearned;
 }
 
 /// A saved deck and what became of its lifetime record.

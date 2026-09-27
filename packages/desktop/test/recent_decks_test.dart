@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learn_anywhere_core/core.dart';
+import 'package:learn_anywhere_desktop/src/file_operations/desktop_file_service.dart';
 import 'package:learn_anywhere_desktop/src/home/recent_decks.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 import 'package:path/path.dart' as p;
@@ -10,6 +12,7 @@ void main() {
   late Directory temp;
   late Directory language;
   late List<String> opened;
+  late Map<String, DeckDates> dates;
 
   setUp(() {
     temp = Directory.systemTemp.createTempSync('la_recent_decks');
@@ -17,6 +20,7 @@ void main() {
     // the language, and the link shows it.
     language = Directory(p.join(temp.path, 'Franz'))..createSync();
     opened = <String>[];
+    dates = <String, DeckDates>{};
   });
 
   tearDown(() {
@@ -32,15 +36,21 @@ void main() {
   /// The text a link shows for [name]: its folder, its own name, nothing else.
   String labelOf(String name) => p.join('...', 'Franz', name);
 
-  Future<void> pumpList(WidgetTester tester, List<String> paths) {
+  Future<void> pumpList(
+    WidgetTester tester,
+    List<String> paths, {
+    Locale locale = const Locale('en'),
+  }) {
     return tester.pumpWidget(
       MaterialApp(
+        locale: locale,
         localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
         supportedLocales: LearnAnywhereLocalizations.supportedLocales,
         home: Scaffold(
           body: RecentDecksList(
             paths: paths,
             onOpen: (String path) async => opened.add(path),
+            datesOf: (String path) async => dates[path] ?? const DeckDates(),
           ),
         ),
       ),
@@ -118,5 +128,67 @@ void main() {
 
     expect(find.text('Recent decks:'), findsNothing);
     expect(find.byType(InkWell), findsNothing);
+  });
+
+  testWidgets('each deck shows when it was last edited and last learned', (
+    WidgetTester tester,
+  ) async {
+    final String french = deckFile('french.vok');
+    final String latin = deckFile('latin.vok');
+    dates[french] = DeckDates(
+      lastEdited: LocalTimestamp.of(DateTime(2026, 9, 25, 16, 32, 11)),
+      lastLearned: DateTime(2026, 9, 26, 8, 5, 42),
+    );
+    await pumpList(tester, <String>[french, latin]);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Last edited: 2026-09-25 16:32 · '
+          'Last learned: 2026-09-26 08:05'),
+      findsOneWidget,
+    );
+    // A deck with neither date says so rather than leaving a gap.
+    expect(
+      find.text('Last edited: not recorded · '
+          'Last learned: not learned yet'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the dates read in German with the German labels', (
+    WidgetTester tester,
+  ) async {
+    final String french = deckFile('french.vok');
+    final String latin = deckFile('latin.vok');
+    dates[french] = DeckDates(
+      lastEdited: LocalTimestamp.of(DateTime(2026, 9, 25, 16, 32, 11)),
+    );
+    await pumpList(
+      tester,
+      <String>[french, latin],
+      locale: const Locale('de'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Zuletzt bearbeitet: 2026-09-25 16:32 · '
+          'Zuletzt gelernt: noch nicht gelernt'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Zuletzt bearbeitet: nicht erfasst · '
+          'Zuletzt gelernt: noch nicht gelernt'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a deck whose file is gone shows no dates', (
+    WidgetTester tester,
+  ) async {
+    final String missing = p.join(language.path, 'moved.vok');
+    await pumpList(tester, <String>[missing]);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Last edited'), findsNothing);
   });
 }

@@ -3,6 +3,7 @@ library;
 
 import 'dart:convert';
 
+import '../models/local_timestamp.dart';
 import '../models/models.dart';
 import '../speech/spoken_language.dart';
 
@@ -117,17 +118,29 @@ LearningDeck decodeDeck(Object? value) {
       ),
     );
   }
+  // `lastEdited` is ADDITIVE at the current format version and read
+  // tolerantly, like the speech keys: a value that is not a timestamp of the
+  // stored shape reads as "not recorded" rather than failing the load.
+  final Object? rawLastEdited = json['lastEdited'];
   return LearningDeck(
     mask: mask,
     units: List<LearningUnit>.unmodifiable(units),
+    lastEdited: rawLastEdited is String
+        ? LocalTimestamp.tryParse(rawLastEdited)
+        : null,
   );
 }
 
 /// Encodes a learning deck object.
 Map<String, Object?> encodeDeck(LearningDeck deck) {
+  final LocalTimestamp? lastEdited = deck.lastEdited;
   return <String, Object?>{
     'format': lessonFormat,
     'version': currentFormatVersion,
+    // Written only when recorded, so an undated deck stays byte-identical to
+    // what builds predating the key produce. Placed first after the version
+    // so someone reading the file sees it without scrolling past the units.
+    if (lastEdited != null) 'lastEdited': lastEdited.toString(),
     'mask': _encodeMaskBody(deck.mask),
     'units': deck.units.map(_encodeUnit).toList(growable: false),
   };

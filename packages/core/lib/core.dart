@@ -4,6 +4,7 @@ library;
 export 'compatibility/mask_compatibility.dart';
 export 'engine/engine.dart';
 export 'i18n/i18n.dart';
+export 'models/local_timestamp.dart';
 export 'models/models.dart';
 export 'paths/deck_paths.dart';
 export 'rich_text/rich_text_ops.dart';

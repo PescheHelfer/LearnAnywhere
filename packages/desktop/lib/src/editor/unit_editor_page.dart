@@ -602,11 +602,10 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
     int? insertedAt,
     int? deletedAt,
   }) {
+    // copyWith keeps the deck's last-edited date: it is the save, not the
+    // keystroke, that dates an edit.
     widget.onChanged(
-      LearningDeck(
-        mask: widget.deck.mask,
-        units: List<LearningUnit>.unmodifiable(units),
-      ),
+      widget.deck.copyWith(units: List<LearningUnit>.unmodifiable(units)),
       insertedAt: insertedAt,
       deletedAt: deletedAt,
     );

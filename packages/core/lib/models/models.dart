@@ -4,6 +4,7 @@ library;
 import 'dart:math';
 
 import '../speech/spoken_language.dart';
+import 'local_timestamp.dart';
 
 /// Stable package identifier used by setup smoke tests.
 const String corePackageName = 'learn_anywhere_core';
@@ -632,13 +633,37 @@ final class LearningUnit {
 /// A self-contained learning deck with an embedded mask.
 final class LearningDeck {
   /// Creates a learning deck.
-  const LearningDeck({required this.mask, required this.units});
+  const LearningDeck({
+    required this.mask,
+    required this.units,
+    this.lastEdited,
+  });
 
   /// The embedded mask.
   final LearningMask mask;
 
   /// Ordered units. Their displayed indices are one-based.
   final List<LearningUnit> units;
+
+  /// When the units last changed — a field value, a unit's category, a unit
+  /// added or removed — or `null` when the deck has no record of it.
+  ///
+  /// Only a write that changes unit content sets it. A change to the mask is
+  /// not an edit, so applying one keeps it as it was.
+  final LocalTimestamp? lastEdited;
+
+  /// Returns a copy with selected fields changed.
+  LearningDeck copyWith({
+    LearningMask? mask,
+    List<LearningUnit>? units,
+    LocalTimestamp? lastEdited,
+  }) {
+    return LearningDeck(
+      mask: mask ?? this.mask,
+      units: units ?? this.units,
+      lastEdited: lastEdited ?? this.lastEdited,
+    );
+  }
 
   /// Returns the category for [unit].
   CategoryDefinition categoryForUnit(LearningUnit unit) {

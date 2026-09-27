@@ -109,6 +109,16 @@ enum LearnAnywhereMessage {
   /// Home screen: heading above the recently opened deck links.
   homeRecentDecks,
 
+  /// Recent-decks entry: the line under the link naming when the deck's units
+  /// were last edited (`{edited}`) and when it was last learned (`{learned}`).
+  homeRecentDeckDates,
+
+  /// Recent-decks entry: the deck file carries no last-edited date.
+  homeRecentDeckNotRecorded,
+
+  /// Recent-decks entry: the deck has no statistics files beside it.
+  homeRecentDeckNotLearned,
+
   /// Home screen: last loaded mask path label.
   homeLastMask,
 
@@ -1445,6 +1455,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.homeNoFileLoaded: 'No file loaded',
       LearnAnywhereMessage.homeMaskName: 'Mask',
       LearnAnywhereMessage.homeRecentDecks: 'Recent decks',
+      LearnAnywhereMessage.homeRecentDeckDates:
+          'Last edited: {edited} · Last learned: {learned}',
+      LearnAnywhereMessage.homeRecentDeckNotRecorded: 'not recorded',
+      LearnAnywhereMessage.homeRecentDeckNotLearned: 'not learned yet',
       LearnAnywhereMessage.homeLastMask: 'Last mask',
       LearnAnywhereMessage.menuFile: '&File', // top-bar F
       LearnAnywhereMessage.fileNewDeck: '&Clear units from memory...', // C
@@ -2078,6 +2092,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.homeNoFileLoaded: 'Keine Datei geladen',
       LearnAnywhereMessage.homeMaskName: 'Maske',
       LearnAnywhereMessage.homeRecentDecks: 'Zuletzt verwendete Lern-Dateien',
+      LearnAnywhereMessage.homeRecentDeckDates:
+          'Zuletzt bearbeitet: {edited} · Zuletzt gelernt: {learned}',
+      LearnAnywhereMessage.homeRecentDeckNotRecorded: 'nicht erfasst',
+      LearnAnywhereMessage.homeRecentDeckNotLearned: 'noch nicht gelernt',
       LearnAnywhereMessage.homeLastMask: 'Letzte Masken-Datei',
       LearnAnywhereMessage.menuFile: '&Datei', // top-bar D
       LearnAnywhereMessage.fileNewDeck:

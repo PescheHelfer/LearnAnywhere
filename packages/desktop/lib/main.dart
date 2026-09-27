@@ -61,6 +61,7 @@ final class LearnAnywhereDesktopApp extends StatefulWidget {
     required this.prefs,
     this.filePicker = const DesktopFilePicker(),
     this.speechEngine,
+    this.settingsPath,
   });
 
   /// Desktop-specific preferences (theme, locale, dialog dirs, window bounds).
@@ -76,6 +77,12 @@ final class LearnAnywhereDesktopApp extends StatefulWidget {
   /// speak decides what the menu offers, and a test must be able to exercise
   /// both answers whichever machine it is running on.
   final TtsEngine? speechEngine;
+
+  /// Where the settings file is read and written. Null uses the per-user
+  /// location (`DesktopFileService.settingsFilePath`); a test that opens decks
+  /// passes a temporary file, so it neither sees nor rewrites the learner's
+  /// own recent-deck list.
+  final String? settingsPath;
 
   @override
   State<LearnAnywhereDesktopApp> createState() =>
@@ -222,6 +229,7 @@ final class _LearnAnywhereDesktopAppState
         prefs: widget.prefs,
         filePicker: widget.filePicker,
         speechEngine: _speechEngine,
+        settingsPath: widget.settingsPath,
         appTheme: _appTheme,
         locale: _locale,
         zoomPercent: _zoomPercent,
@@ -326,6 +334,7 @@ final class _DesktopHome extends StatefulWidget {
     required this.prefs,
     required this.filePicker,
     required this.speechEngine,
+    required this.settingsPath,
     required this.appTheme,
     required this.locale,
     required this.zoomPercent,
@@ -342,6 +351,9 @@ final class _DesktopHome extends StatefulWidget {
   /// The host's speech, chosen by the shell above (see
   /// [LearnAnywhereDesktopApp.speechEngine]).
   final TtsEngine speechEngine;
+
+  /// See [LearnAnywhereDesktopApp.settingsPath].
+  final String? settingsPath;
   final _AppTheme appTheme;
   final Locale locale;
   final int zoomPercent;
@@ -692,7 +704,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     HardwareKeyboard.instance.addHandler(_handleMenuAccelerator);
     HardwareKeyboard.instance.addHandler(_handleHelpKey);
     HardwareKeyboard.instance.addHandler(_handleZoomKey);
-    _settingsPath = _fileService.settingsFilePath();
+    _settingsPath = widget.settingsPath ?? _fileService.settingsFilePath();
     _range = resetUnitRange(_document.deck.units.length);
     _queryOptions = _optionsFromSettings(_settings);
     _learnParameters = _parametersFromSettings(_settings);
@@ -2319,7 +2331,20 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     if (deckPath == null) {
       return false;
     }
-    await _fileService.saveDeckSnapshot(updatedDeck, deckPath);
+    // Through writeDeck, not a bare snapshot: the mask change leaves the
+    // last-edited date alone, but unit edits still pending in memory land
+    // with this whole-file write and have to be dated like any other.
+    final DesktopDocument before = _document;
+    final DesktopDocument written = await _fileService.writeDeck(
+      before,
+      deckPath,
+    );
+    // Adopt the written deck only if nothing replaced the document while the
+    // write ran; otherwise a pending edit stays pending and the next save
+    // dates it.
+    if (mounted && identical(_document, before)) {
+      setState(() => _document = written);
+    }
     return true;
   }
 
@@ -2745,6 +2770,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         ),
         lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
         onOpenRecentDeck: _openDeckPath,
+        recentDeckDates: _fileService.deckDates,
       ),
       _DesktopRoute.fileOperations => _FileOperationsStatus(
         document: _document,
@@ -2941,6 +2967,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     setState(() {
       _document = _document.copyWith(
         deck: deck,
+        unitsEdited: true,
         statistics: statistics,
         levelStatistics: levelStatistics,
         allTime: allTime,
@@ -3746,6 +3773,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         for (var index = 0; index < _document.deck.units.length; index += 1)
           if (selected.contains(index + 1)) _document.deck.units[index],
       ],
+      // A new deck made of some of this one's units: its unit set was
+      // decided just now.
+      lastEdited: LocalTimestamp.of(DateTime.now()),
     );
     await _guardedFileOperation(() async {
       final String vokPath = _ensureExtension(path, 'vok');
@@ -3789,6 +3819,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     setState(() {
       _document = _document.copyWith(
         deck: deck,
+        // A deck assembled from search hits is a new set of units, so the
+        // file it is first saved to is dated.
+        unitsEdited: true,
         statistics: clearStatistics(deck),
         allTime: AllTimeRecord.unread,
         clearDeckPath: true,
@@ -4105,6 +4138,7 @@ final class _HomeScreen extends StatelessWidget {
   const _HomeScreen({
     required this.document,
     required this.onOpenRecentDeck,
+    required this.recentDeckDates,
     this.recentDeckPaths = const <String>[],
     this.lastMaskPath,
   });
@@ -4118,6 +4152,9 @@ final class _HomeScreen extends StatelessWidget {
 
   /// Loads the given deck path directly (no file dialog).
   final Future<void> Function(String path) onOpenRecentDeck;
+
+  /// Looks up a recent deck's last-edited and last-learned dates.
+  final DeckDatesLookup recentDeckDates;
 
   @override
   Widget build(BuildContext context) {
@@ -4148,6 +4185,7 @@ final class _HomeScreen extends StatelessWidget {
                 RecentDecksList(
                   paths: recentDeckPaths,
                   onOpen: onOpenRecentDeck,
+                  datesOf: recentDeckDates,
                 ),
               ],
               if (lastMaskPath != null)
@@ -4181,6 +4219,7 @@ final class _HomeScreen extends StatelessWidget {
                 RecentDecksList(
                   paths: recentDeckPaths,
                   onOpen: onOpenRecentDeck,
+                  datesOf: recentDeckDates,
                 ),
               ],
             ],
