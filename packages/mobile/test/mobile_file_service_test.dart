@@ -218,6 +218,35 @@ void main() {
     ]);
   });
 
+  test(
+    'listDecks recency comes from the shared last-learned helper, not just '
+    'the plain sidecar',
+    () async {
+      // Proves listDecks delegates to core's lastLearned (which considers
+      // every statistics file) rather than hand-rolling a stat of just the
+      // plain sidecar, as it used to.
+      for (final String name in <String>['onlyAllTime', 'untouched']) {
+        File(
+          '${library.path}/$name.vok',
+        ).writeAsStringSync(encodeDeckJson(_deck()));
+      }
+      const StatisticsFile empty = StatisticsFile(
+        deckRef: 'placeholder.vok',
+        perUnit: <UnitStats>[],
+      );
+      File(
+        '${library.path}/onlyAllTime_alltime.sta',
+      ).writeAsStringSync(encodeStatisticsJson(empty));
+
+      final List<LibraryDeckEntry> entries = await service.listDecks();
+
+      expect(entries.map((LibraryDeckEntry e) => e.name).toList(), <String>[
+        'untouched',
+        'onlyAllTime',
+      ]);
+    },
+  );
+
   test('a deck whose sidecar is not a readable file still lists', () async {
     // The listing's catch exists to skip an undecodable *deck*. Reading the
     // session file's timestamp must never reach it: a sidecar the service

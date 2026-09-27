@@ -160,6 +160,43 @@ final class DeckPaths {
     return (context ?? p.context).basenameWithoutExtension(path);
   }
 
+  /// Whether [fileName] is one of [deckPath]'s statistics files: the plain
+  /// sidecar, a timestamped session file, or the all-time file.
+  ///
+  /// [fileName] is a bare file name (as a directory listing returns it), not
+  /// a full path. Matching is exact and case-insensitive for the sidecar and
+  /// all-time names, and by [timestampedStatisticsPattern] for session files,
+  /// so a neighbouring deck whose name is a prefix of this one — `Foo` next to
+  /// `Foo2` — is never mistaken for it: `Foo2.sta` and `Foo2_alltime.sta`
+  /// don't equal `Foo`'s exact names, and `Foo2_20260101_120000.sta` fails the
+  /// anchored `Foo_` pattern.
+  static bool isStatisticsFileFor(
+    String deckPath,
+    String fileName, {
+    p.Context? context,
+  }) {
+    final p.Context ctx = context ?? p.context;
+    final String candidate = fileName.toLowerCase();
+    final String sidecar = DeckPaths.fileName(
+      statisticsSidecar(deckPath, context: ctx),
+      context: ctx,
+    ).toLowerCase();
+    if (candidate == sidecar) {
+      return true;
+    }
+    final String allTime = DeckPaths.fileName(
+      allTimeStatistics(deckPath, context: ctx),
+      context: ctx,
+    ).toLowerCase();
+    if (candidate == allTime) {
+      return true;
+    }
+    return timestampedStatisticsPattern(
+      deckPath,
+      context: ctx,
+    ).hasMatch(fileName);
+  }
+
   /// Whether [path] ends in `.[extension]`, ignoring case.
   ///
   /// Case-insensitive on every host on purpose: a deck typed as `FRENCH.VOK`

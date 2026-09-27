@@ -79,7 +79,8 @@ final class LibraryDeckSource {
 
   /// When this deck was last practised, or `null` when it never was.
   ///
-  /// Derived from the deck's session file rather than stored — see
+  /// Derived from the deck's statistics files rather than stored, through
+  /// core's `lastLearned` helper — see
   /// `docs/adr/0001-library-recency-from-the-session-file.md`. It orders the
   /// listing and is deliberately not carried onto [LibraryDeckEntry]: nothing
   /// renders a date, so nothing needs to hold one.
@@ -176,18 +177,25 @@ class MobileFileService {
 
   /// Lists the decks currently in the library, most recently practised first.
   ///
-  /// "Last practised" is the modification time of the deck's session file.
-  /// Saving statistics rewrites that sidecar on every rated card, so its
-  /// timestamp already is the answer — no timestamp is stored anywhere for
-  /// this, and a deck with no session file has never been practised. See
+  /// "Last practised" is core's `lastLearned`: the newest modification time
+  /// among the deck's statistics files. Mobile only ever writes the plain
+  /// `.sta` sidecar, so in practice that is the one file considered, and
+  /// saving statistics rewrites it on every rated card — so its timestamp
+  /// already is the answer. No timestamp is stored anywhere for this, and a
+  /// deck with no sidecar has never been practised. See
   /// `docs/adr/0001-library-recency-from-the-session-file.md`.
   ///
   /// A file that fails to decode is skipped rather than surfaced as an
   /// error: one damaged deck should not make the whole library unusable.
   Future<List<LibraryDeckEntry>> listDecks() async {
     final Directory dir = await libraryDirectory();
+    final List<FileSystemEntity> entries = dir.listSync();
+    final List<String> fileNames = <String>[
+      for (final FileSystemEntity entity in entries)
+        if (entity is File) DeckPaths.fileName(entity.path),
+    ];
     final List<LibraryDeckSource> decks = <LibraryDeckSource>[];
-    for (final FileSystemEntity entity in dir.listSync()) {
+    for (final FileSystemEntity entity in entries) {
       if (entity is! File || !DeckPaths.hasExtension(entity.path, deckExtension)) {
         continue;
       }
@@ -197,7 +205,7 @@ class MobileFileService {
           LibraryDeckSource(
             path: entity.path,
             deck: deck,
-            lastPractised: await _lastPractised(entity.path),
+            lastPractised: _lastPractised(entity.path, dir, fileNames),
           ),
         );
       } on Object {
@@ -207,23 +215,31 @@ class MobileFileService {
     return libraryDeckEntries(decks);
   }
 
-  /// When the deck at [deckPath] was last practised, or `null` when its
-  /// session file does not exist because it never has been.
+  /// When the deck at [deckPath] was last practised, or `null` when it never
+  /// has been.
   ///
-  /// Swallows its own I/O failures rather than letting them reach the
-  /// listing's `catch`, which exists to skip an *undecodable deck*: a sidecar
-  /// that vanishes between the two calls, or that cannot be stat-ed, must
-  /// cost the deck its place in the order and never its place in the list.
-  Future<DateTime?> _lastPractised(String deckPath) async {
-    final File sidecar = File(statisticsSidecarPath(deckPath));
-    try {
-      if (!await sidecar.exists()) {
-        return null;
-      }
-      return await sidecar.lastModified();
-    } on Object {
-      return null;
-    }
+  /// Delegates to core's `lastLearned`, handing it the file names already
+  /// listed for [dir] plus a lookup that stats one of them. A file that
+  /// cannot be stat-ed (removed mid-listing, unreadable) is swallowed rather
+  /// than let reach the listing's `catch`, which exists to skip an
+  /// *undecodable deck*: a missing statistics file must cost the deck its
+  /// place in the order and never its place in the list.
+  DateTime? _lastPractised(
+    String deckPath,
+    Directory dir,
+    List<String> fileNames,
+  ) {
+    return lastLearned(
+      deckPath: deckPath,
+      statisticsFileNames: fileNames,
+      timeOf: (String fileName) {
+        try {
+          return File(p.join(dir.path, fileName)).lastModifiedSync();
+        } on Object {
+          return null;
+        }
+      },
+    );
   }
 
   /// Opens the deck at [path] in the library, loading its `.sta` sidecar

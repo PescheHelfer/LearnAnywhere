@@ -42,6 +42,13 @@ is exactly the condition the listing needs to put a freshly imported deck at the
 **The Library derives each deck's recency from the modification time of its session file,
 read fresh on every listing. Nothing persists a "last practised" timestamp.**
 
+*(Update, difficult-units ticket 01.)* The derivation itself now lives in core as the
+shared `lastLearned` helper — the newest modification time among *all* of a deck's
+statistics files (sidecar, timestamped session files, the lifetime file), so desktop's
+recent-decks list agrees with the Library on what "last learned" means. Mobile only ever
+writes the plain sidecar, so nothing above changes in practice: the helper still resolves
+to that one file's timestamp here. The reasoning and the four rules stand unchanged.
+
 Four rules follow:
 
 1. **No session file means never practised**, and those decks sort **above** every

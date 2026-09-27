@@ -14,4 +14,5 @@ export 'speech/speech_settings.dart';
 export 'speech/spoken_language.dart';
 export 'speech/tts_engine.dart';
 export 'statistics/all_time.dart';
+export 'statistics/last_learned.dart';
 export 'statistics/unit_identity.dart';
