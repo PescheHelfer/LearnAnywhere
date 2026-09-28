@@ -252,6 +252,19 @@ LearningDeck applyMaskToDeck(LearningDeck deck, LearningMask newMask) {
   );
 }
 
+/// The mask with the highest revision in [masks], which must not be empty; of
+/// equal revisions, the first.
+///
+/// When units of several revisions of one mask are brought together, this is
+/// the one to bring them onto: a later revision is authoritative, and
+/// re-keying onto an older one could drop fields the newer one added.
+LearningMask newestMask(Iterable<LearningMask> masks) {
+  return masks.reduce(
+    (LearningMask newest, LearningMask mask) =>
+        mask.revision > newest.revision ? mask : newest,
+  );
+}
+
 /// Truncates [value] to at most [maxLength] characters of plain text, keeping
 /// run formatting up to the cut. Returns [value] unchanged when it already fits.
 FieldValue _truncateValue(FieldValue value, int maxLength) {

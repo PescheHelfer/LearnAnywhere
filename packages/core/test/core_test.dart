@@ -508,6 +508,26 @@ void main() {
         ]),
       );
     });
+
+    test('newestMask picks the highest revision, wherever it comes', () {
+      final LearningMask r1 = compatMask().copyWith(revision: 1);
+      final LearningMask r3 = compatMask().copyWith(revision: 3, name: 'r3');
+      final LearningMask r2 = compatMask().copyWith(revision: 2);
+
+      expect(newestMask(<LearningMask>[r3, r1, r2]), same(r3));
+      expect(newestMask(<LearningMask>[r1, r2, r3]), same(r3));
+      expect(newestMask(<LearningMask>[r1]), same(r1));
+    });
+
+    test('newestMask keeps the first of equal revisions', () {
+      final LearningMask first = compatMask().copyWith(revision: 2);
+      final LearningMask second = compatMask().copyWith(
+        revision: 2,
+        name: 'second',
+      );
+
+      expect(newestMask(<LearningMask>[first, second]), same(first));
+    });
   });
 
   group('i18n', () {

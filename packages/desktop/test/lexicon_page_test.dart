@@ -134,6 +134,86 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('No matches found.'), findsOneWidget);
   });
+
+  testWidgets('loading file hits of several revisions of one mask brings '
+      'them onto the newest, even when an older deck comes first', (
+    WidgetTester tester,
+  ) async {
+    final LearningDeck older = sampleDeck();
+    final CategoryDefinition category = older.mask.categories.single;
+    // The newer revision added a Note field, and its unit fills it in: an
+    // older reference would have to drop the note, so the load was refused.
+    final LearningMask newerMask = older.mask.copyWith(
+      revision: older.mask.revision + 1,
+      categories: <CategoryDefinition>[
+        CategoryDefinition(
+          id: category.id,
+          name: category.name,
+          fields: <FieldDefinition>[
+            ...category.fields,
+            const FieldDefinition(
+              id: 2,
+              name: 'Note',
+              length: 40,
+              equalGroup: 1,
+              role1: FieldRole.remark,
+              role2: FieldRole.remark,
+            ),
+          ],
+        ),
+      ],
+    );
+    final LearningDeck newer = LearningDeck(
+      mask: newerMask,
+      units: <LearningUnit>[
+        LearningUnit(
+          categoryId: category.id,
+          fields: const <int, FieldValue>{
+            0: FieldValue.plain('thanks'),
+            1: FieldValue.plain('merci'),
+            2: FieldValue.plain('informal'),
+          },
+        ),
+      ],
+    );
+    LearningDeck? loadedDeck;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates:
+            LearnAnywhereLocalizations.localizationsDelegates,
+        supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+        home: Scaffold(
+          body: LexiconPage(
+            deck: older,
+            textOptions: const TextMatchOptions(),
+            // The older deck is walked first, so its hits come first.
+            onPickFolderDecks: () async => <String, LearningDeck>{
+              'older.vok': older,
+              'newer.vok': newer,
+            },
+            onLoadFoundDeck: (LearningDeck deck) => loadedDeck = deck,
+            onClose: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Load found units'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Search files'));
+    await tester.pumpAndSettle();
+    expect(find.text('Results: 3'), findsOneWidget);
+    await tester.tap(find.text('Load results'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(loadedDeck, isNotNull);
+    expect(loadedDeck!.mask.revision, newerMask.revision);
+    expect(loadedDeck!.units, hasLength(3));
+    expect(loadedDeck!.units.last.valueForFieldId(2).plainText, 'informal');
+  });
 }
 
 Widget lexiconApp({required LearningDeck deck, int? maxResults}) {

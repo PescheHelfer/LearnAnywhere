@@ -107,9 +107,9 @@ void main() {
         ),
       ),
     );
-    // The same mask a revision later, with a field renamed: whichever deck
-    // the walk meets first gives the reference mask, so the other deck's
-    // hits are re-keyed onto it when they are loaded.
+    // The same mask a revision later, with a field renamed: the hits of
+    // a.vok are re-keyed onto it when they are loaded, whichever deck the
+    // folder walk meets first.
     File(p.join(folder.path, 'sub', 'b.vok')).writeAsStringSync(
       encodeDeckJson(
         LearningDeck(
@@ -184,6 +184,10 @@ void main() {
         await tester.pump();
       }
 
+      expect(
+        decodeDeckJson(File(savedPath).readAsStringSync()).mask.revision,
+        _mask.revision + 1,
+      );
       expect(flagsByQuestion(savedPath), <String, (bool, bool)>{
         'house': (true, false),
         'dog': (false, true),

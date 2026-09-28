@@ -365,9 +365,10 @@ final class _LexiconPageState extends State<LexiconPage> {
   ///
   /// Memory-search hits resolve against the in-memory deck; file-search hits
   /// resolve against their own source deck ([_fileDecks]). All hits must
-  /// describe the SAME mask (equal [LearningMask.maskId]); the first hit's mask
-  /// is the reference. Each hit's unit is re-keyed onto the reference mask via
-  /// [applyMaskToDeck], but only when that is lossless (per
+  /// describe the SAME mask (equal [LearningMask.maskId]); the newest revision
+  /// among them ([newestMask]) is the reference, whatever order the folder
+  /// walk met the decks in. Each hit's unit is re-keyed onto the reference mask
+  /// via [applyMaskToDeck], but only when that is lossless (per
   /// [checkMaskCompatibility]). A different maskId, or a lossy conversion, is
   /// refused with a localized [_LexiconLoadException].
   LearningDeck _deckFromResults() {
@@ -377,16 +378,22 @@ final class _LexiconPageState extends State<LexiconPage> {
         units: const <LearningUnit>[],
       );
     }
-    final LearningMask reference = _sourceDeckFor(_results.first).mask;
+    final List<LearningDeck> sourceDecks = <LearningDeck>[
+      for (final SearchResult result in _results) _sourceDeckFor(result),
+    ];
+    final String maskId = sourceDecks.first.mask.maskId;
+    if (sourceDecks.any((LearningDeck deck) => deck.mask.maskId != maskId)) {
+      throw const _LexiconLoadException(
+        LearnAnywhereMessage.lexiconLoadMaskMismatch,
+      );
+    }
+    final LearningMask reference = newestMask(
+      sourceDecks.map((LearningDeck deck) => deck.mask),
+    );
     final List<LearningUnit> units = <LearningUnit>[];
-    for (final SearchResult result in _results) {
-      final LearningDeck sourceDeck = _sourceDeckFor(result);
-      if (sourceDeck.mask.maskId != reference.maskId) {
-        throw const _LexiconLoadException(
-          LearnAnywhereMessage.lexiconLoadMaskMismatch,
-        );
-      }
-      final LearningUnit unit = sourceDeck.units[result.unitIndex - 1];
+    for (var i = 0; i < _results.length; i += 1) {
+      final LearningDeck sourceDeck = sourceDecks[i];
+      final LearningUnit unit = sourceDeck.units[_results[i].unitIndex - 1];
       final MaskCompatibilityResult compat = checkMaskCompatibility(
         oldMask: sourceDeck.mask,
         newMask: reference,
