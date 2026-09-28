@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:learn_anywhere_core/core.dart';
 import 'package:test/test.dart';
@@ -731,6 +732,221 @@ void main() {
       expect(change.removed, 0);
       expect(change.changed, isFalse);
       expect(change.deck, same(clean));
+    });
+  });
+
+  group('difficult units only', () {
+    // Units 1, 3 and 4 are difficult, each by a different flag; 2 and 5 are
+    // not.
+    final LearningDeck deck = LearningDeck(
+      mask: mask,
+      units: <LearningUnit>[
+        word('one', 'eins', manual: true),
+        word('two', 'zwei'),
+        word('three', 'drei', automatic: true),
+        word('four', 'vier', manual: true, automatic: true),
+        word('five', 'fünf'),
+      ],
+    );
+    final LearningDeck noneFlagged = LearningDeck(
+      mask: mask,
+      units: <LearningUnit>[word('one', 'eins'), word('two', 'zwei')],
+    );
+
+    SessionParameters only(SessionMode mode, {int? start, int? end}) {
+      return SessionParameters(
+        directionSelection: DirectionSelection.direction1,
+        mode: mode,
+        startIndex: start,
+        endIndex: end,
+        difficultOnly: true,
+      );
+    }
+
+    /// The unit indices of [items], in order.
+    List<int> unitsOf(List<SessionItem> items) => <int>[
+      for (final SessionItem item in items) item.unitIndex,
+    ];
+
+    test('is off by default, so every unit is in scope', () {
+      expect(const SessionParameters().difficultOnly, isFalse);
+      expect(
+        unitsOf(
+          itemsInScope(
+            deck,
+            const SessionParameters(
+              directionSelection: DirectionSelection.direction1,
+            ),
+          ),
+        ),
+        <int>[1, 2, 3, 4, 5],
+      );
+    });
+
+    test('narrows the practice and once-through order to units with either '
+        'flag, within the unit range', () {
+      for (final SessionMode mode in <SessionMode>[
+        SessionMode.practice,
+        SessionMode.onceThrough,
+      ]) {
+        expect(unitsOf(itemsInScope(deck, only(mode))), <int>[1, 3, 4]);
+        expect(
+          unitsOf(
+            sessionItemOrder(
+              deck: deck,
+              parameters: only(mode, start: 2, end: 5),
+              random: Random(1),
+            ),
+          ),
+          <int>[3, 4],
+        );
+      }
+    });
+
+    test('every unit a practice draw serves is difficult', () {
+      final Random random = Random(7);
+      for (var draw = 0; draw < 50; draw += 1) {
+        final SessionItem? item = pickPracticeItem(
+          deck: deck,
+          parameters: only(SessionMode.practice),
+          random: random,
+        );
+        expect(<int>[1, 3, 4], contains(item!.unitIndex));
+      }
+    });
+
+    test('narrows the drill pool, and mastery still removes a difficult unit '
+        'from it', () {
+      // Unit 1 is mastered in direction 1; unit 3 has tried and failed.
+      final List<UnitStats> statistics = <UnitStats>[
+        const UnitStats(
+          index: 1,
+          direction1: DirectionStats(attempts: 2, correct: 2),
+        ),
+        const UnitStats(index: 3, direction1: DirectionStats(attempts: 2)),
+      ];
+      final List<SessionItem> pool = activeSuperQueryPool(
+        deck: deck,
+        statistics: statistics,
+        parameters: only(SessionMode.superQuery),
+      );
+      expect(unitsOf(pool), <int>[3, 4]);
+      // Both directions: a difficult unit is asked both ways.
+      expect(
+        activeSuperQueryPool(
+          deck: deck,
+          statistics: const <UnitStats>[],
+          parameters: const SessionParameters(
+            mode: SessionMode.superQuery,
+            difficultOnly: true,
+          ),
+        ),
+        const <SessionItem>[
+          SessionItem(unitIndex: 1, direction: QueryDirection.direction1),
+          SessionItem(unitIndex: 1, direction: QueryDirection.direction2),
+          SessionItem(unitIndex: 3, direction: QueryDirection.direction1),
+          SessionItem(unitIndex: 3, direction: QueryDirection.direction2),
+          SessionItem(unitIndex: 4, direction: QueryDirection.direction1),
+          SessionItem(unitIndex: 4, direction: QueryDirection.direction2),
+        ],
+      );
+    });
+
+    test('narrows the Level Learning pool, and level-0 mastery still removes '
+        'a difficult unit from it', () {
+      final List<LevelUnitStats> levelStatistics = <LevelUnitStats>[
+        LevelUnitStats(
+          index: 4,
+          dir1: const LevelDirectionStats(
+            currentLevel: kFreeRecallLevel,
+            levels: <int, DirectionStats>{
+              kFreeRecallLevel: DirectionStats(attempts: 2, correct: 2),
+            },
+          ),
+          dir2: LevelDirectionStats.fresh(kMaxSupportLevel),
+        ),
+      ];
+      final List<SessionItem> pool = activeLevelLearningPool(
+        deck: deck,
+        statistics: const <UnitStats>[],
+        levelStatistics: levelStatistics,
+        parameters: only(SessionMode.levelLearning),
+      );
+      expect(unitsOf(pool), <int>[1, 3]);
+    });
+
+    test('a deck, or a unit range, without difficult units yields an empty '
+        'pool in every mode', () {
+      for (final (LearningDeck subject, int? start, int? end)
+          in <(LearningDeck, int?, int?)>[
+            (noneFlagged, null, null),
+            (deck, 5, 5),
+          ]) {
+        for (final SessionMode mode in SessionMode.values) {
+          final SessionParameters parameters = only(
+            mode,
+            start: start,
+            end: end,
+          );
+          expect(itemsInScope(subject, parameters), isEmpty);
+          expect(
+            sessionItemOrder(
+              deck: subject,
+              parameters: parameters,
+              random: Random(1),
+            ),
+            isEmpty,
+          );
+          expect(
+            pickPracticeItem(
+              deck: subject,
+              parameters: parameters,
+              random: Random(1),
+            ),
+            isNull,
+          );
+          expect(
+            activeSuperQueryPool(
+              deck: subject,
+              statistics: const <UnitStats>[],
+              parameters: parameters,
+            ),
+            isEmpty,
+          );
+          expect(
+            activeLevelLearningPool(
+              deck: subject,
+              statistics: const <UnitStats>[],
+              levelStatistics: const <LevelUnitStats>[],
+              parameters: parameters,
+            ),
+            isEmpty,
+          );
+        }
+      }
+    });
+
+    test('narrows what is asked, never what the live readouts count', () {
+      final SessionParameters wide = deckWideScope(
+        only(SessionMode.superQuery),
+      );
+      expect(wide.difficultOnly, isFalse);
+      expect(
+        unitsOf(
+          activeSuperQueryPool(
+            deck: deck,
+            statistics: const <UnitStats>[],
+            parameters: wide,
+          ),
+        ),
+        <int>[1, 2, 3, 4, 5],
+      );
+    });
+
+    test('copyWith keeps and changes the option', () {
+      final SessionParameters on = only(SessionMode.practice);
+      expect(on.copyWith(shuffle: true).difficultOnly, isTrue);
+      expect(on.copyWith(difficultOnly: false).difficultOnly, isFalse);
     });
   });
 }

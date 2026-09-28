@@ -12,6 +12,7 @@ setup** screen (**Learn ▸ Practice setup**, `Alt+L` then `P`).
 | **Mode** | **Level learning**, **Drill mode**, **Endless mode** or **Once through** — see below |
 | **Entry level** | Level Learning only — caps how much support a newly seeded unit may start with; see [Level learning](07-level-learning.md) |
 | **Shuffle units** | Ask in random order instead of deck order |
+| **Difficult units only** | Ask only the units marked difficult, in every mode — see [Asking difficult units only](#asking-difficult-units-only) |
 | **Mastery threshold (%)** | Drill mode only — a unit counts as mastered once its correct rate reaches this |
 | **Require typed answers** | Off, cards wait for you to judge yourself instead of typing; hidden for Level learning, which always requires typing |
 | **Start unit** / **End unit** | Restrict the session to a range of the deck; clearing either field expands it to the first/last unit. **Use all units ({count})** resets both at once |
@@ -158,6 +159,24 @@ defaults: you can change all three numbers, or switch the check off, under
 - The deck file is written only when a flag was added, and like marking a unit that is
   not an edit: **Last edited** does not change. If the file cannot be written, a message
   names it; your statistics are not affected.
+
+## Asking difficult units only
+
+Switch on **Difficult units only** on the setup screen to be asked just the units that
+are difficult — those with either flag, yours or the program's. It works in every mode:
+it narrows whatever the mode would ask, within the unit range. The flags outlive the
+statistics, so you can clear the statistics for a fresh run and then drill only the
+words that gave you trouble, in the same deck.
+
+- Mastering a unit takes it out of the session as usual, but does not take its flag
+  away. When you are sure you know it, unmark it with `F12`.
+- A unit you unmark with `F12` during the session is not asked again, and unmarking the
+  last one ends the session.
+- **Attempts**, **Mastered**, **Remaining** and **Accuracy** still describe the whole
+  deck, just as they do when you restrict the unit range.
+- If no unit in the range is difficult, the setup says so and **Start session** stays
+  unavailable until you switch the option off, widen the range or mark a unit.
+- The option is remembered with the other setup choices.
 
 ## Finishing
 

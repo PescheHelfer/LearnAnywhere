@@ -13,6 +13,7 @@ dann `E`).
 | **Modus** | **Stufenlernen**, **Drill-Modus**, **Endlos-Modus** oder **Einmal durchgehen** — siehe unten |
 | **Einstiegsstufe** | Nur Stufenlernen — begrenzt, mit wie viel Unterstützung eine neu eingestufte Einheit starten darf; siehe [Stufenlernen](07-level-learning.md) |
 | **Einheiten mischen** | In zufälliger statt in Dateireihenfolge fragen |
+| **Nur schwierige Einheiten** | Nur die als schwierig gekennzeichneten Einheiten fragen, in jedem Modus — siehe [Nur schwierige Einheiten abfragen](#nur-schwierige-einheiten-abfragen) |
 | **Beherrschungsschwelle (%)** | Nur Drill-Modus — eine Einheit gilt als gemeistert, sobald ihre Trefferquote diesen Wert erreicht |
 | **Mit Eingabe der Antwort** | Ausgeschaltet warten Karten darauf, dass Sie sich selbst bewerten, statt zu tippen; beim Stufenlernen ausgeblendet, da dort immer getippt wird |
 | **Erste Einheit** / **Letzte Einheit** | Begrenzt die Sitzung auf einen Bereich der Lern-Datei; ein geleertes Feld erweitert ihn bis zur ersten bzw. letzten Einheit. **Alle Einheiten verwenden ({count})** setzt beide auf einmal zurück |
@@ -177,6 +178,26 @@ unter [Statistik-Optionen](11-settings.md#statistik-optionen).
   Kennzeichnen ist das keine Bearbeitung: **Zuletzt bearbeitet** ändert sich nicht. Lässt
   sich die Datei nicht schreiben, nennt eine Meldung sie; Ihre Statistik ist davon nicht
   betroffen.
+
+## Nur schwierige Einheiten abfragen
+
+Schalten Sie auf dem Einrichtungsbildschirm **Nur schwierige Einheiten** ein, um nur die
+schwierigen Einheiten gefragt zu werden — jene mit einer der beiden Kennzeichnungen,
+Ihrer eigenen oder der des Programms. Das wirkt in jedem Modus: Es schränkt ein, was der
+Modus fragen würde, innerhalb des Einheitenbereichs. Die Kennzeichnungen überdauern die
+Statistik; Sie können also die Statistik für einen frischen Durchgang löschen und dann in
+derselben Lern-Datei nur die Wörter üben, die Ihnen Mühe gemacht haben.
+
+- Eine gemeisterte Einheit scheidet wie gewohnt aus der Sitzung aus, behält aber ihre
+  Kennzeichnung. Wenn Sie sicher sind, dass Sie sie können, entfernen Sie sie mit `F12`.
+- Eine Einheit, deren Kennzeichnung Sie während der Sitzung mit `F12` entfernen, wird
+  nicht mehr gefragt, und entfernen Sie die letzte, endet die Sitzung.
+- **Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben weiterhin die ganze
+  Lern-Datei, genau wie bei einem eingeschränkten Einheitenbereich.
+- Ist keine Einheit im Bereich schwierig, sagt die Einrichtung das, und **Sitzung
+  starten** bleibt gesperrt, bis Sie die Option ausschalten, den Bereich erweitern oder
+  eine Einheit kennzeichnen.
+- Die Option wird wie die übrigen Einstellungen der Einrichtung gespeichert.
 
 ## Abschluss
 

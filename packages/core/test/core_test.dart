@@ -2496,6 +2496,24 @@ void main() {
       expect(older.detectionThresholds, DetectionThresholds.defaults);
     });
 
+    test('difficult units only is off by default and round-trips through '
+        'JSON', () {
+      expect(const LearnAnywhereSettings().difficultOnly, isFalse);
+      expect(
+        decodeSettings(<String, Object?>{'shuffle': false}).difficultOnly,
+        isFalse,
+      );
+      const LearnAnywhereSettings settings = LearnAnywhereSettings(
+        difficultOnly: true,
+      );
+      final LearnAnywhereSettings restored = decodeSettingsJson(
+        encodeSettingsJson(settings),
+      );
+      expect(restored, settings);
+      expect(restored.difficultOnly, isTrue);
+      expect(settings.copyWith(shuffle: false).difficultOnly, isTrue);
+    });
+
     test('round-trips the detection switch and thresholds through JSON', () {
       const LearnAnywhereSettings settings = LearnAnywhereSettings(
         detectDifficultUnits: false,

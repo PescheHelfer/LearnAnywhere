@@ -141,6 +141,7 @@ final class LearnAnywhereSettings {
     this.mode = SessionMode.superQuery,
     this.direction = DirectionSelection.direction1,
     this.shuffle = true,
+    this.difficultOnly = false,
     this.requireTypedAnswers = true,
     this.masteryThreshold = 0.4,
     this.entryLevelCap = kMaxSupportLevel,
@@ -200,6 +201,10 @@ final class LearnAnywhereSettings {
 
   /// Whether in-scope units are presented in random order.
   final bool shuffle;
+
+  /// Whether a session asks only difficult units
+  /// ([SessionParameters.difficultOnly]).
+  final bool difficultOnly;
 
   /// Whether the user types answers before reveal.
   final bool requireTypedAnswers;
@@ -274,6 +279,7 @@ final class LearnAnywhereSettings {
     SessionMode? mode,
     DirectionSelection? direction,
     bool? shuffle,
+    bool? difficultOnly,
     bool? requireTypedAnswers,
     double? masteryThreshold,
     int? entryLevelCap,
@@ -307,6 +313,7 @@ final class LearnAnywhereSettings {
       mode: mode ?? this.mode,
       direction: direction ?? this.direction,
       shuffle: shuffle ?? this.shuffle,
+      difficultOnly: difficultOnly ?? this.difficultOnly,
       requireTypedAnswers: requireTypedAnswers ?? this.requireTypedAnswers,
       masteryThreshold: masteryThreshold ?? this.masteryThreshold,
       entryLevelCap: entryLevelCap ?? this.entryLevelCap,
@@ -340,6 +347,7 @@ final class LearnAnywhereSettings {
         other.mode == mode &&
         other.direction == direction &&
         other.shuffle == shuffle &&
+        other.difficultOnly == difficultOnly &&
         other.requireTypedAnswers == requireTypedAnswers &&
         other.masteryThreshold == masteryThreshold &&
         other.entryLevelCap == entryLevelCap &&
@@ -370,6 +378,7 @@ final class LearnAnywhereSettings {
     mode,
     direction,
     shuffle,
+    difficultOnly,
     requireTypedAnswers,
     masteryThreshold,
     entryLevelCap,
@@ -419,6 +428,7 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
     'mode': settings.mode.name,
     'direction': settings.direction.name,
     'shuffle': settings.shuffle,
+    'difficultOnly': settings.difficultOnly,
     'requireTypedAnswers': settings.requireTypedAnswers,
     'masteryThreshold': settings.masteryThreshold,
     'entryLevelCap': settings.entryLevelCap,
@@ -488,6 +498,7 @@ LearnAnywhereSettings decodeSettings(Object? value) {
       defaults.direction,
     ),
     shuffle: _bool(json['shuffle'], defaults.shuffle),
+    difficultOnly: _bool(json['difficultOnly'], defaults.difficultOnly),
     requireTypedAnswers: _bool(
       json['requireTypedAnswers'],
       defaults.requireTypedAnswers,

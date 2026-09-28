@@ -39,6 +39,10 @@ automatic demotion**: a wrong answer only adds to that level's own attempt count
 never sends a unit back up. A unit leaves the practice pool for good only once it has
 mastered level 0.
 
+With [Difficult units only](06-learning-sessions.md#asking-difficult-units-only)
+switched on, the pool holds just the difficult units in the range. Mastering level 0
+still takes a unit out, and it keeps its difficulty flag.
+
 You can override the automatic pace at any time with **More help** (moves the current
 unit up one level) and **Less help** (moves it down one), each bounded by 0 and 3.
 

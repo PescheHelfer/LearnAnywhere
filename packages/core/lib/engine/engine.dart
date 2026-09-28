@@ -622,7 +622,7 @@ List<SessionItem> activeSuperQueryPool({
     index <= end && index <= deck.units.length;
     index += 1
   ) {
-    if (index < 1) {
+    if (!_unitInPool(deck, parameters, index)) {
       continue;
     }
     final UnitStats unitStats = statsByIndex[index] ?? UnitStats(index: index);
@@ -1239,7 +1239,7 @@ List<SessionItem> activeLevelLearningPool({
     index <= end && index <= deck.units.length;
     index += 1
   ) {
-    if (index < 1) {
+    if (!_unitInPool(deck, parameters, index)) {
       continue;
     }
     final LevelUnitStats? levelStats = levelByIndex[index];
@@ -1665,7 +1665,7 @@ List<SessionItem> _allItemsInScope(
     index <= end && index <= deck.units.length;
     index += 1
   ) {
-    if (index < 1) {
+    if (!_unitInPool(deck, parameters, index)) {
       continue;
     }
     for (final QueryDirection direction in directions) {
@@ -1673,6 +1673,16 @@ List<SessionItem> _allItemsInScope(
     }
   }
   return items;
+}
+
+/// Whether the unit at the one-based [index], already within the unit range's
+/// upper bound, belongs to the pool every mode builds for [parameters].
+///
+/// The one place **Difficult units only** narrows a pool, so the drill,
+/// Level-Learning and ordered pools cannot disagree about it.
+bool _unitInPool(LearningDeck deck, SessionParameters parameters, int index) {
+  return index >= 1 &&
+      (!parameters.difficultOnly || deck.units[index - 1].isDifficult);
 }
 
 Map<int, UnitStats> _statsByIndex(List<UnitStats> statistics) {
@@ -1739,10 +1749,11 @@ int accuracyPercent(DirectionStats stats) {
 //
 // The rule the live readouts follow: attempts, accuracy, what is mastered, what
 // is left, and each Level-Learning level are **deck totals in the session's
-// direction**. Restricting the unit range narrows what is asked, never what is
-// counted, so figures standing side by side cannot contradict each other;
-// selecting a single direction narrows both. Item selection keeps the session's
-// own parameters — pass [deckWideScope] only where a readout is computed.
+// direction**. Restricting the unit range, or asking difficult units only,
+// narrows what is asked, never what is counted, so figures standing side by
+// side cannot contradict each other; selecting a single direction narrows both.
+// Item selection keeps the session's own parameters — pass [deckWideScope] only
+// where a readout is computed.
 //
 // The rule lives here, rather than in one shell's session page, so that every
 // shell showing these readouts derives the same figures from the same helpers
@@ -1750,7 +1761,8 @@ int accuracyPercent(DirectionStats stats) {
 
 /// The readout scope for a session run with [parameters]: the whole deck.
 ///
-/// Drops the unit range and keeps everything else — above all the direction
+/// Drops the unit range and **Difficult units only**, which likewise narrow
+/// what is asked, and keeps everything else — above all the direction
 /// selection and the mastery rule, so the widened readout still answers the same
 /// question, just about every unit. [parameters] itself is untouched.
 SessionParameters deckWideScope(SessionParameters parameters) {
@@ -1785,6 +1797,8 @@ StatisticsDirectionView directionViewFor(DirectionSelection selection) {
 /// out-of-range range counts zero rather than a negative. **Both** counts each
 /// unit twice — one item per direction. Pass [deckWideScope] parameters for the
 /// denominator of a live readout, the session's own for what it will serve.
+/// Without the deck it cannot see flags, so it ignores
+/// [SessionParameters.difficultOnly]; count [itemsInScope] for that.
 int sessionItemCount({
   required int unitCount,
   required SessionParameters parameters,

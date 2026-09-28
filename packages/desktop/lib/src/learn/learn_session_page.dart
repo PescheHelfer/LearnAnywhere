@@ -779,6 +779,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         onShuffleChanged: (bool value) {
           _applyDraft(_parametersWith(shuffle: value));
         },
+        nothingDifficultToAsk: _nothingDifficultToAsk,
+        onDifficultOnlyChanged: (bool value) {
+          _applyDraft(_parametersWith(difficultOnly: value));
+        },
         onWithInputChanged: (bool value) {
           _applyDraft(_parametersWith(withInput: value));
         },
@@ -875,7 +879,30 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     onToggle(item.unitIndex);
   }
 
+  /// The draft with the setup's unit range, clamped to the deck, and its
+  /// threshold applied: what a session started now would ask.
+  SessionParameters _scopedDraft() {
+    final int maxUnit = widget.deck.units.length;
+    final int start = _startIndex.clamp(1, maxUnit).toInt();
+    final int end = _endIndex.clamp(start, maxUnit).toInt();
+    return _parametersWith(
+      startIndex: start,
+      endIndex: end,
+      threshold: _thresholdPercent / 100,
+    );
+  }
+
+  /// Whether **Difficult units only** is on and leaves nothing to ask in the
+  /// chosen range, so the setup says so and refuses to start.
+  bool get _nothingDifficultToAsk =>
+      _draftParameters.difficultOnly &&
+      itemsInScope(widget.deck, _scopedDraft()).isEmpty;
+
   Future<void> _startSession() async {
+    // Refused before anything else: the setup already shows why.
+    if (_nothingDifficultToAsk) {
+      return;
+    }
     // Give the shell a chance to create a fresh timestamped auto-save target
     // when a session starts with no statistics loaded (§3.7), and to warn about
     // statistics recorded in a different mode. Either can abort the start.
@@ -884,14 +911,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     if (!proceed || !mounted) {
       return;
     }
-    final int maxUnit = widget.deck.units.length;
-    final int start = _startIndex.clamp(1, maxUnit).toInt();
-    final int end = _endIndex.clamp(start, maxUnit).toInt();
-    _draftParameters = _parametersWith(
-      startIndex: start,
-      endIndex: end,
-      threshold: _thresholdPercent / 100,
-    );
+    _draftParameters = _scopedDraft();
     widget.onParametersChanged(_draftParameters);
     if (_isLevelLearning) {
       // Seed once for every in-scope unit, then persist the ladder: from here
@@ -991,27 +1011,35 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   /// session; in endless mode the order restarts — reshuffled when shuffle is
   /// on, so successive passes differ — and the first item of a new pass is
   /// never the one just shown (unless it is the only item).
+  ///
+  /// What is asked is read from the deck on every draw, as the drill and
+  /// Level-Learning pools are: under **Difficult units only**, a unit unmarked
+  /// with F12 is skipped. When nothing is left to ask, the session ends.
   SessionItem? _nextOrderedItem() {
+    final Set<SessionItem> asked = itemsInScope(
+      widget.deck,
+      _draftParameters,
+    ).toSet();
+    while (_orderPosition < _order.length) {
+      final SessionItem item = _order[_orderPosition++];
+      if (asked.contains(item)) {
+        return item;
+      }
+    }
+    if (_draftParameters.mode == SessionMode.onceThrough) {
+      return null;
+    }
+    // Every item of a fresh order is asked, so its first one is served.
+    _order = sessionItemOrder(
+      deck: widget.deck,
+      parameters: _draftParameters,
+      random: _random,
+    );
+    _orderPosition = 0;
     if (_order.isEmpty) {
       return null;
     }
-    if (_draftParameters.mode == SessionMode.onceThrough) {
-      if (_orderPosition >= _order.length) {
-        return null;
-      }
-      return _order[_orderPosition++];
-    }
-    if (_orderPosition >= _order.length) {
-      _orderPosition = 0;
-      if (_draftParameters.shuffle) {
-        _order = sessionItemOrder(
-          deck: widget.deck,
-          parameters: _draftParameters,
-          random: _random,
-        );
-      }
-      _avoidRepeatAtOrderStart();
-    }
+    _avoidRepeatAtOrderStart();
     return _order[_orderPosition++];
   }
 
@@ -1155,25 +1183,27 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     widget.onLevelStatisticsChanged?.call(_levelStats);
   }
 
-  /// Returns the ladder with fresh seeds materialized for every in-scope unit
-  /// that has no entry yet.
+  /// Returns the ladder with fresh seeds materialized for every unit the
+  /// session asks that has no entry yet.
   ///
   /// Runs once per session start so the seeding (from the unit's prior drill
   /// bucket, capped by the entry level) is a one-time assignment; afterwards
   /// the ladder alone owns each unit's level. Existing entries are untouched,
-  /// so re-starting or extending a session never resets progress.
+  /// so re-starting or extending a session never resets progress. A unit left
+  /// out by **Difficult units only** is not seeded until a session asks it.
   List<LevelUnitStats> _materializedLevelStats() {
     final Map<int, LevelUnitStats> byIndex = <int, LevelUnitStats>{
       for (final LevelUnitStats s in _levelStats) s.index: s,
     };
     final List<UnitStats> normalized = _normalizedStats();
-    final int maxUnit = widget.deck.units.length;
-    final int start = (_draftParameters.startIndex ?? 1).clamp(1, maxUnit);
-    final int end = (_draftParameters.endIndex ?? maxUnit).clamp(
-      start,
-      maxUnit,
-    );
-    for (var index = start; index <= end; index += 1) {
+    final Set<int> asked = <int>{
+      for (final SessionItem item in itemsInScope(
+        widget.deck,
+        _draftParameters,
+      ))
+        item.unitIndex,
+    };
+    for (final int index in asked) {
       if (byIndex.containsKey(index)) {
         continue;
       }
@@ -1546,6 +1576,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     bool? withInput,
     SessionMode? mode,
     bool? shuffle,
+    bool? difficultOnly,
     double? threshold,
   }) {
     final SessionMode nextMode = mode ?? _draftParameters.mode;
@@ -1559,6 +1590,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
           : (withInput ?? _draftParameters.withInput),
       mode: nextMode,
       shuffle: shuffle ?? _draftParameters.shuffle,
+      difficultOnly: difficultOnly ?? _draftParameters.difficultOnly,
       masteryThreshold: threshold ?? _draftParameters.masteryThreshold,
       minimumAttemptsGuardEnabled: widget.options.minimumAttemptsGuardEnabled,
       minAttempts: widget.options.minAttempts,
@@ -1748,6 +1780,8 @@ final class _SetupView extends StatelessWidget {
     required this.onModeChanged,
     required this.onEntryLevelCapChanged,
     required this.onShuffleChanged,
+    required this.nothingDifficultToAsk,
+    required this.onDifficultOnlyChanged,
     required this.onWithInputChanged,
     required this.onUseAllUnitsChanged,
     required this.onStartChanged,
@@ -1772,6 +1806,11 @@ final class _SetupView extends StatelessWidget {
   final ValueChanged<SessionMode> onModeChanged;
   final ValueChanged<int> onEntryLevelCapChanged;
   final ValueChanged<bool> onShuffleChanged;
+
+  /// Whether Difficult units only leaves nothing to ask in the chosen range;
+  /// the setup then says so and cannot start.
+  final bool nothingDifficultToAsk;
+  final ValueChanged<bool> onDifficultOnlyChanged;
   final ValueChanged<bool> onWithInputChanged;
   final ValueChanged<bool> onUseAllUnitsChanged;
   final ValueChanged<int> onStartChanged;
@@ -1898,6 +1937,21 @@ final class _SetupView extends StatelessWidget {
           onChanged: onShuffleChanged,
         ),
         _ToggleRow(
+          label: messages.message(LearnAnywhereMessage.learnDifficultOnly),
+          value: parameters.difficultOnly,
+          onChanged: onDifficultOnlyChanged,
+        ),
+        if (nothingDifficultToAsk)
+          Padding(
+            padding: const EdgeInsets.only(
+              bottom: LearnAnywhereTokens.gapSmall,
+            ),
+            child: Text(
+              messages.message(LearnAnywhereMessage.learnNoDifficultUnits),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        _ToggleRow(
           label: messages
               .message(LearnAnywhereMessage.learnUseAllUnits)
               .replaceAll('{count}', deck.units.length.toString()),
@@ -1944,7 +1998,7 @@ final class _SetupView extends StatelessWidget {
           spacing: LearnAnywhereTokens.gapSmall,
           children: <Widget>[
             FilledButton.icon(
-              onPressed: onStartSession,
+              onPressed: nothingDifficultToAsk ? null : onStartSession,
               icon: const Icon(Icons.play_arrow),
               label: Column(
                 mainAxisSize: MainAxisSize.min,

@@ -35,6 +35,7 @@ LearnAnywhereSettings nextSettingsForSave({
     mode: learnParameters.mode,
     direction: learnParameters.directionSelection,
     shuffle: learnParameters.shuffle,
+    difficultOnly: learnParameters.difficultOnly,
     requireTypedAnswers: learnParameters.withInput,
     masteryThreshold: learnParameters.masteryThreshold,
     recentDeckPaths: deckPath == null

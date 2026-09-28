@@ -812,6 +812,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       withInput: settings.requireTypedAnswers,
       mode: settings.mode,
       shuffle: settings.shuffle,
+      difficultOnly: settings.difficultOnly,
       masteryThreshold: settings.masteryThreshold,
       startIndex: _range.startUnit,
       endIndex: _range.endUnit,

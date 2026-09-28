@@ -653,6 +653,13 @@ enum LearnAnywhereMessage {
   /// Shuffle units option.
   learnShuffleUnits,
 
+  /// Setup option: ask only units carrying either difficulty flag.
+  learnDifficultOnly,
+
+  /// Setup message when Difficult units only leaves nothing to ask; shared by
+  /// every shell's setup, so it names no way of marking.
+  learnNoDifficultUnits,
+
   /// Mastery threshold label.
   learnMasteryThreshold,
 
@@ -1850,6 +1857,10 @@ final class LearnAnywhereCatalog {
           'results suggest.',
       LearnAnywhereMessage.learnEntryLevelNoCapSuffix: ' (no cap)',
       LearnAnywhereMessage.learnShuffleUnits: 'Shuffle units',
+      LearnAnywhereMessage.learnDifficultOnly: 'Difficult units only',
+      LearnAnywhereMessage.learnNoDifficultUnits:
+          'No unit in the selected range is marked as difficult, so there is '
+          'nothing to ask.',
       LearnAnywhereMessage.learnMasteryThreshold: 'Mastery threshold (%)',
       LearnAnywhereMessage.learnMasteryThresholdTooltip:
           'A unit is considered mastered once its correct-answer rate reaches '
@@ -2587,6 +2598,10 @@ final class LearnAnywhereCatalog {
           'viel Unterstützung, wie ihre bisherigen Ergebnisse nahelegen.',
       LearnAnywhereMessage.learnEntryLevelNoCapSuffix: ' (keine Begrenzung)',
       LearnAnywhereMessage.learnShuffleUnits: 'Einheiten mischen',
+      LearnAnywhereMessage.learnDifficultOnly: 'Nur schwierige Einheiten',
+      LearnAnywhereMessage.learnNoDifficultUnits:
+          'Keine Einheit im gewählten Bereich ist als schwierig '
+          'gekennzeichnet, es gibt also nichts abzufragen.',
       LearnAnywhereMessage.learnMasteryThreshold: 'Beherrschungsschwelle (%)',
       LearnAnywhereMessage.learnMasteryThresholdTooltip:
           'Eine Lerneinheit gilt als gemeistert, sobald ihre Trefferquote '

@@ -1078,6 +1078,7 @@ final class SessionParameters {
     this.masteryThreshold = 0.4,
     this.minimumAttemptsGuardEnabled = false,
     this.minAttempts = 2,
+    this.difficultOnly = false,
   });
 
   /// Selected direction scope.
@@ -1109,6 +1110,14 @@ final class SessionParameters {
   /// Minimum attempts required when the guard is enabled.
   final int minAttempts;
 
+  /// Whether the session asks only difficult units, those carrying either
+  /// flag ([LearningUnit.isDifficult]).
+  ///
+  /// It narrows whatever pool the [mode] builds, within the unit range, and is
+  /// read from the deck each time a pool is built. Mastery still removes a
+  /// difficult unit as usual and never clears its flags.
+  final bool difficultOnly;
+
   /// Returns a copy with selected fields changed.
   SessionParameters copyWith({
     DirectionSelection? directionSelection,
@@ -1120,6 +1129,7 @@ final class SessionParameters {
     double? masteryThreshold,
     bool? minimumAttemptsGuardEnabled,
     int? minAttempts,
+    bool? difficultOnly,
   }) {
     return SessionParameters(
       directionSelection: directionSelection ?? this.directionSelection,
@@ -1132,6 +1142,7 @@ final class SessionParameters {
       minimumAttemptsGuardEnabled:
           minimumAttemptsGuardEnabled ?? this.minimumAttemptsGuardEnabled,
       minAttempts: minAttempts ?? this.minAttempts,
+      difficultOnly: difficultOnly ?? this.difficultOnly,
     );
   }
 }
