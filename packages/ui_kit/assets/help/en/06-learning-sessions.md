@@ -140,7 +140,9 @@ Whenever a learning session ends — everything mastered, you stop it, or you cl
 program — Learn Anywhere looks through the deck for units you keep getting wrong and
 gives them the automatic flag. The rule is: a unit is difficult when you have answered
 it wrong **at least twice** and **at least a third of the time**, and — if you have never
-answered it correctly — only once you have tried it **at least six times**.
+answered it correctly — only once you have tried it **at least six times**. Those are the
+defaults: you can change all three numbers, or switch the check off, under
+[Statistics options](11-settings.md#statistics-options).
 
 - It judges each unit by its own **all-time statistics** alone, never by how the rest of
   the deck is going, so clearing the current statistics does not blind it, and a deck

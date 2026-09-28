@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import '../difficulty/difficult_units.dart';
 import '../engine/engine.dart';
 import '../models/models.dart';
 import '../speech/speech_settings.dart';
@@ -146,6 +147,8 @@ final class LearnAnywhereSettings {
     this.levelNamesEn = kDefaultLevelNamesEn,
     this.levelNamesDe = kDefaultLevelNamesDe,
     this.keepStatisticsVersions = 3,
+    this.detectDifficultUnits = true,
+    this.detectionThresholds = DetectionThresholds.defaults,
     this.speech = const SpeechSettings(),
     this.recentDeckPaths = const <String>[],
     this.lastMaskPath,
@@ -220,6 +223,17 @@ final class LearnAnywhereSettings {
   /// pruned first after each new one is written; `0` keeps every file.
   final int keepStatisticsVersions;
 
+  /// Whether a learning session's end flags the units the learner keeps
+  /// getting wrong ([addDetectedDifficult]).
+  ///
+  /// On by default. Off, nothing is detected and existing automatic flags
+  /// stay as they are; it is per machine, like every setting here.
+  final bool detectDifficultUnits;
+
+  /// The thresholds the detection rule judges by, at session end and on
+  /// recompute; kept within [DetectionThresholds]' ranges.
+  final DetectionThresholds detectionThresholds;
+
   /// The machine's own speech choices: a voice per language, and the rate.
   ///
   /// Stored here rather than in the deck because a voice belongs to the
@@ -266,6 +280,8 @@ final class LearnAnywhereSettings {
     List<String>? levelNamesEn,
     List<String>? levelNamesDe,
     int? keepStatisticsVersions,
+    bool? detectDifficultUnits,
+    DetectionThresholds? detectionThresholds,
     SpeechSettings? speech,
     List<String>? recentDeckPaths,
     String? lastMaskPath,
@@ -298,6 +314,8 @@ final class LearnAnywhereSettings {
       levelNamesDe: levelNamesDe ?? this.levelNamesDe,
       keepStatisticsVersions:
           keepStatisticsVersions ?? this.keepStatisticsVersions,
+      detectDifficultUnits: detectDifficultUnits ?? this.detectDifficultUnits,
+      detectionThresholds: detectionThresholds ?? this.detectionThresholds,
       speech: speech ?? this.speech,
       recentDeckPaths: recentDeckPaths ?? this.recentDeckPaths,
       lastMaskPath: clearLastMaskPath ? null : lastMaskPath ?? this.lastMaskPath,
@@ -328,6 +346,8 @@ final class LearnAnywhereSettings {
         _stringListEquals(other.levelNamesEn, levelNamesEn) &&
         _stringListEquals(other.levelNamesDe, levelNamesDe) &&
         other.keepStatisticsVersions == keepStatisticsVersions &&
+        other.detectDifficultUnits == detectDifficultUnits &&
+        other.detectionThresholds == detectionThresholds &&
         other.speech == speech &&
         _stringListEquals(other.recentDeckPaths, recentDeckPaths) &&
         other.lastMaskPath == lastMaskPath;
@@ -356,6 +376,8 @@ final class LearnAnywhereSettings {
     Object.hashAll(levelNamesEn),
     Object.hashAll(levelNamesDe),
     keepStatisticsVersions,
+    detectDifficultUnits,
+    detectionThresholds,
     speech,
     Object.hashAll(recentDeckPaths),
     lastMaskPath,
@@ -403,6 +425,13 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
     'levelNamesEn': settings.levelNamesEn,
     'levelNamesDe': settings.levelNamesDe,
     'keepStatisticsVersions': settings.keepStatisticsVersions,
+    'difficultDetection': <String, Object?>{
+      'enabled': settings.detectDifficultUnits,
+      'minWrong': settings.detectionThresholds.minWrong,
+      'minWrongRatePercent': settings.detectionThresholds.minWrongRatePercent,
+      'minAttemptsWithoutCorrect':
+          settings.detectionThresholds.minAttemptsWithoutCorrect,
+    },
     'speech': encodeSpeechSettings(settings.speech),
     'recentDeckPaths': settings.recentDeckPaths,
     // Written alongside the list, though it is derived from it: a build that
@@ -420,6 +449,7 @@ LearnAnywhereSettings decodeSettings(Object? value) {
   }
   final Map<Object?, Object?> json = value;
   const LearnAnywhereSettings defaults = LearnAnywhereSettings();
+  final Map<Object?, Object?> detection = _map(json['difficultDetection']);
   return LearnAnywhereSettings(
     wrongInputCorrectable: _bool(
       json['wrongInputCorrectable'],
@@ -476,6 +506,11 @@ LearnAnywhereSettings decodeSettings(Object? value) {
       json['keepStatisticsVersions'],
       defaults.keepStatisticsVersions,
     ),
+    detectDifficultUnits: _bool(
+      detection['enabled'],
+      defaults.detectDifficultUnits,
+    ),
+    detectionThresholds: _detectionThresholds(detection),
     speech: decodeSpeechSettings(json['speech']),
     recentDeckPaths: _recentDeckPaths(
       json['recentDeckPaths'],
@@ -603,6 +638,38 @@ double _double(Object? value, double fallback) {
 }
 
 String? _nullableString(Object? value) => value is String ? value : null;
+
+Map<Object?, Object?> _map(Object? value) =>
+    value is Map ? value : const <Object?, Object?>{};
+
+/// Decodes the detection thresholds, each one on its own: a value that is
+/// missing, not a whole number, or outside its range falls back to its own
+/// default, so one bad entry never resets the other two.
+DetectionThresholds _detectionThresholds(Map<Object?, Object?> json) {
+  const DetectionThresholds defaults = DetectionThresholds.defaults;
+  int within(String key, int fallback, ThresholdRange range) {
+    final int decoded = _int(json[key], fallback);
+    return range.contains(decoded) ? decoded : fallback;
+  }
+
+  return DetectionThresholds(
+    minWrong: within(
+      'minWrong',
+      defaults.minWrong,
+      DetectionThresholds.minWrongRange,
+    ),
+    minWrongRatePercent: within(
+      'minWrongRatePercent',
+      defaults.minWrongRatePercent,
+      DetectionThresholds.minWrongRatePercentRange,
+    ),
+    minAttemptsWithoutCorrect: within(
+      'minAttemptsWithoutCorrect',
+      defaults.minAttemptsWithoutCorrect,
+      DetectionThresholds.minAttemptsWithoutCorrectRange,
+    ),
+  );
+}
 
 /// Clamps a decoded level into `0..3`, falling back to [fallback] on failure.
 int _clampLevel(int value, int fallback) {

@@ -264,6 +264,37 @@ enum LearnAnywhereMessage {
   /// Explanation shown under the retention-count field: 0 keeps every file.
   keepStatisticsHint,
 
+  /// Options ▸ Statistics: opens the difficult-unit detection settings.
+  menuOptionsDetectDifficult,
+
+  /// Title of the difficult-unit detection settings dialog.
+  detectDifficultTitle,
+
+  /// Detection settings: the switch that turns detection at session end on.
+  detectDifficultEnabled,
+
+  /// Detection settings: the rule in one paragraph, and what "off" means.
+  detectDifficultHint,
+
+  /// Detection settings: minimum wrong answers field. Carries `{min}` and
+  /// `{max}`.
+  detectDifficultMinWrong,
+
+  /// Detection settings: minimum wrong rate field, in percent. Carries
+  /// `{min}` and `{max}`.
+  detectDifficultMinWrongRate,
+
+  /// Detection settings: attempts a never-correct unit needs. Carries `{min}`
+  /// and `{max}`.
+  detectDifficultMinAttempts,
+
+  /// Detection settings: error under a field holding no number in its range.
+  /// Carries `{min}` and `{max}`.
+  detectDifficultOutOfRange,
+
+  /// Detection settings: restores the three thresholds, not the switch.
+  detectDifficultReset,
+
   /// Options menu: opens the start-folder prompt.
   menuOptionsStartFolder,
 
@@ -1587,6 +1618,29 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.keepStatisticsHint:
           'The oldest timestamped session files beyond this count are '
           'deleted after each new one is written. 0 keeps every file.',
+      // N: avoids the Options-level A P T Z C L I F, Theme's S H D B U,
+      // Language's E G, and the siblings O V K.
+      LearnAnywhereMessage.menuOptionsDetectDifficult:
+          'Detect difficult u&nits...', // N
+      LearnAnywhereMessage.detectDifficultTitle: 'Detect difficult units',
+      LearnAnywhereMessage.detectDifficultEnabled:
+          'Flag difficult units automatically when a session ends',
+      LearnAnywhereMessage.detectDifficultHint:
+          'A unit gets the automatic flag when, in either direction, its '
+          'all-time statistics show at least the minimum number of wrong '
+          'answers, at no less than the minimum wrong rate. A unit never '
+          'answered correctly also needs the given number of attempts. While '
+          'this is off, nothing is flagged automatically, and flags already '
+          'set stay.',
+      LearnAnywhereMessage.detectDifficultMinWrong:
+          'Minimum wrong answers ({min}–{max})',
+      LearnAnywhereMessage.detectDifficultMinWrongRate:
+          'Minimum wrong rate in % ({min}–{max})',
+      LearnAnywhereMessage.detectDifficultMinAttempts:
+          'Attempts that count without a correct answer ({min}–{max})',
+      LearnAnywhereMessage.detectDifficultOutOfRange:
+          'Enter a whole number from {min} to {max}.',
+      LearnAnywhereMessage.detectDifficultReset: 'Reset to defaults',
       LearnAnywhereMessage.menuOptionsStartFolder: 'Start &folder...', // F
       LearnAnywhereMessage.menuOptionsSpeech: 'S&peech...', // P
       LearnAnywhereMessage.speechSettingsTitle: 'Speech',
@@ -2282,6 +2336,32 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.keepStatisticsHint:
           'Die ältesten Sitzungsdateien über diese Anzahl hinaus werden nach '
           'jeder neu geschriebenen Datei gelöscht. 0 behält alle Dateien.',
+      // C: avoids the Options-level E P D Z I S K O, Theme's Y H D B U,
+      // Language's G U, and the siblings L T N.
+      LearnAnywhereMessage.menuOptionsDetectDifficult:
+          'S&chwierige Einheiten erkennen...', // C
+      LearnAnywhereMessage.detectDifficultTitle:
+          'Schwierige Einheiten erkennen',
+      LearnAnywhereMessage.detectDifficultEnabled:
+          'Schwierige Einheiten am Ende einer Sitzung automatisch '
+          'kennzeichnen',
+      LearnAnywhereMessage.detectDifficultHint:
+          'Eine Einheit erhält die automatische Kennzeichnung, wenn ihre '
+          'Allzeit-Statistik in einer der beiden Abfragerichtungen mindestens '
+          'die Mindestanzahl falscher Antworten zeigt, bei mindestens dem '
+          'Mindestanteil. Eine nie richtig beantwortete Einheit braucht '
+          'zudem die angegebene Anzahl Versuche. Ist dies ausgeschaltet, wird '
+          'nichts automatisch gekennzeichnet, und bestehende Kennzeichnungen '
+          'bleiben.',
+      LearnAnywhereMessage.detectDifficultMinWrong:
+          'Mindestanzahl falscher Antworten ({min}–{max})',
+      LearnAnywhereMessage.detectDifficultMinWrongRate:
+          'Mindestanteil falscher Antworten in % ({min}–{max})',
+      LearnAnywhereMessage.detectDifficultMinAttempts:
+          'Nötige Versuche ohne richtige Antwort ({min}–{max})',
+      LearnAnywhereMessage.detectDifficultOutOfRange:
+          'Eine ganze Zahl von {min} bis {max} eingeben.',
+      LearnAnywhereMessage.detectDifficultReset: 'Auf Standard zurücksetzen',
       LearnAnywhereMessage.menuOptionsStartFolder: 'Start&ordner...', // O
       LearnAnywhereMessage.menuOptionsSpeech: 'S&prachausgabe...', // P
       LearnAnywhereMessage.speechSettingsTitle: 'Sprachausgabe',

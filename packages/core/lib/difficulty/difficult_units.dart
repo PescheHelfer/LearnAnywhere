@@ -57,7 +57,8 @@ LearningDeck unmarkDifficultAt(LearningDeck deck, Set<int> unitIndices) {
 /// The three thresholds of the detection rule ([isDetectedDifficult]).
 ///
 /// The defaults are the rule tested against real learners' lifetime records.
-/// They are an input rather than constants, so a caller can judge by others.
+/// They are an input rather than constants, so a caller can judge by others:
+/// the learner tunes them in the settings, within the ranges below.
 final class DetectionThresholds {
   /// Creates detection thresholds; each one left out keeps its default.
   const DetectionThresholds({
@@ -69,6 +70,19 @@ final class DetectionThresholds {
   /// The tested rule: 2 wrong, a third of the time, 6 attempts if never right.
   static const DetectionThresholds defaults = DetectionThresholds();
 
+  /// The values a learner may choose for [minWrong].
+  static const ThresholdRange minWrongRange = ThresholdRange(1, 10);
+
+  /// The values a learner may choose for [minWrongRatePercent], in steps of
+  /// one percent.
+  static const ThresholdRange minWrongRatePercentRange = ThresholdRange(10, 90);
+
+  /// The values a learner may choose for [minAttemptsWithoutCorrect].
+  static const ThresholdRange minAttemptsWithoutCorrectRange = ThresholdRange(
+    3,
+    20,
+  );
+
   /// The fewest wrong answers that make a unit difficult.
   final int minWrong;
 
@@ -79,6 +93,40 @@ final class DetectionThresholds {
   /// How many attempts a unit never answered correctly needs before it can
   /// be detected, so that a brand-new word missed twice is not flagged.
   final int minAttemptsWithoutCorrect;
+
+  /// Whether every threshold lies within the range a learner may choose.
+  bool get isInRange =>
+      minWrongRange.contains(minWrong) &&
+      minWrongRatePercentRange.contains(minWrongRatePercent) &&
+      minAttemptsWithoutCorrectRange.contains(minAttemptsWithoutCorrect);
+
+  @override
+  bool operator ==(Object other) {
+    return other is DetectionThresholds &&
+        other.minWrong == minWrong &&
+        other.minWrongRatePercent == minWrongRatePercent &&
+        other.minAttemptsWithoutCorrect == minAttemptsWithoutCorrect;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(minWrong, minWrongRatePercent, minAttemptsWithoutCorrect);
+}
+
+/// The whole numbers, [min] to [max] inclusive, a detection threshold may
+/// take.
+final class ThresholdRange {
+  /// Creates the range [min] to [max], both included.
+  const ThresholdRange(this.min, this.max);
+
+  /// The lowest value allowed.
+  final int min;
+
+  /// The highest value allowed.
+  final int max;
+
+  /// Whether [value] lies within the range; null never does.
+  bool contains(int? value) => value != null && value >= min && value <= max;
 }
 
 /// Whether one direction's lifetime counters make a unit difficult:

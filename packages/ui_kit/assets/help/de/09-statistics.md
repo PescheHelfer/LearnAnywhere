@@ -195,7 +195,9 @@ Ihre unfertigen Änderungen mitspeichern.
   Kennzeichnungen verlieren. Eine Meldung nennt danach, wie viele Kennzeichnungen
   hinzukamen und wie viele entfernt wurden. Konnte die Allzeit-Statistik der Lern-Datei
   beim Öffnen nicht gelesen werden, sagt der Befehl das und ändert nichts, statt jede
-  Einheit an einer Statistik zu messen, die er nicht sehen konnte.
+  Einheit an einer Statistik zu messen, die er nicht sehen konnte. Er misst nach den
+  Zahlen unter [Statistik-Optionen](11-settings.md#statistik-optionen) und lässt sich
+  nicht wählen, solange die Erkennung dort ausgeschaltet ist.
 - **Alle manuellen Kennzeichnungen der geöffneten Lern-Datei entfernen...** entfernt jede
   manuelle Kennzeichnung, damit Sie Ihre eigene Auswahl neu beginnen können. Automatische
   Kennzeichnungen bleiben unangetastet. Eine Meldung nennt, wie viele entfernt wurden.

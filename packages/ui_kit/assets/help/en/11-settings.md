@@ -149,10 +149,41 @@ present and doing nothing.
 
 ## Statistics options
 
-**Options ▸ Statistics** holds auto-load, auto-save, and the session-file retention
-count, all covered in [Working with files](03-managing-files.md#auto-load-and-auto-save).
-All three concern session files only. The deck's lifetime record is kept whatever these
-are set to — see [The two records](09-statistics.md#the-two-records).
+**Options ▸ Statistics** holds auto-load, auto-save, the session-file retention count,
+and the detection of difficult units.
+
+The first three are covered in
+[Working with files](03-managing-files.md#auto-load-and-auto-save), and concern session
+files only. The deck's lifetime record is kept whatever these are set to — see
+[The two records](09-statistics.md#the-two-records).
+
+**Detect difficult units...** decides how the program finds the units you keep getting
+wrong when a session ends, as described in
+[Difficult units found automatically](06-learning-sessions.md#difficult-units-found-automatically):
+
+| Setting | Range | Default |
+|---|---|---|
+| **Flag difficult units automatically when a session ends** | on / off | on |
+| **Minimum wrong answers** | 1–10 | 2 |
+| **Minimum wrong rate in %** | 10–90 | 33 |
+| **Attempts that count without a correct answer** | 3–20 | 6 |
+
+- A number outside its range gets a note under it, and **OK** stays unavailable until
+  you correct it. **Reset to defaults** puts the three numbers back to 2, 33 and 6; it
+  leaves the switch as it is.
+- The choice belongs to this computer, like the other settings in the settings file, and
+  applies to every deck you open on it.
+- Saving changed numbers, with detection switched on and a deck open, leads straight to
+  the warning of **Recompute automatic flags in the open deck...**, because the flags the
+  deck carries were set by the old numbers. **Continue** rebuilds them by the new ones
+  (see [Recomputing and removing flags](09-statistics.md#recomputing-and-removing-flags));
+  **Cancel** keeps them, and the new numbers apply from the next session end on. While
+  the **Unit editor** is open you are asked to leave it first instead, and can run the
+  command from the **Statistics** menu afterwards.
+- Switched off, a session end flags nothing, and **Recompute automatic flags in the open
+  deck...** cannot be chosen. The flags already set stay, manual and automatic alike,
+  and you can still mark and unmark units yourself. Switching it off is also the way to
+  keep a session from writing flags into a deck you are only trying out.
 
 ## Start folder
 
@@ -180,7 +211,8 @@ for copies of that deck's mask than any fixed folder.
 
 Two separate stores, both entirely local — nothing here is ever sent anywhere:
 
-- Your **learning options**, level names, speech choices, and last-used deck/mask paths are written to
+- Your **learning options**, level names, speech choices, difficult-unit detection, the
+  session-file retention count, and last-used deck/mask paths are written to
   `learn_anywhere.settings.json` in a `LearnAnywhere` folder under your operating
   system's standard per-user configuration location (`%APPDATA%` on Windows;
   `$XDG_CONFIG_HOME` or `~/.config` on Linux).

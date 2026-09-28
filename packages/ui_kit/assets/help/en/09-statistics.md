@@ -173,7 +173,10 @@ with it.
   selected units** starts without statistics, so recomputing it may remove all its
   automatic flags. A message then reports how many flags were added and how many removed.
   If the deck's all-time statistics could not be read when it was opened, it says so and
-  changes nothing, rather than judging every unit by statistics it could not see.
+  changes nothing, rather than judging every unit by statistics it could not see. It
+  judges by the numbers set under
+  [Statistics options](11-settings.md#statistics-options), and cannot be chosen while
+  detection is switched off there.
 - **Remove all manual flags in the open deck...** removes every manual flag, so you can
   start your own selection over. Automatic flags are never touched. A message reports how
   many were removed.

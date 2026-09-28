@@ -23,6 +23,7 @@ import 'src/lexicon/lexicon_page.dart';
 import 'src/mask_editor/mask_editor_page.dart';
 import 'src/mask_editor/mask_sync_dialog.dart';
 import 'src/preferences/desktop_prefs.dart';
+import 'src/settings/detection_settings_dialog.dart';
 import 'src/settings/settings_save.dart';
 import 'src/settings/speech_settings_page.dart';
 import 'src/statistics/statistics_page.dart';
@@ -827,6 +828,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _lastMaskPath = loaded.lastMaskPath;
       _queryOptions = _optionsFromSettings(loaded);
       _learnParameters = _parametersFromSettings(loaded);
+      // The menu shows settings (the retention count, whether Recompute is
+      // offered) and may have been built before they arrived.
+      _cachedMenuChildren = null;
     });
   }
 
@@ -948,6 +952,49 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _cachedMenuChildren = null;
     });
     unawaited(_saveSettings());
+  }
+
+  /// Options ▸ Statistics ▸ Detect difficult units: the detection switch and
+  /// the rule's three thresholds, persisted in the settings file.
+  ///
+  /// Changed thresholds judge differently from the flags the open deck
+  /// already carries, so saving them — with detection on and a deck open —
+  /// goes straight on to Recompute automatic flags, whose own warning is the
+  /// offer. Switching detection alone offers nothing: off, every flag stays.
+  Future<void> _promptDetectionSettings() async {
+    final DetectionSettings? chosen = await showDetectionSettingsDialog(
+      context,
+      enabled: _settings.detectDifficultUnits,
+      thresholds: _settings.detectionThresholds,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (chosen == null) {
+      // Launched from the MenuBar, outside the content FocusScope.
+      _restoreContentFocus();
+      return;
+    }
+    final bool thresholdsChanged =
+        chosen.thresholds != _settings.detectionThresholds;
+    setState(() {
+      _settings = _settings.copyWith(
+        detectDifficultUnits: chosen.enabled,
+        detectionThresholds: chosen.thresholds,
+      );
+      _cachedMenuChildren = null;
+    });
+    // Not awaited, like every other settings save: the recompute below
+    // reads the settings from memory, and a failed write must not cost the
+    // learner the offer.
+    unawaited(_saveSettings());
+    if (thresholdsChanged &&
+        chosen.enabled &&
+        _document.deck.units.isNotEmpty) {
+      await _recomputeAutomaticFlags();
+    } else {
+      _restoreContentFocus();
+    }
   }
 
   // --- Start folder (N2) ----------------------------------------------------
@@ -1640,7 +1687,11 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           ),
           const _MenuSeparator(),
           MenuItemButton(
-            onPressed: _recomputeAutomaticFlags,
+            // Detection switched off leaves the automatic flags as they are,
+            // so rebuilding them is off too.
+            onPressed: _settings.detectDifficultUnits
+                ? _recomputeAutomaticFlags
+                : null,
             child: MenuAcceleratorLabel(
               messages.message(
                 LearnAnywhereMessage.menuStatisticsRecomputeAutomatic,
@@ -1853,6 +1904,15 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
                         '{count}',
                         _settings.keepStatisticsVersions.toString(),
                       ),
+                  builder: menuAcceleratorBuilder,
+                ),
+              ),
+              MenuItemButton(
+                onPressed: _promptDetectionSettings,
+                child: MenuAcceleratorLabel(
+                  messages.message(
+                    LearnAnywhereMessage.menuOptionsDetectDifficult,
+                  ),
                   builder: menuAcceleratorBuilder,
                 ),
               ),
@@ -3096,10 +3156,17 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// adds, and never removes a flag; a unit unflagged during the session that
   /// still meets the rule gets its automatic flag back here. A failed write
   /// reports and keeps the flags in memory; the statistics are not involved.
+  ///
+  /// The rule judges by the thresholds in the settings, and with detection
+  /// switched off nothing runs at all.
   Future<void> _flagDetectedUnits() {
+    if (!_settings.detectDifficultUnits) {
+      return _difficultWriteChain;
+    }
     final DifficultFlagChange change = addDetectedDifficult(
       _document.deck,
       _document.allTime.statistics,
+      thresholds: _settings.detectionThresholds,
     );
     if (!change.changed) {
       return _difficultWriteChain;
@@ -3124,11 +3191,18 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// A lifetime file that was there but could not be read leaves the record
   /// empty for that reason alone, and judging by it would strip every
   /// automatic flag; the command refuses instead.
+  ///
+  /// The rule judges by the thresholds in the settings. The menu offers the
+  /// command only while detection is switched on; saving changed thresholds
+  /// offers it too (see [_promptDetectionSettings]).
   Future<void> _recomputeAutomaticFlags() => _runFlagCommand(
     title: LearnAnywhereMessage.confirmRecomputeAutomaticFlagsTitle,
     warning: LearnAnywhereMessage.confirmRecomputeAutomaticFlags,
-    change: (LearningDeck deck) =>
-        recomputeDetectedDifficult(deck, _document.allTime.statistics),
+    change: (LearningDeck deck) => recomputeDetectedDifficult(
+      deck,
+      _document.allTime.statistics,
+      thresholds: _settings.detectionThresholds,
+    ),
     done: LearnAnywhereMessage.statisticsRecomputeDone,
     refusal: _document.allTime.origin == AllTimeOrigin.unreadable
         ? LearnAnywhereMessage.statisticsRecomputeUnreadable

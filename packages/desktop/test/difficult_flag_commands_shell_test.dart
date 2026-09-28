@@ -339,6 +339,134 @@ void main() {
     });
   });
 
+  void writeSettings(LearnAnywhereSettings settings) {
+    File(p.join(temp.path, 'settings.json'))
+        .writeAsStringSync(encodeSettingsJson(settings));
+  }
+
+  Future<LearnAnywhereSettings> settingsOnDisk() =>
+      readSettingsFile(p.join(temp.path, 'settings.json'));
+
+  /// Opens Options ▸ Statistics ▸ Detect difficult units.
+  Future<void> openDetectionSettings(WidgetTester tester) async {
+    await tester.tap(find.text('Options').first);
+    await settle(tester);
+    // The submenu, not the top-level Statistics menu.
+    await tester.tap(find.text('Statistics').last);
+    await settle(tester);
+    await tester.tap(find.text('Detect difficult units...'));
+    await settleAfterIo(tester);
+    expect(find.text('Detect difficult units'), findsOneWidget);
+  }
+
+  /// Whether Statistics ▸ Recompute automatic flags can be chosen; leaves
+  /// the menu closed again.
+  Future<bool> recomputeEnabled(WidgetTester tester) async {
+    await tester.tap(find.text('Statistics').first);
+    await settle(tester);
+    final bool enabled = tester
+        .widget<MenuItemButton>(
+          find.ancestor(
+            of: find.text(_recompute),
+            matching: find.byType(MenuItemButton),
+          ),
+        )
+        .enabled;
+    await tester.tap(find.text('Statistics').first);
+    await settle(tester);
+    return enabled;
+  }
+
+  testWidgets('with detection switched off, Recompute automatic flags cannot '
+      'be chosen', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'off.vok');
+    writeDeckWithHistory(
+      deckPath,
+      _deck(<(String, String, bool, bool)>[('house', 'Haus', false, true)]),
+      <DirectionStats>[easy],
+    );
+    writeSettings(const LearnAnywhereSettings(detectDifficultUnits: false));
+
+    await tester.runAsync(() async {
+      await openDeck(tester, deckPath);
+      expect(await recomputeEnabled(tester), isFalse);
+    });
+  });
+
+  testWidgets('saving changed thresholds offers a recompute through the same '
+      'warning, which then judges by them', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'tuned.vok');
+    final LearningDeck deck = _deck(<(String, String, bool, bool)>[
+      ('house', 'Haus', false, true),
+      ('tree', 'Baum', false, false),
+    ]);
+    writeDeckWithHistory(deckPath, deck, <DirectionStats>[
+      // 2 wrong of 4: flagged under the default rule, not with 3 needed.
+      const DirectionStats(attempts: 4, correct: 2),
+      // 3 wrong of 4: flagged either way, but not yet.
+      hard,
+    ]);
+
+    await tester.runAsync(() async {
+      await openDeck(tester, deckPath);
+      await openDetectionSettings(tester);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Minimum wrong answers (1–10)'),
+        '3',
+      );
+      await settle(tester);
+      await tester.tap(find.text('OK'));
+      await until(
+        tester,
+        () => find.text('Recompute automatic flags?').evaluate().isNotEmpty,
+      );
+      expect(find.text('Recompute automatic flags?'), findsOneWidget);
+      expect(
+        (await settingsOnDisk()).detectionThresholds,
+        const DetectionThresholds(minWrong: 3),
+      );
+
+      await tester.tap(find.text('Continue').last);
+      await settleAfterIo(tester);
+      final Finder message = find.text(
+        'Automatic flags in “tuned.vok” recomputed: 1 added, 1 removed.',
+      );
+      await until(tester, () => message.evaluate().isNotEmpty);
+      expect(message, findsWidgets);
+      expect(flags(deckOnDisk(deckPath)!), <(bool, bool)>[
+        (false, false),
+        (false, true),
+      ]);
+    });
+  });
+
+  testWidgets('switching detection off saves without offering a recompute, '
+      'and disables it', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'switched.vok');
+    writeDeckWithHistory(
+      deckPath,
+      _deck(<(String, String, bool, bool)>[('house', 'Haus', false, true)]),
+      <DirectionStats>[easy],
+    );
+    final String before = File(deckPath).readAsStringSync();
+
+    await tester.runAsync(() async {
+      await openDeck(tester, deckPath);
+      expect(await recomputeEnabled(tester), isTrue);
+      await openDetectionSettings(tester);
+      await tester.tap(find.byType(Switch));
+      await settle(tester);
+      await tester.tap(find.text('OK'));
+      await settleAfterIo(tester);
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect((await settingsOnDisk()).detectDifficultUnits, isFalse);
+      expect(await recomputeEnabled(tester), isFalse);
+      // The automatic flag stays.
+      expect(File(deckPath).readAsStringSync(), before);
+    });
+  });
+
   testWidgets('Show statistics opens the statistics screen', (
     WidgetTester tester,
   ) async {

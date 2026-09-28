@@ -293,6 +293,70 @@ void main() {
     });
   });
 
+  testWidgets('with detection switched off, a session end writes nothing', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'off.vok');
+    writeDeckWithHistory(
+      deckPath,
+      _deck(<(String, String, bool)>[('house', 'Haus', false)]),
+      <DirectionStats>[hard],
+    );
+    File(p.join(temp.path, 'settings.json')).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(detectDifficultUnits: false),
+      ),
+    );
+    final String before = File(deckPath).readAsStringSync();
+
+    await tester.runAsync(() async {
+      await startSession(tester, deckPath);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settleAfterIo(tester);
+      expect(File(deckPath).readAsStringSync(), before);
+    });
+  });
+
+  testWidgets('a session end judges by the stored thresholds', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'strict.vok');
+    writeDeckWithHistory(
+      deckPath,
+      _deck(<(String, String, bool)>[
+        ('house', 'Haus', false),
+        ('tree', 'Baum', false),
+      ]),
+      // 3 wrong of 4, and 4 wrong of 8: both answered right at least once
+      // and both at or above the rate, so the wrong count alone decides.
+      <DirectionStats>[
+        hard,
+        const DirectionStats(attempts: 8, correct: 4),
+      ],
+    );
+    // 4 wrong needed: the first unit (3 wrong) no longer qualifies.
+    File(p.join(temp.path, 'settings.json')).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(
+          detectionThresholds: DetectionThresholds(minWrong: 4),
+        ),
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await startSession(tester, deckPath);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await until(
+        tester,
+        () => deckOnDisk(deckPath)?.units.last.autoDifficult ?? false,
+      );
+      expect(flags(deckOnDisk(deckPath)!), <(bool, bool)>[
+        (false, false),
+        (false, true),
+      ]);
+    });
+  });
+
   testWidgets('a deck that cannot be written at session end names the file '
       'without blocking', (WidgetTester tester) async {
     final Directory gone = Directory(p.join(temp.path, 'gone'))..createSync();

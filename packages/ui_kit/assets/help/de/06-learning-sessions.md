@@ -155,7 +155,9 @@ das Programm —, sucht Learn Anywhere in der Lern-Datei nach Einheiten, die Sie
 wieder falsch beantworten, und gibt ihnen die automatische Kennzeichnung. Die Regel
 lautet: Eine Einheit ist schwierig, wenn Sie sie **mindestens zweimal** und **in
 mindestens einem Drittel der Fälle** falsch beantwortet haben, und — falls Sie sie noch
-nie richtig beantwortet haben — erst nach **mindestens sechs Versuchen**.
+nie richtig beantwortet haben — erst nach **mindestens sechs Versuchen**. Das sind die
+Standardwerte: Alle drei Zahlen lassen sich ändern und die Prüfung lässt sich ausschalten,
+unter [Statistik-Optionen](11-settings.md#statistik-optionen).
 
 - Beurteilt wird jede Einheit allein nach ihrer eigenen **Allzeit-Statistik**, nie danach,
   wie es im Rest der Lern-Datei läuft. Das Löschen der aktuellen Statistik macht die

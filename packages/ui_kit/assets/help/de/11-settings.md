@@ -162,12 +162,47 @@ Menüpunkt ganz, statt vorhanden zu sein und nichts zu tun.
 
 ## Statistik-Optionen
 
-**Optionen ▸ Statistiken** enthält automatisches Laden, automatisches Speichern und
-die Anzahl der aufbewahrten Sitzungsdateien, alle beschrieben in
-[Arbeiten mit Dateien](03-managing-files.md#automatisch-laden-und-automatisch-speichern).
-Alle drei betreffen allein die Sitzungsdateien. Die Allzeit-Statistik einer Lern-Datei
-wird unabhängig von diesen Einstellungen geführt — siehe
+**Optionen ▸ Statistiken** enthält automatisches Laden, automatisches Speichern, die
+Anzahl der aufbewahrten Sitzungsdateien und die Erkennung schwieriger Einheiten.
+
+Die ersten drei sind in
+[Arbeiten mit Dateien](03-managing-files.md#automatisch-laden-und-automatisch-speichern)
+beschrieben und betreffen allein die Sitzungsdateien. Die Allzeit-Statistik einer
+Lern-Datei wird unabhängig von diesen Einstellungen geführt — siehe
 [Die zwei Statistiken](09-statistics.md#die-zwei-statistiken).
+
+**Schwierige Einheiten erkennen...** legt fest, wie das Programm am Ende einer Sitzung
+die Einheiten findet, die Sie immer wieder falsch beantworten, wie unter
+[Automatisch gefundene schwierige Einheiten](06-learning-sessions.md#automatisch-gefundene-schwierige-einheiten)
+beschrieben:
+
+| Einstellung | Bereich | Standard |
+|---|---|---|
+| **Schwierige Einheiten am Ende einer Sitzung automatisch kennzeichnen** | ein / aus | ein |
+| **Mindestanzahl falscher Antworten** | 1–10 | 2 |
+| **Mindestanteil falscher Antworten in %** | 10–90 | 33 |
+| **Nötige Versuche ohne richtige Antwort** | 3–20 | 6 |
+
+- Unter einer Zahl außerhalb ihres Bereichs steht ein Hinweis, und **OK** bleibt
+  gesperrt, bis Sie sie korrigieren. **Auf Standard zurücksetzen** stellt die drei Zahlen
+  wieder auf 2, 33 und 6; den Schalter lässt es, wie er ist.
+- Die Wahl gehört zu diesem Computer, wie die übrigen Einstellungen in der
+  Einstellungsdatei, und gilt für jede Lern-Datei, die Sie darauf öffnen.
+- Speichern Sie geänderte Zahlen bei eingeschalteter Erkennung, während eine Lern-Datei
+  geöffnet ist, folgt gleich die Warnung von **Automatische Kennzeichnungen der
+  geöffneten Lern-Datei neu berechnen...**, denn die Kennzeichnungen der Lern-Datei
+  wurden nach den alten Zahlen gesetzt. **Weiter** berechnet sie nach den neuen neu
+  (siehe
+  [Kennzeichnungen neu berechnen und entfernen](09-statistics.md#kennzeichnungen-neu-berechnen-und-entfernen));
+  **Abbruch** behält sie, und die neuen Zahlen gelten ab dem nächsten Sitzungsende. Ist
+  die **Eingabe-Maske** geöffnet, werden Sie stattdessen gebeten, sie zuerst zu
+  verlassen, und können den Befehl danach im Menü **Statistik** ausführen.
+- Ausgeschaltet kennzeichnet ein Sitzungsende nichts, und **Automatische Kennzeichnungen
+  der geöffneten Lern-Datei neu berechnen...** lässt sich nicht wählen. Bestehende
+  Kennzeichnungen bleiben, manuelle wie automatische, und Sie können Einheiten weiterhin
+  selbst kennzeichnen und die Kennzeichnung entfernen. Ausschalten ist auch der Weg, eine
+  Sitzung davon abzuhalten, Kennzeichnungen in eine Lern-Datei zu schreiben, die Sie nur
+  ausprobieren.
 
 ## Startordner
 
@@ -198,8 +233,9 @@ Suchen nach Kopien dieser Maske besser geeignet ist als jeder feste Ordner.
 Zwei getrennte Speicherorte, beide vollständig lokal — nichts hiervon wird jemals
 irgendwohin gesendet:
 
-- Ihre **Lernoptionen**, Stufennamen, Sprachausgabe-Einstellungen und zuletzt verwendeten
-  Lern-Datei-/Maskenpfade werden in `learn_anywhere.settings.json` geschrieben, in einem Ordner `LearnAnywhere`
+- Ihre **Lernoptionen**, Stufennamen, Sprachausgabe-Einstellungen, die Erkennung
+  schwieriger Einheiten, die Anzahl aufbewahrter Sitzungsdateien und die zuletzt
+  verwendeten Lern-Datei-/Maskenpfade werden in `learn_anywhere.settings.json` geschrieben, in einem Ordner `LearnAnywhere`
   am üblichen Speicherort für benutzerbezogene Konfiguration Ihres Betriebssystems
   (`%APPDATA%` unter Windows; `$XDG_CONFIG_HOME` oder `~/.config` unter Linux).
 - **Darstellung, Sprache, die Zoomstufe, der Inhaltsrahmen, der Startordner, zuletzt

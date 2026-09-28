@@ -2484,6 +2484,82 @@ void main() {
       );
     });
 
+    test('difficult-unit detection is on, at the tested rule, by default', () {
+      const LearnAnywhereSettings defaults = LearnAnywhereSettings();
+      expect(defaults.detectDifficultUnits, isTrue);
+      expect(defaults.detectionThresholds, DetectionThresholds.defaults);
+      // A settings file written before detection had settings loads them.
+      final LearnAnywhereSettings older = decodeSettings(<String, Object?>{
+        'shuffle': false,
+      });
+      expect(older.detectDifficultUnits, isTrue);
+      expect(older.detectionThresholds, DetectionThresholds.defaults);
+    });
+
+    test('round-trips the detection switch and thresholds through JSON', () {
+      const LearnAnywhereSettings settings = LearnAnywhereSettings(
+        detectDifficultUnits: false,
+        detectionThresholds: DetectionThresholds(
+          minWrong: 10,
+          minWrongRatePercent: 90,
+          minAttemptsWithoutCorrect: 3,
+        ),
+      );
+      final LearnAnywhereSettings restored = decodeSettingsJson(
+        encodeSettingsJson(settings),
+      );
+      expect(restored, settings);
+      expect(restored.detectDifficultUnits, isFalse);
+      expect(
+        restored.detectionThresholds,
+        const DetectionThresholds(
+          minWrong: 10,
+          minWrongRatePercent: 90,
+          minAttemptsWithoutCorrect: 3,
+        ),
+      );
+    });
+
+    test('a detection value outside its range or of the wrong type falls '
+        'back to its own default only', () {
+      final LearnAnywhereSettings broken = decodeSettings(<String, Object?>{
+        'difficultDetection': <String, Object?>{
+          'enabled': 'yes',
+          'minWrong': 0,
+          'minWrongRatePercent': 91,
+          'minAttemptsWithoutCorrect': 20,
+        },
+      });
+      expect(broken.detectDifficultUnits, isTrue);
+      expect(
+        broken.detectionThresholds,
+        const DetectionThresholds(minAttemptsWithoutCorrect: 20),
+      );
+      expect(
+        decodeSettings(<String, Object?>{'difficultDetection': 7})
+            .detectionThresholds,
+        DetectionThresholds.defaults,
+      );
+    });
+
+    test('the detection ranges hold the defaults and match the spec', () {
+      String span(ThresholdRange range) => '${range.min}-${range.max}';
+      expect(span(DetectionThresholds.minWrongRange), '1-10');
+      expect(span(DetectionThresholds.minWrongRatePercentRange), '10-90');
+      expect(span(DetectionThresholds.minAttemptsWithoutCorrectRange), '3-20');
+      expect(DetectionThresholds.minWrongRange.contains(null), isFalse);
+      expect(DetectionThresholds.defaults.isInRange, isTrue);
+      expect(const DetectionThresholds(minWrong: 11).isInRange, isFalse);
+      expect(
+        const DetectionThresholds(minWrongRatePercent: 9).isInRange,
+        isFalse,
+      );
+      expect(
+        const DetectionThresholds(minAttemptsWithoutCorrect: 2).isInRange,
+        isFalse,
+      );
+    });
+
     test('decodes partial settings with defaults and ignores corruption', () {
       const LearnAnywhereSettings defaults = LearnAnywhereSettings();
       final LearnAnywhereSettings partial = decodeSettings(<String, Object?>{

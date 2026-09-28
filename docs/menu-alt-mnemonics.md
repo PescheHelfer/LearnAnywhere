@@ -128,6 +128,7 @@ crashes.
    | Statistics ▸ Auto-load / automatisch laden | O | L |
    | Statistics ▸ Auto-save / automatisch speichern | V | T |
    | Statistics ▸ Keep last N / Nur die letzten N | K | N |
+   | Statistics ▸ Detect difficult units / Schwierige Einheiten erkennen | N | C |
 
    Zoom level's own items carry no letters at all (see 3 above).
 
@@ -140,8 +141,9 @@ crashes.
    (e.g. Language's letter while Theme is open, and vice-versa). See the
    `// Y (avoids S = Sprache label)` style notes in the DE catalog for worked
    examples. The same rule nests one level further for items *inside*
-   Statistics (auto-load/auto-save/keep-last-N): they must also avoid Theme's
-   and Language's own letters, not just their submenu's.
+   Statistics (auto-load/auto-save/keep-last-N/detect difficult units): they
+   must also avoid Theme's and Language's own letters, not just their
+   submenu's.
 
 ## Shared-string rule
 
