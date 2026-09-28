@@ -108,7 +108,7 @@ A difficult unit shows a badge on its header line. The badge also says who flagg
 
 - **Difficult (manual flag)** — you marked it.
 - **Difficult (automatic flag)** — the program found it hard from the unit's all-time
-  statistics.
+  statistics (see [Difficult units found automatically](#difficult-units-found-automatically)).
 - **Difficult (manual and automatic flag)** — both.
 
 The **Difficult** button is filled while the unit is difficult. Pressing `F12` (or the
@@ -133,6 +133,27 @@ program.
 
 Older versions of Learn Anywhere open a deck with flags, but drop every flag if they
 save it. Update every computer on which you edit your decks.
+
+## Difficult units found automatically
+
+Whenever a learning session ends — everything mastered, you stop it, or you close the
+program — Learn Anywhere looks through the deck for units you keep getting wrong and
+gives them the automatic flag. The rule is: a unit is difficult when you have answered
+it wrong **at least twice** and **at least a third of the time**, and — if you have never
+answered it correctly — only once you have tried it **at least six times**.
+
+- It judges each unit by its own **all-time statistics** alone, never by how the rest of
+  the deck is going, so clearing the current statistics does not blind it, and a deck
+  you have never practised gains no flags.
+- Each direction is judged on its own; a unit that is hard either way is flagged.
+- Level Learning answers count only when given at level 0, free recall; answers with
+  support on the lower levels do not.
+- It only ever adds flags. A unit you have since learned keeps its automatic flag until
+  you remove it — with `F12`, or with **Unmark selected** in the
+  [unit list](09-statistics.md#unit-list--finding-what-to-practice-again).
+- The deck file is written only when a flag was added, and like marking a unit that is
+  not an edit: **Last edited** does not change. If the file cannot be written, a message
+  names it; your statistics are not affected.
 
 ## Finishing
 

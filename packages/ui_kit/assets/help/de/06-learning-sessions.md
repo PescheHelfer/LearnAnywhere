@@ -117,7 +117,8 @@ gekennzeichnet hat:
 
 - **Schwierig (manuelle Kennzeichnung)** — Sie selbst.
 - **Schwierig (automatische Kennzeichnung)** — das Programm, anhand der
-  Allzeit-Statistik der Einheit.
+  Allzeit-Statistik der Einheit (siehe
+  [Automatisch gefundene schwierige Einheiten](#automatisch-gefundene-schwierige-einheiten)).
 - **Schwierig (manuelle und automatische Kennzeichnung)** — beide.
 
 Die Schaltfläche **Schwierig** ist gefüllt, solange die Einheit schwierig ist. `F12`
@@ -146,6 +147,32 @@ Programms verloren.
 Ältere Versionen von Learn Anywhere öffnen eine Lern-Datei mit Kennzeichnungen, verwerfen
 aber alle Kennzeichnungen, wenn sie sie speichern. Aktualisieren Sie jeden Computer, auf
 dem Sie Ihre Lern-Dateien bearbeiten.
+
+## Automatisch gefundene schwierige Einheiten
+
+Immer wenn eine Lernsitzung endet — alles gemeistert, Sie brechen ab, oder Sie schließen
+das Programm —, sucht Learn Anywhere in der Lern-Datei nach Einheiten, die Sie immer
+wieder falsch beantworten, und gibt ihnen die automatische Kennzeichnung. Die Regel
+lautet: Eine Einheit ist schwierig, wenn Sie sie **mindestens zweimal** und **in
+mindestens einem Drittel der Fälle** falsch beantwortet haben, und — falls Sie sie noch
+nie richtig beantwortet haben — erst nach **mindestens sechs Versuchen**.
+
+- Beurteilt wird jede Einheit allein nach ihrer eigenen **Allzeit-Statistik**, nie danach,
+  wie es im Rest der Lern-Datei läuft. Das Löschen der aktuellen Statistik macht die
+  Suche also nicht blind, und eine Lern-Datei, die Sie nie geübt haben, erhält keine
+  Kennzeichnungen.
+- Jede Abfragerichtung wird für sich beurteilt; eine Einheit, die in einer der beiden
+  Richtungen schwierig ist, wird gekennzeichnet.
+- Antworten im Stufenlernen zählen nur, wenn sie auf Stufe 0 gegeben wurden, ganz ohne
+  Hilfe; Antworten mit Unterstützung auf den anderen Stufen zählen nicht.
+- Es kommen nur Kennzeichnungen hinzu. Eine Einheit, die Sie inzwischen können, behält
+  ihre automatische Kennzeichnung, bis Sie sie entfernen — mit `F12` oder mit
+  **Kennzeichnung entfernen** in der
+  [Einheitenliste](09-statistics.md#einheitenliste--wonach-erneut-gebt-werden-sollte).
+- Die Lern-Datei wird nur geschrieben, wenn eine Kennzeichnung hinzukam, und wie das
+  Kennzeichnen ist das keine Bearbeitung: **Zuletzt bearbeitet** ändert sich nicht. Lässt
+  sich die Datei nicht schreiben, nennt eine Meldung sie; Ihre Statistik ist davon nicht
+  betroffen.
 
 ## Abschluss
 

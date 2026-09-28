@@ -729,6 +729,11 @@ enum LearnAnywhereMessage {
   /// `{detail}`.
   learnDifficultWriteFailed,
 
+  /// Shown, without blocking, when the automatic flags found as a learning
+  /// session ended could not be written to the deck. Carries `{file}` (the
+  /// deck's file name) and `{detail}`.
+  learnDetectedWriteFailed,
+
   /// Live elapsed-time label.
   learnLiveTime,
 
@@ -1791,6 +1796,10 @@ final class LearnAnywhereCatalog {
           'Could not write "{file}", so the flag change is not saved. Use '
           'File ▸ Save deck once the file can be written again, or the change '
           'is lost when you close the program. ({detail})',
+      LearnAnywhereMessage.learnDetectedWriteFailed:
+          'Could not write "{file}", so the automatic flags found when the '
+          'sitting ended are not saved. Your statistics are not affected. Use '
+          'File ▸ Save deck once the file can be written again. ({detail})',
       LearnAnywhereMessage.learnLiveTime: 'Time',
       LearnAnywhereMessage.learnUnitHeader: 'Unit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
@@ -2471,6 +2480,12 @@ final class LearnAnywhereCatalog {
           'Lerneinheiten speichern, '
           'sobald die Datei wieder beschreibbar ist, sonst geht die Änderung '
           'beim Schließen des Programms verloren. ({detail})',
+      LearnAnywhereMessage.learnDetectedWriteFailed:
+          '„{file}“ konnte nicht geschrieben werden, die am Ende der Sitzung '
+          'gefundenen automatischen Kennzeichnungen sind also nicht '
+          'gespeichert. Ihre Statistik ist davon nicht betroffen. Wählen Sie '
+          'Datei ▸ Lerneinheiten speichern, sobald die Datei wieder '
+          'beschreibbar ist. ({detail})',
       LearnAnywhereMessage.learnLiveTime: 'Zeit',
       LearnAnywhereMessage.learnUnitHeader: 'Einheit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',

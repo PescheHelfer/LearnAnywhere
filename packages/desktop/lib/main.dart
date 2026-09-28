@@ -1938,8 +1938,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
 
   /// Tracks whether the learn page currently has a session running, so the
   /// Learn menu can offer "Continue" instead of a fresh start.
+  ///
+  /// Every way a session ends passes through here — the pool mastered, the
+  /// learner stopping or leaving the page, another deck replacing this one —
+  /// so this is also where the end of a session runs automatic detection.
+  /// Closing the window with a session still running does not come through
+  /// here; [_confirmAndExit] runs it.
   void _setLearnSessionActive(bool active) {
-    if (_learnSessionActive == active) {
+    if (!mounted || _learnSessionActive == active) {
       return;
     }
     setState(() {
@@ -1948,6 +1954,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // depends on session state, so drop the cache by hand.
       _cachedMenuChildren = null;
     });
+    if (!active) {
+      unawaited(_flagDetectedUnits());
+    }
   }
 
   void _selectRoute(_DesktopRoute route) {
@@ -3055,17 +3064,51 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     return _writeDifficultFlags();
   }
 
+  /// Adds the automatic flags the core rule finds in the open deck's lifetime
+  /// record, and writes the deck only if a flag was added.
+  ///
+  /// Runs whenever a learning session ends — pool mastered, learner stops,
+  /// window closed — and completes once the write has run. Detection only
+  /// adds, and never removes a flag; a unit unflagged during the session that
+  /// still meets the rule gets its automatic flag back here. A failed write
+  /// reports and keeps the flags in memory; the statistics are not involved.
+  Future<void> _flagDetectedUnits() {
+    final AutomaticFlagChange change = addDetectedDifficult(
+      _document.deck,
+      _document.allTime.statistics,
+    );
+    if (!change.changed) {
+      return _difficultWriteChain;
+    }
+    setState(() => _document = _document.copyWith(deck: change.deck));
+    return _writeDifficultFlags(
+      failure: LearnAnywhereMessage.learnDetectedWriteFailed,
+      // Pinned now: the session may have ended because another deck is about
+      // to replace this one, and these flags belong to this deck's file.
+      document: _document,
+    );
+  }
+
+  /// Ends a running learning session before the open deck is replaced, so
+  /// its end is judged on the deck that was practised, not the one arriving.
+  void _endLearnSessionBeforeDeckChange() => _setLearnSessionActive(false);
+
   /// Queues a write of the open deck on [_difficultWriteChain], after a flag
   /// change already made in memory, and completes once it has run.
   ///
   /// See [_toggleDifficult] for what the write carries and how a failure is
-  /// reported.
-  Future<void> _writeDifficultFlags() {
+  /// reported; [failure] is the message that says so. [document], when given,
+  /// is written instead of whatever is open when the write runs.
+  Future<void> _writeDifficultFlags({
+    LearnAnywhereMessage failure =
+        LearnAnywhereMessage.learnDifficultWriteFailed,
+    DesktopDocument? document,
+  }) {
     return _difficultWriteChain = _difficultWriteChain.then((_) async {
       // Read when the write runs, not when it was queued: a later toggle
       // already in memory goes out now rather than being overwritten by an
       // older state.
-      final DesktopDocument before = _document;
+      final DesktopDocument before = document ?? _document;
       final String? deckPath = before.deckPath;
       if (deckPath == null) {
         return;
@@ -3093,7 +3136,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             ? error.osError?.message ?? error.message
             : '$error';
         final String text = LearnAnywhereLocalizations.of(context)
-            .message(LearnAnywhereMessage.learnDifficultWriteFailed)
+            .message(failure)
             .replaceAll('{file}', _filePicker.fileNameOf(deckPath))
             .replaceAll('{detail}', detail);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3169,6 +3212,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       }
       await _guardedFileOperation(() async {
         final LearningMask loadedMask = await _fileService.readMask(path);
+        _endLearnSessionBeforeDeckChange();
         _document = await _fileService.newDeck(_document, mask: loadedMask);
         _lastMaskPath = path;
         _resetRangeForDeck();
@@ -3183,6 +3227,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     // Editor so the user can shape it before saving.
     await _guardedFileOperation(() async {
       final LearningMask freshMask = _defaultMask(widget.locale.languageCode);
+      _endLearnSessionBeforeDeckChange();
       _document = await _fileService.newDeck(_document, mask: freshMask);
       _resetRangeForDeck();
       setState(() {
@@ -3263,6 +3308,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       return;
     }
     await _guardedFileOperation(() async {
+      _endLearnSessionBeforeDeckChange();
       _document = await _fileService.openDeck(_document, path);
       final LearnAnywhereMessage? maskStatus = await _reconcileLinkedMask();
       _resetRangeForDeck();
@@ -3964,6 +4010,13 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     // Auto-save (with overwrite prompt) before leaving; Cancel aborts exit.
     if (!await _confirmAndAutoSaveStats()) {
       return;
+    }
+    // Closing the window ends a running session too. Waiting on the chain
+    // also lets any flag write still queued from the session land first.
+    if (_learnSessionActive) {
+      await _flagDetectedUnits();
+    } else {
+      await _difficultWriteChain;
     }
     await _guardedFileOperation(() async {
       await _saveSettings();

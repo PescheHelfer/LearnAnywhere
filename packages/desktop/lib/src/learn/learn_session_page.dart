@@ -600,6 +600,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
 
   @override
   void dispose() {
+    // Leaving the page by any route ends a running session, so the shell
+    // hears of it even when it switched screens without asking this page.
+    if (_sessionActiveNotified) {
+      final ValueChanged<bool>? onChanged = widget.onSessionActiveChanged;
+      WidgetsBinding.instance.addPostFrameCallback((_) => onChanged?.call(false));
+    }
     _clockTimer?.cancel();
     // Leaving the session cuts off a word still being spoken: a voice talking
     // over the screen the learner has just moved to is nobody's idea of help.

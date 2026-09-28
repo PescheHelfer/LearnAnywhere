@@ -264,4 +264,293 @@ void main() {
       }
     });
   });
+
+  group('the detection rule', () {
+    bool detected(
+      int attempts,
+      int correct, [
+      DetectionThresholds thresholds = DetectionThresholds.defaults,
+    ]) {
+      return isDetectedDifficult(
+        DirectionStats(attempts: attempts, correct: correct),
+        thresholds,
+      );
+    }
+
+    test('the defaults are the tested rule: 2 wrong, 33 %, 6 attempts', () {
+      expect(DetectionThresholds.defaults.minWrong, 2);
+      expect(DetectionThresholds.defaults.minWrongRatePercent, 33);
+      expect(DetectionThresholds.defaults.minAttemptsWithoutCorrect, 6);
+    });
+
+    test('a unit never answered is not detected', () {
+      expect(detected(0, 0), isFalse);
+    });
+
+    test('fewer wrong answers than the minimum are not enough, however high '
+        'the rate', () {
+      expect(detected(2, 1), isFalse); // 1 wrong, 50 %
+      expect(detected(3, 1), isTrue); // 2 wrong, 67 %
+    });
+
+    test('the wrong rate must reach the minimum, and exactly the minimum '
+        'counts', () {
+      expect(detected(100, 67), isTrue); // 33 wrong, 33 %
+      expect(detected(100, 68), isFalse); // 32 wrong, 32 %
+      // The default sits at the tested 1/3, which a whole 33 % admits...
+      expect(detected(6, 4), isTrue); // 2 wrong of 6
+      // ...while one more right answer takes it below.
+      expect(detected(7, 5), isFalse); // 2 wrong of 7, 29 %
+    });
+
+    test('a unit never answered correctly needs the minimum attempts', () {
+      expect(detected(2, 0), isFalse);
+      expect(detected(5, 0), isFalse);
+      expect(detected(6, 0), isTrue);
+    });
+
+    test('one correct answer lifts the attempts requirement', () {
+      expect(detected(3, 1), isTrue);
+    });
+
+    test('custom thresholds replace every default', () {
+      const DetectionThresholds strict = DetectionThresholds(
+        minWrong: 3,
+        minWrongRatePercent: 50,
+        minAttemptsWithoutCorrect: 4,
+      );
+      expect(detected(3, 1, strict), isFalse); // 2 wrong
+      expect(detected(6, 3, strict), isTrue); // 3 wrong, 50 %
+      expect(detected(7, 4, strict), isFalse); // 3 wrong, 43 %
+      expect(detected(3, 0, strict), isFalse); // 3 attempts, none correct
+      expect(detected(4, 0, strict), isTrue);
+    });
+  });
+
+  group('adding detected flags', () {
+    LearningUnit word(
+      String question,
+      String answer, {
+      bool manual = false,
+      bool automatic = false,
+    }) {
+      return LearningUnit(
+        categoryId: 0,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain(question),
+          1: FieldValue.plain(answer),
+        },
+        manualDifficult: manual,
+        autoDifficult: automatic,
+      );
+    }
+
+    // Qualifies under the defaults: 3 wrong of 4.
+    const DirectionStats hard = DirectionStats(attempts: 4, correct: 1);
+    // Does not: 1 wrong of 4.
+    const DirectionStats easy = DirectionStats(attempts: 4, correct: 3);
+
+    UnitStats stats(
+      int index,
+      LearningUnit unit, {
+      DirectionStats direction1 = const DirectionStats(),
+      DirectionStats direction2 = const DirectionStats(),
+    }) {
+      return UnitStats(
+        index: index,
+        direction1: direction1,
+        direction2: direction2,
+        hash: unitIdentityHash(mask, unit),
+      );
+    }
+
+    List<(bool, bool)> flags(LearningDeck deck) => <(bool, bool)>[
+      for (final LearningUnit unit in deck.units)
+        (unit.manualDifficult, unit.autoDifficult),
+    ];
+
+    test('flags each unit the rule holds for and reports how many', () {
+      final LearningUnit house = word('house', 'Haus');
+      final LearningUnit tree = word('tree', 'Baum');
+      final LearningUnit dog = word('dog', 'Hund');
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[house, tree, dog],
+      );
+      final AutomaticFlagChange change = addDetectedDifficult(
+        deck,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[
+            stats(1, house, direction1: hard),
+            stats(2, tree, direction1: easy),
+            stats(3, dog, direction1: hard),
+          ],
+        ),
+      );
+      expect(change.added, 2);
+      expect(change.changed, isTrue);
+      expect(flags(change.deck), <(bool, bool)>[
+        (false, true),
+        (false, false),
+        (false, true),
+      ]);
+    });
+
+    test('either direction qualifying is enough, but the two are never '
+        'summed', () {
+      final LearningUnit house = word('house', 'Haus');
+      final LearningUnit tree = word('tree', 'Baum');
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[house, tree],
+      );
+      // 1 wrong of 2 each way: 2 of 4 together would qualify, neither alone
+      // does.
+      const DirectionStats half = DirectionStats(attempts: 2, correct: 1);
+      final AutomaticFlagChange change = addDetectedDifficult(
+        deck,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[
+            stats(1, house, direction1: easy, direction2: hard),
+            stats(2, tree, direction1: half, direction2: half),
+          ],
+        ),
+      );
+      expect(flags(change.deck), <(bool, bool)>[(false, true), (false, false)]);
+    });
+
+    test('never clears a flag, and a unit already flagged automatically is '
+        'not counted again', () {
+      final LearningUnit stale = word('house', 'Haus', automatic: true);
+      final LearningUnit already = word('tree', 'Baum', automatic: true);
+      final LearningUnit mine = word('dog', 'Hund', manual: true);
+      final LearningUnit mineAndHard = word('cat', 'Katze', manual: true);
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[stale, already, mine, mineAndHard],
+      );
+      final AutomaticFlagChange change = addDetectedDifficult(
+        deck,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[
+            stats(1, stale, direction1: easy),
+            stats(2, already, direction1: hard),
+            stats(3, mine, direction1: easy),
+            stats(4, mineAndHard, direction1: hard),
+          ],
+        ),
+      );
+      expect(change.added, 1);
+      expect(flags(change.deck), <(bool, bool)>[
+        (false, true),
+        (false, true),
+        (true, false),
+        (true, true),
+      ]);
+    });
+
+    test('is not an edit: the deck keeps its last-edited date and its unit '
+        'content', () {
+      final LocalTimestamp edited = LocalTimestamp.tryParse(
+        '2026-09-25T16:32:11+02:00',
+      )!;
+      final LearningUnit house = word('house', 'Haus');
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[house],
+        lastEdited: edited,
+      );
+      final AutomaticFlagChange change = addDetectedDifficult(
+        deck,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[stats(1, house, direction1: hard)],
+        ),
+      );
+      expect(change.deck.lastEdited, edited);
+      expect(change.deck.units.single.fields, same(house.fields));
+    });
+
+    test('nothing to add hands back the deck itself', () {
+      final LearningUnit house = word('house', 'Haus');
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[house],
+      );
+      for (final AllTimeStatistics allTime in <AllTimeStatistics>[
+        AllTimeStatistics.empty,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[stats(1, house, direction1: easy)],
+        ),
+      ]) {
+        final AutomaticFlagChange change = addDetectedDifficult(deck, allTime);
+        expect(change.added, 0);
+        expect(change.changed, isFalse);
+        expect(change.deck, same(deck));
+      }
+    });
+
+    test('follows a unit that moved, by its identity', () {
+      final LearningUnit house = word('house', 'Haus');
+      final LearningUnit tree = word('tree', 'Baum');
+      // The record was written when house was unit 1; the deck now has tree
+      // first.
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[tree, house],
+      );
+      final AutomaticFlagChange change = addDetectedDifficult(
+        deck,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[
+            stats(1, house, direction1: hard),
+            stats(2, tree, direction1: easy),
+          ],
+        ),
+      );
+      expect(flags(change.deck), <(bool, bool)>[(false, false), (false, true)]);
+    });
+
+    test('a unit with no matching record is not detected', () {
+      final LearningUnit house = word('house', 'Haus');
+      final LearningUnit gone = word('gone', 'weg');
+      final LearningUnit fresh = word('new', 'neu');
+      // The hard record belongs to a unit no longer in the deck. It sits at
+      // house's position, so matching by position alone would hand it to
+      // house; by identity house has its own, easy record.
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[fresh, house],
+      );
+      final AutomaticFlagChange change = addDetectedDifficult(
+        deck,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[
+            stats(1, house, direction1: easy),
+            stats(2, gone, direction1: hard),
+          ],
+        ),
+      );
+      expect(change.added, 0);
+      expect(flags(change.deck), <(bool, bool)>[(false, false), (false, false)]);
+    });
+
+    test('custom thresholds are honoured', () {
+      final LearningUnit house = word('house', 'Haus');
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[house],
+      );
+      final AllTimeStatistics allTime = AllTimeStatistics(
+        perUnit: <UnitStats>[stats(1, house, direction1: hard)],
+      );
+      expect(
+        addDetectedDifficult(
+          deck,
+          allTime,
+          thresholds: const DetectionThresholds(minWrong: 4),
+        ).added,
+        0,
+      );
+    });
+  });
 }
