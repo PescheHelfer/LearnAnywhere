@@ -29,8 +29,9 @@ oder das Menü **Optionen ▸ Zoomstufe**, das gar nicht von der Tastatur abhän
 ## Menüleiste
 
 `Alt+<Buchstabe>` öffnet ein Menü der obersten Ebene; der unterstrichene Buchstabe in
-jedem Namen ist der wirksame. **Statistik** und **Lexikon** sind direkte Aktionen statt
-Untermenüs — ihr Tastenkürzel öffnet den jeweiligen Bildschirm sofort.
+jedem Namen ist der wirksame. **Lexikon** ist eine direkte Aktion statt eines
+Untermenüs — sein Tastenkürzel öffnet den Bildschirm sofort. **Statistik** ist ein
+Untermenü: `Alt+S` und dann `A` öffnet den Bildschirm.
 
 | Menü | Tastenkürzel |
 |---|---|

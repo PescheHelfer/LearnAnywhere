@@ -27,8 +27,9 @@ depends on the keyboard at all.
 ## Menu bar
 
 `Alt+<letter>` opens a top-level menu; the underlined letter in each name is the one
-that works. **Statistics** and **Lexicon** are direct actions rather than submenus —
-their accelerator opens the screen immediately.
+that works. **Lexicon** is a direct action rather than a submenu — its accelerator
+opens the screen immediately. **Statistics** is a submenu: `Alt+S` then `S` opens the
+screen.
 
 | Menu | Accelerator |
 |---|---|

@@ -33,8 +33,8 @@ Menüleiste am oberen Rand:
 
 **Datei · Edit · Lern · Statistik · Lexikon · Optionen · Hilfe**
 
-**Statistik** und **Lexikon** sind einzelne Befehle und keine Menüs — ein Klick öffnet
-den jeweiligen Bildschirm direkt. Jedes Menü lässt sich auch mit `Alt` und dem
+**Lexikon** ist ein einzelner Befehl und kein Menü — ein Klick öffnet den Bildschirm
+direkt. Jedes Menü lässt sich auch mit `Alt` und dem
 unterstrichenen Buchstaben öffnen, zum Beispiel `Alt+D` für **Datei**. Die vollständige
 Liste steht in [Tastaturbefehle](12-keyboard-shortcuts.md).
 

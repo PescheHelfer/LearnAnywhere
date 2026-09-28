@@ -456,18 +456,15 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   final MenuController _fileMenuController = MenuController();
   final MenuController _editMenuController = MenuController();
   final MenuController _learnMenuController = MenuController();
+  final MenuController _statisticsMenuController = MenuController();
   final MenuController _optionsMenuController = MenuController();
   final MenuController _helpMenuController = MenuController();
 
-  // The two direct-action top-level entries (Statistics/Lexicon) are bare
-  // MenuItemButtons. Without [skipTraversal] the MenuBar's Left/Right arrow
-  // navigation lands on them and stalls (they have no submenu to open); skipping
-  // them lets arrow nav jump straight to the next submenu-bearing menu. They are
-  // still activated via their Alt accelerator and the mouse.
-  final FocusNode _statisticsMenuFocusNode = FocusNode(
-    skipTraversal: true,
-    debugLabel: 'menuStatistics',
-  );
+  // The one direct-action top-level entry (Lexicon) is a bare MenuItemButton.
+  // Without [skipTraversal] the MenuBar's Left/Right arrow navigation lands on
+  // it and stalls (it has no submenu to open); skipping it lets arrow nav jump
+  // straight to the next submenu-bearing menu. It is still activated via its
+  // Alt accelerator and the mouse.
   final FocusNode _lexiconMenuFocusNode = FocusNode(
     skipTraversal: true,
     debugLabel: 'menuLexicon',
@@ -753,7 +750,6 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     HardwareKeyboard.instance.removeHandler(_handleZoomKey);
     _menuScrollController.dispose();
     _contentFocusScope.dispose();
-    _statisticsMenuFocusNode.dispose();
     _lexiconMenuFocusNode.dispose();
     super.dispose();
   }
@@ -1463,7 +1459,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// localized strings.
   ///
   /// Submenu entries open their menu via a [MenuController]; the direct-action
-  /// entries (Learn/Statistics/Lexicon) select their route. Consumed by
+  /// entry (Lexicon) selects its route. Consumed by
   /// [_handleMenuAccelerator] only while no menu is open; once a menu opens, its
   /// items' own [MenuAcceleratorLabel] accelerators take over Alt+<letter>.
   Map<String, VoidCallback> _buildTopLevelAccelerators(
@@ -1476,7 +1472,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           (LearnAnywhereMessage.menuLearn, () => _learnMenuController.open()),
           (
             LearnAnywhereMessage.menuStatistics,
-            () => _selectRoute(_DesktopRoute.statistics),
+            () => _statisticsMenuController.open(),
           ),
           (
             LearnAnywhereMessage.menuLexicon,
@@ -1629,12 +1625,40 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           messages.message(LearnAnywhereMessage.menuLearn),
         ),
       ),
-      // 4. Statistics (direct)
-      _routeMenu(
-        messages,
-        LearnAnywhereMessage.menuStatistics,
-        _DesktopRoute.statistics,
-        _statisticsMenuFocusNode,
+      // 4. Statistics (the screen, and the open deck's flag commands)
+      SubmenuButton(
+        controller: _statisticsMenuController,
+        onOpen: _onMenuOpened,
+        onClose: _onMenuClosed,
+        menuChildren: <Widget>[
+          MenuItemButton(
+            onPressed: () => _selectRoute(_DesktopRoute.statistics),
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuStatisticsShow),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+          const _MenuSeparator(),
+          MenuItemButton(
+            onPressed: _recomputeAutomaticFlags,
+            child: MenuAcceleratorLabel(
+              messages.message(
+                LearnAnywhereMessage.menuStatisticsRecomputeAutomatic,
+              ),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+          MenuItemButton(
+            onPressed: _removeManualFlags,
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuStatisticsRemoveManual),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+        ],
+        child: MenuAcceleratorDisplayLabel(
+          messages.message(LearnAnywhereMessage.menuStatistics),
+        ),
       ),
       // 5. Lexicon (direct)
       _routeMenu(
@@ -3073,7 +3097,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// still meets the rule gets its automatic flag back here. A failed write
   /// reports and keeps the flags in memory; the statistics are not involved.
   Future<void> _flagDetectedUnits() {
-    final AutomaticFlagChange change = addDetectedDifficult(
+    final DifficultFlagChange change = addDetectedDifficult(
       _document.deck,
       _document.allTime.statistics,
     );
@@ -3093,25 +3117,181 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// its end is judged on the deck that was practised, not the one arriving.
   void _endLearnSessionBeforeDeckChange() => _setLearnSessionActive(false);
 
+  /// Statistics ▸ Recompute automatic flags: after a warning, rebuilds every
+  /// automatic flag of the open deck from its lifetime record — stale ones go,
+  /// due ones come — and reports how many were added and removed.
+  ///
+  /// A lifetime file that was there but could not be read leaves the record
+  /// empty for that reason alone, and judging by it would strip every
+  /// automatic flag; the command refuses instead.
+  Future<void> _recomputeAutomaticFlags() => _runFlagCommand(
+    title: LearnAnywhereMessage.confirmRecomputeAutomaticFlagsTitle,
+    warning: LearnAnywhereMessage.confirmRecomputeAutomaticFlags,
+    change: (LearningDeck deck) =>
+        recomputeDetectedDifficult(deck, _document.allTime.statistics),
+    done: LearnAnywhereMessage.statisticsRecomputeDone,
+    refusal: _document.allTime.origin == AllTimeOrigin.unreadable
+        ? LearnAnywhereMessage.statisticsRecomputeUnreadable
+        : null,
+  );
+
+  /// Statistics ▸ Remove all manual flags: after a warning, clears every
+  /// manual flag of the open deck and reports how many.
+  Future<void> _removeManualFlags() => _runFlagCommand(
+    title: LearnAnywhereMessage.confirmRemoveManualFlagsTitle,
+    warning: LearnAnywhereMessage.confirmRemoveManualFlags,
+    change: clearManualDifficult,
+    done: LearnAnywhereMessage.statisticsRemoveManualDone,
+  );
+
+  /// Runs a deck-wide flag command on the open deck: shows [warning] under
+  /// [title], and only if the learner goes on applies [change], writes the
+  /// deck when a flag changed, and reports the counts with [done].
+  ///
+  /// The write is the flag write every other marking path uses, so it keeps
+  /// the last-edited date. A failed write says so in place of the counts.
+  ///
+  /// [refusal], when given, is shown instead and nothing runs. So is a
+  /// refusal while the unit editor is open: the write would carry its pending
+  /// edits to disk, past the editor's own Cancel.
+  Future<void> _runFlagCommand({
+    required LearnAnywhereMessage title,
+    required LearnAnywhereMessage warning,
+    required DifficultFlagChange Function(LearningDeck deck) change,
+    required LearnAnywhereMessage done,
+    LearnAnywhereMessage? refusal,
+  }) async {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final String deckName = _openDeckName(messages);
+    final LearnAnywhereMessage? refused = _route == _DesktopRoute.editor
+        ? LearnAnywhereMessage.statisticsFlagCommandInEditor
+        : refusal;
+    if (refused != null) {
+      _showFlagStatus(messages.message(refused).replaceAll('{deck}', deckName));
+    } else if (await _confirmFlagCommand(messages, title, warning, deckName) &&
+        mounted) {
+      final DifficultFlagChange result = change(_document.deck);
+      var written = true;
+      if (result.changed) {
+        setState(() => _document = _document.copyWith(deck: result.deck));
+        written = await _writeDifficultFlags();
+      }
+      if (written) {
+        // {deck} last: a file name holding a placeholder stays as it is.
+        _showFlagStatus(
+          messages
+              .message(done)
+              .replaceAll('{added}', result.added.toString())
+              .replaceAll('{removed}', result.removed.toString())
+              .replaceAll('{deck}', deckName),
+        );
+      }
+    }
+    // Launched from the MenuBar, outside the content FocusScope.
+    if (mounted) {
+      _restoreContentFocus();
+    }
+  }
+
+  /// Shows a flag command's outcome [status], already filled in, as the
+  /// latest status and in a SnackBar.
+  void _showFlagStatus(String status) {
+    if (!mounted) {
+      return;
+    }
+    setState(() => _lastFileStatus = status);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status)));
+  }
+
+  /// The warning before a deck-wide flag command: [title], and [warning]
+  /// naming [deckName], with any `{saveSelected}` shown as that command's
+  /// label in bold. Cancel holds the focus, so Enter changes nothing.
+  Future<bool> _confirmFlagCommand(
+    LearnAnywhereLocalizations messages,
+    LearnAnywhereMessage title,
+    LearnAnywhereMessage warning,
+    String deckName,
+  ) async {
+    // Split first, then fill {deck} into the pieces, so a file name holding
+    // the placeholder is not split itself.
+    final List<String> parts = messages
+        .message(warning)
+        .split('{saveSelected}')
+        .map((String part) => part.replaceAll('{deck}', deckName))
+        .toList(growable: false);
+    final String saveSelected = messages.message(
+      LearnAnywhereMessage.statisticsSaveSelected,
+    );
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(messages.message(title)),
+          content: Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                for (var i = 0; i < parts.length; i += 1) ...<InlineSpan>[
+                  if (i > 0)
+                    TextSpan(
+                      text: saveSelected,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  TextSpan(text: parts[i]),
+                ],
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            FilledButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                messages.message(LearnAnywhereMessage.actionContinue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  /// The open deck's file name, or the "Unsaved" stand-in used wherever the
+  /// program has to name a deck that has never been written.
+  String _openDeckName(LearnAnywhereLocalizations messages) {
+    final String? deckPath = _document.deckPath;
+    return deckPath == null
+        ? messages.message(LearnAnywhereMessage.fileStatusUnsaved)
+        : _filePicker.fileNameOf(deckPath);
+  }
+
   /// Queues a write of the open deck on [_difficultWriteChain], after a flag
-  /// change already made in memory, and completes once it has run.
+  /// change already made in memory, and completes once it has run — with
+  /// false only when the write failed. A deck never saved has no file to
+  /// write yet; its flags ride along with its first save.
   ///
   /// See [_toggleDifficult] for what the write carries and how a failure is
   /// reported; [failure] is the message that says so. [document], when given,
   /// is written instead of whatever is open when the write runs.
-  Future<void> _writeDifficultFlags({
+  Future<bool> _writeDifficultFlags({
     LearnAnywhereMessage failure =
         LearnAnywhereMessage.learnDifficultWriteFailed,
     DesktopDocument? document,
   }) {
-    return _difficultWriteChain = _difficultWriteChain.then((_) async {
+    final Future<bool> write = _difficultWriteChain.then((_) async {
       // Read when the write runs, not when it was queued: a later toggle
       // already in memory goes out now rather than being overwritten by an
       // older state.
       final DesktopDocument before = document ?? _document;
       final String? deckPath = before.deckPath;
       if (deckPath == null) {
-        return;
+        return true;
       }
       try {
         final DesktopDocument written = await _fileService.writeDeck(
@@ -3128,9 +3308,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             );
           });
         }
+        return true;
       } on Object catch (error) {
         if (!mounted) {
-          return;
+          return false;
         }
         final String detail = error is FileSystemException
             ? error.osError?.message ?? error.message
@@ -3142,8 +3323,11 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(text)),
         );
+        return false;
       }
     });
+    _difficultWriteChain = write;
+    return write;
   }
 
   Future<void> _runFileCommand(LearnAnywhereMessage command) async {
@@ -3857,12 +4041,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
       context,
     );
-    // The deck's file name, or the "Unsaved" stand-in used wherever else the
-    // program has to name a deck that has never been written.
-    final String? deckPath = _document.deckPath;
-    final String deckName = deckPath == null
-        ? messages.message(LearnAnywhereMessage.fileStatusUnsaved)
-        : _filePicker.fileNameOf(deckPath);
+    final String deckName = _openDeckName(messages);
     final bool? result = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {

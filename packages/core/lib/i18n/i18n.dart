@@ -182,6 +182,20 @@ enum LearnAnywhereMessage {
   /// Statistics menu label.
   menuStatistics,
 
+  /// Statistics submenu: open the statistics screen.
+  menuStatisticsShow,
+
+  /// Statistics submenu: rebuild the open deck's automatic flags from its
+  /// lifetime record, behind
+  /// [LearnAnywhereMessage.confirmRecomputeAutomaticFlags]. Names the open
+  /// deck, because nothing else is touched.
+  menuStatisticsRecomputeAutomatic,
+
+  /// Statistics submenu: clear every manual flag in the open deck, behind
+  /// [LearnAnywhereMessage.confirmRemoveManualFlags]. Names the open deck,
+  /// because nothing else is touched.
+  menuStatisticsRemoveManual,
+
   /// Lexicon menu label.
   menuLexicon,
 
@@ -951,6 +965,24 @@ enum LearnAnywhereMessage {
   /// All-time statistics cleared status.
   statisticsAllTimeCleared,
 
+  /// Status after Statistics ▸ Recompute automatic flags. Carries `{deck}`
+  /// (the deck's file name), `{added}` and `{removed}`.
+  statisticsRecomputeDone,
+
+  /// Status after Statistics ▸ Remove all manual flags. Carries `{deck}`
+  /// (the deck's file name) and `{removed}`.
+  statisticsRemoveManualDone,
+
+  /// Shown instead of the recompute warning when the open deck's lifetime
+  /// file was there but could not be read: its record is empty for that
+  /// reason alone, and would strip every automatic flag. Carries `{deck}`.
+  statisticsRecomputeUnreadable,
+
+  /// Shown instead of either flag command's warning while the unit editor is
+  /// open: the command writes the deck at once, which would carry the pending
+  /// edits past the editor's own Cancel.
+  statisticsFlagCommandInEditor,
+
   /// Standing warning above the all-time statistics: this record has stopped
   /// reaching its file, so the numbers on screen are counting into memory
   /// only. Shown for as long as that lasts, because the refusal is silent
@@ -1336,6 +1368,22 @@ enum LearnAnywhereMessage {
   /// each language can place it where its own grammar puts it.
   confirmReallyWord,
 
+  /// Title of the warning before automatic flags are recomputed.
+  confirmRecomputeAutomaticFlagsTitle,
+
+  /// Warning before automatic flags are recomputed. Carries `{deck}`, the
+  /// open deck's file name, and `{saveSelected}`, which the shell replaces
+  /// with [LearnAnywhereMessage.statisticsSaveSelected] in bold — the label
+  /// is quoted from the catalog so the learner can find it on screen.
+  confirmRecomputeAutomaticFlags,
+
+  /// Title of the warning before every manual flag is removed.
+  confirmRemoveManualFlagsTitle,
+
+  /// Warning before every manual flag is removed. Carries `{deck}`, the open
+  /// deck's file name.
+  confirmRemoveManualFlags,
+
   /// Confirm exit message.
   confirmExit,
 
@@ -1516,6 +1564,11 @@ final class LearnAnywhereCatalog {
           '&Learn with last settings', // L
       LearnAnywhereMessage.menuLearnContinue: '&Continue', // C
       LearnAnywhereMessage.menuStatistics: '&Statistics', // top-bar S
+      LearnAnywhereMessage.menuStatisticsShow: '&Show statistics', // S
+      LearnAnywhereMessage.menuStatisticsRecomputeAutomatic:
+          'Recompute &automatic flags in the open deck...', // A
+      LearnAnywhereMessage.menuStatisticsRemoveManual:
+          'Remove all &manual flags in the open deck...', // M
       LearnAnywhereMessage.menuLexicon: 'Le&xicon', // top-bar X
       LearnAnywhereMessage.menuHelp: '&Help', // top-bar H
       LearnAnywhereMessage.helpUserGuide: '&User guide', // U
@@ -1882,6 +1935,18 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsAllTimeMenu: 'All-time actions',
       LearnAnywhereMessage.statisticsAllTimeCleared:
           'All-time statistics cleared.',
+      LearnAnywhereMessage.statisticsRecomputeDone:
+          'Automatic flags in “{deck}” recomputed: {added} added, {removed} '
+          'removed.',
+      LearnAnywhereMessage.statisticsRemoveManualDone:
+          'Manual flags in “{deck}” removed: {removed}.',
+      LearnAnywhereMessage.statisticsRecomputeUnreadable:
+          'The all-time statistics of “{deck}” could not be read when the '
+          'deck was opened, so the automatic flags were not recomputed. Open '
+          'the deck again once the file can be read.',
+      LearnAnywhereMessage.statisticsFlagCommandInEditor:
+          'Leave the unit editor first: F10 keeps your changes, Esc discards '
+          'them.',
       LearnAnywhereMessage.statisticsAllTimeNotRecorded:
           'These all-time statistics are no longer being saved: the file '
           'beside the deck belongs to another deck, or could not be read. '
@@ -2055,6 +2120,18 @@ final class LearnAnywhereCatalog {
           "'{deck}'? The complete learning history of this deck is erased. "
           "This cannot be undone.",
       LearnAnywhereMessage.confirmReallyWord: 'really',
+      LearnAnywhereMessage.confirmRecomputeAutomaticFlagsTitle:
+          'Recompute automatic flags?',
+      LearnAnywhereMessage.confirmRecomputeAutomaticFlags:
+          'Every unit in “{deck}” is checked against its statistics again. '
+          'Units that no longer meet the rule lose their automatic flag; '
+          'manual flags are never touched. Decks made with {saveSelected} '
+          'start without statistics and may lose all their automatic flags.',
+      LearnAnywhereMessage.confirmRemoveManualFlagsTitle:
+          'Remove all manual flags?',
+      LearnAnywhereMessage.confirmRemoveManualFlags:
+          'Every manual flag in “{deck}” is removed. Automatic flags are never '
+          'touched. This cannot be undone.',
       LearnAnywhereMessage.confirmExit: 'Exit Learn Anywhere?',
       LearnAnywhereMessage.fileOperationFailed: 'File operation failed',
       LearnAnywhereMessage.fileNewDeckDone: 'New deck created.',
@@ -2179,6 +2256,13 @@ final class LearnAnywhereCatalog {
           'Mit &letzten Einstellungen lernen', // L
       LearnAnywhereMessage.menuLearnContinue: '&Fortsetzen', // F
       LearnAnywhereMessage.menuStatistics: '&Statistik', // top-bar S
+      LearnAnywhereMessage.menuStatisticsShow: 'Statistik &anzeigen', // A
+      LearnAnywhereMessage.menuStatisticsRecomputeAutomatic:
+          'Automatische Kennzeichnungen der geöffneten Lern-Datei &neu '
+          'berechnen...', // N
+      LearnAnywhereMessage.menuStatisticsRemoveManual:
+          'Alle &manuellen Kennzeichnungen der geöffneten Lern-Datei '
+          'entfernen...', // M
       LearnAnywhereMessage.menuLexicon: 'Le&xikon', // top-bar X
       LearnAnywhereMessage.menuHelp: '&Hilfe', // top-bar H
       LearnAnywhereMessage.helpUserGuide: '&Benutzerhandbuch', // B
@@ -2573,6 +2657,19 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsAllTimeMenu: 'Allzeit-Aktionen',
       LearnAnywhereMessage.statisticsAllTimeCleared:
           'Allzeit-Statistik gelöscht.',
+      LearnAnywhereMessage.statisticsRecomputeDone:
+          'Automatische Kennzeichnungen in „{deck}“ neu berechnet: {added} '
+          'hinzugefügt, {removed} entfernt.',
+      LearnAnywhereMessage.statisticsRemoveManualDone:
+          'Manuelle Kennzeichnungen in „{deck}“ entfernt: {removed}.',
+      LearnAnywhereMessage.statisticsRecomputeUnreadable:
+          'Die Allzeit-Statistik von „{deck}“ konnte beim Öffnen nicht '
+          'gelesen werden, die automatischen Kennzeichnungen wurden also nicht '
+          'neu berechnet. Öffnen Sie die Lern-Datei erneut, sobald die Datei '
+          'lesbar ist.',
+      LearnAnywhereMessage.statisticsFlagCommandInEditor:
+          'Verlassen Sie zuerst die Eingabe-Maske: F10 behält Ihre '
+          'Änderungen, Esc verwirft sie.',
       LearnAnywhereMessage.statisticsAllTimeNotRecorded:
           'Diese Allzeit-Statistik wird nicht mehr gespeichert: Die Datei '
           'neben der Lern-Datei gehört zu einer anderen Lern-Datei oder konnte '
@@ -2762,6 +2859,20 @@ final class LearnAnywhereCatalog {
           'Der gesamte bisherige Lernverlauf dieser Lern-Datei wird gelöscht. '
           'Das lässt sich nicht rückgängig machen.',
       LearnAnywhereMessage.confirmReallyWord: 'wirklich',
+      LearnAnywhereMessage.confirmRecomputeAutomaticFlagsTitle:
+          'Automatische Kennzeichnungen neu berechnen?',
+      LearnAnywhereMessage.confirmRecomputeAutomaticFlags:
+          'Jede Einheit in „{deck}“ wird erneut an ihrer Statistik gemessen. '
+          'Einheiten, die die Regel nicht mehr erfüllen, verlieren ihre '
+          'automatische Kennzeichnung; manuelle Kennzeichnungen bleiben '
+          'unangetastet. Lern-Dateien aus {saveSelected} beginnen ohne '
+          'Statistik und können alle automatischen Kennzeichnungen verlieren.',
+      LearnAnywhereMessage.confirmRemoveManualFlagsTitle:
+          'Alle manuellen Kennzeichnungen entfernen?',
+      LearnAnywhereMessage.confirmRemoveManualFlags:
+          'Jede manuelle Kennzeichnung in „{deck}“ wird entfernt. Automatische '
+          'Kennzeichnungen bleiben unangetastet. Das lässt sich nicht '
+          'rückgängig machen.',
       LearnAnywhereMessage.confirmExit: 'Learn Anywhere beenden?',
       LearnAnywhereMessage.fileOperationFailed: 'Dateioperation fehlgeschlagen',
       LearnAnywhereMessage.fileNewDeckDone: 'Neue Lern-Datei erstellt.',

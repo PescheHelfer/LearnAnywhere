@@ -30,8 +30,8 @@ The program opens on the **Workspace** screen with nothing loaded, so it reports
 
 **File · Edit · Learn · Statistics · Lexicon · Options · Help**
 
-**Statistics** and **Lexicon** are single commands rather than menus — clicking either
-one opens that screen directly. Every menu can also be opened from the keyboard with
+**Lexicon** is a single command rather than a menu — clicking it opens that screen
+directly. Every menu can also be opened from the keyboard with
 `Alt` and the underlined letter, for example `Alt+F` for **File**. See
 [Keyboard shortcuts](12-keyboard-shortcuts.md) for the full list.
 

@@ -105,20 +105,28 @@ bool isDetectedDifficult(
           stats.attempts >= thresholds.minAttemptsWithoutCorrect);
 }
 
-/// A deck after automatic flags were added to it, and how many.
-final class AutomaticFlagChange {
+/// A deck after a deck-wide flag operation, and how many flags it set and
+/// cleared.
+final class DifficultFlagChange {
   /// Creates a change result.
-  const AutomaticFlagChange({required this.deck, required this.added});
+  const DifficultFlagChange({
+    required this.deck,
+    this.added = 0,
+    this.removed = 0,
+  });
 
   /// The deck with the change applied — the same instance when nothing
   /// changed.
   final LearningDeck deck;
 
-  /// How many units gained an automatic flag.
+  /// How many units gained a flag.
   final int added;
 
+  /// How many units lost a flag.
+  final int removed;
+
   /// Whether any flag changed, i.e. whether the deck needs writing.
-  bool get changed => added > 0;
+  bool get changed => added > 0 || removed > 0;
 }
 
 /// Sets the automatic flag on every unit of [deck] whose lifetime record
@@ -129,33 +137,103 @@ final class AutomaticFlagChange {
 /// manual flag is never touched. Units are matched to [allTime] through the
 /// lifetime record's own identity rules ([realignAllTimeStatistics]), so a
 /// unit the record holds nothing for is not detected.
-AutomaticFlagChange addDetectedDifficult(
+DifficultFlagChange addDetectedDifficult(
   LearningDeck deck,
   AllTimeStatistics allTime, {
   DetectionThresholds thresholds = DetectionThresholds.defaults,
 }) {
+  final List<bool> detected = _detectedSlots(deck, allTime, thresholds);
+  final Set<int> gained = <int>{
+    for (var slot = 0; slot < deck.units.length; slot += 1)
+      if (detected[slot] && !deck.units[slot].autoDifficult) slot + 1,
+  };
+  if (gained.isEmpty) {
+    return DifficultFlagChange(deck: deck);
+  }
+  return DifficultFlagChange(
+    deck: _updateUnitsAt(
+      deck,
+      gained,
+      (LearningUnit unit) => unit.copyWith(autoDifficult: true),
+    ),
+    added: gained.length,
+  );
+}
+
+/// Rebuilds every automatic flag of [deck] from its lifetime record
+/// [allTime]: **Statistics ▸ Recompute automatic flags**.
+///
+/// A unit the rule holds for carries the automatic flag afterwards, and
+/// every other unit does not — so, unlike [addDetectedDifficult], stale flags
+/// go away. A unit the record holds nothing for is not detected, which is
+/// why a deck without statistics loses all its automatic flags. Manual flags
+/// are never touched. The counts are relative to the flags [deck] carried.
+DifficultFlagChange recomputeDetectedDifficult(
+  LearningDeck deck,
+  AllTimeStatistics allTime, {
+  DetectionThresholds thresholds = DetectionThresholds.defaults,
+}) {
+  final List<bool> detected = _detectedSlots(deck, allTime, thresholds);
+  final Set<int> gained = <int>{};
+  final Set<int> lost = <int>{};
+  for (var slot = 0; slot < deck.units.length; slot += 1) {
+    if (detected[slot] != deck.units[slot].autoDifficult) {
+      (detected[slot] ? gained : lost).add(slot + 1);
+    }
+  }
+  if (gained.isEmpty && lost.isEmpty) {
+    return DifficultFlagChange(deck: deck);
+  }
+  return DifficultFlagChange(
+    deck: _updateUnitsAt(
+      deck,
+      <int>{...gained, ...lost},
+      (LearningUnit unit) => unit.copyWith(autoDifficult: !unit.autoDifficult),
+    ),
+    added: gained.length,
+    removed: lost.length,
+  );
+}
+
+/// Clears the manual flag on every unit of [deck]: **Statistics ▸ Remove all
+/// manual flags**. Automatic flags are never touched.
+DifficultFlagChange clearManualDifficult(LearningDeck deck) {
+  final Set<int> marked = <int>{
+    for (var slot = 0; slot < deck.units.length; slot += 1)
+      if (deck.units[slot].manualDifficult) slot + 1,
+  };
+  if (marked.isEmpty) {
+    return DifficultFlagChange(deck: deck);
+  }
+  return DifficultFlagChange(
+    deck: _updateUnitsAt(
+      deck,
+      marked,
+      (LearningUnit unit) => unit.copyWith(manualDifficult: false),
+    ),
+    removed: marked.length,
+  );
+}
+
+/// For each unit of [deck], whether its lifetime record in [allTime]
+/// satisfies the rule in either direction.
+///
+/// Units are matched to records by the lifetime record's own identity rules
+/// ([realignAllTimeStatistics]).
+List<bool> _detectedSlots(
+  LearningDeck deck,
+  AllTimeStatistics allTime,
+  DetectionThresholds thresholds,
+) {
   final List<UnitStats> records = realignAllTimeStatistics(
     deck: deck,
     allTime: allTime,
   ).perUnit;
-  final Set<int> detected = <int>{
-    for (var slot = 0; slot < deck.units.length; slot += 1)
-      if (!deck.units[slot].autoDifficult &&
-          (isDetectedDifficult(records[slot].direction1, thresholds) ||
-              isDetectedDifficult(records[slot].direction2, thresholds)))
-        slot + 1,
-  };
-  if (detected.isEmpty) {
-    return AutomaticFlagChange(deck: deck, added: 0);
-  }
-  return AutomaticFlagChange(
-    deck: _updateUnitsAt(
-      deck,
-      detected,
-      (LearningUnit unit) => unit.copyWith(autoDifficult: true),
-    ),
-    added: detected.length,
-  );
+  return <bool>[
+    for (final UnitStats record in records)
+      isDetectedDifficult(record.direction1, thresholds) ||
+          isDetectedDifficult(record.direction2, thresholds),
+  ];
 }
 
 /// Applies [update] to the units at the one-based [unitIndices].

@@ -149,8 +149,10 @@ answered it correctly — only once you have tried it **at least six times**.
 - Level Learning answers count only when given at level 0, free recall; answers with
   support on the lower levels do not.
 - It only ever adds flags. A unit you have since learned keeps its automatic flag until
-  you remove it — with `F12`, or with **Unmark selected** in the
-  [unit list](09-statistics.md#unit-list--finding-what-to-practice-again).
+  you remove it — with `F12`, with **Unmark selected** in the
+  [unit list](09-statistics.md#unit-list--finding-what-to-practice-again), or for the
+  whole deck with
+  [Recompute automatic flags in the open deck...](09-statistics.md#recomputing-and-removing-flags).
 - The deck file is written only when a flag was added, and like marking a unit that is
   not an edit: **Last edited** does not change. If the file cannot be written, a message
   names it; your statistics are not affected.

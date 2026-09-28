@@ -50,6 +50,48 @@ void main() {
     );
   }
 
+  LearningUnit word(
+    String question,
+    String answer, {
+    bool manual = false,
+    bool automatic = false,
+  }) {
+    return LearningUnit(
+      categoryId: 0,
+      fields: <int, FieldValue>{
+        0: FieldValue.plain(question),
+        1: FieldValue.plain(answer),
+      },
+      manualDifficult: manual,
+      autoDifficult: automatic,
+    );
+  }
+
+  // Qualifies under the defaults: 3 wrong of 4.
+  const DirectionStats hard = DirectionStats(attempts: 4, correct: 1);
+  // Does not: 1 wrong of 4.
+  const DirectionStats easy = DirectionStats(attempts: 4, correct: 3);
+
+  UnitStats stats(
+    int index,
+    LearningUnit unit, {
+    DirectionStats direction1 = const DirectionStats(),
+    DirectionStats direction2 = const DirectionStats(),
+  }) {
+    return UnitStats(
+      index: index,
+      direction1: direction1,
+      direction2: direction2,
+      hash: unitIdentityHash(mask, unit),
+    );
+  }
+
+  /// Each unit's `(manual, automatic)` flags, in deck order.
+  List<(bool, bool)> flags(LearningDeck deck) => <(bool, bool)>[
+    for (final LearningUnit unit in deck.units)
+      (unit.manualDifficult, unit.autoDifficult),
+  ];
+
   group('.vok difficulty flags', () {
     test('a deck without them decodes to unflagged units and re-encodes '
         'byte-for-byte', () {
@@ -199,10 +241,6 @@ void main() {
       ],
       lastEdited: edited,
     );
-    List<(bool, bool)> flags(LearningDeck deck) => <(bool, bool)>[
-      for (final LearningUnit unit in deck.units)
-        (unit.manualDifficult, unit.autoDifficult),
-    ];
 
     test('mark sets the manual flag on each selected unit and keeps any '
         'automatic one', () {
@@ -328,47 +366,6 @@ void main() {
   });
 
   group('adding detected flags', () {
-    LearningUnit word(
-      String question,
-      String answer, {
-      bool manual = false,
-      bool automatic = false,
-    }) {
-      return LearningUnit(
-        categoryId: 0,
-        fields: <int, FieldValue>{
-          0: FieldValue.plain(question),
-          1: FieldValue.plain(answer),
-        },
-        manualDifficult: manual,
-        autoDifficult: automatic,
-      );
-    }
-
-    // Qualifies under the defaults: 3 wrong of 4.
-    const DirectionStats hard = DirectionStats(attempts: 4, correct: 1);
-    // Does not: 1 wrong of 4.
-    const DirectionStats easy = DirectionStats(attempts: 4, correct: 3);
-
-    UnitStats stats(
-      int index,
-      LearningUnit unit, {
-      DirectionStats direction1 = const DirectionStats(),
-      DirectionStats direction2 = const DirectionStats(),
-    }) {
-      return UnitStats(
-        index: index,
-        direction1: direction1,
-        direction2: direction2,
-        hash: unitIdentityHash(mask, unit),
-      );
-    }
-
-    List<(bool, bool)> flags(LearningDeck deck) => <(bool, bool)>[
-      for (final LearningUnit unit in deck.units)
-        (unit.manualDifficult, unit.autoDifficult),
-    ];
-
     test('flags each unit the rule holds for and reports how many', () {
       final LearningUnit house = word('house', 'Haus');
       final LearningUnit tree = word('tree', 'Baum');
@@ -377,7 +374,7 @@ void main() {
         mask: mask,
         units: <LearningUnit>[house, tree, dog],
       );
-      final AutomaticFlagChange change = addDetectedDifficult(
+      final DifficultFlagChange change = addDetectedDifficult(
         deck,
         AllTimeStatistics(
           perUnit: <UnitStats>[
@@ -407,7 +404,7 @@ void main() {
       // 1 wrong of 2 each way: 2 of 4 together would qualify, neither alone
       // does.
       const DirectionStats half = DirectionStats(attempts: 2, correct: 1);
-      final AutomaticFlagChange change = addDetectedDifficult(
+      final DifficultFlagChange change = addDetectedDifficult(
         deck,
         AllTimeStatistics(
           perUnit: <UnitStats>[
@@ -429,7 +426,7 @@ void main() {
         mask: mask,
         units: <LearningUnit>[stale, already, mine, mineAndHard],
       );
-      final AutomaticFlagChange change = addDetectedDifficult(
+      final DifficultFlagChange change = addDetectedDifficult(
         deck,
         AllTimeStatistics(
           perUnit: <UnitStats>[
@@ -460,7 +457,7 @@ void main() {
         units: <LearningUnit>[house],
         lastEdited: edited,
       );
-      final AutomaticFlagChange change = addDetectedDifficult(
+      final DifficultFlagChange change = addDetectedDifficult(
         deck,
         AllTimeStatistics(
           perUnit: <UnitStats>[stats(1, house, direction1: hard)],
@@ -482,7 +479,7 @@ void main() {
           perUnit: <UnitStats>[stats(1, house, direction1: easy)],
         ),
       ]) {
-        final AutomaticFlagChange change = addDetectedDifficult(deck, allTime);
+        final DifficultFlagChange change = addDetectedDifficult(deck, allTime);
         expect(change.added, 0);
         expect(change.changed, isFalse);
         expect(change.deck, same(deck));
@@ -498,7 +495,7 @@ void main() {
         mask: mask,
         units: <LearningUnit>[tree, house],
       );
-      final AutomaticFlagChange change = addDetectedDifficult(
+      final DifficultFlagChange change = addDetectedDifficult(
         deck,
         AllTimeStatistics(
           perUnit: <UnitStats>[
@@ -521,7 +518,7 @@ void main() {
         mask: mask,
         units: <LearningUnit>[fresh, house],
       );
-      final AutomaticFlagChange change = addDetectedDifficult(
+      final DifficultFlagChange change = addDetectedDifficult(
         deck,
         AllTimeStatistics(
           perUnit: <UnitStats>[
@@ -551,6 +548,189 @@ void main() {
         ).added,
         0,
       );
+    });
+  });
+
+  group('recomputing automatic flags', () {
+    test('removes stale automatic flags, adds new ones, keeps those that '
+        'still hold, and counts both ways', () {
+      final LearningUnit stale = word('house', 'Haus', automatic: true);
+      final LearningUnit kept = word('tree', 'Baum', automatic: true);
+      final LearningUnit fresh = word('dog', 'Hund');
+      final LearningUnit plain = word('cat', 'Katze');
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[stale, kept, fresh, plain],
+      );
+      final DifficultFlagChange change = recomputeDetectedDifficult(
+        deck,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[
+            stats(1, stale, direction1: easy),
+            stats(2, kept, direction2: hard),
+            stats(3, fresh, direction1: hard),
+            stats(4, plain, direction1: easy),
+          ],
+        ),
+      );
+      expect(change.added, 1);
+      expect(change.removed, 1);
+      expect(change.changed, isTrue);
+      expect(flags(change.deck), <(bool, bool)>[
+        (false, false),
+        (false, true),
+        (false, true),
+        (false, false),
+      ]);
+    });
+
+    test('never touches a manual flag, whatever the rule says', () {
+      final LearningUnit mineStale = word(
+        'house',
+        'Haus',
+        manual: true,
+        automatic: true,
+      );
+      final LearningUnit mineEasy = word('tree', 'Baum', manual: true);
+      final LearningUnit mineHard = word('dog', 'Hund', manual: true);
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[mineStale, mineEasy, mineHard],
+      );
+      final DifficultFlagChange change = recomputeDetectedDifficult(
+        deck,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[
+            stats(1, mineStale, direction1: easy),
+            stats(2, mineEasy, direction1: easy),
+            stats(3, mineHard, direction1: hard),
+          ],
+        ),
+      );
+      expect(change.added, 1);
+      expect(change.removed, 1);
+      expect(flags(change.deck), <(bool, bool)>[
+        (true, false),
+        (true, false),
+        (true, true),
+      ]);
+    });
+
+    test('a deck without statistics loses every automatic flag', () {
+      final LearningUnit house = word('house', 'Haus', automatic: true);
+      final LearningUnit tree = word(
+        'tree',
+        'Baum',
+        manual: true,
+        automatic: true,
+      );
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[house, tree],
+      );
+      final DifficultFlagChange change = recomputeDetectedDifficult(
+        deck,
+        AllTimeStatistics.empty,
+      );
+      expect(change.added, 0);
+      expect(change.removed, 2);
+      expect(flags(change.deck), <(bool, bool)>[(false, false), (true, false)]);
+    });
+
+    test('is not an edit, and nothing to change hands back the deck '
+        'itself', () {
+      final LocalTimestamp edited = LocalTimestamp.tryParse(
+        '2026-09-25T16:32:11+02:00',
+      )!;
+      final LearningUnit house = word('house', 'Haus', automatic: true);
+      final LearningUnit tree = word('tree', 'Baum');
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[house, tree],
+        lastEdited: edited,
+      );
+      final AllTimeStatistics allTime = AllTimeStatistics(
+        perUnit: <UnitStats>[
+          stats(1, house, direction1: hard),
+          stats(2, tree, direction1: easy),
+        ],
+      );
+      final DifficultFlagChange unchanged = recomputeDetectedDifficult(
+        deck,
+        allTime,
+      );
+      expect(unchanged.changed, isFalse);
+      expect(unchanged.deck, same(deck));
+
+      final DifficultFlagChange changed = recomputeDetectedDifficult(
+        deck,
+        AllTimeStatistics.empty,
+      );
+      expect(changed.deck.lastEdited, edited);
+      expect(changed.deck.units.first.fields, same(house.fields));
+    });
+
+    test('custom thresholds are honoured', () {
+      final LearningUnit house = word('house', 'Haus', automatic: true);
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[house],
+      );
+      final DifficultFlagChange change = recomputeDetectedDifficult(
+        deck,
+        AllTimeStatistics(
+          perUnit: <UnitStats>[stats(1, house, direction1: hard)],
+        ),
+        thresholds: const DetectionThresholds(minWrong: 4),
+      );
+      expect(change.removed, 1);
+      expect(flags(change.deck), <(bool, bool)>[(false, false)]);
+    });
+  });
+
+  group('clearing manual flags', () {
+    test('clears every manual flag, keeps automatic ones, and counts', () {
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[
+          unit(manual: true),
+          unit(manual: true, automatic: true),
+          unit(automatic: true),
+          unit(),
+        ],
+      );
+      final DifficultFlagChange change = clearManualDifficult(deck);
+      expect(change.removed, 2);
+      expect(change.added, 0);
+      expect(change.changed, isTrue);
+      expect(flags(change.deck), <(bool, bool)>[
+        (false, false),
+        (false, true),
+        (false, true),
+        (false, false),
+      ]);
+    });
+
+    test('is not an edit, and a deck without manual flags comes back as it '
+        'is', () {
+      final LocalTimestamp edited = LocalTimestamp.tryParse(
+        '2026-09-25T16:32:11+02:00',
+      )!;
+      final LearningDeck flagged = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[unit(manual: true)],
+        lastEdited: edited,
+      );
+      expect(clearManualDifficult(flagged).deck.lastEdited, edited);
+
+      final LearningDeck clean = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[unit(automatic: true), unit()],
+      );
+      final DifficultFlagChange change = clearManualDifficult(clean);
+      expect(change.removed, 0);
+      expect(change.changed, isFalse);
+      expect(change.deck, same(clean));
     });
   });
 }

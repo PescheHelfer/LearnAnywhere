@@ -1,8 +1,10 @@
 # Statistik
 
-Der Bildschirm **Statistik** (**Statistik**, `Alt+S` — eine direkte Aktion in der
-Menüleiste, kein Untermenü) liest dieselben Zähler, in die Ihre Sitzungen schreiben. Er
-hat drei Reiter: **Übersicht**, **Einheitenliste** und **Stufenlernen**.
+Der Bildschirm **Statistik** (**Statistik ▸ Statistik anzeigen**, `Alt+S` und dann
+`A`) liest dieselben Zähler, in die Ihre Sitzungen schreiben. Dasselbe Menü enthält zwei
+Befehle für die Kennzeichnungen der geöffneten Lern-Datei, beschrieben unter
+[Kennzeichnungen neu berechnen und entfernen](#kennzeichnungen-neu-berechnen-und-entfernen).
+Der Bildschirm hat drei Reiter: **Übersicht**, **Einheitenliste** und **Stufenlernen**.
 
 Über den Reitern liegen zwei Zeilen. In der ersten steht der Schalter **Richtung** —
 **Kombiniert**, **Abfragerichtung 1** oder **Abfragerichtung 2** — sowie die Umschaltung
@@ -169,6 +171,34 @@ geschrieben; wie jede Kennzeichnung ist das keine Bearbeitung, das Datum
 Ein Hinweis unter der Tabelle zeigt an, wenn die Zahlen **die letzte Stufe aus dem
 Stufenlernen einschließen** — auch Ergebnisse von Stufe 0 zählen zu dieser gewöhnlichen
 Statistik, eine dort gemeisterte Einheit ist hier also nicht unsichtbar.
+
+## Kennzeichnungen neu berechnen und entfernen
+
+Zwei Befehle im Menü **Statistik** ändern die Kennzeichnungen aller Einheiten der
+geöffneten Lern-Datei auf einmal — nur dieser Lern-Datei, wie ihre Namen sagen. Beide
+warnen zuerst und nennen dabei die Lern-Datei; mit **Abbruch** ändert sich nichts. Die
+Lern-Datei wird gleich geschrieben (eine noch nie gespeicherte nimmt ihre
+Kennzeichnungen beim ersten Speichern mit), und wie jede Kennzeichnung ist keiner der
+beiden eine Bearbeitung: **Zuletzt bearbeitet** bleibt, wie es war. Solange die
+**Eingabe-Maske** geöffnet ist, bitten beide nur darum, sie zuerst zu verlassen — `F10`
+behält Ihre Änderungen, `Esc` verwirft sie —, denn das Schreiben der Lern-Datei würde
+Ihre unfertigen Änderungen mitspeichern.
+
+- **Automatische Kennzeichnungen der geöffneten Lern-Datei neu berechnen...** misst jede
+  Einheit erneut an ihrer Allzeit-Statistik, nach der Regel unter
+  [Automatisch gefundene schwierige Einheiten](06-learning-sessions.md#automatisch-gefundene-schwierige-einheiten).
+  Eine Einheit, die die Regel erfüllt, trägt danach die automatische Kennzeichnung; eine,
+  die sie nicht mehr erfüllt, verliert sie. So verschwinden veraltete automatische
+  Kennzeichnungen, denn die Prüfung am Ende einer Sitzung fügt nur hinzu. Manuelle
+  Kennzeichnungen bleiben unangetastet. Lern-Dateien aus **Ausgewählte Einheiten
+  speichern** beginnen ohne Statistik und können beim Neuberechnen alle automatischen
+  Kennzeichnungen verlieren. Eine Meldung nennt danach, wie viele Kennzeichnungen
+  hinzukamen und wie viele entfernt wurden. Konnte die Allzeit-Statistik der Lern-Datei
+  beim Öffnen nicht gelesen werden, sagt der Befehl das und ändert nichts, statt jede
+  Einheit an einer Statistik zu messen, die er nicht sehen konnte.
+- **Alle manuellen Kennzeichnungen der geöffneten Lern-Datei entfernen...** entfernt jede
+  manuelle Kennzeichnung, damit Sie Ihre eigene Auswahl neu beginnen können. Automatische
+  Kennzeichnungen bleiben unangetastet. Eine Meldung nennt, wie viele entfernt wurden.
 
 ## Stufenlernen
 

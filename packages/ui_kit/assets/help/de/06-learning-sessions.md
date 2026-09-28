@@ -166,9 +166,11 @@ nie richtig beantwortet haben — erst nach **mindestens sechs Versuchen**.
 - Antworten im Stufenlernen zählen nur, wenn sie auf Stufe 0 gegeben wurden, ganz ohne
   Hilfe; Antworten mit Unterstützung auf den anderen Stufen zählen nicht.
 - Es kommen nur Kennzeichnungen hinzu. Eine Einheit, die Sie inzwischen können, behält
-  ihre automatische Kennzeichnung, bis Sie sie entfernen — mit `F12` oder mit
+  ihre automatische Kennzeichnung, bis Sie sie entfernen — mit `F12`, mit
   **Kennzeichnung entfernen** in der
-  [Einheitenliste](09-statistics.md#einheitenliste--wonach-erneut-gebt-werden-sollte).
+  [Einheitenliste](09-statistics.md#einheitenliste--wonach-erneut-gebt-werden-sollte)
+  oder für die ganze Lern-Datei mit
+  [Automatische Kennzeichnungen der geöffneten Lern-Datei neu berechnen...](09-statistics.md#kennzeichnungen-neu-berechnen-und-entfernen).
 - Die Lern-Datei wird nur geschrieben, wenn eine Kennzeichnung hinzukam, und wie das
   Kennzeichnen ist das keine Bearbeitung: **Zuletzt bearbeitet** ändert sich nicht. Lässt
   sich die Datei nicht schreiben, nennt eine Meldung sie; Ihre Statistik ist davon nicht

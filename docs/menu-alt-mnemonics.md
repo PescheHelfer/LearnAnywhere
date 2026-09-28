@@ -27,9 +27,8 @@ There are exactly two kinds of menu entries. Use the right one:
 
 ### Top-level bar entries → `MenuAcceleratorDisplayLabel` + gated shortcut
 
-Top-level entries (File, Edit, Learn, Statistics, Lexicon, Options, Help — the
-first three plus Options/Help are dropdowns, Statistics and Lexicon are direct
-actions) must
+Top-level entries (File, Edit, Learn, Statistics, Lexicon, Options, Help — all
+dropdowns except Lexicon, which is a direct action) must
 **not** use `MenuAcceleratorLabel` — that would register them globally and
 re-introduce the bug. Instead:
 
@@ -51,13 +50,13 @@ re-introduce the bug. Instead:
   keyboards need it to type `@ € { }`, etc. — and ignores AltGr combos (reported as
   Control+AltRight).
 - "Is a menu open?" is tracked by `_openMenuCount`, incremented/decremented by the
-  `onOpen`/`onClose` callbacks wired onto the five top-level **submenus** (File,
-  Edit, Learn, Options, Help). The two direct-action entries
-  (Statistics/Lexicon) have no submenu and do not affect the count.
-- The two direct-action entries are bare `MenuItemButton`s; they are given a
+  `onOpen`/`onClose` callbacks wired onto the six top-level **submenus** (File,
+  Edit, Learn, Statistics, Options, Help). The direct-action entry (Lexicon) has
+  no submenu and does not affect the count.
+- The direct-action entry is a bare `MenuItemButton`; it is given a
   `FocusNode(skipTraversal: true)` so the `MenuBar`'s Left/Right arrow navigation
-  skips over them (they have no submenu to open) and jumps to the next
-  submenu-bearing menu instead of stalling. They stay reachable via their Alt
+  skips over it (it has no submenu to open) and jumps to the next
+  submenu-bearing menu instead of stalling. It stays reachable via its Alt
   accelerator and the mouse.
 
 ### Submenu items → `MenuAcceleratorLabel`

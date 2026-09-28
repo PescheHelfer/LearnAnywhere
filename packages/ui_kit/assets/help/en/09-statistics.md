@@ -1,7 +1,9 @@
 # Statistics
 
-The **Statistics** screen (**Statistics**, `Alt+S` — a direct action on the menu bar,
-not a submenu) reads the same counters your sessions write to. It has three tabs:
+The **Statistics** screen (**Statistics ▸ Show statistics**, `Alt+S` then `S`) reads
+the same counters your sessions write to. The same menu holds two commands for the
+flags of the open deck, described in
+[Recomputing and removing flags](#recomputing-and-removing-flags). The screen has three tabs:
 **Overview**, **Unit list**, and **Level Learning**.
 
 Two rows sit above the tabs. The first holds the **Direction** switch — **Combined**,
@@ -150,6 +152,31 @@ it was. With nothing selected, both say **No units selected.** and change nothin
 A note under the table flags when the figures **include the last level from Level
 Learning** — level-0 results count toward these ordinary statistics too, so a unit
 mastered there is not invisible here.
+
+## Recomputing and removing flags
+
+Two commands on the **Statistics** menu change the difficulty flags of every unit in the
+open deck at once — that deck only, as their names say. Each warns you first, naming the
+deck, and changes nothing if you press **Cancel**. The deck file is written straight
+away (a deck never saved takes its flags along with its first save), and like any flag
+change neither counts as an edit: **Last edited** stays as it was. While the
+**Unit editor** is open, both only ask you to leave it first — `F10` keeps your
+changes, `Esc` discards them — because writing the deck would save your unfinished edits
+with it.
+
+- **Recompute automatic flags in the open deck...** checks every unit against its
+  all-time statistics again, by the rule in
+  [Difficult units found automatically](06-learning-sessions.md#difficult-units-found-automatically).
+  A unit that meets the rule has the automatic flag afterwards; one that no longer does
+  loses it. This is the way stale automatic flags go, because the check at the end of a
+  session only ever adds them. Manual flags are never touched. A deck made with **Save
+  selected units** starts without statistics, so recomputing it may remove all its
+  automatic flags. A message then reports how many flags were added and how many removed.
+  If the deck's all-time statistics could not be read when it was opened, it says so and
+  changes nothing, rather than judging every unit by statistics it could not see.
+- **Remove all manual flags in the open deck...** removes every manual flag, so you can
+  start your own selection over. Automatic flags are never touched. A message reports how
+  many were removed.
 
 ## Level Learning
 

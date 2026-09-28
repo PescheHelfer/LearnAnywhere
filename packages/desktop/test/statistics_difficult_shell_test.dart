@@ -139,6 +139,8 @@ void main() {
     await settleAfterIo(tester);
     await tester.tap(find.text('Statistics').first);
     await settle(tester);
+    await tester.tap(find.text('Show statistics').last);
+    await settle(tester);
     await tester.tap(find.text('Unit list'));
     await settle(tester);
   }

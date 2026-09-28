@@ -372,6 +372,8 @@ void main() {
     // and the lifetime one this test is about to clear.
     await tester.tap(find.text('Statistics'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Show statistics'));
+    await tester.pumpAndSettle();
     expect(find.text('Total Attempts: 1'), findsOneWidget);
     await tester.tap(find.text('All-time'));
     await tester.pumpAndSettle();
@@ -608,6 +610,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Statistics'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Show statistics'));
+    await tester.pumpAndSettle();
 
     final Size plainLabel = tester.getSize(find.text('Cancel'));
     final Size plainHint = tester.getSize(find.text('Esc'));
@@ -743,6 +747,8 @@ void main() {
 
     await tester.ensureVisible(find.text('Statistics'));
     await tester.tap(find.text('Statistics'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Show statistics'));
     await tester.pumpAndSettle();
     // A working screen, framed.
     expect(find.byType(ContentFrame), findsOneWidget);
@@ -1121,6 +1127,8 @@ Future<void> walkEveryScreen(
 
   await tester.ensureVisible(find.text('Statistics'));
   await tester.tap(find.text('Statistics'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Show statistics'));
   await tester.pumpAndSettle();
   await clean('the statistics screen');
   await tester.tap(find.text('All-time'));
