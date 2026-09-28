@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
-/// The badge naming which flag makes a unit difficult, shared by the learning
-/// session and the unit editor so the wording and styling agree everywhere.
+/// The badge naming which flag makes a unit difficult in one direction,
+/// shared by the learning session and the unit editor so the wording and
+/// styling agree everywhere.
 final class DifficultBadge extends StatelessWidget {
-  /// Creates a badge naming [unit]'s difficulty flag.
-  const DifficultBadge({super.key, required this.unit});
+  /// Creates a badge naming the difficulty [flags] of one direction.
+  const DifficultBadge({super.key, required this.flags});
 
-  /// The unit whose flag the badge names.
-  final LearningUnit unit;
+  /// The flags of the direction the badge describes.
+  final DifficultFlags flags;
 
   @override
   Widget build(BuildContext context) {
-    final LearnAnywhereMessage? text = _flagMessage(unit);
+    final LearnAnywhereMessage? text = _flagMessage(flags);
     if (text == null) {
       return const SizedBox.shrink();
     }
@@ -49,11 +50,12 @@ final class DifficultBadge extends StatelessWidget {
   }
 }
 
-/// A compact, table-sized sign of which flags make [unit] difficult: a flag
-/// for the learner's manual flag, a sparkle for the program's automatic one,
-/// both side by side for both, and nothing at all for an unflagged unit.
+/// A compact, table-sized sign of which flags make [unit] difficult where no
+/// single direction is in view: a flag for a manual flag, a sparkle for an
+/// automatic one, in either direction, both side by side for both, and
+/// nothing at all for a unit difficult in neither direction.
 ///
-/// Hovering names the flag in the badge's own words, so a table row and the
+/// Hovering names the flags in the badge's own words, so a table row and the
 /// session badge say the same thing.
 final class DifficultFlagIndicator extends StatelessWidget {
   /// Creates an indicator of [unit]'s difficulty flags.
@@ -64,7 +66,8 @@ final class DifficultFlagIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LearnAnywhereMessage? text = _flagMessage(unit);
+    final DifficultFlags flags = unit.flagsInEither;
+    final LearnAnywhereMessage? text = _flagMessage(flags);
     if (text == null) {
       return const SizedBox.shrink();
     }
@@ -73,17 +76,17 @@ final class DifficultFlagIndicator extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (unit.manualDifficult) const Icon(Icons.flag, size: 18),
-          if (unit.autoDifficult) const Icon(Icons.auto_awesome, size: 18),
+          if (flags.manual) const Icon(Icons.flag, size: 18),
+          if (flags.automatic) const Icon(Icons.auto_awesome, size: 18),
         ],
       ),
     );
   }
 }
 
-/// The badge text naming [unit]'s flags, or null when it carries none.
-LearnAnywhereMessage? _flagMessage(LearningUnit unit) {
-  return switch ((unit.manualDifficult, unit.autoDifficult)) {
+/// The badge text naming [flags], or null when there are none.
+LearnAnywhereMessage? _flagMessage(DifficultFlags flags) {
+  return switch ((flags.manual, flags.automatic)) {
     (true, true) => LearnAnywhereMessage.learnDifficultBadgeBoth,
     (true, false) => LearnAnywhereMessage.learnDifficultBadgeManual,
     (false, true) => LearnAnywhereMessage.learnDifficultBadgeAutomatic,

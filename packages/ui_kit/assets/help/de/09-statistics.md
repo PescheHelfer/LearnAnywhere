@@ -152,20 +152,22 @@ neue Lern-Datei genau aus den Einheiten, die Ihnen Schwierigkeiten bereiten:
 Das funktioniert in beiden Bereichen gleich: eine Lern-Datei aus den Sorgenkindern der
 ganzen Lebensdauer entsteht genau so wie eine aus denen dieser Woche.
 
-Die Spalte **Schwierig** zeigt, welche Einheiten
+Die Spalte **Schwierig** zeigt, welche Einheiten in einer der beiden Abfragerichtungen
 [schwierig](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen) sind: eine
 Fahne für Ihre manuelle Kennzeichnung, ein Funkeln für die automatische und beide
 nebeneinander für beide. Mit der Maus darüber lesen Sie, welche es ist —
 **Schwierig (manuelle Kennzeichnung)**, **Schwierig (automatische Kennzeichnung)** oder
-**Schwierig (manuelle und automatische Kennzeichnung)**.
+**Schwierig (manuelle und automatische Kennzeichnung)**. Ebenso zeigt **Nur schwierige**
+eine Einheit, die in einer der beiden Richtungen schwierig ist.
 
 Um mehrere Einheiten auf einmal zu kennzeichnen, wählen Sie sie aus und drücken
-**Ausgewählte kennzeichnen**: Jede erhält Ihre manuelle Kennzeichnung, eine schon
-vorhandene automatische bleibt. **Kennzeichnung entfernen** nimmt jeder ausgewählten
-Einheit beide Kennzeichnungen — „nicht schwierig“ heißt nicht schwierig, wie bei `F12`
-in einer Sitzung. Die Liste zeigt die Änderung sofort, und die Lern-Datei wird gleich
-geschrieben; wie jede Kennzeichnung ist das keine Bearbeitung, das Datum
-**Zuletzt bearbeitet** bleibt also, wie es war. Ist nichts ausgewählt, melden beide
+**Ausgewählte kennzeichnen**: Jede erhält Ihre manuelle Kennzeichnung in beiden
+Abfragerichtungen, eine schon vorhandene automatische bleibt. **Kennzeichnung
+entfernen** nimmt jeder ausgewählten Einheit alle Kennzeichnungen in beiden Richtungen —
+„nicht schwierig“ heißt nicht schwierig, wie bei `F12` in einer Sitzung. Die Liste
+zeigt die Änderung sofort, und die Lern-Datei wird gleich geschrieben; wie jede
+Kennzeichnung ist das keine Bearbeitung, das Datum **Zuletzt bearbeitet** bleibt also,
+wie es war. Ist nichts ausgewählt, melden beide
 **Keine Einheiten ausgewählt.** und ändern nichts.
 
 Ein Hinweis unter der Tabelle zeigt an, wenn die Zahlen **die letzte Stufe aus dem
@@ -187,20 +189,23 @@ Ihre unfertigen Änderungen mitspeichern.
 - **Automatische Kennzeichnungen der geöffneten Lern-Datei neu berechnen...** misst jede
   Einheit erneut an ihrer Allzeit-Statistik, nach der Regel unter
   [Automatisch gefundene schwierige Einheiten](06-learning-sessions.md#automatisch-gefundene-schwierige-einheiten).
-  Eine Einheit, die die Regel erfüllt, trägt danach die automatische Kennzeichnung; eine,
-  die sie nicht mehr erfüllt, verliert sie. So verschwinden veraltete automatische
-  Kennzeichnungen, denn die Prüfung am Ende einer Sitzung fügt nur hinzu. Manuelle
-  Kennzeichnungen bleiben unangetastet. Lern-Dateien aus **Ausgewählte Einheiten
-  speichern** beginnen ohne Statistik und können beim Neuberechnen alle automatischen
-  Kennzeichnungen verlieren. Eine Meldung nennt danach, wie viele Kennzeichnungen
-  hinzukamen und wie viele entfernt wurden. Konnte die Allzeit-Statistik der Lern-Datei
-  beim Öffnen nicht gelesen werden, sagt der Befehl das und ändert nichts, statt jede
+  Jede Abfragerichtung wird für sich gemessen: Wo eine Einheit die Regel erfüllt, trägt
+  sie danach die automatische Kennzeichnung; wo sie sie nicht mehr erfüllt, verliert sie
+  sie. So verschwinden veraltete automatische Kennzeichnungen, denn die Prüfung am Ende
+  einer Sitzung fügt nur hinzu. Manuelle Kennzeichnungen bleiben unangetastet.
+  Lern-Dateien aus **Ausgewählte Einheiten speichern** beginnen ohne Statistik und
+  können beim Neuberechnen alle automatischen Kennzeichnungen verlieren. Eine Meldung
+  nennt danach, wie viele Kennzeichnungen hinzukamen und wie viele entfernt wurden,
+  wobei jede Richtung einer Einheit einzeln zählt. Konnte die Allzeit-Statistik der
+  Lern-Datei beim Öffnen nicht gelesen werden, sagt der Befehl das und ändert nichts,
+  statt jede
   Einheit an einer Statistik zu messen, die er nicht sehen konnte. Er misst nach den
   Zahlen unter [Statistik-Optionen](11-settings.md#statistik-optionen) und lässt sich
   nicht wählen, solange die Erkennung dort ausgeschaltet ist.
 - **Alle manuellen Kennzeichnungen der geöffneten Lern-Datei entfernen...** entfernt jede
-  manuelle Kennzeichnung, damit Sie Ihre eigene Auswahl neu beginnen können. Automatische
-  Kennzeichnungen bleiben unangetastet. Eine Meldung nennt, wie viele entfernt wurden.
+  manuelle Kennzeichnung in beiden Abfragerichtungen, damit Sie Ihre eigene Auswahl neu
+  beginnen können. Automatische Kennzeichnungen bleiben unangetastet. Eine Meldung nennt,
+  wie viele entfernt wurden, wobei jede Richtung einer Einheit einzeln zählt.
 
 ## Stufenlernen
 

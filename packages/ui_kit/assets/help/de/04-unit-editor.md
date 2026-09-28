@@ -81,18 +81,22 @@ und bleibt erhalten, wohin auch immer die Lern-Datei geht.
 
 ## Eine Einheit als schwierig kennzeichnen
 
-Die Kopfzeile zeigt, ob die aktuelle Einheit schwierig ist, mit demselben Abzeichen wie
-in einer Lernsitzung, und aktualisiert es, sobald Sie zwischen Einheiten wechseln:
+Eine Einheit ist in einer Abfragerichtung schwierig (siehe
+[Eine Einheit als schwierig kennzeichnen](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen)).
+Hier in der Eingabe-Maske zeigt die Kopfzeile, ob die aktuelle Einheit in
+Abfragerichtung 1 schwierig ist, mit demselben Abzeichen wie in einer Lernsitzung, und
+aktualisiert es, sobald Sie zwischen Einheiten wechseln:
 
 - **Schwierig (manuelle Kennzeichnung)** — Sie selbst.
 - **Schwierig (automatische Kennzeichnung)** — das Programm, anhand der
   Allzeit-Statistik der Einheit.
 - **Schwierig (manuelle und automatische Kennzeichnung)** — beide.
 
-`F12` schaltet sie hier genauso um wie in einer
-[Lernsitzung](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen): Auf
-einer schwierigen Einheit hebt es beide Kennzeichnungen auf; auf einer nicht
-schwierigen setzt es Ihre manuelle Kennzeichnung.
+`F12` schaltet hier Abfragerichtung 1 genauso um wie in einer
+[Lernsitzung](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen): Ist die
+Einheit dort schwierig, hebt es beide Kennzeichnungen dieser Richtung auf; ist sie es
+nicht, setzt es Ihre manuelle Kennzeichnung. Abfragerichtung 2 bleibt, wie sie ist;
+kennzeichnen Sie sie in einer Lernsitzung, die in dieser Richtung fragt.
 
 Anders als in einer Sitzung wird die Änderung nicht sofort geschrieben. Sie ist Teil der
 vorgenommenen Bearbeitung, wie ein Feldwert, bleibt also nur im Speicher, bis Sie

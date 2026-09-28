@@ -608,14 +608,60 @@ final class LearningMask {
   }
 }
 
+/// A unit's difficulty flags in one query direction.
+///
+/// The two flags are independent: the learner sets the manual one, the
+/// program the automatic one, and the direction is difficult when it carries
+/// either (see "Difficult units" in `packages/core/CONTEXT.md`).
+final class DifficultFlags {
+  /// Creates the flags of one direction; each left out is unset.
+  const DifficultFlags({this.manual = false, this.automatic = false});
+
+  /// No flag at all: the direction is not difficult.
+  static const DifficultFlags none = DifficultFlags();
+
+  /// The learner's own verdict that the unit is difficult in this direction.
+  ///
+  /// Set and removed only by the learner.
+  final bool manual;
+
+  /// The program's verdict, from this direction's lifetime record, that the
+  /// unit is difficult in this direction. Independent of [manual].
+  final bool automatic;
+
+  /// Whether the direction is difficult: it carries either flag, or both.
+  bool get isDifficult => manual || automatic;
+
+  /// Returns a copy with selected flags changed.
+  DifficultFlags copyWith({bool? manual, bool? automatic}) {
+    return DifficultFlags(
+      manual: manual ?? this.manual,
+      automatic: automatic ?? this.automatic,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DifficultFlags &&
+        other.manual == manual &&
+        other.automatic == automatic;
+  }
+
+  @override
+  int get hashCode => Object.hash(manual, automatic);
+
+  @override
+  String toString() => 'DifficultFlags(manual: $manual, automatic: $automatic)';
+}
+
 /// One ordered learning unit in a deck.
 final class LearningUnit {
   /// Creates a learning unit.
   const LearningUnit({
     required this.categoryId,
     required this.fields,
-    this.manualDifficult = false,
-    this.autoDifficult = false,
+    this.direction1Flags = DifficultFlags.none,
+    this.direction2Flags = DifficultFlags.none,
   });
 
   /// Category id this unit belongs to.
@@ -629,18 +675,48 @@ final class LearningUnit {
   /// lives only in the embedded mask.
   final Map<int, FieldValue> fields;
 
-  /// The learner's own verdict that this unit is difficult.
+  /// The unit's difficulty flags in direction 1.
   ///
-  /// Set and removed only by the learner. Not part of the unit's content: it
-  /// never enters the identity hash and changing it is not an edit.
-  final bool manualDifficult;
+  /// Neither direction's flags are part of the unit's content: they never
+  /// enter the identity hash, and changing them is not an edit.
+  final DifficultFlags direction1Flags;
 
-  /// The program's verdict, from the unit's lifetime record, that this unit
-  /// is difficult. Independent of [manualDifficult].
-  final bool autoDifficult;
+  /// The unit's difficulty flags in direction 2. See [direction1Flags].
+  final DifficultFlags direction2Flags;
 
-  /// Whether the unit is difficult: it carries either flag, or both.
-  bool get isDifficult => manualDifficult || autoDifficult;
+  /// Returns the flags for [direction].
+  DifficultFlags flagsFor(QueryDirection direction) {
+    return switch (direction) {
+      QueryDirection.direction1 => direction1Flags,
+      QueryDirection.direction2 => direction2Flags,
+    };
+  }
+
+  /// Returns a copy with the flags for [direction] replaced; the other
+  /// direction's flags and the content travel unchanged.
+  LearningUnit withFlags(QueryDirection direction, DifficultFlags flags) {
+    return switch (direction) {
+      QueryDirection.direction1 => copyWith(direction1Flags: flags),
+      QueryDirection.direction2 => copyWith(direction2Flags: flags),
+    };
+  }
+
+  /// Whether the unit is difficult in [direction]: that direction carries
+  /// either flag, or both.
+  bool isDifficultIn(QueryDirection direction) =>
+      flagsFor(direction).isDifficult;
+
+  /// Whether the unit is difficult in either direction: the question asked
+  /// where no single direction is in view.
+  bool get isDifficultInEither => flagsInEither.isDifficult;
+
+  /// Every flag the unit carries in either direction, merged: a manual flag
+  /// when either direction has one, likewise automatic. What a place without
+  /// a single direction in view shows.
+  DifficultFlags get flagsInEither => DifficultFlags(
+    manual: direction1Flags.manual || direction2Flags.manual,
+    automatic: direction1Flags.automatic || direction2Flags.automatic,
+  );
 
   /// Returns the value for the field with [fieldId], or empty when absent.
   FieldValue valueForFieldId(int fieldId) {
@@ -649,19 +725,19 @@ final class LearningUnit {
 
   /// Returns a copy with selected properties changed.
   ///
-  /// Both flags travel unless overridden, so rebuilding a unit's fields never
-  /// drops its difficulty.
+  /// Every flag travels unless overridden, so rebuilding a unit's fields
+  /// never drops its difficulty.
   LearningUnit copyWith({
     int? categoryId,
     Map<int, FieldValue>? fields,
-    bool? manualDifficult,
-    bool? autoDifficult,
+    DifficultFlags? direction1Flags,
+    DifficultFlags? direction2Flags,
   }) {
     return LearningUnit(
       categoryId: categoryId ?? this.categoryId,
       fields: fields ?? this.fields,
-      manualDifficult: manualDifficult ?? this.manualDifficult,
-      autoDifficult: autoDifficult ?? this.autoDifficult,
+      direction1Flags: direction1Flags ?? this.direction1Flags,
+      direction2Flags: direction2Flags ?? this.direction2Flags,
     );
   }
 }
@@ -1110,12 +1186,13 @@ final class SessionParameters {
   /// Minimum attempts required when the guard is enabled.
   final int minAttempts;
 
-  /// Whether the session asks only difficult units, those carrying either
-  /// flag ([LearningUnit.isDifficult]).
+  /// Whether the session asks only difficult units, each only in the
+  /// directions it is difficult in ([LearningUnit.isDifficultIn]).
   ///
-  /// It narrows whatever pool the [mode] builds, within the unit range, and is
-  /// read from the deck each time a pool is built. Mastery still removes a
-  /// difficult unit as usual and never clears its flags.
+  /// It narrows whatever pool the [mode] builds, within the unit range and
+  /// per question, so a **Both** session does not drill the easy way round.
+  /// It is read from the deck each time a pool is built. Mastery still
+  /// removes a difficult unit as usual and never clears its flags.
   final bool difficultOnly;
 
   /// Returns a copy with selected fields changed.

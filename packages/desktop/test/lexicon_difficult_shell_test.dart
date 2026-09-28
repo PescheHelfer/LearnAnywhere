@@ -74,17 +74,17 @@ void main() {
     await settle(tester);
   }
 
-  /// Each unit's (manual, automatic) flags in the deck file at [path], keyed
-  /// by its question: the folder walk decides the order of the hits, so the
-  /// order of the saved units is not asserted.
-  Map<String, (bool, bool)> flagsByQuestion(String path) {
-    return <String, (bool, bool)>{
+  /// Each unit's (Direction 1, Direction 2) flags in the deck file at
+  /// [path], keyed by its question: the folder walk decides the order of the
+  /// hits, so the order of the saved units is not asserted.
+  Map<String, (DifficultFlags, DifficultFlags)> flagsByQuestion(String path) {
+    return <String, (DifficultFlags, DifficultFlags)>{
       for (final LearningUnit unit in decodeDeckJson(
         File(path).readAsStringSync(),
       ).units)
         unit.valueForFieldId(0).plainText: (
-          unit.manualDifficult,
-          unit.autoDifficult,
+          unit.direction1Flags,
+          unit.direction2Flags,
         ),
     };
   }
@@ -100,9 +100,10 @@ void main() {
         LearningDeck(
           mask: _mask,
           units: <LearningUnit>[
-            _unit('house', 'Haus', manual: true),
+            _unit('house', 'Haus', direction1: _manual),
             _unit('cat', 'Katze'),
-            _unit('dog', 'Hund', auto: true),
+            // Difficult the other way round only: still a hit.
+            _unit('dog', 'Hund', direction2: _automatic),
           ],
         ),
       ),
@@ -127,7 +128,12 @@ void main() {
             ],
           ),
           units: <LearningUnit>[
-            _unit('mouse', 'Maus', manual: true, auto: true),
+            _unit(
+              'mouse',
+              'Maus',
+              direction1: _manual,
+              direction2: _automatic,
+            ),
             _unit('bird', 'Vogel'),
           ],
         ),
@@ -188,11 +194,14 @@ void main() {
         decodeDeckJson(File(savedPath).readAsStringSync()).mask.revision,
         _mask.revision + 1,
       );
-      expect(flagsByQuestion(savedPath), <String, (bool, bool)>{
-        'house': (true, false),
-        'dog': (false, true),
-        'mouse': (true, true),
-      });
+      expect(
+        flagsByQuestion(savedPath),
+        <String, (DifficultFlags, DifficultFlags)>{
+          'house': (_manual, DifficultFlags.none),
+          'dog': (DifficultFlags.none, _automatic),
+          'mouse': (_manual, _automatic),
+        },
+      );
     });
   });
 }
@@ -228,11 +237,14 @@ const LearningMask _mask = LearningMask(
   ],
 );
 
+const DifficultFlags _manual = DifficultFlags(manual: true);
+const DifficultFlags _automatic = DifficultFlags(automatic: true);
+
 LearningUnit _unit(
   String question,
   String answer, {
-  bool manual = false,
-  bool auto = false,
+  DifficultFlags direction1 = DifficultFlags.none,
+  DifficultFlags direction2 = DifficultFlags.none,
 }) {
   return LearningUnit(
     categoryId: 1,
@@ -240,7 +252,7 @@ LearningUnit _unit(
       0: FieldValue.plain(question),
       1: FieldValue.plain(answer),
     },
-    manualDifficult: manual,
-    autoDifficult: auto,
+    direction1Flags: direction1,
+    direction2Flags: direction2,
   );
 }

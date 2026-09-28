@@ -150,7 +150,7 @@ void main() {
 
   List<(bool, bool)> flags(LearningDeck deck) => <(bool, bool)>[
     for (final LearningUnit unit in deck.units)
-      (unit.manualDifficult, unit.autoDifficult),
+      (unit.direction1Flags.manual, unit.direction1Flags.automatic),
   ];
 
   // 3 wrong of 4: qualifies under the default rule.
@@ -181,7 +181,9 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await until(
         tester,
-        () => deckOnDisk(deckPath)?.units.first.autoDifficult ?? false,
+        () =>
+            deckOnDisk(deckPath)?.units.first.direction1Flags.automatic ??
+            false,
       );
       final LearningDeck onDisk = deckOnDisk(deckPath)!;
       expect(flags(onDisk), <(bool, bool)>[
@@ -190,6 +192,10 @@ void main() {
         (false, false),
       ]);
       expect(onDisk.lastEdited, edited);
+      // Only Direction 1 was practised, so only Direction 1 is flagged.
+      for (final LearningUnit unit in onDisk.units) {
+        expect(unit.direction2Flags, DifficultFlags.none);
+      }
     });
   });
 
@@ -214,9 +220,14 @@ void main() {
 
       await until(
         tester,
-        () => deckOnDisk(deckPath)?.units.single.autoDifficult ?? false,
+        () =>
+            deckOnDisk(deckPath)?.units.single.direction1Flags.automatic ??
+            false,
       );
-      expect(deckOnDisk(deckPath)!.units.single.autoDifficult, isTrue);
+      expect(
+        deckOnDisk(deckPath)!.units.single.direction1Flags.automatic,
+        isTrue,
+      );
     });
   });
 
@@ -245,9 +256,14 @@ void main() {
       await pickMenuItem(tester, 'File', 'Load deck...');
       await until(
         tester,
-        () => deckOnDisk(practisedPath)?.units.single.autoDifficult ?? false,
+        () =>
+            deckOnDisk(practisedPath)?.units.single.direction1Flags.automatic ??
+            false,
       );
-      expect(deckOnDisk(practisedPath)!.units.single.autoDifficult, isTrue);
+      expect(
+        deckOnDisk(practisedPath)!.units.single.direction1Flags.automatic,
+        isTrue,
+      );
       // No session ended for the arriving deck, so its file is untouched.
       expect(File(arrivingPath).readAsStringSync(), arrivingBefore);
     });
@@ -269,10 +285,15 @@ void main() {
       await pickMenuItem(tester, 'Edit', 'Mask Editor');
       await until(
         tester,
-        () => deckOnDisk(deckPath)?.units.single.autoDifficult ?? false,
+        () =>
+            deckOnDisk(deckPath)?.units.single.direction1Flags.automatic ??
+            false,
       );
       expect(find.text('Check'), findsNothing);
-      expect(deckOnDisk(deckPath)!.units.single.autoDifficult, isTrue);
+      expect(
+        deckOnDisk(deckPath)!.units.single.direction1Flags.automatic,
+        isTrue,
+      );
     });
   });
 
@@ -348,7 +369,9 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await until(
         tester,
-        () => deckOnDisk(deckPath)?.units.last.autoDifficult ?? false,
+        () =>
+            deckOnDisk(deckPath)?.units.last.direction1Flags.automatic ??
+            false,
       );
       expect(flags(deckOnDisk(deckPath)!), <(bool, bool)>[
         (false, false),
@@ -385,7 +408,7 @@ void main() {
   });
 }
 
-/// A deck of `(question, answer, automatic flag)` units.
+/// A deck of `(question, answer, Direction 1 automatic flag)` units.
 LearningDeck _deck(List<(String, String, bool)> units) {
   return LearningDeck(
     mask: const LearningMask(
@@ -426,7 +449,7 @@ LearningDeck _deck(List<(String, String, bool)> units) {
             0: FieldValue.plain(question),
             1: FieldValue.plain(answer),
           },
-          autoDifficult: automatic,
+          direction1Flags: DifficultFlags(automatic: automatic),
         ),
     ],
   );

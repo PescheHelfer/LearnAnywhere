@@ -137,17 +137,18 @@ This works the same way in either scope, so a deck of lifetime problem units is 
 exactly like a deck of this week's.
 
 The **Difficult** column shows which units are
-[difficult](06-learning-sessions.md#marking-a-unit-difficult): a flag for your manual
-flag, a sparkle for the automatic one, and both side by side for both. Hover over it to
-read which — **Difficult (manual flag)**, **Difficult (automatic flag)** or
-**Difficult (manual and automatic flag)**.
+[difficult](06-learning-sessions.md#marking-a-unit-difficult) in either direction: a
+flag for your manual flag, a sparkle for the automatic one, and both side by side for
+both. Hover over it to read which — **Difficult (manual flag)**, **Difficult (automatic
+flag)** or **Difficult (manual and automatic flag)**. **Difficult only** likewise shows
+a unit that is difficult in either direction.
 
 To mark units in bulk, select them and press **Mark selected**: each gets your manual
-flag, and an automatic flag it already has stays. **Unmark selected** removes both
-flags from each selected unit — "not difficult" means not difficult, as with `F12` in a
-session. The list shows the change at once and the deck file is written straight away;
-like any flag change, this is not an edit, so the deck's **Last edited** date stays as
-it was. With nothing selected, both say **No units selected.** and change nothing.
+flag in both directions, and an automatic flag it already has stays. **Unmark selected**
+removes every flag, in both directions, from each selected unit — "not difficult" means
+not difficult, as with `F12` in a session. The list shows the change at once and the
+deck file is written straight away; like any flag change, this is not an edit, so the
+deck's **Last edited** date stays as it was. With nothing selected, both say **No units selected.** and change nothing.
 
 A note under the table flags when the figures **include the last level from Level
 Learning** — level-0 results count toward these ordinary statistics too, so a unit
@@ -167,19 +168,21 @@ with it.
 - **Recompute automatic flags in the open deck...** checks every unit against its
   all-time statistics again, by the rule in
   [Difficult units found automatically](06-learning-sessions.md#difficult-units-found-automatically).
-  A unit that meets the rule has the automatic flag afterwards; one that no longer does
-  loses it. This is the way stale automatic flags go, because the check at the end of a
-  session only ever adds them. Manual flags are never touched. A deck made with **Save
-  selected units** starts without statistics, so recomputing it may remove all its
-  automatic flags. A message then reports how many flags were added and how many removed.
-  If the deck's all-time statistics could not be read when it was opened, it says so and
-  changes nothing, rather than judging every unit by statistics it could not see. It
+  Each direction is judged on its own: where a unit meets the rule it has the automatic
+  flag afterwards; where it no longer does, it loses it. This is the way stale automatic
+  flags go, because the check at the end of a session only ever adds them. Manual flags
+  are never touched. A deck made with **Save selected units** starts without
+  statistics, so recomputing it may remove all its automatic flags. A message then
+  reports how many flags were added and how many removed, counting each direction of a
+  unit separately. If the deck's all-time statistics could not be read when it was
+  opened, it says so and changes nothing, rather than judging every unit by statistics it could not see. It
   judges by the numbers set under
   [Statistics options](11-settings.md#statistics-options), and cannot be chosen while
   detection is switched off there.
-- **Remove all manual flags in the open deck...** removes every manual flag, so you can
-  start your own selection over. Automatic flags are never touched. A message reports how
-  many were removed.
+- **Remove all manual flags in the open deck...** removes every manual flag, in both
+  directions, so you can start your own selection over. Automatic flags are never
+  touched. A message reports how many were removed, counting each direction of a unit
+  separately.
 
 ## Level Learning
 

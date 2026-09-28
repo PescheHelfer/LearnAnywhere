@@ -154,9 +154,11 @@ void main() {
     await until(tester, () => find.byType(AlertDialog).evaluate().isNotEmpty);
   }
 
+  /// Each unit's Direction 1 (manual, automatic) flags: the direction the
+  /// history below records.
   List<(bool, bool)> flags(LearningDeck deck) => <(bool, bool)>[
     for (final LearningUnit unit in deck.units)
-      (unit.manualDifficult, unit.autoDifficult),
+      (unit.direction1Flags.manual, unit.direction1Flags.automatic),
   ];
 
   // 3 wrong of 4: qualifies under the default rule.
@@ -485,7 +487,8 @@ void main() {
   });
 }
 
-/// A deck of `(question, answer, manual flag, automatic flag)` units.
+/// A deck of `(question, answer, manual flag, automatic flag)` units, flagged
+/// in Direction 1.
 LearningDeck _deck(List<(String, String, bool, bool)> units) {
   return LearningDeck(
     mask: const LearningMask(
@@ -527,8 +530,10 @@ LearningDeck _deck(List<(String, String, bool, bool)> units) {
             0: FieldValue.plain(question),
             1: FieldValue.plain(answer),
           },
-          manualDifficult: manual,
-          autoDifficult: automatic,
+          direction1Flags: DifficultFlags(
+            manual: manual,
+            automatic: automatic,
+          ),
         ),
     ],
   );

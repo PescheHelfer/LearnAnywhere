@@ -53,22 +53,22 @@ auch bestimmen, wie eine getippte Antwort während einer Sitzung bewertet wird.
 
 Schalten Sie **Nur schwierige** ein, um nur die Einheiten zu finden, die als
 [schwierig](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen)
-gekennzeichnet sind — von Ihnen oder vom Programm. Das wirkt in beiden Suchmodi und
-zusammen mit **Suchtext** und **Kategorie**: Ein Treffer muss alle drei erfüllen. Wie
-die **Kategorie** gilt es für die nächste Suche, nicht für die schon angezeigten
-Treffer. Bleibt der **Suchtext** leer, werden alle schwierigen Einheiten aufgelistet.
+gekennzeichnet sind — von Ihnen oder vom Programm, in einer der beiden
+Abfragerichtungen. Das wirkt in beiden Suchmodi und zusammen mit **Suchtext** und
+**Kategorie**: Ein Treffer muss alle drei erfüllen. Wie die **Kategorie** gilt es für
+die nächste Suche, nicht für die schon angezeigten Treffer. Bleibt der **Suchtext** leer, werden alle schwierigen Einheiten aufgelistet.
 
 Die Kennzeichnungen stehen in den Lern-Dateien selbst. **Dateien durchsuchen** findet
 die schwierigen Einheiten jeder Lern-Datei unterhalb eines Ordners daher ganz ohne
 geladene Statistik. So sammeln Sie alle Ihre schwierigen Einheiten ein.
 
 Die Treffertabelle hat eine Spalte **Schwierig**: eine Fahne für Ihre manuelle
-Kennzeichnung, ein Funkeln für die automatische, beide nebeneinander für beide und
-nichts für eine Einheit, die nicht schwierig ist. Mit der Maus darüber lesen Sie, welche
-es ist.
+Kennzeichnung, ein Funkeln für die automatische, beide nebeneinander für beide — in
+einer der beiden Richtungen — und nichts für eine Einheit, die nicht schwierig ist. Mit
+der Maus darüber lesen Sie, welche es ist.
 
-Werden Treffer mit **Treffer laden** geladen, behält jede Einheit beide
-Kennzeichnungen, und ebenso beim anschließenden Speichern. Schalten Sie also
+Werden Treffer mit **Treffer laden** geladen, behält jede Einheit alle Kennzeichnungen
+in beiden Richtungen, und ebenso beim anschließenden Speichern. Schalten Sie also
 **Nur schwierige** und **Gefundene Einheiten laden** ein, wählen Sie
 **Dateien durchsuchen**, dann **Treffer laden** und zuletzt
 **Datei ▸ Lerneinheiten speichern**: Das ergibt eine neue Lern-Datei Ihrer schwierigen

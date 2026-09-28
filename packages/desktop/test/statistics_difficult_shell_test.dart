@@ -68,14 +68,14 @@ void main() {
     await settle(tester);
   }
 
-  /// Each unit's (manual, automatic) flags exactly as the file at [path]
-  /// holds them.
-  List<(bool, bool)> flagsOnDisk(String path) {
-    return <(bool, bool)>[
+  /// Each unit's (Direction 1, Direction 2) flags exactly as the file at
+  /// [path] holds them.
+  List<_UnitFlags> flagsOnDisk(String path) {
+    return <_UnitFlags>[
       for (final LearningUnit unit in decodeDeckJson(
         File(path).readAsStringSync(),
       ).units)
-        (unit.manualDifficult, unit.autoDifficult),
+        (unit.direction1Flags, unit.direction2Flags),
     ];
   }
 
@@ -86,7 +86,7 @@ void main() {
   Future<void> untilFlagsOnDisk(
     WidgetTester tester,
     String path,
-    List<(bool, bool)> expected,
+    List<_UnitFlags> expected,
   ) async {
     bool landed() {
       try {
@@ -181,18 +181,19 @@ void main() {
       expect(find.text('dog'), findsNothing);
 
       // Mark it: the manual flag joins the automatic one, on disk and on
-      // screen.
+      // screen. Until the list follows its View, marking acts on both
+      // directions.
       await press(tester, 'Select visible');
       await press(tester, 'Mark selected');
-      await untilFlagsOnDisk(tester, deckPath, <(bool, bool)>[
-        (false, false),
-        (true, true),
-        (false, false),
+      await untilFlagsOnDisk(tester, deckPath, <_UnitFlags>[
+        (none, none),
+        (both, manual),
+        (none, none),
       ]);
-      expect(flagsOnDisk(deckPath), <(bool, bool)>[
-        (false, false),
-        (true, true),
-        (false, false),
+      expect(flagsOnDisk(deckPath), <_UnitFlags>[
+        (none, none),
+        (both, manual),
+        (none, none),
       ]);
       expect(
         find.byTooltip('Difficult (manual and automatic flag)'),
@@ -205,15 +206,15 @@ void main() {
       await tick(tester, 0);
       await tick(tester, 2);
       await press(tester, 'Mark selected');
-      await untilFlagsOnDisk(tester, deckPath, <(bool, bool)>[
-        (true, false),
-        (true, true),
-        (true, false),
+      await untilFlagsOnDisk(tester, deckPath, <_UnitFlags>[
+        (manual, manual),
+        (both, manual),
+        (manual, manual),
       ]);
-      expect(flagsOnDisk(deckPath), <(bool, bool)>[
-        (true, false),
-        (true, true),
-        (true, false),
+      expect(flagsOnDisk(deckPath), <_UnitFlags>[
+        (manual, manual),
+        (both, manual),
+        (manual, manual),
       ]);
       expect(find.byTooltip('Difficult (manual flag)'), findsNWidgets(2));
 
@@ -221,15 +222,15 @@ void main() {
       await press(tester, 'Clear selection');
       await tick(tester, 2);
       await press(tester, 'Unmark selected');
-      await untilFlagsOnDisk(tester, deckPath, <(bool, bool)>[
-        (true, false),
-        (true, true),
-        (false, false),
+      await untilFlagsOnDisk(tester, deckPath, <_UnitFlags>[
+        (manual, manual),
+        (both, manual),
+        (none, none),
       ]);
-      expect(flagsOnDisk(deckPath), <(bool, bool)>[
-        (true, false),
-        (true, true),
-        (false, false),
+      expect(flagsOnDisk(deckPath), <_UnitFlags>[
+        (manual, manual),
+        (both, manual),
+        (none, none),
       ]);
       expect(find.byTooltip('Difficult (manual flag)'), findsOneWidget);
       // Marking is not editing: the deck keeps the date it had.
@@ -245,9 +246,9 @@ void main() {
       await press(tester, 'Clear selection');
       await press(tester, 'Select visible');
       await press(tester, 'Save selected units');
-      await untilFlagsOnDisk(tester, savedPath, <(bool, bool)>[
-        (true, false),
-        (true, true),
+      await untilFlagsOnDisk(tester, savedPath, <_UnitFlags>[
+        (manual, manual),
+        (both, manual),
       ]);
       final LearningDeck saved = decodeDeckJson(
         File(savedPath).readAsStringSync(),
@@ -259,9 +260,9 @@ void main() {
         ],
         <String>['house', 'cat'],
       );
-      expect(flagsOnDisk(savedPath), <(bool, bool)>[
-        (true, false),
-        (true, true),
+      expect(flagsOnDisk(savedPath), <_UnitFlags>[
+        (manual, manual),
+        (both, manual),
       ]);
     });
   });
@@ -288,17 +289,29 @@ void main() {
   });
 }
 
-/// Three units: house (unflagged), cat (automatically flagged), dog
-/// (unflagged).
+/// One unit's (Direction 1, Direction 2) flags.
+typedef _UnitFlags = (DifficultFlags, DifficultFlags);
+
+const DifficultFlags none = DifficultFlags.none;
+const DifficultFlags manual = DifficultFlags(manual: true);
+const DifficultFlags automatic = DifficultFlags(automatic: true);
+const DifficultFlags both = DifficultFlags(manual: true, automatic: true);
+
+/// Three units: house (unflagged), cat (automatically flagged in
+/// Direction 1), dog (unflagged).
 LearningDeck _deck() {
-  LearningUnit unit(String question, String answer, {bool auto = false}) {
+  LearningUnit unit(
+    String question,
+    String answer, {
+    DifficultFlags direction1 = none,
+  }) {
     return LearningUnit(
       categoryId: 1,
       fields: <int, FieldValue>{
         0: FieldValue.plain(question),
         1: FieldValue.plain(answer),
       },
-      autoDifficult: auto,
+      direction1Flags: direction1,
     );
   }
 
@@ -335,7 +348,7 @@ LearningDeck _deck() {
     ),
     units: <LearningUnit>[
       unit('house', 'Haus'),
-      unit('cat', 'Katze', auto: true),
+      unit('cat', 'Katze', direction1: automatic),
       unit('dog', 'Hund'),
     ],
   );

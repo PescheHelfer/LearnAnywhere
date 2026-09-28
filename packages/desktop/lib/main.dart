@@ -2998,10 +2998,17 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onClearStatistics: _clearStatistics,
         onClearAllTimeStatistics: _clearAllTimeStatistics,
         onSaveSelectedUnits: _saveSelectedUnits,
-        onMarkSelectedUnits: (List<int> unitIndices) =>
-            _changeSelectedFlags(unitIndices, markDifficultAt),
-        onUnmarkSelectedUnits: (List<int> unitIndices) =>
-            _changeSelectedFlags(unitIndices, unmarkDifficultAt),
+        // Both directions until the unit list follows its View.
+        onMarkSelectedUnits: (List<int> unitIndices) => _changeSelectedFlags(
+          unitIndices,
+          (LearningDeck deck, Set<int> units) =>
+              markDifficultAt(deck, units, QueryDirection.values.toSet()),
+        ),
+        onUnmarkSelectedUnits: (List<int> unitIndices) => _changeSelectedFlags(
+          unitIndices,
+          (LearningDeck deck, Set<int> units) =>
+              unmarkDifficultAt(deck, units, QueryDirection.values.toSet()),
+        ),
         onClose: () => _selectRoute(_DesktopRoute.home),
       ),
       _DesktopRoute.lexicon => LexiconPage(
@@ -3087,20 +3094,20 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     });
   }
 
-  /// Applies the core toggle rule to the unit at the one-based [unitIndex],
-  /// in memory only. Shared by [_toggleDifficultInEditor] and
+  /// Applies the core toggle rule to the unit at the one-based [unitIndex] in
+  /// [direction], in memory only. Shared by [_toggleDifficultInEditor] and
   /// [_toggleDifficult], which differ only in whether — and when — the
   /// result is written to disk.
-  void _applyDifficultToggle(int unitIndex) {
+  void _applyDifficultToggle(int unitIndex, QueryDirection direction) {
     setState(() {
       _document = _document.copyWith(
-        deck: toggleDifficultAt(_document.deck, unitIndex),
+        deck: toggleDifficultAt(_document.deck, unitIndex, direction),
       );
     });
   }
 
-  /// Toggles the difficulty of the unit at the one-based [unitIndex] in the
-  /// unit editor, in memory only.
+  /// Toggles the difficulty of the unit at the one-based [unitIndex] in
+  /// [direction] in the unit editor, in memory only.
   ///
   /// Unlike [_toggleDifficult], this never writes: the editor's own rule is
   /// that nothing reaches disk until the next save (F10/Done keeps the
@@ -3108,15 +3115,17 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// [DesktopDocument.unitsEdited] as it found it, so a save whose only
   /// change is this flag does not date the deck, while one that also has a
   /// pending field edit still does.
-  void _toggleDifficultInEditor(int unitIndex) => _applyDifficultToggle(unitIndex);
+  void _toggleDifficultInEditor(int unitIndex, QueryDirection direction) =>
+      _applyDifficultToggle(unitIndex, direction);
 
   // Flag writes from a session are serialized through this chain, so two F12
   // presses in quick succession land on disk in the order they were made.
   Future<void> _difficultWriteChain = Future<void>.value();
 
-  /// Toggles the difficulty of the unit at the one-based [unitIndex] and
-  /// writes the deck at once: the manual flag is the only record of the
-  /// learner's verdict, so it must not wait for a save (ADR-0005).
+  /// Toggles the difficulty of the question on screen — its unit in the
+  /// direction being asked, [item] — and writes the deck at once: the manual
+  /// flag is the only record of the learner's verdict, so it must not wait
+  /// for a save (ADR-0005).
   ///
   /// The write goes through [DesktopFileService.writeDeck] like every other
   /// write of the open deck, so a flag alone leaves the last-edited date as it
@@ -3125,8 +3134,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// flag stays in memory only, and goes out with the next write of the deck.
   /// A deck that has never been saved has no file yet: its flags ride along
   /// with the first save.
-  void _toggleDifficult(int unitIndex) {
-    _applyDifficultToggle(unitIndex);
+  void _toggleDifficult(SessionItem item) {
+    _applyDifficultToggle(item.unitIndex, item.direction);
     unawaited(_writeDifficultFlags());
   }
 

@@ -777,14 +777,13 @@ String _matrixLevelHeader(WidgetTester tester) {
 }
 
 /// [sampleDeck]'s mask with four units: 1 unflagged, 2 manually flagged,
-/// 3 automatically flagged, 4 carrying both flags.
+/// 3 automatically flagged, 4 carrying both flags, all in Direction 1.
 LearningDeck flaggedDeck() {
   final LearningUnit template = sampleDeck().units.first;
   LearningUnit unit(String question, {bool manual = false, bool auto = false}) {
     return template.copyWith(
       fields: <int, FieldValue>{0: FieldValue.plain(question)},
-      manualDifficult: manual,
-      autoDifficult: auto,
+      direction1Flags: DifficultFlags(manual: manual, automatic: auto),
     );
   }
 

@@ -528,7 +528,7 @@ final class _PracticeListState extends State<_PracticeList> {
       if (!_visibleBuckets.contains(row.bucket)) {
         return false;
       }
-      if (_difficultOnly && !row.unit.isDifficult) {
+      if (_difficultOnly && !row.unit.isDifficultInEither) {
         return false;
       }
       if (!numericActive) {
@@ -1505,9 +1505,12 @@ enum _PracticeSortKey {
   accuracy,
 }
 
-/// Sort rank of [unit]'s flags: unflagged, automatic, manual, both.
-int _difficultRank(LearningUnit unit) =>
-    (unit.manualDifficult ? 2 : 0) + (unit.autoDifficult ? 1 : 0);
+/// Sort rank of [unit]'s flags in either direction, as the Difficult column
+/// shows them: unflagged, automatic, manual, both.
+int _difficultRank(LearningUnit unit) {
+  final DifficultFlags flags = unit.flagsInEither;
+  return (flags.manual ? 2 : 0) + (flags.automatic ? 1 : 0);
+}
 
 final class _UnitStatisticsRow {
   const _UnitStatisticsRow({

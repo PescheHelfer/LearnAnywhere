@@ -46,9 +46,9 @@ govern how a typed answer is judged during a session.
 ## Finding difficult units
 
 Switch on **Difficult only** to find just the units flagged as
-[difficult](06-learning-sessions.md#marking-a-unit-difficult), by you or by the program.
-It works in both search modes and combines with **Search text** and **Category**: a hit
-has to match all three. Like **Category**, it applies to the next search, not to the
+[difficult](06-learning-sessions.md#marking-a-unit-difficult), by you or by the program,
+in either direction. It works in both search modes and combines with **Search text** and
+**Category**: a hit has to match all three. Like **Category**, it applies to the next search, not to the
 results already on screen. With **Search text** left empty it lists every difficult
 unit.
 
@@ -57,10 +57,10 @@ difficult units of every deck under a folder with no statistics loaded at all. T
 the way to gather every difficult unit you own.
 
 The results table has a **Difficult** column: a flag for your manual flag, a sparkle
-for the automatic one, both side by side for both, and nothing for a unit that is not
-difficult. Hover over it to read which.
+for the automatic one, both side by side for both — in either direction — and nothing
+for a unit that is not difficult. Hover over it to read which.
 
-Loading hits with **Load results** keeps both flags on every unit, and so does saving
-them afterwards. So switch on **Difficult only** and **Load found units**, choose
-**Search files**, then **Load results**, and finally **File ▸ Save deck**: that gives you
-one new deck of your difficult units, still flagged.
+Loading hits with **Load results** keeps every flag on every unit, in both directions,
+and so does saving them afterwards. So switch on **Difficult only** and **Load found
+units**, choose **Search files**, then **Load results**, and finally **File ▸ Save
+deck**: that gives you one new deck of your difficult units, still flagged.

@@ -76,17 +76,20 @@ goes.
 
 ## Marking a unit difficult
 
-The header line shows whether the current unit is difficult, with the same badge a
-learning session uses, and updates it as you move between units:
+A unit is difficult in a direction (see
+[Marking a unit difficult](06-learning-sessions.md#marking-a-unit-difficult)). Here in
+the editor, the header line shows whether the current unit is difficult in Direction 1,
+with the same badge a learning session uses, and updates it as you move between units:
 
 - **Difficult (manual flag)** — you marked it.
 - **Difficult (automatic flag)** — the program found it hard from the unit's all-time
   statistics.
 - **Difficult (manual and automatic flag)** — both.
 
-`F12` toggles it here exactly as it does in a
-[learning session](06-learning-sessions.md#marking-a-unit-difficult): on a difficult
-unit it clears both flags; on one that is not difficult it sets your manual flag.
+`F12` toggles Direction 1 here exactly as it does in a
+[learning session](06-learning-sessions.md#marking-a-unit-difficult): where the unit is
+difficult it clears both of that direction's flags; where it is not, it sets your
+manual flag. Direction 2 is left as it is; mark it in a learning session that asks it.
 
 Unlike in a session, the change is not written at once. It is part of the pending edit,
 like a field value, so it is kept only in memory until you save, and is dropped along

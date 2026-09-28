@@ -150,9 +150,9 @@ void main() {
 
       // Question stage.
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
-      await untilOnDisk(tester, deckPath, 'manualDifficult', present: true);
-      expect(unitOnDisk(deckPath)['manualDifficult'], isTrue);
-      expect(unitOnDisk(deckPath).containsKey('autoDifficult'), isFalse);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: true);
+      expect(unitOnDisk(deckPath)['manualDifficult1'], isTrue);
+      expect(unitOnDisk(deckPath).containsKey('autoDifficult1'), isFalse);
       expect(find.text('Difficult (manual flag)'), findsOneWidget);
       // A flag is not an edit: the stored date is the one it had.
       expect(
@@ -161,8 +161,8 @@ void main() {
       );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
-      await untilOnDisk(tester, deckPath, 'manualDifficult', present: false);
-      expect(unitOnDisk(deckPath).containsKey('manualDifficult'), isFalse);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: false);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
       expect(find.text('Difficult (manual flag)'), findsNothing);
 
       // Answer stage: F12, then the pill.
@@ -170,13 +170,13 @@ void main() {
       await settle(tester);
       expect(find.text('Continue'), findsOneWidget);
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
-      await untilOnDisk(tester, deckPath, 'manualDifficult', present: true);
-      expect(unitOnDisk(deckPath)['manualDifficult'], isTrue);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: true);
+      expect(unitOnDisk(deckPath)['manualDifficult1'], isTrue);
       expect(find.text('Difficult (manual flag)'), findsOneWidget);
 
       await tester.tap(find.text('Difficult'));
-      await untilOnDisk(tester, deckPath, 'manualDifficult', present: false);
-      expect(unitOnDisk(deckPath).containsKey('manualDifficult'), isFalse);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: false);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
       expect(find.text('Difficult (manual flag)'), findsNothing);
       // Still in the session, still on the answer.
       expect(find.text('Continue'), findsOneWidget);
@@ -188,18 +188,61 @@ void main() {
   ) async {
     final String deckPath = p.join(temp.path, 'auto.vok');
     File(deckPath).writeAsStringSync(
-      encodeDeckJson(_deck(autoDifficult: true)),
+      encodeDeckJson(
+        _deck(direction1Flags: const DifficultFlags(automatic: true)),
+      ),
     );
     await tester.runAsync(() async {
       await startSession(tester, deckPath);
       expect(find.text('Difficult (automatic flag)'), findsOneWidget);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
-      await untilOnDisk(tester, deckPath, 'autoDifficult', present: false);
-      expect(unitOnDisk(deckPath).containsKey('autoDifficult'), isFalse);
-      expect(unitOnDisk(deckPath).containsKey('manualDifficult'), isFalse);
+      await untilOnDisk(tester, deckPath, 'autoDifficult1', present: false);
+      expect(unitOnDisk(deckPath).containsKey('autoDifficult1'), isFalse);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
       expect(find.text('Difficult (automatic flag)'), findsNothing);
       expect(find.text('Difficult (manual flag)'), findsNothing);
+    });
+  });
+
+  testWidgets('in a Direction 2 question F12 writes the Direction 2 manual '
+      'flag at once, and the badge and pill show only that direction', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'direction2.vok');
+    // Difficult in Direction 1 only, by the program's verdict.
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(direction1Flags: const DifficultFlags(automatic: true)),
+      ),
+    );
+    File(p.join(temp.path, 'settings.json')).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(direction: DirectionSelection.direction2),
+      ),
+    );
+    await tester.runAsync(() async {
+      await startSession(tester, deckPath);
+      // Asked the other way round: the unit is not difficult this way.
+      expect(find.text('Haus', findRichText: true), findsOneWidget);
+      expect(find.text('Difficult (automatic flag)'), findsNothing);
+      expect(find.byKey(const Key('learnDifficultBadge')), findsNothing);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await untilOnDisk(tester, deckPath, 'manualDifficult2', present: true);
+      expect(unitOnDisk(deckPath)['manualDifficult2'], isTrue);
+      // Direction 1 keeps exactly what it had.
+      expect(unitOnDisk(deckPath)['autoDifficult1'], isTrue);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
+      expect(unitOnDisk(deckPath).containsKey('autoDifficult2'), isFalse);
+      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+
+      // The pill unmarks Direction 2 only.
+      await tester.tap(find.text('Difficult'));
+      await untilOnDisk(tester, deckPath, 'manualDifficult2', present: false);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult2'), isFalse);
+      expect(unitOnDisk(deckPath)['autoDifficult1'], isTrue);
+      expect(find.byKey(const Key('learnDifficultBadge')), findsNothing);
     });
   });
 
@@ -234,11 +277,11 @@ void main() {
       await settleAfterIo(tester);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
-      await untilOnDisk(tester, deckPath, 'manualDifficult', present: true);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: true);
       final LearningDeck onDisk = decodeDeckJson(
         File(deckPath).readAsStringSync(),
       );
-      expect(onDisk.units.single.manualDifficult, isTrue);
+      expect(onDisk.units.single.direction1Flags.manual, isTrue);
       expect(onDisk.units.single.valueForFieldId(0).plainText, 'home');
       expect(onDisk.lastEdited, isNot(edited));
       expect(onDisk.lastEdited!.instant.isAfter(edited.instant), isTrue);
@@ -293,7 +336,7 @@ void main() {
       await settle(tester);
       expect(find.text('Difficult (manual flag)'), findsOneWidget);
       // Nothing reaches disk from the editor on its own.
-      expect(unitOnDisk(deckPath).containsKey('manualDifficult'), isFalse);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
 
       // Cancelling drops the flag change along with everything else pending.
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -301,7 +344,7 @@ void main() {
       expect(find.text('Please confirm'), findsOneWidget);
       await tester.tap(find.text('Continue'));
       await settle(tester);
-      expect(unitOnDisk(deckPath).containsKey('manualDifficult'), isFalse);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
 
       await pickMenuItem(tester, 'Edit', 'Unit editor');
       expect(find.text('Difficult (manual flag)'), findsNothing);
@@ -313,14 +356,14 @@ void main() {
       await tester.tap(find.text('Done'));
       await settle(tester);
       // Still not written: Done keeps the change in memory only.
-      expect(unitOnDisk(deckPath).containsKey('manualDifficult'), isFalse);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
 
       await pickMenuItem(tester, 'File', 'Save deck');
-      await untilOnDisk(tester, deckPath, 'manualDifficult', present: true);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: true);
       final LearningDeck onDisk = decodeDeckJson(
         File(deckPath).readAsStringSync(),
       );
-      expect(onDisk.units.single.manualDifficult, isTrue);
+      expect(onDisk.units.single.direction1Flags.manual, isTrue);
       // A flag is not an edit: the stored date is the one it had.
       expect(onDisk.lastEdited, edited);
     });
@@ -358,11 +401,11 @@ void main() {
       await settle(tester);
 
       await pickMenuItem(tester, 'File', 'Save deck');
-      await untilOnDisk(tester, deckPath, 'manualDifficult', present: true);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: true);
       final LearningDeck onDisk = decodeDeckJson(
         File(deckPath).readAsStringSync(),
       );
-      expect(onDisk.units.single.manualDifficult, isTrue);
+      expect(onDisk.units.single.direction1Flags.manual, isTrue);
       expect(onDisk.units.single.valueForFieldId(0).plainText, 'home');
       expect(onDisk.lastEdited, isNot(edited));
       expect(onDisk.lastEdited!.instant.isAfter(edited.instant), isTrue);
@@ -370,7 +413,7 @@ void main() {
   });
 }
 
-LearningDeck _deck({bool autoDifficult = false}) {
+LearningDeck _deck({DifficultFlags direction1Flags = DifficultFlags.none}) {
   return LearningDeck(
     mask: const LearningMask(
       maskId: 'm_new_difficult-flag-shell',
@@ -409,7 +452,7 @@ LearningDeck _deck({bool autoDifficult = false}) {
           0: FieldValue.plain('house'),
           1: FieldValue.plain('Haus'),
         },
-        autoDifficult: autoDifficult,
+        direction1Flags: direction1Flags,
       ),
     ],
   );

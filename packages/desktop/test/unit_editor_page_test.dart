@@ -43,11 +43,11 @@ void main() {
           LearningUnit(
             categoryId: 0,
             fields: <int, FieldValue>{0: FieldValue.plain('two')},
-            manualDifficult: true,
+            direction1Flags: DifficultFlags(manual: true),
           ),
         ],
       );
-      final List<int> toggled = <int>[];
+      final List<(int, QueryDirection)> toggled = <(int, QueryDirection)>[];
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates:
@@ -63,12 +63,17 @@ void main() {
                   },
                   onDone: () {},
                   onCancel: () {},
-                  onToggleDifficult: (int unitIndex) {
-                    toggled.add(unitIndex);
-                    setState(
-                      () => deck = toggleDifficultAt(deck, unitIndex),
-                    );
-                  },
+                  onToggleDifficult:
+                      (int unitIndex, QueryDirection direction) {
+                        toggled.add((unitIndex, direction));
+                        setState(
+                          () => deck = toggleDifficultAt(
+                            deck,
+                            unitIndex,
+                            direction,
+                          ),
+                        );
+                      },
                 );
               },
             ),
@@ -86,7 +91,8 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await tester.pumpAndSettle();
-      expect(toggled, <int>[2]);
+      // F12 acts on Direction 1 in the editor.
+      expect(toggled, <(int, QueryDirection)>[(2, QueryDirection.direction1)]);
       expect(find.text('Difficult (manual flag)'), findsNothing);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f2);
@@ -95,7 +101,10 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await tester.pumpAndSettle();
-      expect(toggled, <int>[2, 1]);
+      expect(toggled, <(int, QueryDirection)>[
+        (2, QueryDirection.direction1),
+        (1, QueryDirection.direction1),
+      ]);
       expect(find.text('Difficult (manual flag)'), findsOneWidget);
     },
   );
@@ -128,7 +137,7 @@ void main() {
                   },
                   onDone: () {},
                   onCancel: () {},
-                  onToggleDifficult: (int _) {},
+                  onToggleDifficult: (int _, QueryDirection _) {},
                 );
               },
             ),
@@ -189,7 +198,7 @@ void main() {
                       },
                   onDone: () {},
                   onCancel: () {},
-                  onToggleDifficult: (int _) {},
+                  onToggleDifficult: (int _, QueryDirection _) {},
                 );
               },
             ),
@@ -274,7 +283,7 @@ void main() {
                       },
                   onDone: () {},
                   onCancel: () {},
-                  onToggleDifficult: (int _) {},
+                  onToggleDifficult: (int _, QueryDirection _) {},
                 );
               },
             ),
@@ -362,7 +371,7 @@ void main() {
                   (LearningDeck value, {int? insertedAt, int? deletedAt}) {},
               onDone: () {},
               onCancel: () {},
-              onToggleDifficult: (int _) {},
+              onToggleDifficult: (int _, QueryDirection _) {},
             ),
           ),
         ),

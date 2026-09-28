@@ -106,14 +106,15 @@ void main() {
     }
   }
 
-  List<(bool, bool)> flags(LearningDeck deck) => <(bool, bool)>[
-    for (final LearningUnit unit in deck.units)
-      (unit.manualDifficult, unit.autoDifficult),
-  ];
+  List<(DifficultFlags, DifficultFlags)> flags(LearningDeck deck) =>
+      <(DifficultFlags, DifficultFlags)>[
+        for (final LearningUnit unit in deck.units)
+          (unit.direction1Flags, unit.direction2Flags),
+      ];
 
   const String noDifficultUnits =
-      'No unit in the selected range is marked as difficult, so there is '
-      'nothing to ask.';
+      'No unit in the selected range is difficult in the chosen direction, '
+      'so there is nothing to ask.';
 
   testWidgets('a session with Difficult units only asks just the flagged '
       'units, mastering them keeps their flags, and the option is '
@@ -127,11 +128,11 @@ void main() {
     };
     File(deckPath).writeAsStringSync(
       encodeDeckJson(
-        _deck(<(String, String, bool, bool)>[
-          ('house', 'Haus', false, false),
-          ('tree', 'Baum', true, false),
-          ('dog', 'Hund', false, false),
-          ('cat', 'Katze', false, true),
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', none, none),
+          ('tree', 'Baum', manual, none),
+          ('dog', 'Hund', none, none),
+          ('cat', 'Katze', automatic, none),
         ]),
       ),
     );
@@ -162,16 +163,75 @@ void main() {
       expect(asked.toSet(), <String>{'tree', 'cat'});
 
       // Mastering a unit is not unmarking it.
-      expect(flags(deckOnDisk(deckPath)!), <(bool, bool)>[
-        (false, false),
-        (true, false),
-        (false, false),
-        (false, true),
+      expect(flags(deckOnDisk(deckPath)!), <(DifficultFlags, DifficultFlags)>[
+        (none, none),
+        (manual, none),
+        (none, none),
+        (automatic, none),
       ]);
       expect(
         decodeSettingsJson(File(settingsPath).readAsStringSync()).difficultOnly,
         isTrue,
       );
+    });
+  });
+
+  testWidgets('a Both session with Difficult units only asks each unit only '
+      'in the direction it is difficult in', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'both.vok');
+    // Question text to answer, in either direction.
+    const Map<String, String> answers = <String, String>{
+      'house': 'Haus',
+      'Haus': 'house',
+      'tree': 'Baum',
+      'Baum': 'tree',
+      'dog': 'Hund',
+      'Hund': 'dog',
+    };
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', manual, none),
+          ('tree', 'Baum', none, automatic),
+          ('dog', 'Hund', none, none),
+        ]),
+      ),
+    );
+    File(settingsPath).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(
+          direction: DirectionSelection.both,
+          difficultOnly: true,
+        ),
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await openSetup(tester, deckPath);
+      await tester.tap(find.text('Start session'));
+      await settleAfterIo(tester);
+
+      // One right answer masters a question; the session then ends.
+      final List<String> asked = <String>[];
+      while (find.text('Check').evaluate().isNotEmpty) {
+        expect(asked.length, lessThan(2));
+        final String question = answers.keys.singleWhere(
+          (String q) => find.text(q, findRichText: true).evaluate().isNotEmpty,
+        );
+        asked.add(question);
+        await tester.enterText(
+          find.byType(TextField).first,
+          answers[question]!,
+        );
+        await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+        await settle(tester);
+        await tester.tap(find.text('Continue'));
+        await settleAfterIo(tester);
+      }
+      // house in Direction 1 and tree in Direction 2 (asked as "Baum"); never
+      // the easy way round, and never the unflagged dog.
+      expect(asked.toSet(), <String>{'house', 'Baum'});
+      expect(tester.takeException(), isNull);
     });
   });
 
@@ -191,10 +251,10 @@ void main() {
       };
       File(deckPath).writeAsStringSync(
         encodeDeckJson(
-          _deck(<(String, String, bool, bool)>[
-            ('house', 'Haus', true, false),
-            ('tree', 'Baum', false, false),
-            ('dog', 'Hund', false, true),
+          _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+            ('house', 'Haus', manual, none),
+            ('tree', 'Baum', none, none),
+            ('dog', 'Hund', automatic, none),
           ]),
         ),
       );
@@ -244,9 +304,9 @@ void main() {
     final String deckPath = p.join(temp.path, 'plain.vok');
     File(deckPath).writeAsStringSync(
       encodeDeckJson(
-        _deck(<(String, String, bool, bool)>[
-          ('house', 'Haus', false, false),
-          ('tree', 'Baum', false, false),
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', none, none),
+          ('tree', 'Baum', none, none),
         ]),
       ),
     );
@@ -284,8 +344,15 @@ void main() {
   });
 }
 
-/// A deck of `(question, answer, manual flag, automatic flag)` units.
-LearningDeck _deck(List<(String, String, bool, bool)> units) {
+const DifficultFlags none = DifficultFlags.none;
+const DifficultFlags manual = DifficultFlags(manual: true);
+const DifficultFlags automatic = DifficultFlags(automatic: true);
+
+/// A deck of `(question, answer, Direction 1 flags, Direction 2 flags)`
+/// units.
+LearningDeck _deck(
+  List<(String, String, DifficultFlags, DifficultFlags)> units,
+) {
   return LearningDeck(
     mask: const LearningMask(
       maskId: 'm_new_difficult-only-shell',
@@ -318,7 +385,12 @@ LearningDeck _deck(List<(String, String, bool, bool)> units) {
       ],
     ),
     units: <LearningUnit>[
-      for (final (String question, String answer, bool manual, bool automatic)
+      for (final (
+            String question,
+            String answer,
+            DifficultFlags direction1,
+            DifficultFlags direction2,
+          )
           in units)
         LearningUnit(
           categoryId: 1,
@@ -326,8 +398,8 @@ LearningDeck _deck(List<(String, String, bool, bool)> units) {
             0: FieldValue.plain(question),
             1: FieldValue.plain(answer),
           },
-          manualDifficult: manual,
-          autoDifficult: automatic,
+          direction1Flags: direction1,
+          direction2Flags: direction2,
         ),
     ],
   );

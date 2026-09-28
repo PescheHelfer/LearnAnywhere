@@ -1,57 +1,85 @@
 /// Difficult units: the one marking rule every surface that marks shares.
 ///
-/// A unit is difficult when it carries a manual flag, an automatic flag, or
-/// both (see "Difficult units" in `packages/core/CONTEXT.md`). The flags live
-/// on the unit in the deck (ADR-0005), so everything here is a pure function
-/// from a unit or deck to a new one; writing it is the shell's business.
+/// A unit is difficult in a direction when that direction carries a manual
+/// flag, an automatic flag, or both (see "Difficult units" in
+/// `packages/core/CONTEXT.md`). The flags live on the unit in the deck
+/// (ADR-0005 and its per-direction amendment), so everything here is a pure
+/// function from a unit or deck to a new one; writing it is the shell's
+/// business.
 library;
 
 import '../models/models.dart';
 import '../statistics/all_time.dart';
 
-/// Toggles [unit]'s difficulty: the one rule behind F12 and the Difficult
-/// pill, which every later way of marking a unit reuses.
+/// Toggles [unit]'s difficulty in [direction]: the one rule behind F12 and
+/// the Difficult pill, which every later way of marking a unit reuses.
 ///
-/// A unit carrying **any** flag loses **both**: "not difficult" means not
-/// difficult, whoever said it was. Otherwise the unit gains the **manual**
-/// flag — the program's automatic flag is never set by hand.
-LearningUnit toggleDifficult(LearningUnit unit) {
-  return unit.isDifficult
-      ? unit.copyWith(manualDifficult: false, autoDifficult: false)
-      : unit.copyWith(manualDifficult: true);
+/// A direction carrying **any** flag loses **both** of its flags: "not
+/// difficult" means not difficult, whoever said it was. Otherwise it gains
+/// the **manual** flag — the program's automatic flag is never set by hand.
+/// The other direction is never touched.
+LearningUnit toggleDifficult(LearningUnit unit, QueryDirection direction) {
+  return unit.withFlags(
+    direction,
+    unit.isDifficultIn(direction)
+        ? DifficultFlags.none
+        : const DifficultFlags(manual: true),
+  );
 }
 
-/// Returns [deck] with [toggleDifficult] applied to the unit at the one-based
-/// [unitIndex].
+/// Returns [deck] with [toggleDifficult] applied in [direction] to the unit
+/// at the one-based [unitIndex].
 ///
 /// Changing a flag is not an edit, so the deck keeps its last-edited date.
-LearningDeck toggleDifficultAt(LearningDeck deck, int unitIndex) {
-  return _updateUnitsAt(deck, <int>{unitIndex}, toggleDifficult);
+LearningDeck toggleDifficultAt(
+  LearningDeck deck,
+  int unitIndex,
+  QueryDirection direction,
+) {
+  return _updateUnitsAt(
+    deck,
+    <int>{unitIndex},
+    (LearningUnit unit) => toggleDifficult(unit, direction),
+  );
 }
 
-/// Returns [deck] with the manual flag set on each unit at the one-based
-/// [unitIndices]: the unit list's **Mark selected**.
+/// Returns [deck] with the manual flag set in each of [directions] on each
+/// unit at the one-based [unitIndices]: the unit list's **Mark selected**.
 ///
 /// Unlike the toggle, marking a selection never clears anything — a unit the
 /// program already flagged keeps its automatic flag as well.
-LearningDeck markDifficultAt(LearningDeck deck, Set<int> unitIndices) {
-  return _updateUnitsAt(
-    deck,
-    unitIndices,
-    (LearningUnit unit) => unit.copyWith(manualDifficult: true),
-  );
+LearningDeck markDifficultAt(
+  LearningDeck deck,
+  Set<int> unitIndices,
+  Set<QueryDirection> directions,
+) {
+  return _updateUnitsAt(deck, unitIndices, (LearningUnit unit) {
+    var marked = unit;
+    for (final QueryDirection direction in directions) {
+      marked = marked.withFlags(
+        direction,
+        marked.flagsFor(direction).copyWith(manual: true),
+      );
+    }
+    return marked;
+  });
 }
 
-/// Returns [deck] with both flags cleared on each unit at the one-based
-/// [unitIndices]: the unit list's **Unmark selected**, which — like the
-/// toggle — means "not difficult", whoever said it was.
-LearningDeck unmarkDifficultAt(LearningDeck deck, Set<int> unitIndices) {
-  return _updateUnitsAt(
-    deck,
-    unitIndices,
-    (LearningUnit unit) =>
-        unit.copyWith(manualDifficult: false, autoDifficult: false),
-  );
+/// Returns [deck] with both flags cleared in each of [directions] on each
+/// unit at the one-based [unitIndices]: the unit list's **Unmark selected**,
+/// which — like the toggle — means "not difficult", whoever said it was.
+LearningDeck unmarkDifficultAt(
+  LearningDeck deck,
+  Set<int> unitIndices,
+  Set<QueryDirection> directions,
+) {
+  return _updateUnitsAt(deck, unitIndices, (LearningUnit unit) {
+    var unmarked = unit;
+    for (final QueryDirection direction in directions) {
+      unmarked = unmarked.withFlags(direction, DifficultFlags.none);
+    }
+    return unmarked;
+  });
 }
 
 /// The three thresholds of the detection rule ([isDetectedDifficult]).
@@ -155,6 +183,9 @@ bool isDetectedDifficult(
 
 /// A deck after a deck-wide flag operation, and how many flags it set and
 /// cleared.
+///
+/// Every count is in flags — one per unit and direction — so a unit newly
+/// flagged both ways counts two.
 final class DifficultFlagChange {
   /// Creates a change result.
   const DifficultFlagChange({
@@ -167,121 +198,137 @@ final class DifficultFlagChange {
   /// changed.
   final LearningDeck deck;
 
-  /// How many units gained a flag.
+  /// How many flags were set.
   final int added;
 
-  /// How many units lost a flag.
+  /// How many flags were cleared.
   final int removed;
 
   /// Whether any flag changed, i.e. whether the deck needs writing.
   bool get changed => added > 0 || removed > 0;
 }
 
-/// Sets the automatic flag on every unit of [deck] whose lifetime record
-/// [allTime] satisfies the rule in either direction: what runs when a
-/// learning session ends.
+/// Sets the automatic flag in each direction of each unit of [deck] whose
+/// lifetime record [allTime] satisfies the rule in that direction: what runs
+/// when a learning session ends.
 ///
-/// It only ever adds — a unit that no longer qualifies keeps its flag, and a
-/// manual flag is never touched. Units are matched to [allTime] through the
-/// lifetime record's own identity rules ([realignAllTimeStatistics]), so a
-/// unit the record holds nothing for is not detected.
+/// It only ever adds — a direction that no longer qualifies keeps its flag,
+/// and a manual flag is never touched. Units are matched to [allTime] through
+/// the lifetime record's own identity rules ([realignAllTimeStatistics]), so
+/// a unit the record holds nothing for is not detected.
 DifficultFlagChange addDetectedDifficult(
   LearningDeck deck,
   AllTimeStatistics allTime, {
   DetectionThresholds thresholds = DetectionThresholds.defaults,
 }) {
-  final List<bool> detected = _detectedSlots(deck, allTime, thresholds);
-  final Set<int> gained = <int>{
-    for (var slot = 0; slot < deck.units.length; slot += 1)
-      if (detected[slot] && !deck.units[slot].autoDifficult) slot + 1,
-  };
-  if (gained.isEmpty) {
-    return DifficultFlagChange(deck: deck);
-  }
-  return DifficultFlagChange(
-    deck: _updateUnitsAt(
-      deck,
-      gained,
-      (LearningUnit unit) => unit.copyWith(autoDifficult: true),
-    ),
-    added: gained.length,
+  return _setAutomaticFlags(
+    deck,
+    allTime,
+    thresholds,
+    (bool detected, bool flagged) => detected || flagged,
   );
 }
 
-/// Rebuilds every automatic flag of [deck] from its lifetime record
-/// [allTime]: **Statistics ▸ Recompute automatic flags**.
+/// Rebuilds every automatic flag of [deck], in both directions, from its
+/// lifetime record [allTime]: **Statistics ▸ Recompute automatic flags**.
 ///
-/// A unit the rule holds for carries the automatic flag afterwards, and
-/// every other unit does not — so, unlike [addDetectedDifficult], stale flags
-/// go away. A unit the record holds nothing for is not detected, which is
-/// why a deck without statistics loses all its automatic flags. Manual flags
-/// are never touched. The counts are relative to the flags [deck] carried.
+/// A direction the rule holds for carries the automatic flag afterwards, and
+/// every other does not — so, unlike [addDetectedDifficult], stale flags go
+/// away. A unit the record holds nothing for is not detected, which is why a
+/// deck without statistics loses all its automatic flags. Manual flags are
+/// never touched. The counts are relative to the flags [deck] carried.
 DifficultFlagChange recomputeDetectedDifficult(
   LearningDeck deck,
   AllTimeStatistics allTime, {
   DetectionThresholds thresholds = DetectionThresholds.defaults,
 }) {
-  final List<bool> detected = _detectedSlots(deck, allTime, thresholds);
-  final Set<int> gained = <int>{};
-  final Set<int> lost = <int>{};
-  for (var slot = 0; slot < deck.units.length; slot += 1) {
-    if (detected[slot] != deck.units[slot].autoDifficult) {
-      (detected[slot] ? gained : lost).add(slot + 1);
-    }
-  }
-  if (gained.isEmpty && lost.isEmpty) {
-    return DifficultFlagChange(deck: deck);
-  }
-  return DifficultFlagChange(
-    deck: _updateUnitsAt(
-      deck,
-      <int>{...gained, ...lost},
-      (LearningUnit unit) => unit.copyWith(autoDifficult: !unit.autoDifficult),
-    ),
-    added: gained.length,
-    removed: lost.length,
+  return _setAutomaticFlags(
+    deck,
+    allTime,
+    thresholds,
+    (bool detected, bool flagged) => detected,
   );
 }
 
-/// Clears the manual flag on every unit of [deck]: **Statistics ▸ Remove all
-/// manual flags**. Automatic flags are never touched.
+/// Clears the manual flag in both directions of every unit of [deck]:
+/// **Statistics ▸ Remove all manual flags**. Automatic flags are never
+/// touched.
 DifficultFlagChange clearManualDifficult(LearningDeck deck) {
-  final Set<int> marked = <int>{
-    for (var slot = 0; slot < deck.units.length; slot += 1)
-      if (deck.units[slot].manualDifficult) slot + 1,
-  };
-  if (marked.isEmpty) {
-    return DifficultFlagChange(deck: deck);
+  var removed = 0;
+  final List<LearningUnit> units = <LearningUnit>[];
+  for (final LearningUnit unit in deck.units) {
+    var cleared = unit;
+    for (final QueryDirection direction in QueryDirection.values) {
+      final DifficultFlags flags = cleared.flagsFor(direction);
+      if (flags.manual) {
+        removed += 1;
+        cleared = cleared.withFlags(direction, flags.copyWith(manual: false));
+      }
+    }
+    units.add(cleared);
   }
-  return DifficultFlagChange(
-    deck: _updateUnitsAt(
-      deck,
-      marked,
-      (LearningUnit unit) => unit.copyWith(manualDifficult: false),
-    ),
-    removed: marked.length,
-  );
+  return _flagChange(deck, units, removed: removed);
 }
 
-/// For each unit of [deck], whether its lifetime record in [allTime]
-/// satisfies the rule in either direction.
+/// Sets each direction's automatic flag on each unit of [deck] to what
+/// [decide] makes of whether the rule detects that direction by its lifetime
+/// record in [allTime] and whether the flag is set already.
 ///
 /// Units are matched to records by the lifetime record's own identity rules
 /// ([realignAllTimeStatistics]).
-List<bool> _detectedSlots(
+DifficultFlagChange _setAutomaticFlags(
   LearningDeck deck,
   AllTimeStatistics allTime,
   DetectionThresholds thresholds,
+  bool Function(bool detected, bool flagged) decide,
 ) {
   final List<UnitStats> records = realignAllTimeStatistics(
     deck: deck,
     allTime: allTime,
   ).perUnit;
-  return <bool>[
-    for (final UnitStats record in records)
-      isDetectedDifficult(record.direction1, thresholds) ||
-          isDetectedDifficult(record.direction2, thresholds),
-  ];
+  var added = 0;
+  var removed = 0;
+  final List<LearningUnit> units = <LearningUnit>[];
+  for (var slot = 0; slot < deck.units.length; slot += 1) {
+    var unit = deck.units[slot];
+    for (final QueryDirection direction in QueryDirection.values) {
+      final DifficultFlags flags = unit.flagsFor(direction);
+      final bool automatic = decide(
+        isDetectedDifficult(records[slot].statsFor(direction), thresholds),
+        flags.automatic,
+      );
+      if (automatic != flags.automatic) {
+        if (automatic) {
+          added += 1;
+        } else {
+          removed += 1;
+        }
+        unit = unit.withFlags(direction, flags.copyWith(automatic: automatic));
+      }
+    }
+    units.add(unit);
+  }
+  return _flagChange(deck, units, added: added, removed: removed);
+}
+
+/// The change from [deck] to [deck] with [units], which set [added] flags and
+/// cleared [removed] — [deck] itself when neither is any.
+///
+/// Changing a flag is not an edit, so the deck keeps its last-edited date.
+DifficultFlagChange _flagChange(
+  LearningDeck deck,
+  List<LearningUnit> units, {
+  int added = 0,
+  int removed = 0,
+}) {
+  if (added == 0 && removed == 0) {
+    return DifficultFlagChange(deck: deck);
+  }
+  return DifficultFlagChange(
+    deck: deck.copyWith(units: List<LearningUnit>.unmodifiable(units)),
+    added: added,
+    removed: removed,
+  );
 }
 
 /// Applies [update] to the units at the one-based [unitIndices].

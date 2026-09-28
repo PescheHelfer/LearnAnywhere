@@ -58,7 +58,7 @@ to their German equivalents; see [Settings](11-settings.md#appearance-and-langua
 | `F8` | Insert unit before the current one |
 | `F10` | Done — keep changes |
 | `Esc` | Cancel — confirm discard if anything changed |
-| `F12` | Mark the unit difficult, or remove its difficulty |
+| `F12` | Mark the unit difficult in Direction 1, or remove its difficulty there |
 | `Enter` / `Tab` | Next field |
 | `Backspace` (on an empty field) | Previous field |
 
@@ -79,7 +79,7 @@ part of the pending edit and reaches the file only when you save. See
 | `F7` | Rating button 3 |
 | `F9` | Cycle answer view: Correction → Solution → Your answer |
 | `F10` | Reveal (in Level Learning at level 3: Hide & type, before Reveal) |
-| `F12` | Mark the unit difficult, or remove its difficulty — before and after the answer is shown |
+| `F12` | Mark the unit difficult in the direction being asked, or remove its difficulty there — before and after the answer is shown |
 | `Esc` | Cancel session, back to setup |
 | `Enter` / `Tab` | Next blank, in a multi-blank field |
 | `Backspace` (on an empty blank) | Previous blank |

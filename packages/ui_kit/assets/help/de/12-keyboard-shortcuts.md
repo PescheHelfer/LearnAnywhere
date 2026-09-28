@@ -61,7 +61,7 @@ Gegenstück; siehe [Einstellungen](11-settings.md#darstellung-und-sprache).
 | `F8` | Einheit vor der aktuellen einfügen |
 | `F10` | Fertig — Änderungen behalten |
 | `Esc` | Abbruch — bei Änderungen mit Rückfrage |
-| `F12` | Einheit als schwierig kennzeichnen oder ihre Schwierigkeit aufheben |
+| `F12` | Einheit in Abfragerichtung 1 als schwierig kennzeichnen oder ihre Schwierigkeit dort aufheben |
 | `Enter` / `Tab` | Nächstes Feld |
 | `Rücktaste` (bei leerem Feld) | Vorheriges Feld |
 
@@ -84,7 +84,7 @@ Speichern. Siehe
 | `F7` | Bewertungsschaltfläche 3 |
 | `F9` | Antwortansicht durchschalten: Korrektur → Lösung → Ihre Antwort |
 | `F10` | Anzeigen (beim Stufenlernen auf Stufe 3: Verdecken & tippen, vor dem Anzeigen) |
-| `F12` | Einheit als schwierig kennzeichnen oder ihre Schwierigkeit aufheben — vor und nach dem Anzeigen der Antwort |
+| `F12` | Einheit in der gefragten Abfragerichtung als schwierig kennzeichnen oder ihre Schwierigkeit dort aufheben — vor und nach dem Anzeigen der Antwort |
 | `Esc` | Sitzung abbrechen, zurück zur Einrichtung |
 | `Enter` / `Tab` | Nächste Lücke in einem mehrteiligen Feld |
 | `Rücktaste` (bei leerer Lücke) | Vorherige Lücke |

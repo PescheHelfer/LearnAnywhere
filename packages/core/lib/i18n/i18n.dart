@@ -1859,8 +1859,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnShuffleUnits: 'Shuffle units',
       LearnAnywhereMessage.learnDifficultOnly: 'Difficult units only',
       LearnAnywhereMessage.learnNoDifficultUnits:
-          'No unit in the selected range is marked as difficult, so there is '
-          'nothing to ask.',
+          'No unit in the selected range is difficult in the chosen '
+          'direction, so there is nothing to ask.',
       LearnAnywhereMessage.learnMasteryThreshold: 'Mastery threshold (%)',
       LearnAnywhereMessage.learnMasteryThresholdTooltip:
           'A unit is considered mastered once its correct-answer rate reaches '
@@ -2600,8 +2600,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnShuffleUnits: 'Einheiten mischen',
       LearnAnywhereMessage.learnDifficultOnly: 'Nur schwierige Einheiten',
       LearnAnywhereMessage.learnNoDifficultUnits:
-          'Keine Einheit im gewählten Bereich ist als schwierig '
-          'gekennzeichnet, es gibt also nichts abzufragen.',
+          'Keine Einheit im gewählten Bereich ist in der gewählten '
+          'Abfragerichtung schwierig, es gibt also nichts abzufragen.',
       LearnAnywhereMessage.learnMasteryThreshold: 'Beherrschungsschwelle (%)',
       LearnAnywhereMessage.learnMasteryThresholdTooltip:
           'Eine Lerneinheit gilt als gemeistert, sobald ihre Trefferquote '

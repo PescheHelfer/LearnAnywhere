@@ -82,7 +82,7 @@ void main() {
                 onOpenEditor: () {},
                 onExit: () {},
                 // Offered, so the Difficult pill is laid out too.
-                onToggleDifficult: (int _) {},
+                onToggleDifficult: (SessionItem _) {},
               );
             },
           ),
@@ -103,7 +103,7 @@ void main() {
                 onChanged: (LearningDeck _, {int? insertedAt, int? deletedAt}) {},
                 onDone: () {},
                 onCancel: () {},
-                onToggleDifficult: (int _) {},
+                onToggleDifficult: (int _, QueryDirection _) {},
               );
             },
           ),
@@ -256,7 +256,7 @@ void main() {
               onChanged: (LearningDeck _, {int? insertedAt, int? deletedAt}) {},
               onDone: () {},
               onCancel: () {},
-              onToggleDifficult: (int _) {},
+              onToggleDifficult: (int _, QueryDirection _) {},
             ),
           ),
         ),

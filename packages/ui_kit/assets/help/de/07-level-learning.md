@@ -42,8 +42,9 @@ den Versuchszähler dieser Stufe, sie schickt eine Einheit nie wieder nach oben.
 Einheit verlässt den Übungspool endgültig erst, wenn sie Stufe 0 beherrscht.
 
 Ist [Nur schwierige Einheiten](06-learning-sessions.md#nur-schwierige-einheiten-abfragen)
-eingeschaltet, enthält der Pool nur die schwierigen Einheiten im Bereich. Eine Einheit,
-die Stufe 0 beherrscht, scheidet trotzdem aus und behält ihre Kennzeichnung.
+eingeschaltet, enthält der Pool nur die schwierigen Einheiten im Bereich, jede nur in
+der Abfragerichtung, in der sie schwierig ist. Eine Einheit, die Stufe 0 beherrscht,
+scheidet trotzdem aus und behält ihre Kennzeichnung.
 
 Sie können das automatische Tempo jederzeit überschreiben mit **Mehr Hilfe** (hebt die
 aktuelle Einheit eine Stufe an) und **Weniger Hilfe** (senkt sie eine Stufe), jeweils

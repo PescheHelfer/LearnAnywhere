@@ -622,12 +622,10 @@ List<SessionItem> activeSuperQueryPool({
     index <= end && index <= deck.units.length;
     index += 1
   ) {
-    if (!_unitInPool(deck, parameters, index)) {
-      continue;
-    }
     final UnitStats unitStats = statsByIndex[index] ?? UnitStats(index: index);
     for (final QueryDirection direction in directions) {
-      if (!isMastered(unitStats.statsFor(direction), parameters)) {
+      if (_questionInPool(deck, parameters, index, direction) &&
+          !isMastered(unitStats.statsFor(direction), parameters)) {
         items.add(SessionItem(unitIndex: index, direction: direction));
       }
     }
@@ -1239,12 +1237,12 @@ List<SessionItem> activeLevelLearningPool({
     index <= end && index <= deck.units.length;
     index += 1
   ) {
-    if (!_unitInPool(deck, parameters, index)) {
-      continue;
-    }
     final LevelUnitStats? levelStats = levelByIndex[index];
     final UnitStats unitStats = statsByIndex[index] ?? UnitStats(index: index);
     for (final QueryDirection direction in directions) {
+      if (!_questionInPool(deck, parameters, index, direction)) {
+        continue;
+      }
       final LevelDirectionStats dirStats = levelStats != null
           ? levelStats.statsFor(direction)
           : seedLevelLearningStats(
@@ -1425,8 +1423,9 @@ List<LevelUnitStats> levelStatsAfterDelete(
 /// matches the plain text of the named (non-hidden) fields of the unit's own
 /// category, under [options].
 ///
-/// [difficultOnly] keeps only units carrying either difficulty flag. The flags
-/// live in the deck, so this needs no statistics.
+/// [difficultOnly] keeps only units difficult in either direction: a search
+/// has no direction in view. The flags live in the deck, so this needs no
+/// statistics.
 ///
 /// Stops after [maxResults] hits and reports that in [SearchOutcome.isTruncated].
 SearchOutcome searchDeck({
@@ -1447,7 +1446,7 @@ SearchOutcome searchDeck({
     if (categoryId != null && unit.categoryId != categoryId) {
       continue;
     }
-    if (difficultOnly && !unit.isDifficult) {
+    if (difficultOnly && !unit.isDifficultInEither) {
       continue;
     }
     var matchedFields = const <String>[];
@@ -1674,24 +1673,32 @@ List<SessionItem> _allItemsInScope(
     index <= end && index <= deck.units.length;
     index += 1
   ) {
-    if (!_unitInPool(deck, parameters, index)) {
-      continue;
-    }
     for (final QueryDirection direction in directions) {
-      items.add(SessionItem(unitIndex: index, direction: direction));
+      if (_questionInPool(deck, parameters, index, direction)) {
+        items.add(SessionItem(unitIndex: index, direction: direction));
+      }
     }
   }
   return items;
 }
 
 /// Whether the unit at the one-based [index], already within the unit range's
-/// upper bound, belongs to the pool every mode builds for [parameters].
+/// upper bound, is asked in [direction] by the pool every mode builds for
+/// [parameters].
 ///
 /// The one place **Difficult units only** narrows a pool, so the drill,
-/// Level-Learning and ordered pools cannot disagree about it.
-bool _unitInPool(LearningDeck deck, SessionParameters parameters, int index) {
+/// Level-Learning and ordered pools cannot disagree about it. It narrows per
+/// question: a unit is asked in a direction only if it is difficult in that
+/// direction, so a **Both** session does not drill the easy way round.
+bool _questionInPool(
+  LearningDeck deck,
+  SessionParameters parameters,
+  int index,
+  QueryDirection direction,
+) {
   return index >= 1 &&
-      (!parameters.difficultOnly || deck.units[index - 1].isDifficult);
+      (!parameters.difficultOnly ||
+          deck.units[index - 1].isDifficultIn(direction));
 }
 
 Map<int, UnitStats> _statsByIndex(List<UnitStats> statistics) {

@@ -462,15 +462,26 @@ LearningUnit _decodeUnit(
   }
   // The difficulty flags are ADDITIVE at the current format version and read
   // tolerantly, like the speech keys: anything but `true` means unflagged.
-  final Object? rawManual = json['manualDifficult'];
-  final Object? rawAuto = json['autoDifficult'];
+  // The development builds' direction-less keys are Direction 1's (ADR-0005
+  // amendment): the only direction ever practised when they were written.
   return LearningUnit(
     categoryId: categoryId,
     fields: Map<int, FieldValue>.unmodifiable(fields),
-    manualDifficult: rawManual is bool && rawManual,
-    autoDifficult: rawAuto is bool && rawAuto,
+    direction1Flags: DifficultFlags(
+      manual: _isTrue(json['manualDifficult1']) ||
+          _isTrue(json['manualDifficult']),
+      automatic: _isTrue(json['autoDifficult1']) ||
+          _isTrue(json['autoDifficult']),
+    ),
+    direction2Flags: DifficultFlags(
+      manual: _isTrue(json['manualDifficult2']),
+      automatic: _isTrue(json['autoDifficult2']),
+    ),
   );
 }
+
+/// Whether a tolerantly read flag [value] is set: only `true` is.
+bool _isTrue(Object? value) => value is bool && value;
 
 bool _hasMaskId(Object? maskValue) {
   if (maskValue is! Map) {
@@ -486,8 +497,10 @@ Map<String, Object?> _encodeUnit(LearningUnit unit) {
     // Written only when set, so an unflagged deck stays byte-identical to
     // what builds predating the flags produce. Before `fields`, so a reader
     // sees them without scrolling past a long unit.
-    if (unit.manualDifficult) 'manualDifficult': true,
-    if (unit.autoDifficult) 'autoDifficult': true,
+    if (unit.direction1Flags.manual) 'manualDifficult1': true,
+    if (unit.direction2Flags.manual) 'manualDifficult2': true,
+    if (unit.direction1Flags.automatic) 'autoDifficult1': true,
+    if (unit.direction2Flags.automatic) 'autoDifficult2': true,
     'fields': <String, Object?>{
       for (final MapEntry<int, FieldValue> entry in unit.fields.entries)
         entry.key.toString(): _encodeFieldValue(entry.value),

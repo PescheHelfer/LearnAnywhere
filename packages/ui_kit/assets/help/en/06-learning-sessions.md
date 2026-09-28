@@ -12,7 +12,7 @@ setup** screen (**Learn ▸ Practice setup**, `Alt+L` then `P`).
 | **Mode** | **Level learning**, **Drill mode**, **Endless mode** or **Once through** — see below |
 | **Entry level** | Level Learning only — caps how much support a newly seeded unit may start with; see [Level learning](07-level-learning.md) |
 | **Shuffle units** | Ask in random order instead of deck order |
-| **Difficult units only** | Ask only the units marked difficult, in every mode — see [Asking difficult units only](#asking-difficult-units-only) |
+| **Difficult units only** | Ask only the units that are difficult, each only in the direction it is difficult in, in every mode — see [Asking difficult units only](#asking-difficult-units-only) |
 | **Mastery threshold (%)** | Drill mode only — a unit counts as mastered once its correct rate reaches this |
 | **Require typed answers** | Off, cards wait for you to judge yourself instead of typing; hidden for Level learning, which always requires typing |
 | **Start unit** / **End unit** | Restrict the session to a range of the deck; clearing either field expands it to the first/last unit. **Use all units ({count})** resets both at once |
@@ -105,17 +105,23 @@ When a unit gives you trouble, say so the moment you feel it: press `F12`, or cl
 answering and after the answer is shown, and it never rates, reveals or moves on — the
 card stays exactly where it was.
 
-A difficult unit shows a badge on its header line. The badge also says who flagged it:
+A unit is difficult **in a direction**: a word can be hard to produce and easy to
+recognise. `F12` and the button always act on the direction you are being asked right
+now, and leave the other direction exactly as it was.
+
+A unit that is difficult in the direction being asked shows a badge on its header line.
+It says nothing about the other direction. The badge also says who flagged it:
 
 - **Difficult (manual flag)** — you marked it.
 - **Difficult (automatic flag)** — the program found it hard from the unit's all-time
   statistics (see [Difficult units found automatically](#difficult-units-found-automatically)).
 - **Difficult (manual and automatic flag)** — both.
 
-The **Difficult** button is filled while the unit is difficult. Pressing `F12` (or the
-button) on a difficult unit removes its difficulty altogether — the automatic flag as
-well as your own — because "not difficult" means not difficult. On a unit that is not
-difficult it sets your manual flag.
+The **Difficult** button is filled while the unit is difficult in the direction being
+asked. Pressing `F12` (or the button) there removes its difficulty in that direction
+altogether — the automatic flag as well as your own — because "not difficult" means not
+difficult. Where the unit is not difficult in that direction, it sets your manual flag
+for it.
 
 The flag belongs to the unit and is stored in the deck file, so clearing either kind of
 statistics does not remove it. It is written to the file **at once**, not at the next
@@ -148,7 +154,8 @@ defaults: you can change all three numbers, or switch the check off, under
 - It judges each unit by its own **all-time statistics** alone, never by how the rest of
   the deck is going, so clearing the current statistics does not blind it, and a deck
   you have never practised gains no flags.
-- Each direction is judged on its own; a unit that is hard either way is flagged.
+- Each direction is judged on its own statistics, and the automatic flag is set only in
+  the direction that meets the rule; a unit hard both ways gets it in both.
 - Level Learning answers count only when given at level 0, free recall; answers with
   support on the lower levels do not.
 - It only ever adds flags. A unit you have since learned keeps its automatic flag until
@@ -163,10 +170,12 @@ defaults: you can change all three numbers, or switch the check off, under
 ## Asking difficult units only
 
 Switch on **Difficult units only** on the setup screen to be asked just the units that
-are difficult — those with either flag, yours or the program's. It works in every mode:
-it narrows whatever the mode would ask, within the unit range. The flags outlive the
-statistics, so you can clear the statistics for a fresh run and then drill only the
-words that gave you trouble, in the same deck.
+are difficult — those with either flag, yours or the program's. Each unit is asked only
+in the direction it is difficult in: with **Both** directions, a unit that is difficult
+only one way is never asked the easy way round. It works in every mode: it narrows
+whatever the mode would ask, within the unit range. The flags outlive the statistics, so
+you can clear the statistics for a fresh run and then drill only the words that gave you
+trouble, in the same deck.
 
 - Mastering a unit takes it out of the session as usual, but does not take its flag
   away. When you are sure you know it, unmark it with `F12`.
@@ -174,8 +183,9 @@ words that gave you trouble, in the same deck.
   last one ends the session.
 - **Attempts**, **Mastered**, **Remaining** and **Accuracy** still describe the whole
   deck, just as they do when you restrict the unit range.
-- If no unit in the range is difficult, the setup says so and **Start session** stays
-  unavailable until you switch the option off, widen the range or mark a unit.
+- If no unit in the range is difficult in the chosen direction, the setup says so and
+  **Start session** stays unavailable until you switch the option off, widen the range,
+  choose another direction or mark a unit.
 - The option is remembered with the other setup choices.
 
 ## Finishing

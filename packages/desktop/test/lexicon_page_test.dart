@@ -107,7 +107,9 @@ void main() {
     final LearningDeck base = sampleDeck();
     final LearningDeck deck = base.copyWith(
       units: <LearningUnit>[
-        base.units[0].copyWith(manualDifficult: true),
+        base.units[0].copyWith(
+          direction2Flags: const DifficultFlags(manual: true),
+        ),
         base.units[1],
       ],
     );

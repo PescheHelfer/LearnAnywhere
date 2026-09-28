@@ -13,7 +13,7 @@ dann `E`).
 | **Modus** | **Stufenlernen**, **Drill-Modus**, **Endlos-Modus** oder **Einmal durchgehen** — siehe unten |
 | **Einstiegsstufe** | Nur Stufenlernen — begrenzt, mit wie viel Unterstützung eine neu eingestufte Einheit starten darf; siehe [Stufenlernen](07-level-learning.md) |
 | **Einheiten mischen** | In zufälliger statt in Dateireihenfolge fragen |
-| **Nur schwierige Einheiten** | Nur die als schwierig gekennzeichneten Einheiten fragen, in jedem Modus — siehe [Nur schwierige Einheiten abfragen](#nur-schwierige-einheiten-abfragen) |
+| **Nur schwierige Einheiten** | Nur die schwierigen Einheiten fragen, jede nur in der Abfragerichtung, in der sie schwierig ist, in jedem Modus — siehe [Nur schwierige Einheiten abfragen](#nur-schwierige-einheiten-abfragen) |
 | **Beherrschungsschwelle (%)** | Nur Drill-Modus — eine Einheit gilt als gemeistert, sobald ihre Trefferquote diesen Wert erreicht |
 | **Mit Eingabe der Antwort** | Ausgeschaltet warten Karten darauf, dass Sie sich selbst bewerten, statt zu tippen; beim Stufenlernen ausgeblendet, da dort immer getippt wird |
 | **Erste Einheit** / **Letzte Einheit** | Begrenzt die Sitzung auf einen Bereich der Lern-Datei; ein geleertes Feld erweitert ihn bis zur ersten bzw. letzten Einheit. **Alle Einheiten verwenden ({count})** setzt beide auf einmal zurück |
@@ -113,8 +113,13 @@ Schaltflächen der Sitzung. Das geht beim Antworten ebenso wie nach dem Anzeigen
 Antwort, und es bewertet nichts, deckt nichts auf und geht nicht weiter — die Karte
 bleibt genau, wo sie war.
 
-Eine schwierige Einheit zeigt in ihrer Kopfzeile ein Abzeichen. Es sagt auch, wer sie
-gekennzeichnet hat:
+Eine Einheit ist **in einer Abfragerichtung** schwierig: Ein Wort kann schwer
+hervorzubringen und leicht zu erkennen sein. `F12` und die Schaltfläche wirken immer auf
+die Richtung, in der Sie gerade gefragt werden, und lassen die andere Richtung genau, wie
+sie war.
+
+Ist die Einheit in der gefragten Richtung schwierig, zeigt ihre Kopfzeile ein Abzeichen.
+Über die andere Richtung sagt es nichts. Es sagt auch, wer sie gekennzeichnet hat:
 
 - **Schwierig (manuelle Kennzeichnung)** — Sie selbst.
 - **Schwierig (automatische Kennzeichnung)** — das Programm, anhand der
@@ -122,11 +127,11 @@ gekennzeichnet hat:
   [Automatisch gefundene schwierige Einheiten](#automatisch-gefundene-schwierige-einheiten)).
 - **Schwierig (manuelle und automatische Kennzeichnung)** — beide.
 
-Die Schaltfläche **Schwierig** ist gefüllt, solange die Einheit schwierig ist. `F12`
-(oder die Schaltfläche) auf einer schwierigen Einheit hebt ihre Schwierigkeit ganz auf —
-die automatische Kennzeichnung ebenso wie Ihre eigene —, denn „nicht schwierig“ heißt
-nicht schwierig. Auf einer nicht schwierigen Einheit setzt es Ihre manuelle
-Kennzeichnung.
+Die Schaltfläche **Schwierig** ist gefüllt, solange die Einheit in der gefragten
+Richtung schwierig ist. `F12` (oder die Schaltfläche) hebt ihre Schwierigkeit dann in
+dieser Richtung ganz auf — die automatische Kennzeichnung ebenso wie Ihre eigene —, denn
+„nicht schwierig“ heißt nicht schwierig. Ist die Einheit in dieser Richtung nicht
+schwierig, setzt es dort Ihre manuelle Kennzeichnung.
 
 Die Kennzeichnung gehört zur Einheit und steht in der Lern-Datei; das Löschen einer der
 beiden Statistiken entfernt sie also nicht. Sie wird **sofort** in die Datei
@@ -164,8 +169,9 @@ unter [Statistik-Optionen](11-settings.md#statistik-optionen).
   wie es im Rest der Lern-Datei läuft. Das Löschen der aktuellen Statistik macht die
   Suche also nicht blind, und eine Lern-Datei, die Sie nie geübt haben, erhält keine
   Kennzeichnungen.
-- Jede Abfragerichtung wird für sich beurteilt; eine Einheit, die in einer der beiden
-  Richtungen schwierig ist, wird gekennzeichnet.
+- Jede Abfragerichtung wird nach ihrer eigenen Statistik beurteilt, und die
+  automatische Kennzeichnung wird nur in der Richtung gesetzt, die die Regel erfüllt;
+  eine Einheit, die in beiden Richtungen schwierig ist, erhält sie in beiden.
 - Antworten im Stufenlernen zählen nur, wenn sie auf Stufe 0 gegeben wurden, ganz ohne
   Hilfe; Antworten mit Unterstützung auf den anderen Stufen zählen nicht.
 - Es kommen nur Kennzeichnungen hinzu. Eine Einheit, die Sie inzwischen können, behält
@@ -183,10 +189,13 @@ unter [Statistik-Optionen](11-settings.md#statistik-optionen).
 
 Schalten Sie auf dem Einrichtungsbildschirm **Nur schwierige Einheiten** ein, um nur die
 schwierigen Einheiten gefragt zu werden — jene mit einer der beiden Kennzeichnungen,
-Ihrer eigenen oder der des Programms. Das wirkt in jedem Modus: Es schränkt ein, was der
-Modus fragen würde, innerhalb des Einheitenbereichs. Die Kennzeichnungen überdauern die
-Statistik; Sie können also die Statistik für einen frischen Durchgang löschen und dann in
-derselben Lern-Datei nur die Wörter üben, die Ihnen Mühe gemacht haben.
+Ihrer eigenen oder der des Programms. Jede Einheit wird nur in der Abfragerichtung
+gefragt, in der sie schwierig ist: Bei **Beide** wird eine Einheit, die nur in einer
+Richtung schwierig ist, nie in der leichten Richtung gefragt. Das wirkt in jedem Modus:
+Es schränkt ein, was der Modus fragen würde, innerhalb des Einheitenbereichs. Die
+Kennzeichnungen überdauern die Statistik; Sie können also die Statistik für einen
+frischen Durchgang löschen und dann in derselben Lern-Datei nur die Wörter üben, die
+Ihnen Mühe gemacht haben.
 
 - Eine gemeisterte Einheit scheidet wie gewohnt aus der Sitzung aus, behält aber ihre
   Kennzeichnung. Wenn Sie sicher sind, dass Sie sie können, entfernen Sie sie mit `F12`.
@@ -194,9 +203,10 @@ derselben Lern-Datei nur die Wörter üben, die Ihnen Mühe gemacht haben.
   nicht mehr gefragt, und entfernen Sie die letzte, endet die Sitzung.
 - **Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben weiterhin die ganze
   Lern-Datei, genau wie bei einem eingeschränkten Einheitenbereich.
-- Ist keine Einheit im Bereich schwierig, sagt die Einrichtung das, und **Sitzung
-  starten** bleibt gesperrt, bis Sie die Option ausschalten, den Bereich erweitern oder
-  eine Einheit kennzeichnen.
+- Ist keine Einheit im Bereich in der gewählten Abfragerichtung schwierig, sagt die
+  Einrichtung das, und **Sitzung starten** bleibt gesperrt, bis Sie die Option
+  ausschalten, den Bereich erweitern, eine andere Richtung wählen oder eine Einheit
+  kennzeichnen.
 - Die Option wird wie die übrigen Einstellungen der Einrichtung gespeichert.
 
 ## Abschluss

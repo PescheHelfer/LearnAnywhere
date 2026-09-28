@@ -109,18 +109,31 @@ its units were edited.
 time among the deck's statistics files (the plain sidecar, the timestamped
 session files, the all-time file), worked out when needed.
 
-A unit may additionally carry, right after its `categoryId`, one or both
-**difficulty flags** (ADR-0005):
+A unit may additionally carry, right after its `categoryId`, up to four
+**difficulty flags** — two kinds, each per query direction (ADR-0005 and its
+per-direction amendment):
 
-- **`manualDifficult`** — `true` when the learner marked the unit difficult
-  (F12 or the **Difficult** pill in a learning session).
-- **`autoDifficult`** — `true` when the program detected the unit as difficult
-  from its lifetime record.
+- **`manualDifficult1`** / **`manualDifficult2`** — `true` when the learner
+  marked the unit difficult in direction 1 / 2 (F12 or the **Difficult** pill in
+  a learning session asking that direction).
+- **`autoDifficult1`** / **`autoDifficult2`** — `true` when the program
+  detected the unit as difficult in direction 1 / 2 from that direction's
+  lifetime record.
 
-A unit carrying either is **difficult**. Each is written **only when `true`**
+A unit is **difficult in a direction** when it carries either flag of that
+direction; where no single direction is in view (the Lexicon, the statistics
+unit list's Combined view), it counts as difficult when either direction is. Each key is written **only when `true`**
 and omitted otherwise (never `false`), so an unflagged deck stays byte-identical
-to what earlier builds produce; both are **additive at version `1`**. A value
-that is not the boolean `true` reads as unflagged rather than failing the load.
+to what earlier builds produce; all four are **additive at version `1`**, and
+are written in the order listed above. A value that is not the boolean `true`
+reads as unflagged rather than failing the load.
+
+Decks flagged by development builds carry the direction-less keys
+**`manualDifficult`** / **`autoDifficult`** instead. They are read as
+**direction 1**'s flags — the only direction ever practised when they were
+written — and never written again, so the next save of such a deck turns them
+into `manualDifficult1` / `autoDifficult1`. A unit carrying both an old and a
+new key for direction 1 is flagged if either says so.
 The flags are not unit content: they never enter the per-unit identity `hash`
 in the `.sta` (so marking a unit never resets its statistics), and a write that
 changes only flags does not move `lastEdited`. Propagating a mask keeps them.

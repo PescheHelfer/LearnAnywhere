@@ -39,23 +39,35 @@ void main() {
     ],
   );
 
-  LearningUnit unit({bool manual = false, bool automatic = false}) {
+  // The four states one direction can be in.
+  const DifficultFlags noFlag = DifficultFlags.none;
+  const DifficultFlags manualFlag = DifficultFlags(manual: true);
+  const DifficultFlags autoFlag = DifficultFlags(automatic: true);
+  const DifficultFlags bothFlags = DifficultFlags(
+    manual: true,
+    automatic: true,
+  );
+
+  LearningUnit unit({
+    DifficultFlags d1 = DifficultFlags.none,
+    DifficultFlags d2 = DifficultFlags.none,
+  }) {
     return LearningUnit(
       categoryId: 0,
       fields: const <int, FieldValue>{
         0: FieldValue.plain('house'),
         1: FieldValue.plain('Haus'),
       },
-      manualDifficult: manual,
-      autoDifficult: automatic,
+      direction1Flags: d1,
+      direction2Flags: d2,
     );
   }
 
   LearningUnit word(
     String question,
     String answer, {
-    bool manual = false,
-    bool automatic = false,
+    DifficultFlags d1 = DifficultFlags.none,
+    DifficultFlags d2 = DifficultFlags.none,
   }) {
     return LearningUnit(
       categoryId: 0,
@@ -63,8 +75,8 @@ void main() {
         0: FieldValue.plain(question),
         1: FieldValue.plain(answer),
       },
-      manualDifficult: manual,
-      autoDifficult: automatic,
+      direction1Flags: d1,
+      direction2Flags: d2,
     );
   }
 
@@ -87,141 +99,280 @@ void main() {
     );
   }
 
-  /// Each unit's `(manual, automatic)` flags, in deck order.
-  List<(bool, bool)> flags(LearningDeck deck) => <(bool, bool)>[
-    for (final LearningUnit unit in deck.units)
-      (unit.manualDifficult, unit.autoDifficult),
-  ];
+  /// Each unit's `(Direction 1, Direction 2)` flags, in deck order.
+  List<(DifficultFlags, DifficultFlags)> flags(LearningDeck deck) =>
+      <(DifficultFlags, DifficultFlags)>[
+        for (final LearningUnit unit in deck.units)
+          (unit.direction1Flags, unit.direction2Flags),
+      ];
+
+  /// The direction that is not [direction].
+  QueryDirection other(QueryDirection direction) =>
+      direction == QueryDirection.direction1
+      ? QueryDirection.direction2
+      : QueryDirection.direction1;
+
+  group('flags on a unit', () {
+    test('an unflagged unit is difficult in neither direction', () {
+      final LearningUnit plain = unit();
+      expect(plain.direction1Flags, noFlag);
+      expect(plain.direction2Flags, noFlag);
+      expect(plain.isDifficultIn(QueryDirection.direction1), isFalse);
+      expect(plain.isDifficultIn(QueryDirection.direction2), isFalse);
+      expect(plain.isDifficultInEither, isFalse);
+    });
+
+    test('a flag in one direction makes the unit difficult in that direction '
+        'only, and in either', () {
+      for (final DifficultFlags set in <DifficultFlags>[
+        manualFlag,
+        autoFlag,
+        bothFlags,
+      ]) {
+        final LearningUnit oneWay = unit(d2: set);
+        expect(oneWay.flagsFor(QueryDirection.direction2), set);
+        expect(oneWay.flagsFor(QueryDirection.direction1), noFlag);
+        expect(oneWay.isDifficultIn(QueryDirection.direction2), isTrue);
+        expect(oneWay.isDifficultIn(QueryDirection.direction1), isFalse);
+        expect(oneWay.isDifficultInEither, isTrue);
+      }
+    });
+
+    test('flagsInEither merges the two directions flag by flag', () {
+      expect(unit().flagsInEither, noFlag);
+      expect(unit(d2: manualFlag).flagsInEither, manualFlag);
+      expect(unit(d1: manualFlag, d2: autoFlag).flagsInEither, bothFlags);
+      expect(unit(d1: autoFlag, d2: autoFlag).flagsInEither, autoFlag);
+    });
+
+    test('withFlags replaces one direction and keeps the other and the '
+        'content', () {
+      final LearningUnit before = unit(d1: manualFlag, d2: autoFlag);
+      final LearningUnit after = before.withFlags(
+        QueryDirection.direction2,
+        bothFlags,
+      );
+      expect(after.direction1Flags, manualFlag);
+      expect(after.direction2Flags, bothFlags);
+      expect(after.fields, same(before.fields));
+      expect(after.categoryId, before.categoryId);
+    });
+
+    test('copyWith keeps both directions unless told otherwise', () {
+      final LearningUnit before = unit(d1: manualFlag, d2: autoFlag);
+      final LearningUnit edited = before.copyWith(
+        fields: const <int, FieldValue>{0: FieldValue.plain('home')},
+      );
+      expect(edited.direction1Flags, manualFlag);
+      expect(edited.direction2Flags, autoFlag);
+    });
+  });
 
   group('.vok difficulty flags', () {
     test('a deck without them decodes to unflagged units and re-encodes '
         'byte-for-byte', () {
       final LearningDeck deck = decodeDeckJson(exampleVok());
       for (final LearningUnit unit in deck.units) {
-        expect(unit.manualDifficult, isFalse);
-        expect(unit.autoDifficult, isFalse);
-        expect(unit.isDifficult, isFalse);
+        expect(unit.direction1Flags, noFlag);
+        expect(unit.direction2Flags, noFlag);
       }
       expect(encodeDeckJson(deck), exampleVok());
       expect(encodeDeckJson(deck), isNot(contains('Difficult')));
     });
 
-    test('each flag round-trips, and only a true flag is written', () {
+    test('each of the four keys round-trips, and only a true flag is '
+        'written', () {
       final LearningDeck deck = LearningDeck(
         mask: mask,
         units: <LearningUnit>[
           unit(),
-          unit(manual: true),
-          unit(automatic: true),
-          unit(manual: true, automatic: true),
+          unit(d1: manualFlag),
+          unit(d2: manualFlag),
+          unit(d1: autoFlag),
+          unit(d2: autoFlag),
+          unit(d1: bothFlags, d2: bothFlags),
+          unit(d1: manualFlag, d2: autoFlag),
         ],
       );
       final String json = encodeDeckJson(deck);
-      expect('"manualDifficult": true'.allMatches(json).length, 2);
-      expect('"autoDifficult": true'.allMatches(json).length, 2);
+      expect('"manualDifficult1": true'.allMatches(json).length, 3);
+      expect('"manualDifficult2": true'.allMatches(json).length, 2);
+      expect('"autoDifficult1": true'.allMatches(json).length, 2);
+      expect('"autoDifficult2": true'.allMatches(json).length, 3);
       expect(json, isNot(contains('false')));
+      // The development keys are never written.
+      expect(json, isNot(contains('"manualDifficult":')));
+      expect(json, isNot(contains('"autoDifficult":')));
 
       final LearningDeck decoded = decodeDeckJson(json);
-      expect(
-        <(bool, bool)>[
-          for (final LearningUnit unit in decoded.units)
-            (unit.manualDifficult, unit.autoDifficult),
-        ],
-        <(bool, bool)>[
-          (false, false),
-          (true, false),
-          (false, true),
-          (true, true),
-        ],
-      );
+      expect(flags(decoded), flags(deck));
       expect(encodeDeckJson(decoded), json);
+    });
+
+    test('the development keys are read as Direction 1 and written back as '
+        'its keys', () {
+      final String source = exampleVok().replaceFirst(
+        '"categoryId": ',
+        '"manualDifficult": true,\n'
+            '      "autoDifficult": true,\n'
+            '      "categoryId": ',
+      );
+      final LearningDeck deck = decodeDeckJson(source);
+      expect(deck.units.first.direction1Flags, bothFlags);
+      expect(deck.units.first.direction2Flags, noFlag);
+
+      final String json = encodeDeckJson(deck);
+      expect(json, contains('"manualDifficult1": true'));
+      expect(json, contains('"autoDifficult1": true'));
+      expect(json, isNot(contains('"manualDifficult":')));
+      expect(json, isNot(contains('"autoDifficult":')));
+    });
+
+    test('an old and a new key for Direction 1 flag it if either says so', () {
+      for (final String keys in <String>[
+        '"manualDifficult": true, "manualDifficult1": false,',
+        '"manualDifficult": false, "manualDifficult1": true,',
+      ]) {
+        final LearningDeck deck = decodeDeckJson(
+          exampleVok().replaceFirst('"categoryId": ', '$keys "categoryId": '),
+        );
+        expect(deck.units.first.direction1Flags, manualFlag, reason: keys);
+        expect(deck.units.first.direction2Flags, noFlag, reason: keys);
+      }
     });
 
     test('a value that is not a boolean reads as unflagged rather than '
         'failing the load', () {
-      for (final Object? value in <Object?>['true', 1, null, <Object?>[]]) {
-        final String source = exampleVok().replaceFirst(
-          '"categoryId": ',
-          '"manualDifficult": ${value is String ? '"$value"' : value},\n'
-              '      "categoryId": ',
-        );
-        final LearningDeck deck = decodeDeckJson(source);
-        expect(deck.units.first.manualDifficult, isFalse, reason: '$value');
+      for (final String key in <String>[
+        'manualDifficult1',
+        'manualDifficult2',
+        'autoDifficult1',
+        'autoDifficult2',
+        'manualDifficult',
+        'autoDifficult',
+      ]) {
+        for (final Object? value in <Object?>['true', 1, null, <Object?>[]]) {
+          final String source = exampleVok().replaceFirst(
+            '"categoryId": ',
+            '"$key": ${value is String ? '"$value"' : value},\n'
+                '      "categoryId": ',
+          );
+          final LearningUnit first = decodeDeckJson(source).units.first;
+          expect(first.isDifficultInEither, isFalse, reason: '$key: $value');
+        }
       }
     });
 
-    test('the identity hash is blind to both flags, so flagging never resets '
+    test('the identity hash is blind to every flag, so flagging never resets '
         'statistics', () {
       final String plain = unitIdentityHash(mask, unit());
-      expect(unitIdentityHash(mask, unit(manual: true)), plain);
-      expect(unitIdentityHash(mask, unit(automatic: true)), plain);
-      expect(unitIdentityHash(mask, unit(manual: true, automatic: true)), plain);
+      for (final DifficultFlags set in <DifficultFlags>[
+        manualFlag,
+        autoFlag,
+        bothFlags,
+      ]) {
+        expect(unitIdentityHash(mask, unit(d1: set)), plain);
+        expect(unitIdentityHash(mask, unit(d2: set)), plain);
+        expect(unitIdentityHash(mask, unit(d1: set, d2: set)), plain);
+      }
     });
 
-    test('applying a mask keeps both flags', () {
+    test('applying a mask keeps every flag in its direction', () {
       final LearningDeck deck = LearningDeck(
         mask: mask,
-        units: <LearningUnit>[unit(manual: true), unit(automatic: true)],
+        units: <LearningUnit>[
+          unit(d1: manualFlag, d2: autoFlag),
+          unit(d2: bothFlags),
+        ],
       );
       final LearningDeck propagated = applyMaskToDeck(
         deck,
         mask.copyWith(revision: mask.revision + 1),
       );
-      expect(propagated.units[0].manualDifficult, isTrue);
-      expect(propagated.units[1].autoDifficult, isTrue);
+      expect(flags(propagated), flags(deck));
     });
   });
 
   group('toggleDifficult', () {
-    test('an unflagged unit gains the manual flag', () {
-      final LearningUnit toggled = toggleDifficult(unit());
-      expect(toggled.manualDifficult, isTrue);
-      expect(toggled.autoDifficult, isFalse);
-    });
+    for (final QueryDirection direction in QueryDirection.values) {
+      group('in ${direction.name}', () {
+        // The other direction carries both flags throughout, so any change
+        // to it shows.
+        LearningUnit subject(DifficultFlags flags) =>
+            unit().withFlags(direction, flags).withFlags(
+              other(direction),
+              bothFlags,
+            );
 
-    test('a manually flagged unit loses its flag', () {
-      final LearningUnit toggled = toggleDifficult(unit(manual: true));
-      expect(toggled.isDifficult, isFalse);
-    });
+        test('an unflagged direction gains the manual flag', () {
+          final LearningUnit toggled = toggleDifficult(
+            subject(noFlag),
+            direction,
+          );
+          expect(toggled.flagsFor(direction), manualFlag);
+          expect(toggled.flagsFor(other(direction)), bothFlags);
+        });
 
-    test('an automatically flagged unit loses its flag: "not difficult" means '
-        'not difficult', () {
-      final LearningUnit toggled = toggleDifficult(unit(automatic: true));
-      expect(toggled.manualDifficult, isFalse);
-      expect(toggled.autoDifficult, isFalse);
-    });
+        test('a manual flag is removed', () {
+          final LearningUnit toggled = toggleDifficult(
+            subject(manualFlag),
+            direction,
+          );
+          expect(toggled.flagsFor(direction), noFlag);
+          expect(toggled.flagsFor(other(direction)), bothFlags);
+        });
 
-    test('a unit carrying both flags loses both', () {
-      final LearningUnit toggled = toggleDifficult(
-        unit(manual: true, automatic: true),
-      );
-      expect(toggled.manualDifficult, isFalse);
-      expect(toggled.autoDifficult, isFalse);
-    });
+        test('an automatic flag is removed: "not difficult" means not '
+            'difficult', () {
+          final LearningUnit toggled = toggleDifficult(
+            subject(autoFlag),
+            direction,
+          );
+          expect(toggled.flagsFor(direction), noFlag);
+          expect(toggled.flagsFor(other(direction)), bothFlags);
+        });
+
+        test('both flags are removed together', () {
+          final LearningUnit toggled = toggleDifficult(
+            subject(bothFlags),
+            direction,
+          );
+          expect(toggled.flagsFor(direction), noFlag);
+          expect(toggled.flagsFor(other(direction)), bothFlags);
+        });
+      });
+    }
 
     test('the unit content is untouched', () {
       final LearningUnit before = unit();
-      final LearningUnit toggled = toggleDifficult(before);
+      final LearningUnit toggled = toggleDifficult(
+        before,
+        QueryDirection.direction1,
+      );
       expect(toggled.categoryId, before.categoryId);
       expect(toggled.fields, same(before.fields));
     });
 
-    test('on a deck it changes only the unit at the one-based index and keeps '
-        'the last-edited date', () {
+    test('on a deck it changes only the unit at the one-based index, in the '
+        'given direction, and keeps the last-edited date', () {
       final LocalTimestamp edited = LocalTimestamp.tryParse(
         '2026-09-25T16:32:11+02:00',
       )!;
       final LearningDeck deck = LearningDeck(
         mask: mask,
-        units: <LearningUnit>[unit(), unit(), unit(automatic: true)],
+        units: <LearningUnit>[unit(), unit(), unit(d1: autoFlag)],
         lastEdited: edited,
       );
-      final LearningDeck toggled = toggleDifficultAt(deck, 2);
-      expect(
-        <bool>[for (final LearningUnit u in toggled.units) u.isDifficult],
-        <bool>[false, true, true],
+      final LearningDeck toggled = toggleDifficultAt(
+        deck,
+        2,
+        QueryDirection.direction2,
       );
-      expect(toggled.units[1].manualDifficult, isTrue);
+      expect(flags(toggled), <(DifficultFlags, DifficultFlags)>[
+        (noFlag, noFlag),
+        (noFlag, manualFlag),
+        (autoFlag, noFlag),
+      ]);
       expect(toggled.lastEdited, edited);
       expect(toggled.mask, same(deck.mask));
     });
@@ -235,65 +386,80 @@ void main() {
       mask: mask,
       units: <LearningUnit>[
         unit(),
-        unit(manual: true),
-        unit(automatic: true),
-        unit(manual: true, automatic: true),
-        unit(),
+        unit(d1: manualFlag),
+        unit(d1: autoFlag, d2: autoFlag),
+        unit(d1: bothFlags),
+        unit(d2: manualFlag),
       ],
       lastEdited: edited,
     );
 
-    test('mark sets the manual flag on each selected unit and keeps any '
-        'automatic one', () {
-      final LearningDeck marked = markDifficultAt(deck(), <int>{1, 2, 3, 4});
-      expect(flags(marked), <(bool, bool)>[
-        (true, false),
-        (true, false),
-        (true, true),
-        (true, true),
-        (false, false),
-      ]);
-    });
-
-    test('unmark clears both flags on each selected unit', () {
-      final LearningDeck unmarked = unmarkDifficultAt(
+    test('mark in one direction sets that manual flag on each selected unit, '
+        'keeping any automatic one and the other direction', () {
+      final LearningDeck marked = markDifficultAt(
         deck(),
         <int>{1, 2, 3, 4},
+        <QueryDirection>{QueryDirection.direction1},
       );
-      expect(flags(unmarked), <(bool, bool)>[
-        (false, false),
-        (false, false),
-        (false, false),
-        (false, false),
-        (false, false),
+      expect(flags(marked), <(DifficultFlags, DifficultFlags)>[
+        (manualFlag, noFlag),
+        (manualFlag, noFlag),
+        (bothFlags, autoFlag),
+        (bothFlags, noFlag),
+        (noFlag, manualFlag),
       ]);
     });
 
-    test('units outside the selection are untouched', () {
-      final LearningDeck marked = markDifficultAt(deck(), <int>{5});
-      expect(flags(marked), <(bool, bool)>[
-        (false, false),
-        (true, false),
-        (false, true),
-        (true, true),
-        (true, false),
+    test('mark in both directions sets both manual flags', () {
+      final LearningDeck marked = markDifficultAt(
+        deck(),
+        <int>{1, 3},
+        QueryDirection.values.toSet(),
+      );
+      expect(flags(marked), <(DifficultFlags, DifficultFlags)>[
+        (manualFlag, manualFlag),
+        (manualFlag, noFlag),
+        (bothFlags, bothFlags),
+        (bothFlags, noFlag),
+        (noFlag, manualFlag),
       ]);
-      final LearningDeck unmarked = unmarkDifficultAt(deck(), <int>{3});
-      expect(flags(unmarked), <(bool, bool)>[
-        (false, false),
-        (true, false),
-        (false, false),
-        (true, true),
-        (false, false),
+    });
+
+    test('unmark in one direction clears both of its flags and leaves the '
+        'other direction', () {
+      final LearningDeck unmarked = unmarkDifficultAt(
+        deck(),
+        <int>{2, 3, 4, 5},
+        <QueryDirection>{QueryDirection.direction1},
+      );
+      expect(flags(unmarked), <(DifficultFlags, DifficultFlags)>[
+        (noFlag, noFlag),
+        (noFlag, noFlag),
+        (noFlag, autoFlag),
+        (noFlag, noFlag),
+        (noFlag, manualFlag),
       ]);
+    });
+
+    test('unmark in both directions clears every flag', () {
+      final LearningDeck unmarked = unmarkDifficultAt(
+        deck(),
+        <int>{1, 2, 3, 4, 5},
+        QueryDirection.values.toSet(),
+      );
+      for (final (DifficultFlags, DifficultFlags) unitFlags in flags(
+        unmarked,
+      )) {
+        expect(unitFlags, (noFlag, noFlag));
+      }
     });
 
     test('neither is an edit: the deck keeps its last-edited date and its '
         'unit content', () {
       final LearningDeck before = deck();
       for (final LearningDeck after in <LearningDeck>[
-        markDifficultAt(before, <int>{1, 5}),
-        unmarkDifficultAt(before, <int>{2, 4}),
+        markDifficultAt(before, <int>{1, 5}, QueryDirection.values.toSet()),
+        unmarkDifficultAt(before, <int>{2, 4}, QueryDirection.values.toSet()),
       ]) {
         expect(after.lastEdited, edited);
         expect(after.mask, same(before.mask));
@@ -367,7 +533,8 @@ void main() {
   });
 
   group('adding detected flags', () {
-    test('flags each unit the rule holds for and reports how many', () {
+    test('flags each unit the rule holds for, in that direction, and reports '
+        'how many', () {
       final LearningUnit house = word('house', 'Haus');
       final LearningUnit tree = word('tree', 'Baum');
       final LearningUnit dog = word('dog', 'Hund');
@@ -381,26 +548,27 @@ void main() {
           perUnit: <UnitStats>[
             stats(1, house, direction1: hard),
             stats(2, tree, direction1: easy),
-            stats(3, dog, direction1: hard),
+            stats(3, dog, direction2: hard),
           ],
         ),
       );
       expect(change.added, 2);
       expect(change.changed, isTrue);
-      expect(flags(change.deck), <(bool, bool)>[
-        (false, true),
-        (false, false),
-        (false, true),
+      expect(flags(change.deck), <(DifficultFlags, DifficultFlags)>[
+        (autoFlag, noFlag),
+        (noFlag, noFlag),
+        (noFlag, autoFlag),
       ]);
     });
 
-    test('either direction qualifying is enough, but the two are never '
-        'summed', () {
+    test('each direction is judged on its own and never summed; a unit '
+        'qualifying both ways counts two flags', () {
       final LearningUnit house = word('house', 'Haus');
       final LearningUnit tree = word('tree', 'Baum');
+      final LearningUnit dog = word('dog', 'Hund');
       final LearningDeck deck = LearningDeck(
         mask: mask,
-        units: <LearningUnit>[house, tree],
+        units: <LearningUnit>[house, tree, dog],
       );
       // 1 wrong of 2 each way: 2 of 4 together would qualify, neither alone
       // does.
@@ -411,18 +579,24 @@ void main() {
           perUnit: <UnitStats>[
             stats(1, house, direction1: easy, direction2: hard),
             stats(2, tree, direction1: half, direction2: half),
+            stats(3, dog, direction1: hard, direction2: hard),
           ],
         ),
       );
-      expect(flags(change.deck), <(bool, bool)>[(false, true), (false, false)]);
+      expect(change.added, 3);
+      expect(flags(change.deck), <(DifficultFlags, DifficultFlags)>[
+        (noFlag, autoFlag),
+        (noFlag, noFlag),
+        (autoFlag, autoFlag),
+      ]);
     });
 
-    test('never clears a flag, and a unit already flagged automatically is '
-        'not counted again', () {
-      final LearningUnit stale = word('house', 'Haus', automatic: true);
-      final LearningUnit already = word('tree', 'Baum', automatic: true);
-      final LearningUnit mine = word('dog', 'Hund', manual: true);
-      final LearningUnit mineAndHard = word('cat', 'Katze', manual: true);
+    test('never clears a flag, and a direction already flagged '
+        'automatically is not counted again', () {
+      final LearningUnit stale = word('house', 'Haus', d1: autoFlag);
+      final LearningUnit already = word('tree', 'Baum', d2: autoFlag);
+      final LearningUnit mine = word('dog', 'Hund', d1: manualFlag);
+      final LearningUnit mineAndHard = word('cat', 'Katze', d1: manualFlag);
       final LearningDeck deck = LearningDeck(
         mask: mask,
         units: <LearningUnit>[stale, already, mine, mineAndHard],
@@ -432,18 +606,18 @@ void main() {
         AllTimeStatistics(
           perUnit: <UnitStats>[
             stats(1, stale, direction1: easy),
-            stats(2, already, direction1: hard),
+            stats(2, already, direction2: hard),
             stats(3, mine, direction1: easy),
             stats(4, mineAndHard, direction1: hard),
           ],
         ),
       );
       expect(change.added, 1);
-      expect(flags(change.deck), <(bool, bool)>[
-        (false, true),
-        (false, true),
-        (true, false),
-        (true, true),
+      expect(flags(change.deck), <(DifficultFlags, DifficultFlags)>[
+        (autoFlag, noFlag),
+        (noFlag, autoFlag),
+        (manualFlag, noFlag),
+        (bothFlags, noFlag),
       ]);
     });
 
@@ -505,7 +679,10 @@ void main() {
           ],
         ),
       );
-      expect(flags(change.deck), <(bool, bool)>[(false, false), (false, true)]);
+      expect(flags(change.deck), <(DifficultFlags, DifficultFlags)>[
+        (noFlag, noFlag),
+        (autoFlag, noFlag),
+      ]);
     });
 
     test('a unit with no matching record is not detected', () {
@@ -529,7 +706,7 @@ void main() {
         ),
       );
       expect(change.added, 0);
-      expect(flags(change.deck), <(bool, bool)>[(false, false), (false, false)]);
+      expect(change.deck, same(deck));
     });
 
     test('custom thresholds are honoured', () {
@@ -554,14 +731,16 @@ void main() {
 
   group('recomputing automatic flags', () {
     test('removes stale automatic flags, adds new ones, keeps those that '
-        'still hold, and counts both ways', () {
-      final LearningUnit stale = word('house', 'Haus', automatic: true);
-      final LearningUnit kept = word('tree', 'Baum', automatic: true);
+        'still hold, per direction, and counts flags both ways', () {
+      final LearningUnit stale = word('house', 'Haus', d1: autoFlag);
+      final LearningUnit kept = word('tree', 'Baum', d2: autoFlag);
       final LearningUnit fresh = word('dog', 'Hund');
       final LearningUnit plain = word('cat', 'Katze');
+      // Flagged the wrong way round: loses Direction 1, gains Direction 2.
+      final LearningUnit swapped = word('bird', 'Vogel', d1: autoFlag);
       final LearningDeck deck = LearningDeck(
         mask: mask,
-        units: <LearningUnit>[stale, kept, fresh, plain],
+        units: <LearningUnit>[stale, kept, fresh, plain, swapped],
       );
       final DifficultFlagChange change = recomputeDetectedDifficult(
         deck,
@@ -569,31 +748,28 @@ void main() {
           perUnit: <UnitStats>[
             stats(1, stale, direction1: easy),
             stats(2, kept, direction2: hard),
-            stats(3, fresh, direction1: hard),
+            stats(3, fresh, direction1: hard, direction2: hard),
             stats(4, plain, direction1: easy),
+            stats(5, swapped, direction1: easy, direction2: hard),
           ],
         ),
       );
-      expect(change.added, 1);
-      expect(change.removed, 1);
+      expect(change.added, 3);
+      expect(change.removed, 2);
       expect(change.changed, isTrue);
-      expect(flags(change.deck), <(bool, bool)>[
-        (false, false),
-        (false, true),
-        (false, true),
-        (false, false),
+      expect(flags(change.deck), <(DifficultFlags, DifficultFlags)>[
+        (noFlag, noFlag),
+        (noFlag, autoFlag),
+        (autoFlag, autoFlag),
+        (noFlag, noFlag),
+        (noFlag, autoFlag),
       ]);
     });
 
     test('never touches a manual flag, whatever the rule says', () {
-      final LearningUnit mineStale = word(
-        'house',
-        'Haus',
-        manual: true,
-        automatic: true,
-      );
-      final LearningUnit mineEasy = word('tree', 'Baum', manual: true);
-      final LearningUnit mineHard = word('dog', 'Hund', manual: true);
+      final LearningUnit mineStale = word('house', 'Haus', d1: bothFlags);
+      final LearningUnit mineEasy = word('tree', 'Baum', d2: manualFlag);
+      final LearningUnit mineHard = word('dog', 'Hund', d2: manualFlag);
       final LearningDeck deck = LearningDeck(
         mask: mask,
         units: <LearningUnit>[mineStale, mineEasy, mineHard],
@@ -603,28 +779,29 @@ void main() {
         AllTimeStatistics(
           perUnit: <UnitStats>[
             stats(1, mineStale, direction1: easy),
-            stats(2, mineEasy, direction1: easy),
-            stats(3, mineHard, direction1: hard),
+            stats(2, mineEasy, direction2: easy),
+            stats(3, mineHard, direction2: hard),
           ],
         ),
       );
       expect(change.added, 1);
       expect(change.removed, 1);
-      expect(flags(change.deck), <(bool, bool)>[
-        (true, false),
-        (true, false),
-        (true, true),
+      expect(flags(change.deck), <(DifficultFlags, DifficultFlags)>[
+        (manualFlag, noFlag),
+        (noFlag, manualFlag),
+        (noFlag, bothFlags),
       ]);
     });
 
-    test('a deck without statistics loses every automatic flag', () {
-      final LearningUnit house = word('house', 'Haus', automatic: true);
-      final LearningUnit tree = word(
-        'tree',
-        'Baum',
-        manual: true,
-        automatic: true,
+    test('a deck without statistics loses every automatic flag, counted per '
+        'direction', () {
+      final LearningUnit house = word(
+        'house',
+        'Haus',
+        d1: autoFlag,
+        d2: autoFlag,
       );
+      final LearningUnit tree = word('tree', 'Baum', d1: bothFlags);
       final LearningDeck deck = LearningDeck(
         mask: mask,
         units: <LearningUnit>[house, tree],
@@ -634,8 +811,11 @@ void main() {
         AllTimeStatistics.empty,
       );
       expect(change.added, 0);
-      expect(change.removed, 2);
-      expect(flags(change.deck), <(bool, bool)>[(false, false), (true, false)]);
+      expect(change.removed, 3);
+      expect(flags(change.deck), <(DifficultFlags, DifficultFlags)>[
+        (noFlag, noFlag),
+        (manualFlag, noFlag),
+      ]);
     });
 
     test('is not an edit, and nothing to change hands back the deck '
@@ -643,7 +823,7 @@ void main() {
       final LocalTimestamp edited = LocalTimestamp.tryParse(
         '2026-09-25T16:32:11+02:00',
       )!;
-      final LearningUnit house = word('house', 'Haus', automatic: true);
+      final LearningUnit house = word('house', 'Haus', d1: autoFlag);
       final LearningUnit tree = word('tree', 'Baum');
       final LearningDeck deck = LearningDeck(
         mask: mask,
@@ -672,7 +852,7 @@ void main() {
     });
 
     test('custom thresholds are honoured', () {
-      final LearningUnit house = word('house', 'Haus', automatic: true);
+      final LearningUnit house = word('house', 'Haus', d1: autoFlag);
       final LearningDeck deck = LearningDeck(
         mask: mask,
         units: <LearningUnit>[house],
@@ -685,30 +865,33 @@ void main() {
         thresholds: const DetectionThresholds(minWrong: 4),
       );
       expect(change.removed, 1);
-      expect(flags(change.deck), <(bool, bool)>[(false, false)]);
+      expect(flags(change.deck), <(DifficultFlags, DifficultFlags)>[
+        (noFlag, noFlag),
+      ]);
     });
   });
 
   group('clearing manual flags', () {
-    test('clears every manual flag, keeps automatic ones, and counts', () {
+    test('clears every manual flag in both directions, keeps automatic ones, '
+        'and counts flags', () {
       final LearningDeck deck = LearningDeck(
         mask: mask,
         units: <LearningUnit>[
-          unit(manual: true),
-          unit(manual: true, automatic: true),
-          unit(automatic: true),
+          unit(d1: manualFlag, d2: manualFlag),
+          unit(d1: bothFlags),
+          unit(d2: autoFlag),
           unit(),
         ],
       );
       final DifficultFlagChange change = clearManualDifficult(deck);
-      expect(change.removed, 2);
+      expect(change.removed, 3);
       expect(change.added, 0);
       expect(change.changed, isTrue);
-      expect(flags(change.deck), <(bool, bool)>[
-        (false, false),
-        (false, true),
-        (false, true),
-        (false, false),
+      expect(flags(change.deck), <(DifficultFlags, DifficultFlags)>[
+        (noFlag, noFlag),
+        (autoFlag, noFlag),
+        (noFlag, autoFlag),
+        (noFlag, noFlag),
       ]);
     });
 
@@ -719,14 +902,14 @@ void main() {
       )!;
       final LearningDeck flagged = LearningDeck(
         mask: mask,
-        units: <LearningUnit>[unit(manual: true)],
+        units: <LearningUnit>[unit(d2: manualFlag)],
         lastEdited: edited,
       );
       expect(clearManualDifficult(flagged).deck.lastEdited, edited);
 
       final LearningDeck clean = LearningDeck(
         mask: mask,
-        units: <LearningUnit>[unit(automatic: true), unit()],
+        units: <LearningUnit>[unit(d1: autoFlag, d2: autoFlag), unit()],
       );
       final DifficultFlagChange change = clearManualDifficult(clean);
       expect(change.removed, 0);
@@ -736,16 +919,17 @@ void main() {
   });
 
   group('difficult units only', () {
-    // Units 1, 3 and 4 are difficult, each by a different flag; 2 and 5 are
-    // not.
+    // Units 1, 3 and 4 are difficult in Direction 1, each by a different
+    // flag; unit 3 in Direction 2 too, and unit 5 only in Direction 2.
+    // Unit 2 is not difficult at all.
     final LearningDeck deck = LearningDeck(
       mask: mask,
       units: <LearningUnit>[
-        word('one', 'eins', manual: true),
+        word('one', 'eins', d1: manualFlag),
         word('two', 'zwei'),
-        word('three', 'drei', automatic: true),
-        word('four', 'vier', manual: true, automatic: true),
-        word('five', 'fünf'),
+        word('three', 'drei', d1: autoFlag, d2: manualFlag),
+        word('four', 'vier', d1: bothFlags),
+        word('five', 'fünf', d2: autoFlag),
       ],
     );
     final LearningDeck noneFlagged = LearningDeck(
@@ -753,9 +937,14 @@ void main() {
       units: <LearningUnit>[word('one', 'eins'), word('two', 'zwei')],
     );
 
-    SessionParameters only(SessionMode mode, {int? start, int? end}) {
+    SessionParameters only(
+      SessionMode mode, {
+      DirectionSelection directions = DirectionSelection.direction1,
+      int? start,
+      int? end,
+    }) {
       return SessionParameters(
-        directionSelection: DirectionSelection.direction1,
+        directionSelection: directions,
         mode: mode,
         startIndex: start,
         endIndex: end,
@@ -766,6 +955,12 @@ void main() {
     /// The unit indices of [items], in order.
     List<int> unitsOf(List<SessionItem> items) => <int>[
       for (final SessionItem item in items) item.unitIndex,
+    ];
+
+    /// [items] as "unit.direction" strings, in order.
+    List<String> questionsOf(List<SessionItem> items) => <String>[
+      for (final SessionItem item in items)
+        '${item.unitIndex}.${item.direction.index + 1}',
     ];
 
     test('is off by default, so every unit is in scope', () {
@@ -783,13 +978,22 @@ void main() {
       );
     });
 
-    test('narrows the practice and once-through order to units with either '
-        'flag, within the unit range', () {
+    test('narrows the practice and once-through order to units difficult in '
+        'the asked direction, within the unit range', () {
       for (final SessionMode mode in <SessionMode>[
         SessionMode.practice,
         SessionMode.onceThrough,
       ]) {
         expect(unitsOf(itemsInScope(deck, only(mode))), <int>[1, 3, 4]);
+        expect(
+          unitsOf(
+            itemsInScope(
+              deck,
+              only(mode, directions: DirectionSelection.direction2),
+            ),
+          ),
+          <int>[3, 5],
+        );
         expect(
           unitsOf(
             sessionItemOrder(
@@ -803,20 +1007,45 @@ void main() {
       }
     });
 
-    test('every unit a practice draw serves is difficult', () {
+    test('under Both each unit is asked only in the directions it is '
+        'difficult in', () {
+      for (final SessionMode mode in <SessionMode>[
+        SessionMode.practice,
+        SessionMode.onceThrough,
+      ]) {
+        expect(
+          questionsOf(
+            itemsInScope(
+              deck,
+              only(mode, directions: DirectionSelection.both),
+            ),
+          ),
+          <String>['1.1', '3.1', '3.2', '4.1', '5.2'],
+        );
+      }
+    });
+
+    test('every question a practice draw serves is difficult in its '
+        'direction', () {
       final Random random = Random(7);
       for (var draw = 0; draw < 50; draw += 1) {
         final SessionItem? item = pickPracticeItem(
           deck: deck,
-          parameters: only(SessionMode.practice),
+          parameters: only(
+            SessionMode.practice,
+            directions: DirectionSelection.both,
+          ),
           random: random,
         );
-        expect(<int>[1, 3, 4], contains(item!.unitIndex));
+        expect(
+          deck.units[item!.unitIndex - 1].isDifficultIn(item.direction),
+          isTrue,
+        );
       }
     });
 
-    test('narrows the drill pool, and mastery still removes a difficult unit '
-        'from it', () {
+    test('narrows the drill pool per question, and mastery still removes a '
+        'difficult unit from it', () {
       // Unit 1 is mastered in direction 1; unit 3 has tried and failed.
       final List<UnitStats> statistics = <UnitStats>[
         const UnitStats(
@@ -831,29 +1060,25 @@ void main() {
         parameters: only(SessionMode.superQuery),
       );
       expect(unitsOf(pool), <int>[3, 4]);
-      // Both directions: a difficult unit is asked both ways.
+      // Both directions: a unit difficult only in Direction 1 is not asked
+      // in Direction 2.
       expect(
-        activeSuperQueryPool(
-          deck: deck,
-          statistics: const <UnitStats>[],
-          parameters: const SessionParameters(
-            mode: SessionMode.superQuery,
-            difficultOnly: true,
+        questionsOf(
+          activeSuperQueryPool(
+            deck: deck,
+            statistics: const <UnitStats>[],
+            parameters: only(
+              SessionMode.superQuery,
+              directions: DirectionSelection.both,
+            ),
           ),
         ),
-        const <SessionItem>[
-          SessionItem(unitIndex: 1, direction: QueryDirection.direction1),
-          SessionItem(unitIndex: 1, direction: QueryDirection.direction2),
-          SessionItem(unitIndex: 3, direction: QueryDirection.direction1),
-          SessionItem(unitIndex: 3, direction: QueryDirection.direction2),
-          SessionItem(unitIndex: 4, direction: QueryDirection.direction1),
-          SessionItem(unitIndex: 4, direction: QueryDirection.direction2),
-        ],
+        <String>['1.1', '3.1', '3.2', '4.1', '5.2'],
       );
     });
 
-    test('narrows the Level Learning pool, and level-0 mastery still removes '
-        'a difficult unit from it', () {
+    test('narrows the Level Learning pool per question, and level-0 mastery '
+        'still removes a difficult unit from it', () {
       final List<LevelUnitStats> levelStatistics = <LevelUnitStats>[
         LevelUnitStats(
           index: 4,
@@ -873,18 +1098,45 @@ void main() {
         parameters: only(SessionMode.levelLearning),
       );
       expect(unitsOf(pool), <int>[1, 3]);
+      expect(
+        questionsOf(
+          activeLevelLearningPool(
+            deck: deck,
+            statistics: const <UnitStats>[],
+            levelStatistics: levelStatistics,
+            parameters: only(
+              SessionMode.levelLearning,
+              directions: DirectionSelection.both,
+            ),
+          ),
+        ),
+        <String>['1.1', '3.1', '3.2', '5.2'],
+      );
     });
 
-    test('a deck, or a unit range, without difficult units yields an empty '
-        'pool in every mode', () {
-      for (final (LearningDeck subject, int? start, int? end)
-          in <(LearningDeck, int?, int?)>[
-            (noneFlagged, null, null),
-            (deck, 5, 5),
+    test('a deck, a unit range or a direction without difficult units yields '
+        'an empty pool in every mode', () {
+      final LearningDeck direction1Only = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[word('one', 'eins', d1: bothFlags)],
+      );
+      for (final (
+            LearningDeck subject,
+            DirectionSelection directions,
+            int? start,
+            int? end,
+          )
+          in <(LearningDeck, DirectionSelection, int?, int?)>[
+            (noneFlagged, DirectionSelection.direction1, null, null),
+            (noneFlagged, DirectionSelection.both, null, null),
+            (deck, DirectionSelection.direction1, 5, 5),
+            (deck, DirectionSelection.both, 2, 2),
+            (direction1Only, DirectionSelection.direction2, null, null),
           ]) {
         for (final SessionMode mode in SessionMode.values) {
           final SessionParameters parameters = only(
             mode,
+            directions: directions,
             start: start,
             end: end,
           );
@@ -951,15 +1203,16 @@ void main() {
   });
 
   group('Lexicon', () {
-    // Units 1, 3 and 4 are difficult, each by a different flag; 2 and 5 are
-    // not. Every unit contains "e", so a search for it matches them all.
+    // Units 1, 3 and 4 are difficult, each by a different flag and unit 3
+    // only in Direction 2; 2 and 5 are not. Every unit contains "e", so a
+    // search for it matches them all.
     final LearningDeck deck = LearningDeck(
       mask: mask,
       units: <LearningUnit>[
-        word('one', 'eins', manual: true),
+        word('one', 'eins', d1: manualFlag),
         word('two', 'zwei'),
-        word('three', 'drei', automatic: true),
-        word('four', 'vier', manual: true, automatic: true),
+        word('three', 'drei', d2: autoFlag),
+        word('four', 'vier', d1: manualFlag, d2: bothFlags),
         word('five', 'fünf'),
       ],
     );
@@ -973,8 +1226,8 @@ void main() {
       expect(hitsOf(searchDeck(deck: deck, query: 'e')), <int>[1, 2, 3, 4, 5]);
     });
 
-    test('Difficult only keeps units with either flag, ANDed with the search '
-        'text', () {
+    test('Difficult only keeps units difficult in either direction, ANDed '
+        'with the search text', () {
       expect(
         hitsOf(searchDeck(deck: deck, query: 'e', difficultOnly: true)),
         <int>[1, 3, 4],
@@ -1025,7 +1278,7 @@ void main() {
         mask: mask,
         units: <LearningUnit>[
           word('six', 'sechs'),
-          word('seven', 'sieben', automatic: true),
+          word('seven', 'sieben', d2: autoFlag),
         ],
       );
       final SearchOutcome outcome = searchDeckFiles(
@@ -1042,7 +1295,8 @@ void main() {
       );
     });
 
-    test('re-keying hits onto a reference mask keeps both flags', () {
+    test('re-keying hits onto a reference mask keeps every flag in its '
+        'direction', () {
       // The reference comes from another deck of the same mask: a later
       // revision with a renamed field and one added.
       final LearningMask reference = mask.copyWith(
@@ -1081,18 +1335,7 @@ void main() {
 
       final LearningDeck rekeyed = applyMaskToDeck(hits, reference);
 
-      expect(
-        <(bool, bool)>[
-          for (final LearningUnit unit in rekeyed.units)
-            (unit.manualDifficult, unit.autoDifficult),
-        ],
-        <(bool, bool)>[
-          (true, false),
-          (false, false),
-          (false, true),
-          (true, true),
-        ],
-      );
+      expect(flags(rekeyed), flags(hits));
     });
   });
 }

@@ -119,14 +119,15 @@ final class LearnSessionPage extends StatefulWidget {
   /// Called when the user exits the learn session back to the home screen.
   final VoidCallback? onExit;
 
-  /// Called with the one-based index of the unit on screen when the learner
-  /// toggles its difficulty (F12 or the Difficult pill).
+  /// Called with the question on screen — its unit and the direction being
+  /// asked — when the learner toggles its difficulty (F12 or the Difficult
+  /// pill), which acts on that direction only.
   ///
   /// The page only asks: the shell applies the rule, writes the deck and
   /// hands the changed deck back through [deck], which is what the pill and
   /// the badge read. Without it the session offers neither the key nor the
   /// pill.
-  final ValueChanged<int>? onToggleDifficult;
+  final ValueChanged<SessionItem>? onToggleDifficult;
 
   /// The host's speech, injected by the shell.
   ///
@@ -865,18 +866,19 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     );
   }
 
-  /// Asks the shell to toggle the difficulty of the unit on screen.
+  /// Asks the shell to toggle the difficulty of the unit on screen in the
+  /// direction being asked.
   ///
   /// Only while a unit is on screen — the question or the answer stage — and
   /// only when the shell offers it. The stage itself is left exactly as it
   /// was: marking never rates, reveals or moves on.
   void _toggleDifficult() {
     final SessionItem? item = _currentItem;
-    final ValueChanged<int>? onToggle = widget.onToggleDifficult;
+    final ValueChanged<SessionItem>? onToggle = widget.onToggleDifficult;
     if (item == null || onToggle == null) {
       return;
     }
-    onToggle(item.unitIndex);
+    onToggle(item);
   }
 
   /// The draft with the setup's unit range, clamped to the deck, and its
@@ -2121,12 +2123,14 @@ final class _SessionView extends StatelessWidget {
   final VoidCallback onContinue;
   final VoidCallback onCancel;
 
-  /// Toggles the unit's difficulty; `null` hides the Difficult pill.
+  /// Toggles the unit's difficulty in the asked direction; `null` hides the
+  /// Difficult pill.
   final VoidCallback? onToggleDifficult;
 
   bool get _isLevelLearning => parameters.mode == SessionMode.levelLearning;
 
-  /// The Difficult pill for [unit], or nothing when the shell offers none.
+  /// The Difficult pill for [unit] in the asked direction, or nothing when
+  /// the shell offers none.
   List<Widget> _difficultPill(LearningUnit unit) {
     final VoidCallback? onToggle = onToggleDifficult;
     if (onToggle == null) {
@@ -2135,7 +2139,7 @@ final class _SessionView extends StatelessWidget {
     return <Widget>[
       _DifficultPill(
         key: const Key('learnDifficultPill'),
-        difficult: unit.isDifficult,
+        difficult: unit.isDifficultIn(item.direction),
         onPressed: onToggle,
       ),
     ];
@@ -2639,7 +2643,8 @@ final class _SessionView extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
                 Text(headerText, style: Theme.of(context).textTheme.titleSmall),
-                if (unit.isDifficult) DifficultBadge(unit: unit),
+                if (unit.isDifficultIn(item.direction))
+                  DifficultBadge(flags: unit.flagsFor(item.direction)),
               ],
             ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),

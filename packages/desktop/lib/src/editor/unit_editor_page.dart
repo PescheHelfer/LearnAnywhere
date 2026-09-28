@@ -32,13 +32,15 @@ final class UnitEditorPage extends StatefulWidget {
   final void Function(LearningDeck deck, {int? insertedAt, int? deletedAt})
   onChanged;
 
-  /// Called with the current unit's 1-based position when F12 toggles its
-  /// difficulty flag.
+  /// Called with the current unit's 1-based position and a direction when a
+  /// key toggles the unit's difficulty in that direction — F12 in
+  /// direction 1.
   ///
   /// Unlike [onChanged], this does not mark the pending edit as content: a
   /// flag-only save must leave the deck's last-edited date alone, so the host
   /// applies the toggle without touching that tracking.
-  final void Function(int unitIndex) onToggleDifficult;
+  final void Function(int unitIndex, QueryDirection direction)
+  onToggleDifficult;
 
   /// Called when the user finishes editing (F10/Done), keeping changes.
   final VoidCallback onDone;
@@ -329,7 +331,10 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
           _ToggleDifficultIntent: CallbackAction<_ToggleDifficultIntent>(
             onInvoke: (_) {
               if (widget.deck.units.isNotEmpty) {
-                widget.onToggleDifficult(_currentIndex + 1);
+                widget.onToggleDifficult(
+                  _currentIndex + 1,
+                  QueryDirection.direction1,
+                );
               }
               return null;
             },
@@ -928,8 +933,9 @@ final class _EditorBodyState extends State<_EditorBody> {
                   ),
                 ),
                 const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                if (unit.isDifficult) ...<Widget>[
-                  DifficultBadge(unit: unit),
+                // Direction 1, the direction F12 toggles here.
+                if (unit.isDifficultIn(QueryDirection.direction1)) ...<Widget>[
+                  DifficultBadge(flags: unit.direction1Flags),
                   const SizedBox(width: LearnAnywhereTokens.gapSmall),
                 ],
                 Flexible(
