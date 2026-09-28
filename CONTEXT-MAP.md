@@ -29,12 +29,12 @@ counter moves.
 
 | File | |
 |---|---|
-| [`packages/core/CONTEXT.md`](packages/core/CONTEXT.md) | Statistics vocabulary — the two records, session files, learning sessions — difficult units (manual and automatic flags, last edited, last learned), and speech vocabulary: spoken language, voice, speech engine. |
+| [`packages/core/CONTEXT.md`](packages/core/CONTEXT.md) | Statistics vocabulary — the two records, session files, learning sessions — difficult units (manual and automatic flags, new version, last edited, last learned), and speech vocabulary: spoken language, voice, speech engine. |
 | [`docs/adr/0001-all-time-statistics-accumulate-live-deltas.md`](docs/adr/0001-all-time-statistics-accumulate-live-deltas.md) | Why the lifetime record is accumulated live and never derived. |
 | [`docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md`](docs/adr/0002-zoom-scales-the-theme-not-the-text-scaler.md) | Why zoom scales the theme's font sizes and never the text scaler. |
 | [`docs/adr/0003-spoken-language-belongs-to-the-field.md`](docs/adr/0003-spoken-language-belongs-to-the-field.md) | Why a spoken language is a property of a field and never of a direction or a deck. |
 | [`docs/adr/0004-flutter-tts-first-linux-mute.md`](docs/adr/0004-flutter-tts-first-linux-mute.md) | Why the simpler speech engine ships first, and why Linux ships mute. |
-| [`docs/adr/0005-difficult-flags-live-in-the-deck.md`](docs/adr/0005-difficult-flags-live-in-the-deck.md) | Why the manual and automatic difficult flags are two additive keys in the `.vok`, not statistics or a sidecar. |
+| [`docs/adr/0005-difficult-flags-live-in-the-deck.md`](docs/adr/0005-difficult-flags-live-in-the-deck.md) | Why the manual and automatic difficult flags are additive keys in the `.vok`, not statistics or a sidecar — and, since its amendments, why they are kept per direction and how a learner keeps theirs when taking a new version of a shared deck. |
 | [`packages/desktop/CONTEXT.md`](packages/desktop/CONTEXT.md) | Desktop shell vocabulary — start folder, content frame, zoom level, recent decks. |
 | [`packages/mobile/CONTEXT.md`](packages/mobile/CONTEXT.md) | Android companion vocabulary — the Library, and the deck title (a file's base name, never its mask's). |
 | [`packages/mobile/docs/adr/0001-library-recency-from-the-session-file.md`](packages/mobile/docs/adr/0001-library-recency-from-the-session-file.md) | Why the Library's order is derived from the session file's modification time and no timestamp is stored. |

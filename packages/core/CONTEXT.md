@@ -62,23 +62,28 @@ Decided from the current statistics only.
 
 ## Difficult units
 
-**Difficult** — a unit the learner should drill again, whatever their statistics say
-now. A unit is difficult when it carries a manual flag, an automatic flag, or both;
-nothing else makes it difficult. It is a property of the unit and travels with the deck,
-so it outlives clearing either record. In German **schwierig**; a flag is a
+**Difficult** — a unit the learner should drill again in a direction, whatever their
+statistics say now. Difficulty belongs to a unit **in one direction**: a unit is
+difficult in a direction when that direction carries a manual flag, an automatic flag,
+or both, and nothing else makes it difficult. A unit can be difficult one way and easy
+the other. Where no single direction is in view, a unit counts as difficult when either
+of its directions is, and it is still one unit, never two. Difficulty travels with the
+deck, so it outlives clearing either record. It belongs to **one copy** of the deck: two
+learners who share a deck each have their own. In German **schwierig**; a flag is a
 **Kennzeichnung** (*als schwierig gekennzeichnet*), never *Markierung*, which the German
 interface already uses for text highlight.
 
-**Manual flag** — the learner's own verdict that a unit is difficult. Set and removed
-only by the learner; never by the program. It is the only record of that verdict.
+**Manual flag** — the learner's own verdict that a unit is difficult in a direction.
+Set and removed only by the learner; never by the program. It is the only record of that
+verdict.
 
-**Automatic flag** — the program's verdict that a unit is difficult, judged from the
-unit's lifetime record alone against thresholds the learner can set, never from how the
-rest of the deck is going. It is added when a learning session ends, if the learner has
-not switched detection off, and removed only by the learner: by recomputing the
-automatic flags, or by unmarking a unit, which says "not difficult" and so removes both
-flags. It can always be derived again from the lifetime record, so losing one is not
-losing data.
+**Automatic flag** — the program's verdict that a unit is difficult in a direction,
+judged from that direction's lifetime record alone against thresholds the learner can
+set, never from how the rest of the deck is going. It is added when a learning session
+ends, if the learner has not switched detection off, and removed only by the learner: by
+recomputing the automatic flags, or by unmarking the unit in that direction, which says
+"not difficult" and so removes both of that direction's flags. It can always be derived
+again from the lifetime record, so losing one is not losing data.
 
 **Last edited** — when a deck's units last changed: a field value or a unit's category,
 or a unit added or removed. Changing a flag is not an edit, and neither is a change to
@@ -86,6 +91,11 @@ the deck's mask.
 
 **Last learned** — when a deck was last practised, taken from its statistics files. It is
 never stored as a date of its own.
+
+**New version** (of a deck) — the same deck's content revised elsewhere, typically by
+whoever shared it: on the same mask, with typos fixed or units added or removed. Taking
+a new version keeps the learner's own flags and never adopts the flags the new version
+arrived with. It is not a *merge*, which adds another deck's units to this one.
 
 Avoid "label" for either flag: in this project a label is a piece of interface text.
 Avoid "mark" as a noun for the manual flag; the learner *marks* a unit, and what that
