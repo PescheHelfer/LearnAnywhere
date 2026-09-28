@@ -135,9 +135,10 @@ neue Lern-Datei genau aus den Einheiten, die Ihnen Schwierigkeiten bereiten:
 
 1. Liste eingrenzen — auf einen Bereichs-Chip klicken, um ihn ein-/auszuschalten,
    `Strg`+Klick auf einen, um nur diesen anzuzeigen, oder feste Grenzen bei
-   **Min %** / **Max %** setzen. **Nur schwierige** einschalten zeigt nur die
-   schwierigen Einheiten; es wirkt zusammen mit den Bereichs-Chips und den Grenzen und
-   ist ein schlichter Ein/Aus-Schalter — `Strg`+Klick bewirkt dort nichts Besonderes.
+   **Min %** / **Max %** setzen. **Nur schwierige** einschalten zeigt nur die in der
+   gezeigten Richtung schwierigen Einheiten (siehe unten); es wirkt zusammen mit den
+   Bereichs-Chips und den Grenzen und ist ein schlichter Ein/Aus-Schalter —
+   `Strg`+Klick bewirkt dort nichts Besonderes.
 2. **Sichtbare auswählen** wählt alles gerade Angezeigte aus, oder einzelne Zeilen
    anklicken. **Auswahl leeren** setzt zurück. Die Schaltflächen wirken nur auf
    ausgewählte Einheiten, die die Liste zeigt — auch auf Zeilen, zu denen Sie erst
@@ -152,19 +153,31 @@ neue Lern-Datei genau aus den Einheiten, die Ihnen Schwierigkeiten bereiten:
 Das funktioniert in beiden Bereichen gleich: eine Lern-Datei aus den Sorgenkindern der
 ganzen Lebensdauer entsteht genau so wie eine aus denen dieser Woche.
 
-Die Spalte **Schwierig** zeigt, welche Einheiten in einer der beiden Abfragerichtungen
-[schwierig](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen) sind: eine
-Fahne für Ihre manuelle Kennzeichnung, ein Funkeln für die automatische und beide
-nebeneinander für beide. Mit der Maus darüber lesen Sie, welche es ist —
-**Schwierig (manuelle Kennzeichnung)**, **Schwierig (automatische Kennzeichnung)** oder
-**Schwierig (manuelle und automatische Kennzeichnung)**. Ebenso zeigt **Nur schwierige**
-eine Einheit, die in einer der beiden Richtungen schwierig ist.
+Die Spalte **Schwierig**, **Nur schwierige**, **Ausgewählte kennzeichnen** und
+**Kennzeichnung entfernen** folgen alle dem Schalter **Richtung** über den Reitern, denn
+eine Einheit ist in einer Abfragerichtung
+[schwierig](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen).
+
+- Bei **Abfragerichtung 1** oder **Abfragerichtung 2** betreffen sie nur diese Richtung.
+  Die Spalte zeigt die Kennzeichnungen der Einheit dort — eine Fahne für Ihre manuelle
+  Kennzeichnung, ein Funkeln für die automatische, beide nebeneinander für beide —, und
+  mit der Maus darüber lesen Sie **Manuelle Kennzeichnung**, **Automatische
+  Kennzeichnung** oder **Manuelle und automatische Kennzeichnung**. **Nur schwierige**
+  zeigt die Einheiten, die in dieser Richtung schwierig sind, und das Sortieren nach der
+  Spalte ordnet nach den Kennzeichnungen dieser Richtung.
+- Bei **Kombiniert** gilt jeweils eine der beiden Richtungen. Die Spalte zeigt jede
+  Kennzeichnung, die die Einheit in einer der beiden Richtungen hat, und mit der Maus
+  darüber lesen Sie, wo jede sitzt, zum Beispiel **Manuelle Kennzeichnung:
+  Abfragerichtung 1 · Automatische Kennzeichnung: Abfragerichtung 1 und 2**. **Nur
+  schwierige** zeigt eine Einheit, die in einer der beiden Richtungen schwierig ist.
 
 Um mehrere Einheiten auf einmal zu kennzeichnen, wählen Sie sie aus und drücken
-**Ausgewählte kennzeichnen**: Jede erhält Ihre manuelle Kennzeichnung in beiden
-Abfragerichtungen, eine schon vorhandene automatische bleibt. **Kennzeichnung
-entfernen** nimmt jeder ausgewählten Einheit alle Kennzeichnungen in beiden Richtungen —
-„nicht schwierig“ heißt nicht schwierig, wie bei `F12` in einer Sitzung. Die Liste
+**Ausgewählte kennzeichnen**: Jede erhält Ihre manuelle Kennzeichnung in der gezeigten
+Richtung — bei **Kombiniert** in beiden —, eine schon vorhandene automatische bleibt.
+**Kennzeichnung entfernen** nimmt jeder ausgewählten Einheit beide Kennzeichnungen der
+gezeigten Richtung, bei **Kombiniert** alle — „nicht schwierig“ heißt nicht schwierig,
+wie bei `F12` in einer Sitzung. Bei **Abfragerichtung 1** oder **Abfragerichtung 2**
+bleibt die andere Richtung unangetastet. Die Liste
 zeigt die Änderung sofort, und die Lern-Datei wird gleich geschrieben; wie jede
 Kennzeichnung ist das keine Bearbeitung, das Datum **Zuletzt bearbeitet** bleibt also,
 wie es war. Ist nichts ausgewählt, melden beide
@@ -213,8 +226,8 @@ Eine Matrix mit einer Zeile je Stufe und einer Spalte je Trefferquote-Bereich, d
 Zeilen- und Spalten-**Gesamt**-Summen, die zeigen, wie sich Ihr Übungspool über beide
 Dimensionen zugleich verteilt. Eine Zelle anklicken führt in die Einheiten, die sie
 vertritt — dieselbe Einheitenliste wie oben, eingegrenzt auf diese Stufe und diesen
-Bereich, auch mit **Nur schwierige** und den Schaltflächen zum Kennzeichnen;
-**Zurück** kehrt zur Matrix zurück.
+Bereich, auch mit **Nur schwierige** und den Schaltflächen zum Kennzeichnen, die
+ebenso dem Schalter **Richtung** folgen; **Zurück** kehrt zur Matrix zurück.
 
 Dieser Reiter enthält erst Daten, sobald im Modus [Stufenlernen](07-level-learning.md)
 geübt wurde.

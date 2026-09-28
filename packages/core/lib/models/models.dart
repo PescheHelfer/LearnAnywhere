@@ -713,10 +713,20 @@ final class LearningUnit {
   /// Every flag the unit carries in either direction, merged: a manual flag
   /// when either direction has one, likewise automatic. What a place without
   /// a single direction in view shows.
-  DifficultFlags get flagsInEither => DifficultFlags(
-    manual: direction1Flags.manual || direction2Flags.manual,
-    automatic: direction1Flags.automatic || direction2Flags.automatic,
-  );
+  DifficultFlags get flagsInEither => flagsIn(QueryDirection.values);
+
+  /// The flags the unit carries in any of [directions], merged flag by flag:
+  /// what a view covering those directions shows. No directions, no flags.
+  DifficultFlags flagsIn(Iterable<QueryDirection> directions) {
+    var manual = false;
+    var automatic = false;
+    for (final QueryDirection direction in directions) {
+      final DifficultFlags flags = flagsFor(direction);
+      manual = manual || flags.manual;
+      automatic = automatic || flags.automatic;
+    }
+    return DifficultFlags(manual: manual, automatic: automatic);
+  }
 
   /// Returns the value for the field with [fieldId], or empty when absent.
   FieldValue valueForFieldId(int fieldId) {

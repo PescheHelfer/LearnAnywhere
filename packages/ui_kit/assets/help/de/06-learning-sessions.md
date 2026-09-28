@@ -119,13 +119,15 @@ die Richtung, in der Sie gerade gefragt werden, und lassen die andere Richtung g
 sie war.
 
 Ist die Einheit in der gefragten Richtung schwierig, zeigt ihre Kopfzeile ein Abzeichen.
-Über die andere Richtung sagt es nichts. Es sagt auch, wer sie gekennzeichnet hat:
+Über die andere Richtung sagt es nichts. Es zeigt, wer sie gekennzeichnet hat — eine
+Fahne für Ihre manuelle Kennzeichnung, ein Funkeln für die automatische oder beide —,
+gefolgt von **Schwierig**. Mit der Maus darüber lesen Sie, welche es ist:
 
-- **Schwierig (manuelle Kennzeichnung)** — Sie selbst.
-- **Schwierig (automatische Kennzeichnung)** — das Programm, anhand der
-  Allzeit-Statistik der Einheit (siehe
+- **Manuelle Kennzeichnung** — Sie selbst.
+- **Automatische Kennzeichnung** — das Programm, anhand der Allzeit-Statistik der
+  Einheit (siehe
   [Automatisch gefundene schwierige Einheiten](#automatisch-gefundene-schwierige-einheiten)).
-- **Schwierig (manuelle und automatische Kennzeichnung)** — beide.
+- **Manuelle und automatische Kennzeichnung** — beide.
 
 Die Schaltfläche **Schwierig** ist gefüllt, solange die Einheit in der gefragten
 Richtung schwierig ist. `F12` (oder die Schaltfläche) hebt ihre Schwierigkeit dann in

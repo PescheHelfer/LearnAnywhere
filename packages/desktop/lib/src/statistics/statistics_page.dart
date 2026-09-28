@@ -12,6 +12,15 @@ import '../widgets/difficult_badge.dart';
 /// current filters, never a ticked unit a filter hides.
 typedef SelectedUnitsCallback = Future<void> Function(List<int> unitIndices);
 
+/// Changes the difficulty flags of the selected units, given as for
+/// [SelectedUnitsCallback], in [directions]: the directions the list's View
+/// covers.
+typedef FlagSelectedUnitsCallback =
+    Future<void> Function(
+      List<int> unitIndices,
+      Set<QueryDirection> directions,
+    );
+
 /// Desktop statistics page with bucket tables, chart, and unit export.
 final class StatisticsPage extends StatefulWidget {
   /// Creates the statistics page.
@@ -85,12 +94,14 @@ final class StatisticsPage extends StatefulWidget {
   /// Saves selected unit indices as a new deck.
   final SelectedUnitsCallback onSaveSelectedUnits;
 
-  /// Sets the manual difficulty flag on the selected units and writes the
-  /// deck; the list shows the result once [deck] comes back changed.
-  final SelectedUnitsCallback onMarkSelectedUnits;
+  /// Sets the manual difficulty flag on the selected units in the given
+  /// directions and writes the deck; the list shows the result once [deck]
+  /// comes back changed.
+  final FlagSelectedUnitsCallback onMarkSelectedUnits;
 
-  /// Clears both difficulty flags on the selected units and writes the deck.
-  final SelectedUnitsCallback onUnmarkSelectedUnits;
+  /// Clears both difficulty flags on the selected units in the given
+  /// directions and writes the deck.
+  final FlagSelectedUnitsCallback onUnmarkSelectedUnits;
 
   /// Called when the user closes this page.
   final VoidCallback onClose;
@@ -403,8 +414,11 @@ final class _PracticeList extends StatefulWidget {
   /// shows under its current filters (scrolled out of view or not): a unit a
   /// filter hides stays ticked, but no action touches it.
   final SelectedUnitsCallback onSaveSelected;
-  final SelectedUnitsCallback onMarkSelected;
-  final SelectedUnitsCallback onUnmarkSelected;
+
+  /// Mark and Unmark act on the directions [view] covers, like the Difficult
+  /// column and the Difficult only filter.
+  final FlagSelectedUnitsCallback onMarkSelected;
+  final FlagSelectedUnitsCallback onUnmarkSelected;
 
   /// Whether to show the Bucket column (hidden when the bucket is constant
   /// for all shown rows, e.g. a Level×Bucket cell). The bucket filter chips are
@@ -433,8 +447,9 @@ final class _PracticeListState extends State<_PracticeList> {
   final TextEditingController _minController = TextEditingController();
   final TextEditingController _maxController = TextEditingController();
 
-  /// Whether only difficult units (either flag) are shown. Off means no
-  /// difficulty filter at all, not "only units that are not difficult".
+  /// Whether only units difficult in the View's direction (either direction
+  /// under Combined) are shown. Off means no difficulty filter at all, not
+  /// "only units that are not difficult".
   bool _difficultOnly = false;
 
   /// Column the table is sorted by, and its direction.
@@ -495,7 +510,8 @@ final class _PracticeListState extends State<_PracticeList> {
         _PracticeSortKey.unit => a.index.compareTo(b.index),
         _PracticeSortKey.difficult => _difficultRank(
           a.unit,
-        ).compareTo(_difficultRank(b.unit)),
+          widget.view,
+        ).compareTo(_difficultRank(b.unit, widget.view)),
         _PracticeSortKey.question => a.question.toLowerCase().compareTo(
           b.question.toLowerCase(),
         ),
@@ -528,7 +544,8 @@ final class _PracticeListState extends State<_PracticeList> {
       if (!_visibleBuckets.contains(row.bucket)) {
         return false;
       }
-      if (_difficultOnly && !row.unit.isDifficultInEither) {
+      if (_difficultOnly &&
+          !row.unit.flagsIn(widget.view.directions).isDifficult) {
         return false;
       }
       if (!numericActive) {
@@ -657,7 +674,12 @@ final class _PracticeListState extends State<_PracticeList> {
                           ),
                         ),
                         _tipCell(row.tooltip, Text(row.index.toString())),
-                        DataCell(DifficultFlagIndicator(unit: row.unit)),
+                        DataCell(
+                          DifficultFlagIndicator(
+                            unit: row.unit,
+                            directions: widget.view.directions,
+                          ),
+                        ),
                         _tipCell(row.tooltip, Text(row.question)),
                         _tipCell(row.tooltip, Text(row.answer)),
                         if (widget.showBucketColumn)
@@ -704,14 +726,20 @@ final class _PracticeListState extends State<_PracticeList> {
                 ),
               ),
               FilledButton.tonalIcon(
-                onPressed: () => widget.onMarkSelected(shownSelection),
+                onPressed: () => widget.onMarkSelected(
+                  shownSelection,
+                  widget.view.directions,
+                ),
                 icon: const Icon(Icons.flag),
                 label: Text(
                   messages.message(LearnAnywhereMessage.statisticsMarkSelected),
                 ),
               ),
               FilledButton.tonalIcon(
-                onPressed: () => widget.onUnmarkSelected(shownSelection),
+                onPressed: () => widget.onUnmarkSelected(
+                  shownSelection,
+                  widget.view.directions,
+                ),
                 icon: const Icon(Icons.outlined_flag),
                 label: Text(
                   messages.message(
@@ -865,8 +893,8 @@ final class _LevelLearningStats extends StatefulWidget {
   final Set<int> selectedUnitIndices;
   final ValueChanged<Set<int>> onSelectionChanged;
   final SelectedUnitsCallback onSaveSelected;
-  final SelectedUnitsCallback onMarkSelected;
-  final SelectedUnitsCallback onUnmarkSelected;
+  final FlagSelectedUnitsCallback onMarkSelected;
+  final FlagSelectedUnitsCallback onUnmarkSelected;
 
   @override
   State<_LevelLearningStats> createState() => _LevelLearningStatsState();
@@ -1505,10 +1533,10 @@ enum _PracticeSortKey {
   accuracy,
 }
 
-/// Sort rank of [unit]'s flags in either direction, as the Difficult column
-/// shows them: unflagged, automatic, manual, both.
-int _difficultRank(LearningUnit unit) {
-  final DifficultFlags flags = unit.flagsInEither;
+/// Sort rank of [unit]'s flags in the directions [view] covers, as the
+/// Difficult column shows them: unflagged, automatic, manual, both.
+int _difficultRank(LearningUnit unit, StatisticsDirectionView view) {
+  final DifficultFlags flags = unit.flagsIn(view.directions);
   return (flags.manual ? 2 : 0) + (flags.automatic ? 1 : 0);
 }
 

@@ -65,7 +65,9 @@ geladene Statistik. So sammeln Sie alle Ihre schwierigen Einheiten ein.
 Die Treffertabelle hat eine Spalte **Schwierig**: eine Fahne für Ihre manuelle
 Kennzeichnung, ein Funkeln für die automatische, beide nebeneinander für beide — in
 einer der beiden Richtungen — und nichts für eine Einheit, die nicht schwierig ist. Mit
-der Maus darüber lesen Sie, welche es ist.
+der Maus darüber lesen Sie, welche Kennzeichnung in welcher Richtung sitzt, zum Beispiel
+**Manuelle Kennzeichnung: Abfragerichtung 1 · Automatische Kennzeichnung:
+Abfragerichtung 1 und 2**.
 
 Werden Treffer mit **Treffer laden** geladen, behält jede Einheit alle Kennzeichnungen
 in beiden Richtungen, und ebenso beim anschließenden Speichern. Schalten Sie also

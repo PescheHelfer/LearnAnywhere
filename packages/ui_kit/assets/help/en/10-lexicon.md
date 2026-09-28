@@ -58,7 +58,8 @@ the way to gather every difficult unit you own.
 
 The results table has a **Difficult** column: a flag for your manual flag, a sparkle
 for the automatic one, both side by side for both — in either direction — and nothing
-for a unit that is not difficult. Hover over it to read which.
+for a unit that is not difficult. Hover over it to read which flag sits in which
+direction, for example **Manual flag: Direction 1 · Automatic flag: Direction 1 and 2**.
 
 Loading hits with **Load results** keeps every flag on every unit, in both directions,
 and so does saving them afterwards. So switch on **Difficult only** and **Load found

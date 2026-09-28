@@ -2998,17 +2998,20 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         onClearStatistics: _clearStatistics,
         onClearAllTimeStatistics: _clearAllTimeStatistics,
         onSaveSelectedUnits: _saveSelectedUnits,
-        // Both directions until the unit list follows its View.
-        onMarkSelectedUnits: (List<int> unitIndices) => _changeSelectedFlags(
-          unitIndices,
-          (LearningDeck deck, Set<int> units) =>
-              markDifficultAt(deck, units, QueryDirection.values.toSet()),
-        ),
-        onUnmarkSelectedUnits: (List<int> unitIndices) => _changeSelectedFlags(
-          unitIndices,
-          (LearningDeck deck, Set<int> units) =>
-              unmarkDifficultAt(deck, units, QueryDirection.values.toSet()),
-        ),
+        onMarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) =>
+                _changeSelectedFlags(
+                  unitIndices,
+                  (LearningDeck deck, Set<int> units) =>
+                      markDifficultAt(deck, units, directions),
+                ),
+        onUnmarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) =>
+                _changeSelectedFlags(
+                  unitIndices,
+                  (LearningDeck deck, Set<int> units) =>
+                      unmarkDifficultAt(deck, units, directions),
+                ),
         onClose: () => _selectRoute(_DesktopRoute.home),
       ),
       _DesktopRoute.lexicon => LexiconPage(

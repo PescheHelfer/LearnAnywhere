@@ -110,12 +110,14 @@ recognise. `F12` and the button always act on the direction you are being asked 
 now, and leave the other direction exactly as it was.
 
 A unit that is difficult in the direction being asked shows a badge on its header line.
-It says nothing about the other direction. The badge also says who flagged it:
+It says nothing about the other direction. The badge shows who flagged it — a flag icon
+for your manual flag, a sparkle for the automatic one, or both — followed by
+**Difficult**. Hover over it to read which:
 
-- **Difficult (manual flag)** — you marked it.
-- **Difficult (automatic flag)** — the program found it hard from the unit's all-time
-  statistics (see [Difficult units found automatically](#difficult-units-found-automatically)).
-- **Difficult (manual and automatic flag)** — both.
+- **Manual flag** — you marked it.
+- **Automatic flag** — the program found it hard from the unit's all-time statistics
+  (see [Difficult units found automatically](#difficult-units-found-automatically)).
+- **Manual and automatic flag** — both.
 
 The **Difficult** button is filled while the unit is difficult in the direction being
 asked. Pressing `F12` (or the button) there removes its difficulty in that direction

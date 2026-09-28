@@ -119,7 +119,7 @@ void main() {
     await tester.tap(find.text('Search memory'));
     await tester.pumpAndSettle();
     expect(find.text('Results: 2'), findsOneWidget);
-    expect(find.byTooltip('Difficult (manual flag)'), findsOneWidget);
+    expect(find.byTooltip('Manual flag: Direction 2'), findsOneWidget);
 
     await tester.tap(find.text('Difficult only'));
     await tester.pumpAndSettle();
@@ -128,7 +128,7 @@ void main() {
     expect(find.text('Results: 1'), findsOneWidget);
     expect(find.text('hello'), findsOneWidget);
     expect(find.text('bye'), findsNothing);
-    expect(find.byTooltip('Difficult (manual flag)'), findsOneWidget);
+    expect(find.byTooltip('Manual flag: Direction 2'), findsOneWidget);
 
     // ANDed with the search text: the flagged unit does not match "bye".
     await tester.enterText(find.byType(TextField).first, 'bye');

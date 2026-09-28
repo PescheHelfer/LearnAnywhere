@@ -117,17 +117,90 @@ void main() {
 
     // One indicator per flagged unit, named as the session badge names it;
     // unit 1 carries no flag and shows none.
-    expect(find.byTooltip('Difficult (manual flag)'), findsOneWidget);
-    expect(find.byTooltip('Difficult (automatic flag)'), findsOneWidget);
-    expect(
-      find.byTooltip('Difficult (manual and automatic flag)'),
-      findsOneWidget,
-    );
+    expect(find.byTooltip('Manual flag'), findsOneWidget);
+    expect(find.byTooltip('Automatic flag'), findsOneWidget);
+    expect(find.byTooltip('Manual and automatic flag'), findsOneWidget);
 
     // Unflagged first, then automatic, manual, both.
     await tester.tap(find.text('Difficult'));
     await tester.pumpAndSettle();
     expect(_unitColumn(tester), <String>['1', '3', '2', '4']);
+  });
+
+  testWidgets('the Difficult column, its sort, Difficult only and Mark / '
+      'Unmark selected follow the View\'s direction, and Combined names the '
+      'directions', (WidgetTester tester) async {
+    widenSurface(tester);
+    final List<Set<QueryDirection>> marked = <Set<QueryDirection>>[];
+    final List<Set<QueryDirection>> unmarked = <Set<QueryDirection>>[];
+    await tester.pumpWidget(
+      buildPage(
+        deck: twoWayFlaggedDeck(),
+        statistics: const <UnitStats>[],
+        onMarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) async {
+              marked.add(directions);
+            },
+        onUnmarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) async {
+              unmarked.add(directions);
+            },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit list'));
+    await tester.pumpAndSettle();
+
+    Future<void> tapAndSettle(String label) async {
+      await tester.tap(find.text(label));
+      await tester.pumpAndSettle();
+    }
+
+    // Direction 1, the default View: only the manual flags of units 2 and 4.
+    expect(find.byTooltip('Manual flag'), findsNWidgets(2));
+    expect(find.byTooltip('Automatic flag'), findsNothing);
+    expect(find.byTooltip('Manual and automatic flag'), findsNothing);
+    await tapAndSettle('Difficult');
+    expect(_unitColumn(tester), <String>['1', '3', '2', '4']);
+    await tapAndSettle('Difficult only');
+    expect(_unitColumn(tester), <String>['2', '4']);
+    await tapAndSettle('Mark selected');
+    await tapAndSettle('Unmark selected');
+    expect(marked.last, <QueryDirection>{QueryDirection.direction1});
+    expect(unmarked.last, <QueryDirection>{QueryDirection.direction1});
+
+    // Direction 2: unit 3's automatic flag and unit 4's two; unit 2 is not
+    // difficult this way round, and the sort ranks by this direction too.
+    await selectView(tester, 'Direction 2');
+    expect(find.byTooltip('Manual flag'), findsNothing);
+    expect(find.byTooltip('Automatic flag'), findsOneWidget);
+    expect(find.byTooltip('Manual and automatic flag'), findsOneWidget);
+    expect(_unitColumn(tester), <String>['3', '4']);
+    await tapAndSettle('Difficult only');
+    expect(_unitColumn(tester), <String>['1', '2', '3', '4']);
+    await tapAndSettle('Mark selected');
+    await tapAndSettle('Unmark selected');
+    expect(marked.last, <QueryDirection>{QueryDirection.direction2});
+    expect(unmarked.last, <QueryDirection>{QueryDirection.direction2});
+
+    // Combined: either direction, and each tooltip says which.
+    await selectCombined(tester);
+    expect(find.byTooltip('Manual flag: Direction 1'), findsOneWidget);
+    expect(find.byTooltip('Automatic flag: Direction 2'), findsOneWidget);
+    expect(
+      find.byTooltip(
+        'Manual flag: Direction 1 and 2 · Automatic flag: Direction 2',
+      ),
+      findsOneWidget,
+    );
+    // Still sorted by Difficult, now on the merged flags: automatic (3),
+    // manual (2), both (4).
+    await tapAndSettle('Difficult only');
+    expect(_unitColumn(tester), <String>['3', '2', '4']);
+    await tapAndSettle('Mark selected');
+    await tapAndSettle('Unmark selected');
+    expect(marked.last, QueryDirection.values.toSet());
+    expect(unmarked.last, QueryDirection.values.toSet());
   });
 
   testWidgets('Difficult only narrows the list together with the bucket chips '
@@ -141,12 +214,14 @@ void main() {
       buildPage(
         deck: flaggedDeck(),
         statistics: flaggedStatistics,
-        onMarkSelectedUnits: (List<int> unitIndices) async {
-          marked = unitIndices;
-        },
-        onUnmarkSelectedUnits: (List<int> unitIndices) async {
-          unmarked = unitIndices;
-        },
+        onMarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) async {
+              marked = unitIndices;
+            },
+        onUnmarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) async {
+              unmarked = unitIndices;
+            },
       ),
     );
     await tester.pumpAndSettle();
@@ -210,12 +285,14 @@ void main() {
         onSaveSelectedUnits: (List<int> unitIndices) async {
           saved = unitIndices;
         },
-        onMarkSelectedUnits: (List<int> unitIndices) async {
-          marked = unitIndices;
-        },
-        onUnmarkSelectedUnits: (List<int> unitIndices) async {
-          unmarked = unitIndices;
-        },
+        onMarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) async {
+              marked = unitIndices;
+            },
+        onUnmarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) async {
+              unmarked = unitIndices;
+            },
       ),
     );
     await tester.pumpAndSettle();
@@ -261,6 +338,7 @@ void main() {
       'marking actions too', (WidgetTester tester) async {
     widenSurface(tester);
     List<int> marked = <int>[];
+    Set<QueryDirection> markedDirections = <QueryDirection>{};
     await tester.pumpWidget(
       buildPage(
         deck: flaggedDeck(),
@@ -276,9 +354,11 @@ void main() {
             dir2: _levelZeroPerfect,
           ),
         ],
-        onMarkSelectedUnits: (List<int> unitIndices) async {
-          marked = unitIndices;
-        },
+        onMarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) async {
+              marked = unitIndices;
+              markedDirections = directions;
+            },
       ),
     );
     await tester.pumpAndSettle();
@@ -298,6 +378,59 @@ void main() {
     await tester.tap(find.text('Mark selected'));
     await tester.pumpAndSettle();
     expect(marked, <int>[2]);
+    // The drill-down follows the View as the unit list does.
+    expect(markedDirections, <QueryDirection>{QueryDirection.direction1});
+  });
+
+  testWidgets('the Level x Bucket drill-down follows the View too', (
+    WidgetTester tester,
+  ) async {
+    widenSurface(tester);
+    List<int> marked = <int>[];
+    Set<QueryDirection> markedDirections = <QueryDirection>{};
+    await tester.pumpWidget(
+      buildPage(
+        // Unit 2's manual flag sits in Direction 1 only.
+        deck: flaggedDeck(),
+        levelStatistics: const <LevelUnitStats>[
+          LevelUnitStats(
+            index: 1,
+            dir1: _levelZeroPerfect,
+            dir2: _levelZeroPerfect,
+          ),
+          LevelUnitStats(
+            index: 2,
+            dir1: _levelZeroPerfect,
+            dir2: _levelZeroPerfect,
+          ),
+        ],
+        onMarkSelectedUnits:
+            (List<int> unitIndices, Set<QueryDirection> directions) async {
+              marked = unitIndices;
+              markedDirections = directions;
+            },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await selectView(tester, 'Direction 2');
+    await tester.tap(find.text('Level Learning'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2 (100%)').first);
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), <String>['1', '2']);
+    expect(find.byTooltip('Manual flag'), findsNothing);
+
+    await tester.tap(find.text('Select visible'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mark selected'));
+    await tester.pumpAndSettle();
+    expect(marked, <int>[1, 2]);
+    expect(markedDirections, <QueryDirection>{QueryDirection.direction2});
+
+    // Nothing is difficult this way round.
+    await tester.tap(find.text('Difficult only'));
+    await tester.pumpAndSettle();
+    expect(_unitColumn(tester), isEmpty);
   });
 
   testWidgets('the level learning drill-down omits the level-zero caption', (
@@ -676,12 +809,16 @@ void widenSurface(WidgetTester tester) {
 }
 
 /// Switches the direction selector to Combined, which counts both directions.
-Future<void> selectCombined(WidgetTester tester) async {
+Future<void> selectCombined(WidgetTester tester) =>
+    selectView(tester, 'Combined');
+
+/// Switches the direction selector to the View labelled [label].
+Future<void> selectView(WidgetTester tester, String label) async {
   await tester.tap(
     find.byType(DropdownButtonFormField<StatisticsDirectionView>),
   );
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Combined').last);
+  await tester.tap(find.text(label).last);
   await tester.pumpAndSettle();
 }
 
@@ -699,8 +836,8 @@ Widget buildPage({
   List<LevelUnitStats> allTimeLevelStatistics = const <LevelUnitStats>[],
   bool allTimeIsRefused = false,
   SelectedUnitsCallback? onSaveSelectedUnits,
-  SelectedUnitsCallback? onMarkSelectedUnits,
-  SelectedUnitsCallback? onUnmarkSelectedUnits,
+  FlagSelectedUnitsCallback? onMarkSelectedUnits,
+  FlagSelectedUnitsCallback? onUnmarkSelectedUnits,
   Future<void> Function()? onClearAllTimeStatistics,
   LearningDeck? deck,
 }) {
@@ -723,9 +860,11 @@ Widget buildPage({
       onSaveSelectedUnits:
           onSaveSelectedUnits ?? (List<int> unitIndices) async {},
       onMarkSelectedUnits:
-          onMarkSelectedUnits ?? (List<int> unitIndices) async {},
+          onMarkSelectedUnits ??
+          (List<int> unitIndices, Set<QueryDirection> directions) async {},
       onUnmarkSelectedUnits:
-          onUnmarkSelectedUnits ?? (List<int> unitIndices) async {},
+          onUnmarkSelectedUnits ??
+          (List<int> unitIndices, Set<QueryDirection> directions) async {},
       onSaveStatisticsAs: () async {},
       onClose: () {},
     ),
@@ -793,6 +932,38 @@ LearningDeck flaggedDeck() {
       unit('Q2', manual: true),
       unit('Q3', auto: true),
       unit('Q4', manual: true, auto: true),
+    ],
+  );
+}
+
+/// [sampleDeck]'s mask with four units flagged per direction: 1 unflagged,
+/// 2 manual in Direction 1, 3 automatic in Direction 2, and 4 manual in
+/// Direction 1 and both flags in Direction 2.
+LearningDeck twoWayFlaggedDeck() {
+  final LearningUnit template = sampleDeck().units.first;
+  const DifficultFlags manual = DifficultFlags(manual: true);
+  LearningUnit unit(
+    String question, {
+    DifficultFlags d1 = DifficultFlags.none,
+    DifficultFlags d2 = DifficultFlags.none,
+  }) {
+    return template.copyWith(
+      fields: <int, FieldValue>{0: FieldValue.plain(question)},
+      direction1Flags: d1,
+      direction2Flags: d2,
+    );
+  }
+
+  return sampleDeck().copyWith(
+    units: <LearningUnit>[
+      unit('Q1'),
+      unit('Q2', d1: manual),
+      unit('Q3', d2: const DifficultFlags(automatic: true)),
+      unit(
+        'Q4',
+        d1: manual,
+        d2: const DifficultFlags(manual: true, automatic: true),
+      ),
     ],
   );
 }

@@ -145,6 +145,25 @@ void main() {
       expect(unit(d1: autoFlag, d2: autoFlag).flagsInEither, autoFlag);
     });
 
+    test('flagsIn merges only the directions it is given', () {
+      final LearningUnit mixed = unit(d1: manualFlag, d2: autoFlag);
+      expect(mixed.flagsIn(<QueryDirection>{QueryDirection.direction1}),
+          manualFlag);
+      expect(mixed.flagsIn(<QueryDirection>{QueryDirection.direction2}),
+          autoFlag);
+      expect(mixed.flagsIn(QueryDirection.values), bothFlags);
+      expect(mixed.flagsIn(const <QueryDirection>{}), noFlag);
+    });
+
+    test('a View covers its own direction, and Combined covers both', () {
+      expect(StatisticsDirectionView.direction1.directions,
+          <QueryDirection>{QueryDirection.direction1});
+      expect(StatisticsDirectionView.direction2.directions,
+          <QueryDirection>{QueryDirection.direction2});
+      expect(StatisticsDirectionView.combined.directions,
+          QueryDirection.values.toSet());
+    });
+
     test('withFlags replaces one direction and keeps the other and the '
         'content', () {
       final LearningUnit before = unit(d1: manualFlag, d2: autoFlag);

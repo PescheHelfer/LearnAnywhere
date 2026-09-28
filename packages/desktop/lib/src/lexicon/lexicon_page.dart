@@ -519,7 +519,12 @@ final class _ResultTable extends StatelessWidget {
               _tipCell(tooltip, Text(result.unitIndex.toString())),
               // Not wrapped in the unit tooltip: the indicator names its
               // flags on hover itself.
-              DataCell(DifficultFlagIndicator(unit: unit)),
+              DataCell(
+                DifficultFlagIndicator(
+                  unit: unit,
+                  directions: QueryDirection.values.toSet(),
+                ),
+              ),
               _tipCell(
                 tooltip,
                 Text(_fieldPreview(unit, category, FieldRole.question)),

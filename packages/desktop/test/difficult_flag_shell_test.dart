@@ -137,6 +137,13 @@ void main() {
     await settle(tester);
   }
 
+  /// The session's difficulty badge.
+  final Finder badge = find.byKey(const Key('learnDifficultBadge'));
+
+  /// Finds [icon] inside the badge.
+  Finder badgeShows(IconData icon) =>
+      find.descendant(of: badge, matching: find.byIcon(icon));
+
   testWidgets('F12 writes the manual flag to the deck at once and F12 again '
       'removes it, in the question and in the answer stage; the badge follows '
       'and the last-edited date does not move', (WidgetTester tester) async {
@@ -146,14 +153,21 @@ void main() {
     );
     await tester.runAsync(() async {
       await startSession(tester, deckPath);
-      expect(find.text('Difficult (manual flag)'), findsNothing);
+      expect(find.byTooltip('Manual flag'), findsNothing);
 
       // Question stage.
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await untilOnDisk(tester, deckPath, 'manualDifficult1', present: true);
       expect(unitOnDisk(deckPath)['manualDifficult1'], isTrue);
       expect(unitOnDisk(deckPath).containsKey('autoDifficult1'), isFalse);
-      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
+      // The badge: the manual flag's icon, then "Difficult".
+      expect(badgeShows(Icons.flag), findsOneWidget);
+      expect(badgeShows(Icons.auto_awesome), findsNothing);
+      expect(
+        find.descendant(of: badge, matching: find.text('Difficult')),
+        findsOneWidget,
+      );
       // A flag is not an edit: the stored date is the one it had.
       expect(
         decodeDeckJson(File(deckPath).readAsStringSync()).lastEdited,
@@ -163,7 +177,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await untilOnDisk(tester, deckPath, 'manualDifficult1', present: false);
       expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
-      expect(find.text('Difficult (manual flag)'), findsNothing);
+      expect(find.byTooltip('Manual flag'), findsNothing);
 
       // Answer stage: F12, then the pill.
       await tester.sendKeyEvent(LogicalKeyboardKey.f10);
@@ -172,12 +186,12 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await untilOnDisk(tester, deckPath, 'manualDifficult1', present: true);
       expect(unitOnDisk(deckPath)['manualDifficult1'], isTrue);
-      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
 
-      await tester.tap(find.text('Difficult'));
+      await tester.tap(find.byKey(const Key('learnDifficultPill')));
       await untilOnDisk(tester, deckPath, 'manualDifficult1', present: false);
       expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
-      expect(find.text('Difficult (manual flag)'), findsNothing);
+      expect(find.byTooltip('Manual flag'), findsNothing);
       // Still in the session, still on the answer.
       expect(find.text('Continue'), findsOneWidget);
     });
@@ -194,14 +208,16 @@ void main() {
     );
     await tester.runAsync(() async {
       await startSession(tester, deckPath);
-      expect(find.text('Difficult (automatic flag)'), findsOneWidget);
+      expect(find.byTooltip('Automatic flag'), findsOneWidget);
+      expect(badgeShows(Icons.auto_awesome), findsOneWidget);
+      expect(badgeShows(Icons.flag), findsNothing);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await untilOnDisk(tester, deckPath, 'autoDifficult1', present: false);
       expect(unitOnDisk(deckPath).containsKey('autoDifficult1'), isFalse);
       expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
-      expect(find.text('Difficult (automatic flag)'), findsNothing);
-      expect(find.text('Difficult (manual flag)'), findsNothing);
+      expect(find.byTooltip('Automatic flag'), findsNothing);
+      expect(find.byTooltip('Manual flag'), findsNothing);
     });
   });
 
@@ -225,7 +241,7 @@ void main() {
       await startSession(tester, deckPath);
       // Asked the other way round: the unit is not difficult this way.
       expect(find.text('Haus', findRichText: true), findsOneWidget);
-      expect(find.text('Difficult (automatic flag)'), findsNothing);
+      expect(find.byTooltip('Automatic flag'), findsNothing);
       expect(find.byKey(const Key('learnDifficultBadge')), findsNothing);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
@@ -235,10 +251,10 @@ void main() {
       expect(unitOnDisk(deckPath)['autoDifficult1'], isTrue);
       expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
       expect(unitOnDisk(deckPath).containsKey('autoDifficult2'), isFalse);
-      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
 
       // The pill unmarks Direction 2 only.
-      await tester.tap(find.text('Difficult'));
+      await tester.tap(find.byKey(const Key('learnDifficultPill')));
       await untilOnDisk(tester, deckPath, 'manualDifficult2', present: false);
       expect(unitOnDisk(deckPath).containsKey('manualDifficult2'), isFalse);
       expect(unitOnDisk(deckPath)['autoDifficult1'], isTrue);
@@ -302,7 +318,7 @@ void main() {
       await settleAfterIo(tester);
       expect(find.textContaining('"unwritable.vok"'), findsOneWidget);
       // The verdict is kept in memory, and the session is where it was.
-      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
       expect(find.text('Check'), findsOneWidget);
     });
   });
@@ -334,7 +350,7 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await settle(tester);
-      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
       // Nothing reaches disk from the editor on its own.
       expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
 
@@ -347,11 +363,11 @@ void main() {
       expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
 
       await pickMenuItem(tester, 'Edit', 'Unit editor');
-      expect(find.text('Difficult (manual flag)'), findsNothing);
+      expect(find.byTooltip('Manual flag'), findsNothing);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await settle(tester);
-      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
 
       await tester.tap(find.text('Done'));
       await settle(tester);
@@ -396,7 +412,7 @@ void main() {
       await settle(tester);
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await settle(tester);
-      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
       await tester.tap(find.text('Done'));
       await settle(tester);
 

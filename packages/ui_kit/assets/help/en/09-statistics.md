@@ -122,8 +122,9 @@ units giving you trouble:
 
 1. Narrow the list — click a bucket chip to toggle it, `Ctrl`+click one to isolate it,
    or set explicit **Min %** / **Max %** bounds. Switch on **Difficult only** to show
-   just the difficult units; it combines with the bucket chips and the bounds, and is a
-   plain on/off switch — `Ctrl`+click does nothing special to it.
+   just the units difficult in the direction shown (see below); it combines with the
+   bucket chips and the bounds, and is a plain on/off switch — `Ctrl`+click does
+   nothing special to it.
 2. **Select visible** to select everything currently shown, or click individual rows.
    **Clear selection** starts over. The buttons act only on selected units the list
    shows — including rows you would have to scroll to. A unit hidden by a filter stays
@@ -136,17 +137,27 @@ units giving you trouble:
 This works the same way in either scope, so a deck of lifetime problem units is built
 exactly like a deck of this week's.
 
-The **Difficult** column shows which units are
-[difficult](06-learning-sessions.md#marking-a-unit-difficult) in either direction: a
-flag for your manual flag, a sparkle for the automatic one, and both side by side for
-both. Hover over it to read which — **Difficult (manual flag)**, **Difficult (automatic
-flag)** or **Difficult (manual and automatic flag)**. **Difficult only** likewise shows
-a unit that is difficult in either direction.
+The **Difficult** column, **Difficult only**, **Mark selected** and **Unmark selected**
+all follow the **Direction** switch above the tabs, because a unit is
+[difficult](06-learning-sessions.md#marking-a-unit-difficult) in a direction.
+
+- Under **Direction 1** or **Direction 2** they concern that direction only. The column
+  shows the unit's flags there — a flag for your manual flag, a sparkle for the
+  automatic one, both side by side for both — and hovering reads **Manual flag**,
+  **Automatic flag** or **Manual and automatic flag**. **Difficult only** shows the
+  units difficult in that direction, and sorting by the column ranks them by that
+  direction's flags.
+- Under **Combined** they mean either direction. The column shows every flag the unit
+  has in either direction, and hovering names where each one sits, for example
+  **Manual flag: Direction 1 · Automatic flag: Direction 1 and 2**. **Difficult only**
+  shows a unit difficult in either direction.
 
 To mark units in bulk, select them and press **Mark selected**: each gets your manual
-flag in both directions, and an automatic flag it already has stays. **Unmark selected**
-removes every flag, in both directions, from each selected unit — "not difficult" means
-not difficult, as with `F12` in a session. The list shows the change at once and the
+flag in the direction shown — in both directions under **Combined** — and an automatic
+flag it already has stays. **Unmark selected** removes both flags in the direction
+shown, and every flag under **Combined** — "not difficult" means not difficult, as with
+`F12` in a session. Under **Direction 1** or **Direction 2** the other direction is
+never touched. The list shows the change at once and the
 deck file is written straight away; like any flag change, this is not an edit, so the
 deck's **Last edited** date stays as it was. With nothing selected, both say **No units selected.** and change nothing.
 
@@ -189,8 +200,8 @@ with it.
 A matrix with one row per level and one column per accuracy bucket, plus row and column
 **Total**s, showing how your practice pool is distributed across both dimensions at
 once. Click a cell to drill into the units it represents — the same unit list as above,
-scoped to that level and bucket, with **Difficult only** and the marking buttons too;
-**Back** returns to the matrix.
+scoped to that level and bucket, with **Difficult only** and the marking buttons too,
+following the **Direction** switch the same way; **Back** returns to the matrix.
 
 This tab only has data once you have practised in
 [Level learning](07-level-learning.md) mode.

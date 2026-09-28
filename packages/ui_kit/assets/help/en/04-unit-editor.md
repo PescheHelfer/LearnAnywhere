@@ -79,12 +79,12 @@ goes.
 A unit is difficult in a direction (see
 [Marking a unit difficult](06-learning-sessions.md#marking-a-unit-difficult)). Here in
 the editor, the header line shows whether the current unit is difficult in Direction 1,
-with the same badge a learning session uses, and updates it as you move between units:
+with the same badge a learning session uses — the icon of each flag, then
+**Difficult** — and updates it as you move between units. Hover over it to read which:
 
-- **Difficult (manual flag)** — you marked it.
-- **Difficult (automatic flag)** — the program found it hard from the unit's all-time
-  statistics.
-- **Difficult (manual and automatic flag)** — both.
+- **Manual flag** — you marked it.
+- **Automatic flag** — the program found it hard from the unit's all-time statistics.
+- **Manual and automatic flag** — both.
 
 `F12` toggles Direction 1 here exactly as it does in a
 [learning session](06-learning-sessions.md#marking-a-unit-difficult): where the unit is

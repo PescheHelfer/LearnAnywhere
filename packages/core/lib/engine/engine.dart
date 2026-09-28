@@ -75,7 +75,22 @@ enum StatisticsDirectionView {
   direction1,
 
   /// Use only direction 2.
-  direction2,
+  direction2;
+
+  /// The query directions this view covers: its own one, or both when
+  /// combined.
+  Set<QueryDirection> get directions => switch (this) {
+    StatisticsDirectionView.direction1 => const <QueryDirection>{
+      QueryDirection.direction1,
+    },
+    StatisticsDirectionView.direction2 => const <QueryDirection>{
+      QueryDirection.direction2,
+    },
+    StatisticsDirectionView.combined => const <QueryDirection>{
+      QueryDirection.direction1,
+      QueryDirection.direction2,
+    },
+  };
 }
 
 /// Hit-rate bucket for statistics aggregation.
@@ -906,18 +921,7 @@ LevelBucketMatrix levelBucketMatrix({
   };
   var grandTotal = 0;
 
-  final List<QueryDirection> directions = switch (view) {
-    StatisticsDirectionView.direction1 => <QueryDirection>[
-      QueryDirection.direction1,
-    ],
-    StatisticsDirectionView.direction2 => <QueryDirection>[
-      QueryDirection.direction2,
-    ],
-    StatisticsDirectionView.combined => <QueryDirection>[
-      QueryDirection.direction1,
-      QueryDirection.direction2,
-    ],
-  };
+  final Set<QueryDirection> directions = view.directions;
 
   for (final int index in unitIndices) {
     final LevelUnitStats? levelStats = byIndex[index];

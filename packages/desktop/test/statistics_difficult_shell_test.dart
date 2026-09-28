@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -154,6 +155,25 @@ void main() {
     await settle(tester);
   }
 
+  /// Switches the statistics View to the one labelled [label].
+  Future<void> selectView(WidgetTester tester, String label) async {
+    await tester.tap(
+      find.byType(DropdownButtonFormField<StatisticsDirectionView>),
+    );
+    await settle(tester);
+    await tester.tap(find.text(label).last);
+    await settle(tester);
+  }
+
+  /// The keys the file at [path] stores for its unit at [index], flags
+  /// included: which flag keys were written, not what they decode to.
+  Iterable<String> unitKeysOnDisk(String path, int index) {
+    final Map<String, Object?> json =
+        jsonDecode(File(path).readAsStringSync()) as Map<String, Object?>;
+    return ((json['units']! as List<Object?>)[index]! as Map<String, Object?>)
+        .keys;
+  }
+
   /// Ticks the selection checkbox of the list's [row]-th visible row.
   Future<void> tick(WidgetTester tester, int row) async {
     await tester.tap(find.byType(Checkbox).at(row));
@@ -181,24 +201,20 @@ void main() {
       expect(find.text('dog'), findsNothing);
 
       // Mark it: the manual flag joins the automatic one, on disk and on
-      // screen. Until the list follows its View, marking acts on both
-      // directions.
+      // screen, in the View's direction only.
       await press(tester, 'Select visible');
       await press(tester, 'Mark selected');
       await untilFlagsOnDisk(tester, deckPath, <_UnitFlags>[
         (none, none),
-        (both, manual),
+        (both, none),
         (none, none),
       ]);
       expect(flagsOnDisk(deckPath), <_UnitFlags>[
         (none, none),
-        (both, manual),
+        (both, none),
         (none, none),
       ]);
-      expect(
-        find.byTooltip('Difficult (manual and automatic flag)'),
-        findsOneWidget,
-      );
+      expect(find.byTooltip('Manual and automatic flag'), findsOneWidget);
 
       // Mark house and dog from the full list.
       await press(tester, 'Difficult only');
@@ -207,32 +223,32 @@ void main() {
       await tick(tester, 2);
       await press(tester, 'Mark selected');
       await untilFlagsOnDisk(tester, deckPath, <_UnitFlags>[
-        (manual, manual),
-        (both, manual),
-        (manual, manual),
+        (manual, none),
+        (both, none),
+        (manual, none),
       ]);
       expect(flagsOnDisk(deckPath), <_UnitFlags>[
-        (manual, manual),
-        (both, manual),
-        (manual, manual),
+        (manual, none),
+        (both, none),
+        (manual, none),
       ]);
-      expect(find.byTooltip('Difficult (manual flag)'), findsNWidgets(2));
+      expect(find.byTooltip('Manual flag'), findsNWidgets(2));
 
       // Unmark dog again.
       await press(tester, 'Clear selection');
       await tick(tester, 2);
       await press(tester, 'Unmark selected');
       await untilFlagsOnDisk(tester, deckPath, <_UnitFlags>[
-        (manual, manual),
-        (both, manual),
+        (manual, none),
+        (both, none),
         (none, none),
       ]);
       expect(flagsOnDisk(deckPath), <_UnitFlags>[
-        (manual, manual),
-        (both, manual),
+        (manual, none),
+        (both, none),
         (none, none),
       ]);
-      expect(find.byTooltip('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
       // Marking is not editing: the deck keeps the date it had.
       expect(
         decodeDeckJson(File(deckPath).readAsStringSync()).lastEdited,
@@ -247,8 +263,8 @@ void main() {
       await press(tester, 'Select visible');
       await press(tester, 'Save selected units');
       await untilFlagsOnDisk(tester, savedPath, <_UnitFlags>[
-        (manual, manual),
-        (both, manual),
+        (manual, none),
+        (both, none),
       ]);
       final LearningDeck saved = decodeDeckJson(
         File(savedPath).readAsStringSync(),
@@ -261,8 +277,83 @@ void main() {
         <String>['house', 'cat'],
       );
       expect(flagsOnDisk(savedPath), <_UnitFlags>[
-        (manual, manual),
-        (both, manual),
+        (manual, none),
+        (both, none),
+      ]);
+    });
+  });
+
+  testWidgets('the unit list follows its View: Difficult only hides a unit '
+      'difficult only the other way round, Combined shows it, and Mark and '
+      'Unmark selected under Direction 2 write only that direction', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'view.vok');
+    // dog is difficult in Direction 2 only.
+    final LearningDeck deck = _deck();
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        deck.copyWith(
+          units: <LearningUnit>[
+            deck.units[0],
+            deck.units[1],
+            deck.units[2].withFlags(QueryDirection.direction2, manual),
+          ],
+        ),
+      ),
+    );
+    await tester.runAsync(() async {
+      await openUnitList(tester, deckPath);
+
+      // Direction 1, the default View: only cat is difficult this way.
+      await press(tester, 'Difficult only');
+      expect(find.text('cat'), findsOneWidget);
+      expect(find.text('dog'), findsNothing);
+      expect(find.text('house'), findsNothing);
+
+      // Combined: either direction, and dog's tooltip names its direction.
+      await selectView(tester, 'Combined');
+      expect(find.text('cat'), findsOneWidget);
+      expect(find.text('dog'), findsOneWidget);
+      expect(find.text('house'), findsNothing);
+      expect(find.byTooltip('Manual flag: Direction 2'), findsOneWidget);
+      expect(find.byTooltip('Automatic flag: Direction 1'), findsOneWidget);
+
+      // Direction 2: only dog.
+      await selectView(tester, 'Direction 2');
+      expect(find.text('cat'), findsNothing);
+      expect(find.text('dog'), findsOneWidget);
+
+      // Mark house and cat from the full list: only manualDifficult2 is
+      // written, and cat keeps its Direction 1 flag as it was.
+      await press(tester, 'Difficult only');
+      await tick(tester, 0);
+      await tick(tester, 1);
+      await press(tester, 'Mark selected');
+      await untilFlagsOnDisk(tester, deckPath, <_UnitFlags>[
+        (none, manual),
+        (automatic, manual),
+        (none, manual),
+      ]);
+      expect(flagsOnDisk(deckPath), <_UnitFlags>[
+        (none, manual),
+        (automatic, manual),
+        (none, manual),
+      ]);
+      expect(unitKeysOnDisk(deckPath, 0), contains('manualDifficult2'));
+      expect(unitKeysOnDisk(deckPath, 0), isNot(contains('manualDifficult1')));
+
+      // Unmark them again: Direction 2 only, cat's automatic flag stays.
+      await press(tester, 'Unmark selected');
+      await untilFlagsOnDisk(tester, deckPath, <_UnitFlags>[
+        (none, none),
+        (automatic, none),
+        (none, manual),
+      ]);
+      expect(flagsOnDisk(deckPath), <_UnitFlags>[
+        (none, none),
+        (automatic, none),
+        (none, manual),
       ]);
     });
   });

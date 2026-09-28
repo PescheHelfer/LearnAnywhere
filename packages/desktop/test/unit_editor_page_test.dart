@@ -83,21 +83,21 @@ void main() {
       await tester.pumpAndSettle();
 
       // First unit carries no flag.
-      expect(find.text('Difficult (manual flag)'), findsNothing);
+      expect(find.byTooltip('Manual flag'), findsNothing);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f3);
       await tester.pumpAndSettle();
-      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await tester.pumpAndSettle();
       // F12 acts on Direction 1 in the editor.
       expect(toggled, <(int, QueryDirection)>[(2, QueryDirection.direction1)]);
-      expect(find.text('Difficult (manual flag)'), findsNothing);
+      expect(find.byTooltip('Manual flag'), findsNothing);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f2);
       await tester.pumpAndSettle();
-      expect(find.text('Difficult (manual flag)'), findsNothing);
+      expect(find.byTooltip('Manual flag'), findsNothing);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await tester.pumpAndSettle();
@@ -105,7 +105,7 @@ void main() {
         (2, QueryDirection.direction1),
         (1, QueryDirection.direction1),
       ]);
-      expect(find.text('Difficult (manual flag)'), findsOneWidget);
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
     },
   );
 

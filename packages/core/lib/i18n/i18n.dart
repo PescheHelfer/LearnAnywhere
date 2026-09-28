@@ -764,17 +764,26 @@ enum LearnAnywhereMessage {
   learnSpeakNoVoiceMobile,
 
   /// The learning-session pill (F12) that shows and toggles whether the unit
-  /// on screen is difficult.
+  /// on screen is difficult; also the word on the difficulty badge, after
+  /// its flag icons.
   learnDifficult,
 
-  /// Badge on the session's unit while it carries only the manual flag.
-  learnDifficultBadgeManual,
+  /// Tooltip of a difficulty badge or indicator whose direction carries only
+  /// the manual flag; also names that flag where the directions are listed.
+  learnDifficultFlagManual,
 
-  /// Badge on the session's unit while it carries only the automatic flag.
-  learnDifficultBadgeAutomatic,
+  /// Tooltip of a difficulty badge or indicator whose direction carries only
+  /// the automatic flag; also names that flag where the directions are
+  /// listed.
+  learnDifficultFlagAutomatic,
 
-  /// Badge on the session's unit while it carries both flags.
-  learnDifficultBadgeBoth,
+  /// Tooltip of a difficulty badge or indicator whose direction carries both
+  /// flags.
+  learnDifficultFlagBoth,
+
+  /// Names both directions at once in a difficulty indicator's tooltip, where
+  /// a flag sits in each; worded like the statistics View's direction labels.
+  learnDifficultFlagBothDirections,
 
   /// Shown, without interrupting the session, when a flag change could not be
   /// written to the deck. Carries `{file}` (the deck's file name) and
@@ -1904,12 +1913,11 @@ final class LearnAnywhereCatalog {
           'No installed voice speaks {language}. The user guide, in the '
           'overflow menu, explains how to add one.',
       LearnAnywhereMessage.learnDifficult: 'Difficult',
-      LearnAnywhereMessage.learnDifficultBadgeManual:
-          'Difficult (manual flag)',
-      LearnAnywhereMessage.learnDifficultBadgeAutomatic:
-          'Difficult (automatic flag)',
-      LearnAnywhereMessage.learnDifficultBadgeBoth:
-          'Difficult (manual and automatic flag)',
+      LearnAnywhereMessage.learnDifficultFlagManual: 'Manual flag',
+      LearnAnywhereMessage.learnDifficultFlagAutomatic: 'Automatic flag',
+      LearnAnywhereMessage.learnDifficultFlagBoth: 'Manual and automatic flag',
+      LearnAnywhereMessage.learnDifficultFlagBothDirections:
+          'Direction 1 and 2',
       LearnAnywhereMessage.learnDifficultWriteFailed:
           'Could not write "{file}", so the flag change is not saved. Use '
           'File ▸ Save deck once the file can be written again, or the change '
@@ -2647,12 +2655,13 @@ final class LearnAnywhereCatalog {
           'Benutzerhandbuch, im Überlaufmenü, erklärt, wie Sie eine '
           'hinzufügen.',
       LearnAnywhereMessage.learnDifficult: 'Schwierig',
-      LearnAnywhereMessage.learnDifficultBadgeManual:
-          'Schwierig (manuelle Kennzeichnung)',
-      LearnAnywhereMessage.learnDifficultBadgeAutomatic:
-          'Schwierig (automatische Kennzeichnung)',
-      LearnAnywhereMessage.learnDifficultBadgeBoth:
-          'Schwierig (manuelle und automatische Kennzeichnung)',
+      LearnAnywhereMessage.learnDifficultFlagManual: 'Manuelle Kennzeichnung',
+      LearnAnywhereMessage.learnDifficultFlagAutomatic:
+          'Automatische Kennzeichnung',
+      LearnAnywhereMessage.learnDifficultFlagBoth:
+          'Manuelle und automatische Kennzeichnung',
+      LearnAnywhereMessage.learnDifficultFlagBothDirections:
+          'Abfragerichtung 1 und 2',
       LearnAnywhereMessage.learnDifficultWriteFailed:
           '„{file}“ konnte nicht geschrieben werden, die Änderung der '
           'Kennzeichnung ist also nicht gespeichert. Wählen Sie Datei ▸ '

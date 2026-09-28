@@ -169,10 +169,13 @@ void main() {
       expect(find.text('mouse'), findsOneWidget);
       expect(find.text('cat'), findsNothing);
       expect(find.text('bird'), findsNothing);
-      expect(find.byTooltip('Difficult (manual flag)'), findsOneWidget);
-      expect(find.byTooltip('Difficult (automatic flag)'), findsOneWidget);
+      // Each indicator names the directions its flags sit in.
+      expect(find.byTooltip('Manual flag: Direction 1'), findsOneWidget);
+      expect(find.byTooltip('Automatic flag: Direction 2'), findsOneWidget);
       expect(
-        find.byTooltip('Difficult (manual and automatic flag)'),
+        find.byTooltip(
+          'Manual flag: Direction 1 · Automatic flag: Direction 2',
+        ),
         findsOneWidget,
       );
 

@@ -84,13 +84,14 @@ und bleibt erhalten, wohin auch immer die Lern-Datei geht.
 Eine Einheit ist in einer Abfragerichtung schwierig (siehe
 [Eine Einheit als schwierig kennzeichnen](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen)).
 Hier in der Eingabe-Maske zeigt die Kopfzeile, ob die aktuelle Einheit in
-Abfragerichtung 1 schwierig ist, mit demselben Abzeichen wie in einer Lernsitzung, und
-aktualisiert es, sobald Sie zwischen Einheiten wechseln:
+Abfragerichtung 1 schwierig ist, mit demselben Abzeichen wie in einer Lernsitzung —
+dem Symbol jeder Kennzeichnung, gefolgt von **Schwierig** —, und aktualisiert es, sobald
+Sie zwischen Einheiten wechseln. Mit der Maus darüber lesen Sie, welche es ist:
 
-- **Schwierig (manuelle Kennzeichnung)** — Sie selbst.
-- **Schwierig (automatische Kennzeichnung)** — das Programm, anhand der
-  Allzeit-Statistik der Einheit.
-- **Schwierig (manuelle und automatische Kennzeichnung)** — beide.
+- **Manuelle Kennzeichnung** — Sie selbst.
+- **Automatische Kennzeichnung** — das Programm, anhand der Allzeit-Statistik der
+  Einheit.
+- **Manuelle und automatische Kennzeichnung** — beide.
 
 `F12` schaltet hier Abfragerichtung 1 genauso um wie in einer
 [Lernsitzung](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen): Ist die
