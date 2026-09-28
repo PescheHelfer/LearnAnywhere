@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
+import '../widgets/difficult_badge.dart';
+
 /// Opens a folder picker and loads every `.vok` deck beneath the chosen folder
 /// (recursively), keyed by source path. Returns null when the user cancels.
 typedef PickFolderDecks =
@@ -49,6 +51,9 @@ final class LexiconPage extends StatefulWidget {
 final class _LexiconPageState extends State<LexiconPage> {
   final TextEditingController _queryController = TextEditingController();
   int? _categoryId;
+
+  /// Whether the next search keeps only units carrying a difficulty flag.
+  bool _difficultOnly = false;
   bool _loadFoundUnits = false;
   List<SearchResult> _results = const <SearchResult>[];
 
@@ -131,6 +136,20 @@ final class _LexiconPageState extends State<LexiconPage> {
                       setState(() => _categoryId = value);
                     },
                   ),
+                ),
+                // Like the category, it narrows the next search rather than
+                // the hits already shown.
+                FilterChip(
+                  avatar: const Icon(Icons.flag),
+                  label: Text(
+                    messages.message(
+                      LearnAnywhereMessage.statisticsDifficultOnly,
+                    ),
+                  ),
+                  selected: _difficultOnly,
+                  onSelected: (bool selected) {
+                    setState(() => _difficultOnly = selected);
+                  },
                 ),
                 SegmentedButton<bool>(
                   segments: <ButtonSegment<bool>>[
@@ -243,6 +262,7 @@ final class _LexiconPageState extends State<LexiconPage> {
       query: _queryController.text,
       options: widget.textOptions,
       categoryId: _categoryId,
+      difficultOnly: _difficultOnly,
       maxResults: widget.maxResults,
     );
     setState(() {
@@ -263,6 +283,7 @@ final class _LexiconPageState extends State<LexiconPage> {
         query: _queryController.text,
         options: widget.textOptions,
         categoryId: _categoryId,
+        difficultOnly: _difficultOnly,
         maxResults: widget.maxResults,
       );
       setState(() {
@@ -413,9 +434,9 @@ final class _LexiconLoadException implements Exception {
   final LearnAnywhereMessage messageId;
 }
 
-/// Renders search hits in the Keep-Practicing table style: Unit / Question /
-/// Answer / Matched fields (plus Source file for a file search), each row
-/// carrying a full-unit hover tooltip.
+/// Renders search hits in the Keep-Practicing table style: Unit / Difficult /
+/// Question / Answer / Matched fields (plus Source file for a file search),
+/// each row carrying a full-unit hover tooltip.
 final class _ResultTable extends StatelessWidget {
   const _ResultTable({
     required this.deck,
@@ -456,6 +477,11 @@ final class _ResultTable extends StatelessWidget {
           ),
           DataColumn(
             label: Text(
+              messages.message(LearnAnywhereMessage.statisticsDifficult),
+            ),
+          ),
+          DataColumn(
+            label: Text(
               messages.message(LearnAnywhereMessage.statisticsQuestion),
             ),
           ),
@@ -484,6 +510,9 @@ final class _ResultTable extends StatelessWidget {
           return DataRow(
             cells: <DataCell>[
               _tipCell(tooltip, Text(result.unitIndex.toString())),
+              // Not wrapped in the unit tooltip: the indicator names its
+              // flags on hover itself.
+              DataCell(DifficultFlagIndicator(unit: unit)),
               _tipCell(
                 tooltip,
                 Text(_fieldPreview(unit, category, FieldRole.question)),

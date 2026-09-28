@@ -101,6 +101,39 @@ void main() {
     expect(find.text('Results: 1'), findsNothing);
     expect(find.text('No matches found.'), findsNothing);
   });
+
+  testWidgets('Difficult only narrows the next search to flagged units, and '
+      'the results show the flags of each hit', (WidgetTester tester) async {
+    final LearningDeck base = sampleDeck();
+    final LearningDeck deck = base.copyWith(
+      units: <LearningUnit>[
+        base.units[0].copyWith(manualDifficult: true),
+        base.units[1],
+      ],
+    );
+    await tester.pumpWidget(lexiconApp(deck: deck));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Search memory'));
+    await tester.pumpAndSettle();
+    expect(find.text('Results: 2'), findsOneWidget);
+    expect(find.byTooltip('Difficult (manual flag)'), findsOneWidget);
+
+    await tester.tap(find.text('Difficult only'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Search memory'));
+    await tester.pumpAndSettle();
+    expect(find.text('Results: 1'), findsOneWidget);
+    expect(find.text('hello'), findsOneWidget);
+    expect(find.text('bye'), findsNothing);
+    expect(find.byTooltip('Difficult (manual flag)'), findsOneWidget);
+
+    // ANDed with the search text: the flagged unit does not match "bye".
+    await tester.enterText(find.byType(TextField).first, 'bye');
+    await tester.tap(find.text('Search memory'));
+    await tester.pumpAndSettle();
+    expect(find.text('No matches found.'), findsOneWidget);
+  });
 }
 
 Widget lexiconApp({required LearningDeck deck, int? maxResults}) {

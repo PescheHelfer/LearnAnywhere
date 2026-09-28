@@ -1425,12 +1425,16 @@ List<LevelUnitStats> levelStatsAfterDelete(
 /// matches the plain text of the named (non-hidden) fields of the unit's own
 /// category, under [options].
 ///
+/// [difficultOnly] keeps only units carrying either difficulty flag. The flags
+/// live in the deck, so this needs no statistics.
+///
 /// Stops after [maxResults] hits and reports that in [SearchOutcome.isTruncated].
 SearchOutcome searchDeck({
   required LearningDeck deck,
   required String query,
   TextMatchOptions options = const TextMatchOptions(),
   int? categoryId,
+  bool difficultOnly = false,
   String? sourceFile,
   int maxResults = maxSearchResults,
 }) {
@@ -1441,6 +1445,9 @@ SearchOutcome searchDeck({
   for (var unitOffset = 0; unitOffset < deck.units.length; unitOffset += 1) {
     final LearningUnit unit = deck.units[unitOffset];
     if (categoryId != null && unit.categoryId != categoryId) {
+      continue;
+    }
+    if (difficultOnly && !unit.isDifficult) {
       continue;
     }
     var matchedFields = const <String>[];
@@ -1494,6 +1501,7 @@ SearchOutcome searchDeckFiles({
   required String query,
   TextMatchOptions options = const TextMatchOptions(),
   int? categoryId,
+  bool difficultOnly = false,
   int maxResults = maxSearchResults,
 }) {
   final List<SearchResult> results = <SearchResult>[];
@@ -1504,6 +1512,7 @@ SearchOutcome searchDeckFiles({
       query: query,
       options: options,
       categoryId: categoryId,
+      difficultOnly: difficultOnly,
       sourceFile: entry.key,
       maxResults: maxResults - results.length,
     );

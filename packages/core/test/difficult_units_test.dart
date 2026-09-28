@@ -949,4 +949,150 @@ void main() {
       expect(on.copyWith(difficultOnly: false).difficultOnly, isFalse);
     });
   });
+
+  group('Lexicon', () {
+    // Units 1, 3 and 4 are difficult, each by a different flag; 2 and 5 are
+    // not. Every unit contains "e", so a search for it matches them all.
+    final LearningDeck deck = LearningDeck(
+      mask: mask,
+      units: <LearningUnit>[
+        word('one', 'eins', manual: true),
+        word('two', 'zwei'),
+        word('three', 'drei', automatic: true),
+        word('four', 'vier', manual: true, automatic: true),
+        word('five', 'fünf'),
+      ],
+    );
+
+    /// The unit indices of [outcome]'s hits, in order.
+    List<int> hitsOf(SearchOutcome outcome) => <int>[
+      for (final SearchResult result in outcome.results) result.unitIndex,
+    ];
+
+    test('the filter is off by default, so every matching unit is found', () {
+      expect(hitsOf(searchDeck(deck: deck, query: 'e')), <int>[1, 2, 3, 4, 5]);
+    });
+
+    test('Difficult only keeps units with either flag, ANDed with the search '
+        'text', () {
+      expect(
+        hitsOf(searchDeck(deck: deck, query: 'e', difficultOnly: true)),
+        <int>[1, 3, 4],
+      );
+      // "ei" matches eins, zwei and drei; the filter drops zwei.
+      expect(
+        hitsOf(searchDeck(deck: deck, query: 'ei', difficultOnly: true)),
+        <int>[1, 3],
+      );
+      expect(
+        hitsOf(searchDeck(deck: deck, query: 'zwei', difficultOnly: true)),
+        isEmpty,
+      );
+    });
+
+    test('an empty query with the filter lists every difficult unit', () {
+      expect(
+        hitsOf(searchDeck(deck: deck, query: '', difficultOnly: true)),
+        <int>[1, 3, 4],
+      );
+    });
+
+    test('the result cap counts only difficult hits', () {
+      final SearchOutcome capped = searchDeck(
+        deck: deck,
+        query: '',
+        difficultOnly: true,
+        maxResults: 2,
+      );
+      expect(hitsOf(capped), <int>[1, 3]);
+      expect(capped.isTruncated, isTrue);
+
+      // Unit 5 matches the text but not the filter, so three difficult hits
+      // exactly fill a cap of three.
+      final SearchOutcome exact = searchDeck(
+        deck: deck,
+        query: '',
+        difficultOnly: true,
+        maxResults: 3,
+      );
+      expect(hitsOf(exact), <int>[1, 3, 4]);
+      expect(exact.isTruncated, isFalse);
+    });
+
+    test('a file search applies the filter to every deck, with no statistics '
+        'loaded', () {
+      final LearningDeck other = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[
+          word('six', 'sechs'),
+          word('seven', 'sieben', automatic: true),
+        ],
+      );
+      final SearchOutcome outcome = searchDeckFiles(
+        decksBySource: <String, LearningDeck>{'a.vok': deck, 'b.vok': other},
+        query: '',
+        difficultOnly: true,
+      );
+      expect(
+        <String>[
+          for (final SearchResult result in outcome.results)
+            '${result.sourceFile}#${result.unitIndex}',
+        ],
+        <String>['a.vok#1', 'a.vok#3', 'a.vok#4', 'b.vok#2'],
+      );
+    });
+
+    test('re-keying hits onto a reference mask keeps both flags', () {
+      // The reference comes from another deck of the same mask: a later
+      // revision with a renamed field and one added.
+      final LearningMask reference = mask.copyWith(
+        revision: mask.revision + 1,
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 0,
+            name: 'Default',
+            fields: <FieldDefinition>[
+              mask.categories.single.fields[0].copyWith(name: 'Word'),
+              mask.categories.single.fields[1],
+              const FieldDefinition(
+                id: 2,
+                name: 'Note',
+                length: 40,
+                equalGroup: 1,
+                role1: FieldRole.remark,
+                role2: FieldRole.remark,
+              ),
+            ],
+          ),
+        ],
+      );
+      final LearningDeck hits = LearningDeck(
+        mask: mask,
+        units: deck.units.take(4).toList(),
+      );
+      expect(
+        checkMaskCompatibility(
+          oldMask: mask,
+          newMask: reference,
+          units: hits.units,
+        ).isCompatible,
+        isTrue,
+      );
+
+      final LearningDeck rekeyed = applyMaskToDeck(hits, reference);
+
+      expect(
+        <(bool, bool)>[
+          for (final LearningUnit unit in rekeyed.units)
+            (unit.manualDifficult, unit.autoDifficult),
+        ],
+        <(bool, bool)>[
+          (true, false),
+          (false, false),
+          (false, true),
+          (true, true),
+        ],
+      );
+    });
+  });
 }
