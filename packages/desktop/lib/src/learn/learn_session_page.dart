@@ -206,15 +206,13 @@ const List<(LearnAnywhereMessage, String)> _widestStatPills =
 /// must never do is get *squeezed*: the two pill groups are each a
 /// [FittedBox], so a frame narrower than one of them shrinks its text instead
 /// of moving it. This is therefore the widest single unbreakable cluster, not
-/// the sum of a row: the action group, the evaluation group, one statistic
-/// pill, or the Difficult pill, whichever is widest.
+/// the sum of a row: the question-stage group, the action group, the
+/// evaluation group, one statistic pill, or the Difficult pill, whichever is
+/// widest.
 ///
 /// Measured, not estimated: every label is measured in the very style it is
 /// painted in, so the figure follows the language, the zoom level and the
 /// host's font by itself, and only each control's fixed chrome is a constant.
-///
-/// The pre-check row needs no term of its own — it is a plain [Wrap] of single
-/// buttons, every one of them narrower than the action group above.
 double learnControlGroupWidth(
   BuildContext context,
   LearnAnywhereLocalizations messages,
@@ -236,10 +234,13 @@ double learnControlGroupWidth(
       .reduce(max);
 
   // ── The action group: it may wrap away from the evaluation group, but its
-  // own three pills are one atom.
+  // own pills are one atom — at their widest, Read aloud included.
   final double actionGroup =
       iconPillChrome +
       labelColumn(say(LearnAnywhereMessage.learnContinue), 'F3') +
+      LearnAnywhereTokens.gapSmall +
+      iconPillChrome +
+      labelColumn(say(LearnAnywhereMessage.learnReadAloud), 'F4') +
       LearnAnywhereTokens.gapSmall +
       iconPillChrome +
       labelColumn(say(LearnAnywhereMessage.actionCancel), 'Esc') +
@@ -256,6 +257,31 @@ double learnControlGroupWidth(
           keyHintStyle,
         ),
       );
+
+  // ── The question-stage group, at its widest: Level Learning's Less/More
+  // help, Read aloud, the widest of the three F10 labels, and Cancel.
+  final double questionGroup =
+      iconPillChrome +
+      measureTextWidth(say(LearnAnywhereMessage.learnLessHelp), pillLabelStyle) +
+      LearnAnywhereTokens.gapSmall +
+      iconPillChrome +
+      measureTextWidth(say(LearnAnywhereMessage.learnMoreHelp), pillLabelStyle) +
+      LearnAnywhereTokens.gapSmall +
+      iconPillChrome +
+      labelColumn(say(LearnAnywhereMessage.learnReadAloud), 'F4') +
+      LearnAnywhereTokens.gapSmall +
+      iconPillChrome +
+      max(
+        widest(const <LearnAnywhereMessage>[
+          LearnAnywhereMessage.learnCheckAnswer,
+          LearnAnywhereMessage.learnReveal,
+          LearnAnywhereMessage.learnHideAndType,
+        ]),
+        measureTextWidth('F10', keyHintStyle),
+      ) +
+      LearnAnywhereTokens.gapSmall +
+      iconPillChrome +
+      labelColumn(say(LearnAnywhereMessage.actionCancel), 'Esc');
 
   // Always three rating pills, whichever outcome produced them; the widest
   // label any outcome can offer sizes all three.
@@ -296,6 +322,7 @@ double learnControlGroupWidth(
       labelColumn(say(LearnAnywhereMessage.learnDifficult), 'F12');
 
   return <double>[
+    questionGroup,
     actionGroup,
     evaluationGroup,
     statisticPill,
@@ -816,6 +843,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       statistics: widget.statistics,
       speechPlan: speechPlan,
       onSpeak: _speak,
+      // Offered exactly when F4 would play something: an answer with no
+      // installed voice still counts, and pressing it explains as F4 does.
+      onReadAloud: speechPlan.answerUtterances.isEmpty
+          ? null
+          : () => unawaited(_speakAnswer(explain: true)),
       answerShownAsSupport: answerShownAsSupport,
       levelStatistics: _levelStats,
       levelNames: widget.levelNames,
@@ -2036,6 +2068,7 @@ final class _SessionView extends StatelessWidget {
     required this.statistics,
     required this.speechPlan,
     required this.onSpeak,
+    required this.onReadAloud,
     required this.answerShownAsSupport,
     required this.levelStatistics,
     required this.levelNames,
@@ -2075,6 +2108,10 @@ final class _SessionView extends StatelessWidget {
 
   /// Says one of [speechPlan]'s utterances, or explains why it cannot.
   final ValueChanged<SpeechUtterance> onSpeak;
+
+  /// Reads the answer aloud, as `F4` does; `null` hides the Read aloud pill,
+  /// because `F4` would play nothing.
+  final VoidCallback? onReadAloud;
 
   /// Whether the whole answer is on screen as Level-Learning support, before
   /// any Check — the state the top of the ladder shows for memorizing.
@@ -2142,6 +2179,17 @@ final class _SessionView extends StatelessWidget {
         difficult: unit.isDifficultIn(item.direction),
         onPressed: onToggle,
       ),
+    ];
+  }
+
+  /// The Read aloud pill, or nothing when `F4` would play nothing.
+  List<Widget> _readAloudPill() {
+    final VoidCallback? onPressed = onReadAloud;
+    if (onPressed == null) {
+      return const <Widget>[];
+    }
+    return <Widget>[
+      _ReadAloudPill(key: const Key('learnReadAloudPill'), onPressed: onPressed),
     ];
   }
 
@@ -2515,8 +2563,10 @@ final class _SessionView extends StatelessWidget {
     return null;
   }
 
-  /// Pre-check button row: Cancel, the Level-Learning help override (More/Less
-  /// help), and the primary action (Check / Reveal, or Hide & type at level 3).
+  /// Pre-check button row, laid out like the answer stage's: one group with
+  /// the Level-Learning help override (Less/More help), Read aloud where the
+  /// solution is on screen, the primary action (Check / Reveal, or Hide &
+  /// type at level 3) and Cancel last; then the Difficult pill on its own.
   Widget _preCheckButtons(
     BuildContext context,
     LearnAnywhereLocalizations messages,
@@ -2524,60 +2574,74 @@ final class _SessionView extends StatelessWidget {
   ) {
     final bool level3Pending =
         _isLevelLearning && activeLevel == kMaxSupportLevel && !level3Memorized;
-    return Wrap(
-      spacing: LearnAnywhereTokens.gapSmall,
-      runSpacing: LearnAnywhereTokens.gapSmall,
-      children: <Widget>[
-        FilledButton.tonalIcon(
-          onPressed: onCancel,
-          icon: const Icon(Icons.close),
-          label: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(messages.message(LearnAnywhereMessage.actionCancel)),
-              Text('Esc', style: LearnAnywhereTokens.keyHint(context)),
-            ],
-          ),
+    final List<Widget> actions = <Widget>[
+      if (_isLevelLearning) ...<Widget>[
+        OutlinedButton.icon(
+          onPressed: activeLevel > kFreeRecallLevel
+              ? () => onSetLevel(activeLevel - 1)
+              : null,
+          icon: const Icon(Icons.remove),
+          label: Text(messages.message(LearnAnywhereMessage.learnLessHelp)),
         ),
-        if (_isLevelLearning) ...<Widget>[
-          OutlinedButton.icon(
-            onPressed: activeLevel > kFreeRecallLevel
-                ? () => onSetLevel(activeLevel - 1)
-                : null,
-            icon: const Icon(Icons.remove),
-            label: Text(messages.message(LearnAnywhereMessage.learnLessHelp)),
-          ),
-          OutlinedButton.icon(
-            onPressed: activeLevel < kMaxSupportLevel
-                ? () => onSetLevel(activeLevel + 1)
-                : null,
-            icon: const Icon(Icons.add),
-            label: Text(messages.message(LearnAnywhereMessage.learnMoreHelp)),
-          ),
-        ],
-        FilledButton.icon(
-          onPressed: onReveal,
-          icon: Icon(
-            level3Pending
-                ? Icons.visibility_off
-                : (parameters.withInput ? Icons.check : Icons.visibility),
-          ),
-          label: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                messages.message(
-                  level3Pending
-                      ? LearnAnywhereMessage.learnHideAndType
-                      : (parameters.withInput
-                            ? LearnAnywhereMessage.learnCheckAnswer
-                            : LearnAnywhereMessage.learnReveal),
-                ),
+        OutlinedButton.icon(
+          onPressed: activeLevel < kMaxSupportLevel
+              ? () => onSetLevel(activeLevel + 1)
+              : null,
+          icon: const Icon(Icons.add),
+          label: Text(messages.message(LearnAnywhereMessage.learnMoreHelp)),
+        ),
+      ],
+      ..._readAloudPill(),
+      FilledButton.icon(
+        onPressed: onReveal,
+        icon: Icon(
+          level3Pending
+              ? Icons.visibility_off
+              : (parameters.withInput ? Icons.check : Icons.visibility),
+        ),
+        label: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              messages.message(
+                level3Pending
+                    ? LearnAnywhereMessage.learnHideAndType
+                    : (parameters.withInput
+                          ? LearnAnywhereMessage.learnCheckAnswer
+                          : LearnAnywhereMessage.learnReveal),
               ),
-              Text('F10', style: LearnAnywhereTokens.keyHint(context)),
-            ],
-          ),
+            ),
+            Text('F10', style: LearnAnywhereTokens.keyHint(context)),
+          ],
         ),
+      ),
+      FilledButton.tonalIcon(
+        onPressed: onCancel,
+        icon: const Icon(Icons.close),
+        label: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(messages.message(LearnAnywhereMessage.actionCancel)),
+            Text('Esc', style: LearnAnywhereTokens.keyHint(context)),
+          ],
+        ),
+      ),
+    ];
+    return Wrap(
+      key: const Key('learnQuestionPills'),
+      spacing: LearnAnywhereTokens.gapLarge,
+      runSpacing: LearnAnywhereTokens.gapMedium,
+      children: <Widget>[
+        _PillGroup(
+          key: const Key('learnQuestionPillsGroup'),
+          children: <Widget>[
+            for (int i = 0; i < actions.length; i++) ...<Widget>[
+              if (i > 0) const SizedBox(width: LearnAnywhereTokens.gapSmall),
+              actions[i],
+            ],
+          ],
+        ),
+        // A group of its own, as after the reveal.
         ..._difficultPill(unit),
       ],
     );
@@ -2679,8 +2743,10 @@ final class _SessionView extends StatelessWidget {
               // Two _PillGroups nested in a Wrap: the whole group drops to
               // its own line (with a bigger gap than the pills within a
               // group) once the window is too narrow for both to sit side
-              // by side.
+              // by side. Within each group the keyed pills run in F-key
+              // order, and Cancel comes last in its group.
               Wrap(
+                key: const Key('learnAnswerPills'),
                 spacing: LearnAnywhereTokens.gapLarge,
                 runSpacing: LearnAnywhereTokens.gapMedium,
                 children: <Widget>[
@@ -2702,6 +2768,22 @@ final class _SessionView extends StatelessWidget {
                           ],
                         ),
                       ),
+                      for (final Widget pill in _readAloudPill()) ...<Widget>[
+                        const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                        pill,
+                      ],
+                      if (parameters.withInput) ...<Widget>[
+                        const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                        _ToggleViewButton(
+                          label: messages.message(
+                            _answerViewModeMessage(viewMode),
+                          ),
+                          hint:
+                              '${messages.message(LearnAnywhereMessage.learnSwitchHint)}: F9',
+                          onPressed: onToggleView,
+                          onRestoreFocus: onRestoreFocus,
+                        ),
+                      ],
                       const SizedBox(width: LearnAnywhereTokens.gapSmall),
                       FilledButton.tonalIcon(
                         onPressed: onCancel,
@@ -2718,18 +2800,6 @@ final class _SessionView extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (parameters.withInput) ...<Widget>[
-                        const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                        _ToggleViewButton(
-                          label: messages.message(
-                            _answerViewModeMessage(viewMode),
-                          ),
-                          hint:
-                              '${messages.message(LearnAnywhereMessage.learnSwitchHint)}: F9',
-                          onPressed: onToggleView,
-                          onRestoreFocus: onRestoreFocus,
-                        ),
-                      ],
                     ],
                   ),
                   _PillGroup(
@@ -3713,6 +3783,54 @@ final class _ToggleViewButtonState extends State<_ToggleViewButton> {
         children: <Widget>[
           Text(widget.label),
           Text(widget.hint, style: LearnAnywhereTokens.keyHint(context)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Read aloud pill (F4, skipTraversal focus node) ───────────────────────────
+
+/// The pill that reads the answer aloud, like `F4`.
+///
+/// Its focus node never takes focus, so clicking it at the top of the level
+/// ladder or on the answer leaves the session's keys where they were.
+final class _ReadAloudPill extends StatefulWidget {
+  const _ReadAloudPill({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  State<_ReadAloudPill> createState() => _ReadAloudPillState();
+}
+
+final class _ReadAloudPillState extends State<_ReadAloudPill> {
+  final FocusNode _focusNode = FocusNode(
+    skipTraversal: true,
+    canRequestFocus: false,
+  );
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      focusNode: _focusNode,
+      onPressed: widget.onPressed,
+      icon: const Icon(Icons.volume_up),
+      label: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            LearnAnywhereLocalizations.of(
+              context,
+            ).message(LearnAnywhereMessage.learnReadAloud),
+          ),
+          Text('F4', style: LearnAnywhereTokens.keyHint(context)),
         ],
       ),
     );

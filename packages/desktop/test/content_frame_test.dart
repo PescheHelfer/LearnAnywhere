@@ -27,6 +27,8 @@ void main() {
             role1: FieldRole.question,
             role2: FieldRole.answer,
           ),
+          // Spoken, so the session offers the Read aloud pill once the
+          // answer is revealed.
           FieldDefinition(
             id: 1,
             name: 'Answer',
@@ -34,6 +36,8 @@ void main() {
             equalGroup: 0,
             role1: FieldRole.answer,
             role2: FieldRole.question,
+            language: 'en-GB',
+            speak: true,
           ),
         ],
       ),
@@ -53,8 +57,11 @@ void main() {
     ],
   );
 
-  Widget buildSession(Locale locale, {void Function(BuildContext)? report}) =>
-      MaterialApp(
+  Widget buildSession(
+    Locale locale, {
+    SessionMode mode = SessionMode.onceThrough,
+    void Function(BuildContext)? report,
+  }) => MaterialApp(
         locale: locale,
         localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
         supportedLocales: LearnAnywhereLocalizations.supportedLocales,
@@ -69,11 +76,11 @@ void main() {
                 // The clock adds the one optional pill, so the statistic row
                 // laid out here is the widest the drill modes can produce.
                 options: const DesktopQueryOptions(showClock: true),
-                parameters: const SessionParameters(
+                parameters: SessionParameters(
                   // Typed input, so the view-toggle pill is present and the
                   // action row is at its widest.
                   withInput: true,
-                  mode: SessionMode.onceThrough,
+                  mode: mode,
                   directionSelection: DirectionSelection.direction1,
                   shuffle: false,
                 ),
@@ -83,6 +90,8 @@ void main() {
                 onExit: () {},
                 // Offered, so the Difficult pill is laid out too.
                 onToggleDifficult: (SessionItem _) {},
+                // A host that speaks, so the Read aloud pill is laid out too.
+                speechEngine: const _SpeakingTtsEngine(),
               );
             },
           ),
@@ -155,6 +164,7 @@ void main() {
       // its text rather than moving it, which is the one thing the floor is
       // there to prevent. Their combined width is deliberately NOT checked —
       // the evaluation group dropping to its own line is a supported layout.
+      expect(find.byKey(const Key('learnReadAloudPill')), findsOneWidget);
       for (final String group in <String>[
         'learnActionPillsGroup',
         'learnEvaluationPillsGroup',
@@ -167,6 +177,38 @@ void main() {
           reason: 'the $language $group lays out $width wide',
         );
       }
+    });
+
+    testWidgets('the frame floor covers the $language question group', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(3000, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      late BuildContext context;
+      await tester.pumpWidget(
+        buildSession(
+          locale,
+          mode: SessionMode.levelLearning,
+          report: (BuildContext c) => context = c,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // The top of the ladder is the group at its widest: Less and More help,
+      // Read aloud for the solution on screen, Hide & type and Cancel.
+      expect(find.byKey(const Key('learnReadAloudPill')), findsOneWidget);
+      expect(find.byIcon(Icons.visibility_off), findsOneWidget);
+      final double width = tester
+          .getSize(find.byKey(const Key('learnQuestionPillsGroup')))
+          .width;
+      expect(
+        learnControlGroupWidth(context, LearnAnywhereLocalizations.of(context)),
+        greaterThanOrEqualTo(width),
+        reason: 'the $language question group lays out $width wide',
+      );
     });
 
     testWidgets('the frame floor covers the widest $language editor button', (
@@ -500,4 +542,23 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+}
+
+/// A host that speaks English and says nothing out loud.
+final class _SpeakingTtsEngine implements TtsEngine {
+  const _SpeakingTtsEngine();
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<List<SpeechVoice>> voices() async => const <SpeechVoice>[
+    SpeechVoice(id: 'en', name: 'English', language: 'en-GB'),
+  ];
+
+  @override
+  Future<void> speak(SpeechUtterance utterance) async {}
+
+  @override
+  Future<void> stop() async {}
 }

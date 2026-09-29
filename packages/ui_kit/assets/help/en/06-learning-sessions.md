@@ -57,6 +57,14 @@ from a row of buttons (`F5`/`F6`/`F7`) shown right after **Continue** and **Canc
 both groups stay within reach of each other. On a narrow window the rating buttons drop
 to a line of their own rather than being cut off.
 
+Within each group the buttons run in the order of their keys, and **Cancel** comes last
+in its group: **Continue** (`F3`), **Read aloud** (`F4`), the answer view switch (`F9`)
+and **Cancel** (`Esc`); then the rating buttons (`F5`/`F6`/`F7`); then **Difficult**
+(`F12`) on its own. Before the answer is shown the row reads the same way: **Less help**
+and **More help** in [Level learning](07-level-learning.md), **Read aloud** where there is
+something to read, **Check**, **Reveal** or **Hide & type** (`F10`) and **Cancel** in one
+group, then **Difficult**. A group never splits across lines.
+
 `F10` **Reveals** the card without you answering, if you would rather see it than guess.
 `F9` cycles what the answer area shows: **Correction** (your answer with differences
 highlighted against the solution) → **Solution** → **Your answer**.
@@ -69,6 +77,9 @@ straight away, and the answer once you have checked. See
 With **automatic speech** switched on, the answer reads itself out at every reveal,
 right or wrong, and `F4` reads it again whenever you want it — see
 [Reading the answer automatically](15-speech.md#reading-the-answer-automatically).
+The **Read aloud** button does the same with the mouse. It is there exactly when `F4`
+would read something: once the answer is on screen, if the mask lets an answer field be
+spoken and your computer can speak at all.
 
 A live panel tracks **Attempts**, **Mastered**, **Remaining**, **Accuracy**, **Unit
 accuracy** — the current unit's own figure — and, if enabled in

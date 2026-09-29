@@ -773,6 +773,10 @@ enum LearnAnywhereMessage {
   /// Carries `{language}`.
   learnSpeakNoVoiceMobile,
 
+  /// The learning-session pill (F4) that reads the answer aloud, present
+  /// exactly when F4 would play something.
+  learnReadAloud,
+
   /// The learning-session pill (F12) that shows and toggles whether the unit
   /// on screen is difficult; also the word on the difficulty badge, after
   /// its flag icons.
@@ -1925,6 +1929,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnSpeakNoVoiceMobile:
           'No installed voice speaks {language}. The user guide, in the '
           'overflow menu, explains how to add one.',
+      LearnAnywhereMessage.learnReadAloud: 'Read aloud',
       LearnAnywhereMessage.learnDifficult: 'Difficult',
       LearnAnywhereMessage.learnDifficultFlagManual: 'Manual flag',
       LearnAnywhereMessage.learnDifficultFlagAutomatic: 'Automatic flag',
@@ -2670,6 +2675,7 @@ final class LearnAnywhereCatalog {
           'Keine installierte Stimme spricht {language}. Das '
           'Benutzerhandbuch, im Überlaufmenü, erklärt, wie Sie eine '
           'hinzufügen.',
+      LearnAnywhereMessage.learnReadAloud: 'Vorlesen',
       LearnAnywhereMessage.learnDifficult: 'Schwierig',
       LearnAnywhereMessage.learnDifficultFlagManual: 'Manuelle Kennzeichnung',
       LearnAnywhereMessage.learnDifficultFlagAutomatic:

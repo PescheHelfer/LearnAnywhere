@@ -80,7 +80,11 @@ void main() {
   }
 
   /// Opens the app on [deckPath] and starts a session on its only unit.
-  Future<void> startSession(WidgetTester tester, String deckPath) async {
+  Future<void> startSession(
+    WidgetTester tester,
+    String deckPath, {
+    TtsEngine? speechEngine,
+  }) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -90,6 +94,7 @@ void main() {
         prefs: prefs,
         filePicker: picker,
         settingsPath: p.join(temp.path, 'settings.json'),
+        speechEngine: speechEngine,
       ),
     );
     await settleAfterIo(tester);
@@ -143,6 +148,87 @@ void main() {
   /// Finds [icon] inside the badge.
   Finder badgeShows(IconData icon) =>
       find.descendant(of: badge, matching: find.byIcon(icon));
+
+  /// Every label and key hint in the row keyed [rowKey], in reading order.
+  List<String?> rowTexts(String rowKey) => find
+      .descendant(of: find.byKey(Key(rowKey)), matching: find.byType(Text))
+      .evaluate()
+      .map((Element e) => (e.widget as Text).data)
+      .toList();
+
+  final Finder readAloudPill = find.byKey(const Key('learnReadAloudPill'));
+
+  testWidgets('the session pills run in key order in both stages, and Read '
+      'aloud appears with the answer and plays it', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'spoken.vok');
+    File(deckPath).writeAsStringSync(encodeDeckJson(_deck(speakAnswer: true)));
+    final _RecordingTtsEngine engine = _RecordingTtsEngine();
+    await tester.runAsync(() async {
+      await startSession(tester, deckPath, speechEngine: engine);
+
+      // No answer on screen yet, so F4 would say nothing and no pill offers
+      // it; Cancel ends its group and Difficult follows.
+      expect(readAloudPill, findsNothing);
+      expect(rowTexts('learnQuestionPills'), <String>[
+        'Check', 'F10', //
+        'Cancel', 'Esc', //
+        'Difficult', 'F12', //
+      ]);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await settle(tester);
+      expect(rowTexts('learnActionPillsGroup'), <String>[
+        'Continue', 'F3', //
+        'Read aloud', 'F4', //
+        'Correction', 'Switch: F9', //
+        'Cancel', 'Esc', //
+      ]);
+      expect(rowTexts('learnEvaluationPillsGroup'), <String>[
+        'Evaluate as:', //
+        'Wrong', 'F5', //
+        'Actually correct', 'F6', //
+        'No count', 'F7', //
+      ]);
+      // The groups keep their order, Difficult on its own at the end.
+      expect(rowTexts('learnAnswerPills'), <String?>[
+        ...rowTexts('learnActionPillsGroup'),
+        ...rowTexts('learnEvaluationPillsGroup'),
+        'Difficult', 'F12', //
+      ]);
+
+      await tester.tap(readAloudPill);
+      await settle(tester);
+      expect(engine.spoken, <String>['Haus']);
+      // Still on the answer: listening is not a rating.
+      expect(find.text('Continue'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('a host that cannot speak offers no Read aloud pill', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'silent.vok');
+    File(deckPath).writeAsStringSync(encodeDeckJson(_deck(speakAnswer: true)));
+    await tester.runAsync(() async {
+      await startSession(
+        tester,
+        deckPath,
+        speechEngine: const UnavailableTtsEngine(),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await settle(tester);
+      expect(find.text('Continue'), findsOneWidget);
+      expect(readAloudPill, findsNothing);
+      expect(rowTexts('learnActionPillsGroup'), <String>[
+        'Continue', 'F3', //
+        'Correction', 'Switch: F9', //
+        'Cancel', 'Esc', //
+      ]);
+    });
+  });
 
   testWidgets('F12 writes the manual flag to the deck at once and F12 again '
       'removes it, in the question and in the answer stage; the badge follows '
@@ -538,9 +624,14 @@ void main() {
   });
 }
 
-LearningDeck _deck({DifficultFlags direction1Flags = DifficultFlags.none}) {
+/// The shell tests' one-unit deck; [speakAnswer] lets the Direction 1 answer
+/// field be read aloud in German.
+LearningDeck _deck({
+  DifficultFlags direction1Flags = DifficultFlags.none,
+  bool speakAnswer = false,
+}) {
   return LearningDeck(
-    mask: const LearningMask(
+    mask: LearningMask(
       maskId: 'm_new_difficult-flag-shell',
       name: 'Sample',
       direction1Label: 'Direction 1',
@@ -565,6 +656,8 @@ LearningDeck _deck({DifficultFlags direction1Flags = DifficultFlags.none}) {
               equalGroup: 0,
               role1: FieldRole.answer,
               role2: FieldRole.question,
+              language: speakAnswer ? 'de-DE' : noSpokenLanguage,
+              speak: speakAnswer,
             ),
           ],
         ),
@@ -581,4 +674,27 @@ LearningDeck _deck({DifficultFlags direction1Flags = DifficultFlags.none}) {
       ),
     ],
   );
+}
+
+/// A host that speaks German and records what it is asked to say instead of
+/// saying it.
+final class _RecordingTtsEngine implements TtsEngine {
+  /// The text of every utterance handed to [speak], in order.
+  final List<String> spoken = <String>[];
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<List<SpeechVoice>> voices() async => const <SpeechVoice>[
+    SpeechVoice(id: 'de', name: 'German', language: 'de-DE'),
+  ];
+
+  @override
+  Future<void> speak(SpeechUtterance utterance) async {
+    spoken.add(utterance.text);
+  }
+
+  @override
+  Future<void> stop() async {}
 }

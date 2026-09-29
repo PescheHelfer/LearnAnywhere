@@ -74,7 +74,7 @@ the change is part of the pending edit and reaches the file only when you save. 
 | Key | Action |
 |---|---|
 | `F3` or `Enter` | Check answer / Continue |
-| `F4` | Read the answer aloud again |
+| `F4` | Read the answer aloud again (the **Read aloud** button) |
 | `F5` | Rating button 1 |
 | `F6` | Rating button 2 |
 | `F7` | Rating button 3 |

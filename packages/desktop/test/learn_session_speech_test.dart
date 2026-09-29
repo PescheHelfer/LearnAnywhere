@@ -126,6 +126,7 @@ void main() {
     LearningDeck sessionDeck,
     bool withInput,
     ValueChanged<List<UnitStats>> onStatisticsChanged,
+    ValueChanged<SessionItem>? onToggleDifficult,
   ) {
     return MaterialApp(
       localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
@@ -147,6 +148,7 @@ void main() {
           onParametersChanged: (SessionParameters _) {},
           onStatisticsChanged: onStatisticsChanged,
           onOpenEditor: () {},
+          onToggleDifficult: onToggleDifficult,
         ),
       ),
     );
@@ -160,6 +162,7 @@ void main() {
     LearningDeck? sessionDeck,
     bool withInput = false,
     ValueChanged<List<UnitStats>>? onStatisticsChanged,
+    ValueChanged<SessionItem>? onToggleDifficult,
   }) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
@@ -173,6 +176,7 @@ void main() {
         sessionDeck ?? deck,
         withInput,
         onStatisticsChanged ?? (List<UnitStats> _) {},
+        onToggleDifficult,
       ),
     );
     await tester.pumpAndSettle();
@@ -503,6 +507,163 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.f4);
       await tester.pumpAndSettle();
       expect(engine.spoken.single.text, 'Geburtstag');
+    });
+  });
+
+  group('Read aloud pill', () {
+    final Finder pill = find.byKey(const Key('learnReadAloudPill'));
+
+    /// Every label and key hint in the row keyed [rowKey], in reading order.
+    List<String?> texts(String rowKey) => find
+        .descendant(of: find.byKey(Key(rowKey)), matching: find.byType(Text))
+        .evaluate()
+        .map((Element e) => (e.widget as Text).data)
+        .toList();
+
+    testWidgets('appears once the answer is revealed and plays what F4 plays', (
+      WidgetTester tester,
+    ) async {
+      final _RecordingTtsEngine engine = _RecordingTtsEngine(
+        const <SpeechVoice>[frenchVoice, germanVoice],
+      );
+      final List<List<UnitStats>> pushes = <List<UnitStats>>[];
+      await startSession(tester, engine, onStatisticsChanged: pushes.add);
+
+      // The question stage has no answer on screen, so F4 would say nothing
+      // and no pill offers it.
+      expect(pill, findsNothing);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      expect(pill, findsOneWidget);
+      expect(
+        find.descendant(of: pill, matching: find.text('Read aloud')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: pill, matching: find.text('F4')),
+        findsOneWidget,
+      );
+
+      await tester.tap(pill);
+      await tester.pumpAndSettle();
+      expect(engine.events, <String>['stop', 'speak:Geburtstag']);
+      expect(engine.spoken.single.voice, germanVoice);
+      expect(pushes, isEmpty);
+    });
+
+    testWidgets('is absent on a host that cannot speak', (
+      WidgetTester tester,
+    ) async {
+      await startSession(tester, const UnavailableTtsEngine());
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      expect(find.text('Continue'), findsOneWidget);
+      expect(pill, findsNothing);
+    });
+
+    testWidgets('is absent when the unit has no answer to read', (
+      WidgetTester tester,
+    ) async {
+      final _RecordingTtsEngine engine = _RecordingTtsEngine(
+        const <SpeechVoice>[frenchVoice, germanVoice],
+      );
+      await startSession(tester, engine, sessionDeck: mutedAnswerDeck);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      expect(find.text('Continue'), findsOneWidget);
+      expect(pill, findsNothing);
+    });
+
+    testWidgets('stays for an answer with no installed voice and explains it '
+        'as F4 does', (WidgetTester tester) async {
+      final _RecordingTtsEngine engine = _RecordingTtsEngine(
+        const <SpeechVoice>[frenchVoice],
+      );
+      await startSession(tester, engine);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+
+      expect(pill, findsOneWidget);
+      await tester.tap(pill);
+      await tester.pumpAndSettle();
+      expect(engine.spoken, isEmpty);
+      expect(find.textContaining('de-DE'), findsOneWidget);
+    });
+
+    testWidgets('the answer stage orders its groups by key, Cancel last in '
+        'its group and Difficult on its own', (WidgetTester tester) async {
+      final _RecordingTtsEngine engine = _RecordingTtsEngine(
+        const <SpeechVoice>[frenchVoice, germanVoice],
+      );
+      await startSession(
+        tester,
+        engine,
+        withInput: true,
+        onToggleDifficult: (SessionItem _) {},
+      );
+      await tester.enterText(find.byType(TextField), 'Geburtstag');
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+
+      expect(texts('learnActionPillsGroup'), <String>[
+        'Continue', 'F3', //
+        'Read aloud', 'F4', //
+        'Solution', 'Switch: F9', //
+        'Cancel', 'Esc', //
+      ]);
+      expect(texts('learnAnswerPills'), <String?>[
+        ...texts('learnActionPillsGroup'),
+        ...texts('learnEvaluationPillsGroup'),
+        'Difficult', 'F12', //
+      ]);
+      expect(texts('learnEvaluationPillsGroup'), <String>[
+        'Evaluate as:', //
+        'Correct', 'F5', //
+        'Actually wrong', 'F6', //
+        'No count', 'F7', //
+      ]);
+    });
+
+    testWidgets('the question stage shows it where the solution is on screen, '
+        'in key order with Cancel before Difficult', (
+      WidgetTester tester,
+    ) async {
+      final _RecordingTtsEngine engine = _RecordingTtsEngine(
+        const <SpeechVoice>[frenchVoice, germanVoice],
+      );
+      await startSession(
+        tester,
+        engine,
+        mode: SessionMode.levelLearning,
+        onToggleDifficult: (SessionItem _) {},
+      );
+
+      // The top of the ladder shows the solution to be memorized: F4 reads
+      // it, so the pill is there.
+      expect(texts('learnQuestionPills'), <String>[
+        'Less help', //
+        'More help', //
+        'Read aloud', 'F4', //
+        'Hide & type', 'F10', //
+        'Cancel', 'Esc', //
+        'Difficult', 'F12', //
+      ]);
+      await tester.tap(pill);
+      await tester.pumpAndSettle();
+      expect(engine.spoken.single.text, 'Geburtstag');
+
+      // Hide & type takes the solution away, and the pill with it.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      expect(pill, findsNothing);
+      expect(texts('learnQuestionPills'), <String>[
+        'Less help', //
+        'More help', //
+        'Check', 'F10', //
+        'Cancel', 'Esc', //
+        'Difficult', 'F12', //
+      ]);
     });
   });
 

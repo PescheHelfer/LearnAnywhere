@@ -139,6 +139,14 @@ vorab verraten. Die einzige Ausnahme ist die oberste Stufe der
 [Stufenleiter](07-level-learning.md), wo die Lösung zum Einprägen auf dem Bildschirm
 steht: dort trägt sie ein Symbol, und dort liest `F4` sie ebenfalls vor.
 
+Die Schaltfläche **Vorlesen** unter den Schaltflächen der Sitzung tut genau das, was
+`F4` tut, und ist genau dann da, wenn `F4` etwas ausgeben würde: nach dem Aufdecken und
+auf der obersten Stufe der Leiter, solange die Lösung gezeigt wird. Auf einem Computer,
+der nicht sprechen kann, oder bei einer Einheit ohne vorlesbares Antwortfeld fehlt sie
+ganz. Hat die Sprache der Antwort keine installierte Stimme, bleibt die Schaltfläche da,
+und ein Klick darauf sagt Ihnen, welche Sprache fehlt — genau wie `F4`; siehe
+[Wenn nichts gesprochen wird](#wenn-nichts-gesprochen-wird).
+
 Ist das Häkchen nicht gesetzt, sagt das Programm nie etwas, ohne dass Sie es verlangen —
 per Symbol oder per `F4`. So oder so ist Zuhören nie ein Versuch: Hören Sie ein Wort
 zehnmal an, und Ihre [Statistik](09-statistics.md) und Ihr Platz auf der Stufenleiter

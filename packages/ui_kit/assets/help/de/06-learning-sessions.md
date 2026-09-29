@@ -61,6 +61,15 @@ danach entweder automatisch weiter, oder Sie wählen über eine Reihe von Schalt
 schmalen Fenster rutschen die Bewertungsschaltflächen in eine eigene Zeile, statt
 abgeschnitten zu werden.
 
+Innerhalb jeder Gruppe stehen die Schaltflächen in der Reihenfolge ihrer Tasten, und
+**Abbruch** steht zuletzt in seiner Gruppe: **Weiter** (`F3`), **Vorlesen** (`F4`), der
+Umschalter der Antwortansicht (`F9`) und **Abbruch** (`Esc`); dann die
+Bewertungsschaltflächen (`F5`/`F6`/`F7`); dann **Schwierig** (`F12`) für sich allein.
+Vor dem Anzeigen der Antwort liest sich die Reihe genauso: **Weniger Hilfe** und **Mehr
+Hilfe** beim [Stufenlernen](07-level-learning.md), **Vorlesen**, wo es etwas vorzulesen
+gibt, **Prüfen**, **Anzeigen** oder **Verdecken & tippen** (`F10`) und **Abbruch** in einer
+Gruppe, dann **Schwierig**. Eine Gruppe wird nie auf zwei Zeilen verteilt.
+
 `F10` **zeigt** die Karte, ohne dass Sie antworten, falls Sie lieber nachsehen als raten
 wollen. `F9` wechselt durch, was der Antwortbereich zeigt: **Korrektur** (Ihre Antwort
 mit gegen die Lösung hervorgehobenen Unterschieden) → **Lösung** → **Ihre Antwort**.
@@ -74,6 +83,9 @@ Ist das **automatische Vorlesen** eingeschaltet, liest sich die Antwort bei jede
 Aufdecken selbst vor, richtig oder falsch, und `F4` liest sie erneut vor, wann immer Sie
 wollen — siehe
 [Die Antwort automatisch vorlesen](15-speech.md#die-antwort-automatisch-vorlesen).
+Die Schaltfläche **Vorlesen** tut dasselbe mit der Maus. Sie ist genau dann da, wenn
+`F4` etwas vorlesen würde: sobald die Antwort auf dem Bildschirm steht, falls die Maske
+das Vorlesen eines Antwortfeldes erlaubt und Ihr Computer überhaupt sprechen kann.
 
 Eine Live-Anzeige verfolgt **Versuche**, **Beherrscht**, **Übrig**, **Korrekt**, **Einheit
 korrekt** — die Zahl der aktuellen Einheit — sowie, falls in den

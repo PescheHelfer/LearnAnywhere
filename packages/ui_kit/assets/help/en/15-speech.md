@@ -129,6 +129,13 @@ solution early. The one exception is the top of the
 [level ladder](07-level-learning.md), where the solution is on screen to be memorised: it
 carries an icon there, and `F4` reads it there too.
 
+The **Read aloud** button among the session's buttons does exactly what `F4` does, and
+is there exactly when `F4` would play something: after the reveal, and at the top of the
+ladder while the solution is shown. On a computer that cannot speak, or for a unit with
+no answer field to read, it is not there at all. When the answer's language has no
+installed voice the button stays, and pressing it tells you which language is missing,
+just as `F4` does — see [When nothing is said](#when-nothing-is-said).
+
 With the switch off, the program never says anything unless you ask it to, by an icon or
 by `F4`. Either way, listening is never an attempt: play a word ten times and your
 [statistics](09-statistics.md) and your place on the level ladder are exactly where they
