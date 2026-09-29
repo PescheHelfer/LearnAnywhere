@@ -13,7 +13,7 @@ dann `E`).
 | **Modus** | **Stufenlernen**, **Drill-Modus**, **Endlos-Modus** oder **Einmal durchgehen** — siehe unten |
 | **Einstiegsstufe** | Nur Stufenlernen — begrenzt, mit wie viel Unterstützung eine neu eingestufte Einheit starten darf; siehe [Stufenlernen](07-level-learning.md) |
 | **Einheiten mischen** | In zufälliger statt in Dateireihenfolge fragen |
-| **Nur schwierige Einheiten** | Nur die schwierigen Einheiten fragen, jede nur in der Abfragerichtung, in der sie schwierig ist, in jedem Modus — siehe [Nur schwierige Einheiten abfragen](#nur-schwierige-einheiten-abfragen) |
+| **Nur schwierige Einheiten ({count})** | Nur die schwierigen Einheiten fragen, jede nur in der Abfragerichtung, in der sie schwierig ist, in jedem Modus; die Zahl zeigt, wie viele es sind — siehe [Nur schwierige Einheiten abfragen](#nur-schwierige-einheiten-abfragen) |
 | **Beherrschungsschwelle (%)** | Nur Drill-Modus — eine Einheit gilt als gemeistert, sobald ihre Trefferquote diesen Wert erreicht |
 | **Mit Eingabe der Antwort** | Ausgeschaltet warten Karten darauf, dass Sie sich selbst bewerten, statt zu tippen; beim Stufenlernen ausgeblendet, da dort immer getippt wird |
 | **Erste Einheit** / **Letzte Einheit** | Begrenzt die Sitzung auf einen Bereich der Lern-Datei; ein geleertes Feld erweitert ihn bis zur ersten bzw. letzten Einheit. **Alle Einheiten verwenden ({count})** setzt beide auf einmal zurück |
@@ -221,6 +221,12 @@ Ihnen Mühe gemacht haben.
   Einrichtung das, und **Sitzung starten** bleibt gesperrt, bis Sie die Option
   ausschalten, den Bereich erweitern, eine andere Richtung wählen oder eine Einheit
   kennzeichnen.
+- Die Option zeigt, wie groß die Abfrage wird, in Einheiten: **(3)**, wenn der Bereich
+  jede in der gewählten Abfragerichtung schwierige Einheit enthält (mit **Alle
+  Einheiten verwenden ({count})** immer), **(1/3)**, wenn er einige auslässt — eine von den drei
+  schwierigen Einheiten der Lern-Datei. Bei **Beide** zählt eine Einheit, die in einer der beiden Richtungen
+  schwierig ist, einmal. Die Zahl folgt **Erste Einheit**, **Letzte Einheit** und der
+  Abfragerichtung, während Sie sie ändern, und ihr Tooltip erklärt sie.
 - Die Option wird wie die übrigen Einstellungen der Einrichtung gespeichert.
 
 ## Abschluss

@@ -1228,6 +1228,102 @@ void main() {
       expect(on.copyWith(shuffle: true).difficultOnly, isTrue);
       expect(on.copyWith(difficultOnly: false).difficultOnly, isFalse);
     });
+
+    group('counting difficult units', () {
+      /// `(in range, in deck)` for a [directions] session over [start]..[end].
+      (int, int) count(
+        DirectionSelection directions, {
+        int? start,
+        int? end,
+        LearningDeck? subject,
+      }) {
+        final DifficultUnitCount result = countDifficultUnits(
+          subject ?? deck,
+          SessionParameters(
+            directionSelection: directions,
+            startIndex: start,
+            endIndex: end,
+          ),
+        );
+        return (result.inRange, result.inDeck);
+      }
+
+      test('counts units difficult in the chosen direction', () {
+        expect(count(DirectionSelection.direction1), (3, 3));
+        expect(count(DirectionSelection.direction2), (2, 2));
+      });
+
+      test('under Both counts a unit difficult either way, once', () {
+        // Unit 3 is difficult in both directions and counts once.
+        expect(count(DirectionSelection.both), (4, 4));
+      });
+
+      test('the range narrows only the first number, edges included', () {
+        expect(count(DirectionSelection.direction1, start: 3, end: 4), (2, 3));
+        expect(count(DirectionSelection.direction1, start: 1, end: 1), (1, 3));
+        expect(count(DirectionSelection.direction1, start: 2, end: 2), (0, 3));
+        expect(count(DirectionSelection.direction2, start: 5, end: 5), (1, 2));
+        expect(count(DirectionSelection.both, start: 4, end: 5), (2, 4));
+        expect(count(DirectionSelection.both, start: 2), (3, 4));
+        expect(count(DirectionSelection.both, end: 3), (2, 4));
+      });
+
+      test('a range past either end of the deck is clamped', () {
+        expect(count(DirectionSelection.both, start: 0, end: 99), (4, 4));
+        expect(count(DirectionSelection.both, start: 6, end: 9), (0, 4));
+      });
+
+      test('ignores whether Difficult units only is on', () {
+        final DifficultUnitCount result = countDifficultUnits(
+          deck,
+          only(SessionMode.practice, start: 3),
+        );
+        expect((result.inRange, result.inDeck), (2, 3));
+      });
+
+      test('a deck with no difficult unit counts zero', () {
+        expect(count(DirectionSelection.both, subject: noneFlagged), (0, 0));
+      });
+
+      test('covers the deck exactly when the range leaves none out', () {
+        expect(
+          countDifficultUnits(
+            deck,
+            const SessionParameters(
+              directionSelection: DirectionSelection.direction1,
+              startIndex: 1,
+              endIndex: 4,
+            ),
+          ).coversDeck,
+          isTrue,
+        );
+        expect(
+          countDifficultUnits(
+            deck,
+            const SessionParameters(
+              directionSelection: DirectionSelection.direction1,
+              startIndex: 2,
+            ),
+          ).coversDeck,
+          isFalse,
+        );
+      });
+
+      test('reads "y" when it covers the deck, else "x/y"', () {
+        expect(
+          const DifficultUnitCount(inRange: 3, inDeck: 3).text,
+          '3',
+        );
+        expect(
+          const DifficultUnitCount(inRange: 1, inDeck: 3).text,
+          '1/3',
+        );
+        expect(
+          const DifficultUnitCount(inRange: 0, inDeck: 0).text,
+          '0',
+        );
+      });
+    });
   });
 
   group('Lexicon', () {

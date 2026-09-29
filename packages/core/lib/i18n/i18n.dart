@@ -667,8 +667,18 @@ enum LearnAnywhereMessage {
   /// Shuffle units option.
   learnShuffleUnits,
 
-  /// Setup option: ask only units carrying either difficulty flag.
+  /// Setup option: ask only units difficult in the chosen direction.
+  /// Placeholder: {count}, the difficult units as "y" or "x/y"
+  /// (`DifficultUnitCount.text`).
   learnDifficultOnly,
+
+  /// Difficult-only tooltip when the range leaves difficult units out.
+  /// Placeholders: {count} (in the range), {total} (in the deck).
+  learnDifficultOnlyRangeTooltip,
+
+  /// Difficult-only tooltip when the range holds every difficult unit.
+  /// Placeholder: {total}.
+  learnDifficultOnlyDeckTooltip,
 
   /// Setup message when Difficult units only leaves nothing to ask; shared by
   /// every shell's setup, so it names no way of marking.
@@ -1889,7 +1899,12 @@ final class LearnAnywhereCatalog {
           'results suggest.',
       LearnAnywhereMessage.learnEntryLevelNoCapSuffix: ' (no cap)',
       LearnAnywhereMessage.learnShuffleUnits: 'Shuffle units',
-      LearnAnywhereMessage.learnDifficultOnly: 'Difficult units only',
+      LearnAnywhereMessage.learnDifficultOnly: 'Difficult units only ({count})',
+      LearnAnywhereMessage.learnDifficultOnlyRangeTooltip:
+          "{count} of the deck's {total} difficult units are in the selected "
+          'range.',
+      LearnAnywhereMessage.learnDifficultOnlyDeckTooltip:
+          '{total} units in this deck are difficult in the chosen direction.',
       LearnAnywhereMessage.learnNoDifficultUnits:
           'No unit in the selected range is difficult in the chosen '
           'direction, so there is nothing to ask.',
@@ -2632,7 +2647,14 @@ final class LearnAnywhereCatalog {
           'viel Unterstützung, wie ihre bisherigen Ergebnisse nahelegen.',
       LearnAnywhereMessage.learnEntryLevelNoCapSuffix: ' (keine Begrenzung)',
       LearnAnywhereMessage.learnShuffleUnits: 'Einheiten mischen',
-      LearnAnywhereMessage.learnDifficultOnly: 'Nur schwierige Einheiten',
+      LearnAnywhereMessage.learnDifficultOnly:
+          'Nur schwierige Einheiten ({count})',
+      LearnAnywhereMessage.learnDifficultOnlyRangeTooltip:
+          '{count} der {total} schwierigen Einheiten der Lern-Datei liegen im '
+          'gewählten Bereich.',
+      LearnAnywhereMessage.learnDifficultOnlyDeckTooltip:
+          '{total} Einheiten dieser Lern-Datei sind in der gewählten '
+          'Abfragerichtung schwierig.',
       LearnAnywhereMessage.learnNoDifficultUnits:
           'Keine Einheit im gewählten Bereich ist in der gewählten '
           'Abfragerichtung schwierig, es gibt also nichts abzufragen.',

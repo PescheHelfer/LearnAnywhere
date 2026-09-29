@@ -139,7 +139,7 @@ void main() {
 
     await tester.runAsync(() async {
       await openSetup(tester, deckPath);
-      await tester.tap(find.text('Difficult units only'));
+      await tester.tap(find.textContaining('Difficult units only'));
       await settleAfterIo(tester);
       expect(find.text(noDifficultUnits), findsNothing);
       await tester.tap(find.text('Start session'));
@@ -298,6 +298,74 @@ void main() {
     });
   }
 
+  testWidgets('the option counts the difficult units in the range and the '
+      'deck, following End and the direction', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'count.vok');
+    // Direction 1: units 1, 3, 4. Direction 2: units 2, 3. Either: all four.
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', manual, none),
+          ('tree', 'Baum', none, automatic),
+          ('dog', 'Hund', automatic, manual),
+          ('cat', 'Katze', manual, none),
+        ]),
+      ),
+    );
+    File(settingsPath).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(direction: DirectionSelection.direction1),
+      ),
+    );
+
+    /// The tooltip on the help icon beside the option, in the option's own
+    /// row (the nearest one).
+    String tooltip() => tester
+        .widget<Tooltip>(
+          find.descendant(
+            of: find
+                .ancestor(
+                  of: find.textContaining('Difficult units only'),
+                  matching: find.byType(Row),
+                )
+                .first,
+            matching: find.byType(Tooltip),
+          ),
+        )
+        .message!;
+
+    await tester.runAsync(() async {
+      await openSetup(tester, deckPath);
+      expect(find.text('Difficult units only (3)'), findsOneWidget);
+      expect(
+        tooltip(),
+        '3 units in this deck are difficult in the chosen direction.',
+      );
+
+      await tester.enterText(find.widgetWithText(TextField, 'End unit'), '2');
+      await settle(tester);
+      expect(find.text('Difficult units only (1/3)'), findsOneWidget);
+      expect(
+        tooltip(),
+        "1 of the deck's 3 difficult units are in the selected range.",
+      );
+
+      await tester.tap(find.text('Direction 1').last);
+      await settle(tester);
+      await tester.tap(find.text('Both').last);
+      await settleAfterIo(tester);
+      expect(find.text('Difficult units only (2/4)'), findsOneWidget);
+
+      await tester.tap(find.text('Both').last);
+      await settle(tester);
+      await tester.tap(find.text('Direction 2').last);
+      await settleAfterIo(tester);
+      // Of units 2 and 3, only unit 2 is within units 1 to 2.
+      expect(find.text('Difficult units only (1/2)'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   testWidgets('with no difficult unit the setup says so and does not start', (
     WidgetTester tester,
   ) async {
@@ -334,7 +402,7 @@ void main() {
       expect(find.text(noDifficultUnits), findsOneWidget);
 
       // Switching the option off lets the whole deck be asked again.
-      await tester.tap(find.text('Difficult units only'));
+      await tester.tap(find.textContaining('Difficult units only'));
       await settleAfterIo(tester);
       expect(find.text(noDifficultUnits), findsNothing);
       await tester.tap(find.text('Start session'));

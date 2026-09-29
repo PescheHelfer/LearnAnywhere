@@ -809,6 +809,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
           _applyDraft(_parametersWith(shuffle: value));
         },
         nothingDifficultToAsk: _nothingDifficultToAsk,
+        difficultCount: countDifficultUnits(widget.deck, _scopedDraft()),
         onDifficultOnlyChanged: (bool value) {
           _applyDraft(_parametersWith(difficultOnly: value));
         },
@@ -1816,6 +1817,7 @@ final class _SetupView extends StatelessWidget {
     required this.onEntryLevelCapChanged,
     required this.onShuffleChanged,
     required this.nothingDifficultToAsk,
+    required this.difficultCount,
     required this.onDifficultOnlyChanged,
     required this.onWithInputChanged,
     required this.onUseAllUnitsChanged,
@@ -1845,6 +1847,10 @@ final class _SetupView extends StatelessWidget {
   /// Whether Difficult units only leaves nothing to ask in the chosen range;
   /// the setup then says so and cannot start.
   final bool nothingDifficultToAsk;
+
+  /// The difficult units in the chosen range and direction, of the deck's;
+  /// shown on the Difficult units only option.
+  final DifficultUnitCount difficultCount;
   final ValueChanged<bool> onDifficultOnlyChanged;
   final ValueChanged<bool> onWithInputChanged;
   final ValueChanged<bool> onUseAllUnitsChanged;
@@ -1972,7 +1978,19 @@ final class _SetupView extends StatelessWidget {
           onChanged: onShuffleChanged,
         ),
         _ToggleRow(
-          label: messages.message(LearnAnywhereMessage.learnDifficultOnly),
+          label: messages
+              .message(LearnAnywhereMessage.learnDifficultOnly)
+              .replaceAll('{count}', difficultCount.text),
+          tooltip: difficultCount.coversDeck
+              ? messages
+                    .message(LearnAnywhereMessage.learnDifficultOnlyDeckTooltip)
+                    .replaceAll('{total}', '${difficultCount.inDeck}')
+              : messages
+                    .message(
+                      LearnAnywhereMessage.learnDifficultOnlyRangeTooltip,
+                    )
+                    .replaceAll('{count}', '${difficultCount.inRange}')
+                    .replaceAll('{total}', '${difficultCount.inDeck}'),
           value: parameters.difficultOnly,
           onChanged: onDifficultOnlyChanged,
         ),
@@ -3501,14 +3519,19 @@ final class _ToggleRow extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.tooltip,
   });
 
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
 
+  /// Explanation shown on hover, plus a help icon marking it as available.
+  final String? tooltip;
+
   @override
   Widget build(BuildContext context) {
+    final String? tooltip = this.tooltip;
     return Padding(
       padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapSmall),
       child: InkWell(
@@ -3522,6 +3545,11 @@ final class _ToggleRow extends StatelessWidget {
               child: Text(label, style: Theme.of(context).textTheme.bodyLarge),
             ),
             Switch(value: value, onChanged: onChanged),
+            if (tooltip != null)
+              Tooltip(
+                message: tooltip,
+                child: const Icon(Icons.help_outline, size: 18),
+              ),
           ],
         ),
       ),

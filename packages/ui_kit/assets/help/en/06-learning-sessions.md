@@ -12,7 +12,7 @@ setup** screen (**Learn ▸ Practice setup**, `Alt+L` then `P`).
 | **Mode** | **Level learning**, **Drill mode**, **Endless mode** or **Once through** — see below |
 | **Entry level** | Level Learning only — caps how much support a newly seeded unit may start with; see [Level learning](07-level-learning.md) |
 | **Shuffle units** | Ask in random order instead of deck order |
-| **Difficult units only** | Ask only the units that are difficult, each only in the direction it is difficult in, in every mode — see [Asking difficult units only](#asking-difficult-units-only) |
+| **Difficult units only ({count})** | Ask only the units that are difficult, each only in the direction it is difficult in, in every mode; the count shows how many there are — see [Asking difficult units only](#asking-difficult-units-only) |
 | **Mastery threshold (%)** | Drill mode only — a unit counts as mastered once its correct rate reaches this |
 | **Require typed answers** | Off, cards wait for you to judge yourself instead of typing; hidden for Level learning, which always requires typing |
 | **Start unit** / **End unit** | Restrict the session to a range of the deck; clearing either field expands it to the first/last unit. **Use all units ({count})** resets both at once |
@@ -199,6 +199,11 @@ trouble, in the same deck.
 - If no unit in the range is difficult in the chosen direction, the setup says so and
   **Start session** stays unavailable until you switch the option off, widen the range,
   choose another direction or mark a unit.
+- The option shows how big the session will be, in units: **(3)** when the range holds
+  every unit that is difficult in the chosen direction (always so with **Use all units
+  ({count})**), **(1/3)** when the range leaves some out — one of the deck's three. With
+  **Both** a unit difficult either way counts once. The count follows **Start unit**,
+  **End unit** and the direction as you change them, and its tooltip spells it out.
 - The option is remembered with the other setup choices.
 
 ## Finishing

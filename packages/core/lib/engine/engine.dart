@@ -1832,6 +1832,58 @@ int sessionItemCount({
   };
 }
 
+/// How many units a **Difficult units only** session could ask, as the setup
+/// shows it before starting: [inRange] of the deck's [inDeck].
+final class DifficultUnitCount {
+  /// Creates a count.
+  const DifficultUnitCount({required this.inRange, required this.inDeck});
+
+  /// Difficult units within the unit range.
+  final int inRange;
+
+  /// Difficult units in the whole deck.
+  final int inDeck;
+
+  /// Whether the range leaves no difficult unit out.
+  bool get coversDeck => inRange == inDeck;
+
+  /// The count as the option's label shows it: "y" when the range
+  /// [coversDeck], else "x/y".
+  String get text => coversDeck ? '$inDeck' : '$inRange/$inDeck';
+}
+
+/// Counts the units of [deck] difficult in the direction [parameters] choose,
+/// within their unit range and in the whole deck.
+///
+/// A unit counts when it is difficult in the chosen direction; under **Both**
+/// when it is difficult in either, once — the count is of units, never
+/// questions. A range reaching past either end of the deck simply counts the
+/// units it covers, and [SessionParameters.difficultOnly] is ignored: the count
+/// is what that option would narrow the pool to.
+DifficultUnitCount countDifficultUnits(
+  LearningDeck deck,
+  SessionParameters parameters,
+) {
+  final Set<QueryDirection> directions = _directionsFor(
+    parameters.directionSelection,
+  );
+  final int start = parameters.startIndex ?? 1;
+  final int end = parameters.endIndex ?? deck.units.length;
+  var inRange = 0;
+  var inDeck = 0;
+  for (var index = 1; index <= deck.units.length; index += 1) {
+    final LearningUnit unit = deck.units[index - 1];
+    if (!directions.any(unit.isDifficultIn)) {
+      continue;
+    }
+    inDeck += 1;
+    if (index >= start && index <= end) {
+      inRange += 1;
+    }
+  }
+  return DifficultUnitCount(inRange: inRange, inDeck: inDeck);
+}
+
 final class _GroupedAnswer {
   const _GroupedAnswer(this.value);
 
