@@ -83,21 +83,30 @@ und bleibt erhalten, wohin auch immer die Lern-Datei geht.
 
 Eine Einheit ist in einer Abfragerichtung schwierig (siehe
 [Eine Einheit als schwierig kennzeichnen](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen)).
-Hier in der Eingabe-Maske zeigt die Kopfzeile, ob die aktuelle Einheit in
-Abfragerichtung 1 schwierig ist, mit demselben Abzeichen wie in einer Lernsitzung —
-dem Symbol jeder Kennzeichnung, gefolgt von **Schwierig** —, und aktualisiert es, sobald
-Sie zwischen Einheiten wechseln. Mit der Maus darüber lesen Sie, welche es ist:
+Hier in der Eingabe-Maske sehen und setzen Sie beide Abfragerichtungen. Die Kopfzeile
+zeigt ein Abzeichen für jede Richtung, in der die aktuelle Einheit schwierig ist,
+**Schwierig 1** und **Schwierig 2**, jedes mit dem Symbol jeder Kennzeichnung, die es
+trägt, und aktualisiert sie, sobald Sie zwischen Einheiten wechseln. Mit der Maus über
+einem Abzeichen lesen Sie, welche Kennzeichnung es ist:
 
 - **Manuelle Kennzeichnung** — Sie selbst.
 - **Automatische Kennzeichnung** — das Programm, anhand der Allzeit-Statistik der
   Einheit.
 - **Manuelle und automatische Kennzeichnung** — beide.
 
-`F12` schaltet hier Abfragerichtung 1 genauso um wie in einer
+`F12` schaltet Abfragerichtung 1 um und `Umschalt+F12` Abfragerichtung 2, nach
+derselben Regel wie in einer
 [Lernsitzung](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen): Ist die
-Einheit dort schwierig, hebt es beide Kennzeichnungen dieser Richtung auf; ist sie es
-nicht, setzt es Ihre manuelle Kennzeichnung. Abfragerichtung 2 bleibt, wie sie ist;
-kennzeichnen Sie sie in einer Lernsitzung, die in dieser Richtung fragt.
+Einheit in dieser Richtung schwierig, werden beide Kennzeichnungen dieser Richtung
+aufgehoben; ist sie es nicht, wird Ihre manuelle Kennzeichnung gesetzt. Die andere
+Richtung bleibt immer unberührt.
+
+Die Aktionszeile hat für jede eine Schaltfläche: **Schwierig 1** (`F12`) und
+**Schwierig 2** (`Umschalt+F12`). Ein Klick darauf wirkt wie ihre Taste. Eine
+Schaltfläche ist gefüllt, solange die Einheit in ihrer Richtung schwierig ist, und nur
+umrandet, solange sie es nicht ist; sie zeigt dabei die noch nicht gespeicherte
+Änderung — das, was **Fertig** behält. Mit der Maus darüber sehen Sie, für welche
+Richtung sie steht, unter dem Namen, den Ihre Maske dieser Richtung gibt.
 
 Anders als in einer Sitzung wird die Änderung nicht sofort geschrieben. Sie ist Teil der
 vorgenommenen Bearbeitung, wie ein Feldwert, bleibt also nur im Speicher, bis Sie

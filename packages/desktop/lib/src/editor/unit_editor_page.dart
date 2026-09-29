@@ -33,8 +33,8 @@ final class UnitEditorPage extends StatefulWidget {
   onChanged;
 
   /// Called with the current unit's 1-based position and a direction when a
-  /// key toggles the unit's difficulty in that direction — F12 in
-  /// direction 1.
+  /// key or pill toggles the unit's difficulty in that direction: F12 in
+  /// direction 1, Shift+F12 in direction 2.
   ///
   /// Unlike [onChanged], this does not mark the pending edit as content: a
   /// flag-only save must leave the deck's last-edited date alone, so the host
@@ -227,7 +227,11 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
         SingleActivator(LogicalKeyboardKey.f8): _InsertIntent(),
         SingleActivator(LogicalKeyboardKey.f10): _DoneIntent(),
         SingleActivator(LogicalKeyboardKey.escape): _CancelIntent(),
-        SingleActivator(LogicalKeyboardKey.f12): _ToggleDifficultIntent(),
+        SingleActivator(LogicalKeyboardKey.f12): _ToggleDifficultIntent(
+          QueryDirection.direction1,
+        ),
+        SingleActivator(LogicalKeyboardKey.f12, shift: true):
+            _ToggleDifficultIntent(QueryDirection.direction2),
       };
 
   int _currentIndex = 0;
@@ -329,13 +333,8 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
             },
           ),
           _ToggleDifficultIntent: CallbackAction<_ToggleDifficultIntent>(
-            onInvoke: (_) {
-              if (widget.deck.units.isNotEmpty) {
-                widget.onToggleDifficult(
-                  _currentIndex + 1,
-                  QueryDirection.direction1,
-                );
-              }
+            onInvoke: (_ToggleDifficultIntent intent) {
+              _toggleDifficult(intent.direction);
               return null;
             },
           ),
@@ -356,6 +355,7 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
                     onInsertBefore: _insertBefore,
                     onDelete: _delete,
                     onSearch: _search,
+                    onToggleDifficult: _toggleDifficult,
                     onDone: widget.onDone,
                     onCancel: widget.onCancel,
                   ),
@@ -363,6 +363,12 @@ final class _UnitEditorPageState extends State<UnitEditorPage> {
         ),
       ),
     );
+  }
+
+  void _toggleDifficult(QueryDirection direction) {
+    if (widget.deck.units.isNotEmpty) {
+      widget.onToggleDifficult(_currentIndex + 1, direction);
+    }
   }
 
   void _clampCurrentIndex() {
@@ -695,6 +701,7 @@ final class _EditorBody extends StatefulWidget {
     required this.onInsertBefore,
     required this.onDelete,
     required this.onSearch,
+    required this.onToggleDifficult,
     required this.onDone,
     required this.onCancel,
   });
@@ -708,6 +715,7 @@ final class _EditorBody extends StatefulWidget {
   final VoidCallback onInsertBefore;
   final VoidCallback onDelete;
   final VoidCallback onSearch;
+  final ValueChanged<QueryDirection> onToggleDifficult;
   final VoidCallback onDone;
   final VoidCallback onCancel;
 
@@ -933,11 +941,16 @@ final class _EditorBodyState extends State<_EditorBody> {
                   ),
                 ),
                 const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                // Direction 1, the direction F12 toggles here.
-                if (unit.isDifficultIn(QueryDirection.direction1)) ...<Widget>[
-                  DifficultBadge(flags: unit.direction1Flags),
-                  const SizedBox(width: LearnAnywhereTokens.gapSmall),
-                ],
+                // One badge per direction the unit is difficult in.
+                for (final QueryDirection direction in QueryDirection.values)
+                  if (unit.isDifficultIn(direction)) ...<Widget>[
+                    DifficultBadge(
+                      key: Key('editorDifficultBadge${direction.index + 1}'),
+                      flags: unit.flagsFor(direction),
+                      label: _difficultLabel(direction),
+                    ),
+                    const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                  ],
                 Flexible(
                   child: Text(
                     _unitHeader(
@@ -1002,10 +1015,22 @@ final class _EditorBodyState extends State<_EditorBody> {
                   onPressed: widget.onNext,
                 ),
                 _ActionButton(
+                  icon: Icons.search,
+                  label: messages.message(LearnAnywhereMessage.editorSearch),
+                  shortcut: 'F5',
+                  onPressed: widget.onSearch,
+                ),
+                _ActionButton(
                   icon: Icons.numbers,
                   label: messages.message(LearnAnywhereMessage.editorJump),
                   shortcut: 'F6',
                   onPressed: widget.onJump,
+                ),
+                _ActionButton(
+                  icon: Icons.delete_outline,
+                  label: messages.message(LearnAnywhereMessage.editorDelete),
+                  shortcut: 'F7',
+                  onPressed: widget.onDelete,
                 ),
                 _ActionButton(
                   icon: Icons.add,
@@ -1015,18 +1040,16 @@ final class _EditorBodyState extends State<_EditorBody> {
                   shortcut: 'F8',
                   onPressed: widget.onInsertBefore,
                 ),
-                _ActionButton(
-                  icon: Icons.delete_outline,
-                  label: messages.message(LearnAnywhereMessage.editorDelete),
-                  shortcut: 'F7',
-                  onPressed: widget.onDelete,
-                ),
-                _ActionButton(
-                  icon: Icons.search,
-                  label: messages.message(LearnAnywhereMessage.editorSearch),
-                  shortcut: 'F5',
-                  onPressed: widget.onSearch,
-                ),
+                // The pending state: what Done will keep.
+                for (final QueryDirection direction in QueryDirection.values)
+                  DifficultPill(
+                    key: Key('editorDifficultPill${direction.index + 1}'),
+                    difficult: unit.isDifficultIn(direction),
+                    onPressed: () => widget.onToggleDifficult(direction),
+                    label: _difficultLabel(direction),
+                    keyName: _difficultKey(messages, direction),
+                    tooltip: widget.deck.mask.labelFor(direction),
+                  ),
                 _ActionButton(
                   icon: Icons.check,
                   label: messages.message(LearnAnywhereMessage.editorDone),
@@ -1231,24 +1254,28 @@ final class _GridRowState extends State<_GridRow> {
 }
 
 /// Every button of the editor's bottom action row, with the key name printed
-/// under each.
+/// under each, in the language of [messages].
 ///
-/// Kept beside the row rather than driving it: wiring eight distinct callbacks
+/// Kept beside the row rather than driving it: wiring ten distinct callbacks
 /// through one list would need a fallback arm that silently mis-wires the
-/// ninth button. The two are held in step by measurement instead — the
+/// eleventh button. The two are held in step by measurement instead — the
 /// content-frame test lays the real row out and fails if this list has
 /// stopped describing it.
-const List<(LearnAnywhereMessage, String)> _actionRow =
-    <(LearnAnywhereMessage, String)>[
-      (LearnAnywhereMessage.editorPrevious, 'F2'),
-      (LearnAnywhereMessage.editorNext, 'F3'),
-      (LearnAnywhereMessage.editorJump, 'F6'),
-      (LearnAnywhereMessage.editorInsertBefore, 'F8'),
-      (LearnAnywhereMessage.editorDelete, 'F7'),
-      (LearnAnywhereMessage.editorSearch, 'F5'),
-      (LearnAnywhereMessage.editorDone, 'F10'),
-      (LearnAnywhereMessage.editorCancel, 'Esc'),
-    ];
+List<(String, String)> _actionRow(LearnAnywhereLocalizations messages) {
+  String say(LearnAnywhereMessage message) => messages.message(message);
+  return <(String, String)>[
+    (say(LearnAnywhereMessage.editorPrevious), 'F2'),
+    (say(LearnAnywhereMessage.editorNext), 'F3'),
+    (say(LearnAnywhereMessage.editorSearch), 'F5'),
+    (say(LearnAnywhereMessage.editorJump), 'F6'),
+    (say(LearnAnywhereMessage.editorDelete), 'F7'),
+    (say(LearnAnywhereMessage.editorInsertBefore), 'F8'),
+    for (final QueryDirection direction in QueryDirection.values)
+      (say(_difficultLabel(direction)), _difficultKey(messages, direction)),
+    (say(LearnAnywhereMessage.editorDone), 'F10'),
+    (say(LearnAnywhereMessage.editorCancel), 'Esc'),
+  ];
+}
 
 /// The width of the widest single button in the editor's action row.
 ///
@@ -1264,11 +1291,10 @@ double editorControlButtonWidth(
   LearnAnywhereLocalizations messages,
 ) {
   double width = 0;
-  for (final (LearnAnywhereMessage label, String key) in _actionRow) {
+  for (final (String label, String key) in _actionRow(messages)) {
     width = math.max(
       width,
-      iconPillChrome +
-          measurePillLabelWidth(context, messages.message(label), key),
+      iconPillChrome + measurePillLabelWidth(context, label, key),
     );
   }
   return width;
@@ -1357,6 +1383,27 @@ final class _FormatIconButtonState extends State<_FormatIconButton> {
   }
 }
 
+/// The label of the editor's Difficult pill and badge for [direction].
+LearnAnywhereMessage _difficultLabel(QueryDirection direction) {
+  return switch (direction) {
+    QueryDirection.direction1 => LearnAnywhereMessage.editorDifficult1,
+    QueryDirection.direction2 => LearnAnywhereMessage.editorDifficult2,
+  };
+}
+
+/// The key that toggles [direction] in the editor, as printed on its pill.
+String _difficultKey(
+  LearnAnywhereLocalizations messages,
+  QueryDirection direction,
+) {
+  return switch (direction) {
+    QueryDirection.direction1 => 'F12',
+    QueryDirection.direction2 => messages.message(
+      LearnAnywhereMessage.editorDifficult2Key,
+    ),
+  };
+}
+
 String _unitHeader(
   LearnAnywhereLocalizations messages,
   int index,
@@ -1407,7 +1454,9 @@ final class _CancelIntent extends Intent {
 }
 
 final class _ToggleDifficultIntent extends Intent {
-  const _ToggleDifficultIntent();
+  const _ToggleDifficultIntent(this.direction);
+
+  final QueryDirection direction;
 }
 
 final class _ChooseCategoryConfirmIntent extends Intent {

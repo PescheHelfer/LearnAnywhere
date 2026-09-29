@@ -78,18 +78,25 @@ goes.
 
 A unit is difficult in a direction (see
 [Marking a unit difficult](06-learning-sessions.md#marking-a-unit-difficult)). Here in
-the editor, the header line shows whether the current unit is difficult in Direction 1,
-with the same badge a learning session uses — the icon of each flag, then
-**Difficult** — and updates it as you move between units. Hover over it to read which:
+the editor you see and set both directions. The header line shows one badge per
+direction the current unit is difficult in, **Difficult 1** and **Difficult 2**, each
+with the icon of every flag it carries, and updates them as you move between units.
+Hover over a badge to read which flag it is:
 
 - **Manual flag** — you marked it.
 - **Automatic flag** — the program found it hard from the unit's all-time statistics.
 - **Manual and automatic flag** — both.
 
-`F12` toggles Direction 1 here exactly as it does in a
-[learning session](06-learning-sessions.md#marking-a-unit-difficult): where the unit is
-difficult it clears both of that direction's flags; where it is not, it sets your
-manual flag. Direction 2 is left as it is; mark it in a learning session that asks it.
+`F12` toggles Direction 1 and `Shift+F12` toggles Direction 2, with the same rule as in
+a [learning session](06-learning-sessions.md#marking-a-unit-difficult): where the unit
+is difficult in that direction, both of that direction's flags are cleared; where it is
+not, your manual flag is set. The other direction is never touched.
+
+The action row has a pill for each: **Difficult 1** (`F12`) and **Difficult 2**
+(`Shift+F12`). Clicking one does what its key does. A pill is filled while the unit is
+difficult in its direction and outlined while it is not, and it shows the change you
+have not saved yet — what **Done** will keep. Hover over a pill to see which direction
+it stands for, under the name your mask gives that direction.
 
 Unlike in a session, the change is not written at once. It is part of the pending edit,
 like a field value, so it is kept only in memory until you save, and is dropped along

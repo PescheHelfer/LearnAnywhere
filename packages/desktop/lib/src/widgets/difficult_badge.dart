@@ -9,10 +9,18 @@ import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 /// Hovering names the flags in a few words; the icons are the unit list's.
 final class DifficultBadge extends StatelessWidget {
   /// Creates a badge for the difficulty [flags] of one direction.
-  const DifficultBadge({super.key, required this.flags});
+  const DifficultBadge({
+    super.key,
+    required this.flags,
+    this.label = LearnAnywhereMessage.learnDifficult,
+  });
 
   /// The flags of the direction the badge describes.
   final DifficultFlags flags;
+
+  /// The badge's text: "Difficult" where one direction is in view,
+  /// "Difficult 1" / "Difficult 2" in the unit editor, which shows both.
+  final LearnAnywhereMessage label;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +52,7 @@ final class DifficultBadge extends StatelessWidget {
               const SizedBox(width: LearnAnywhereTokens.gapSmall / 2),
               Flexible(
                 child: Text(
-                  messages.message(LearnAnywhereMessage.learnDifficult),
+                  messages.message(label),
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: colors.onTertiaryContainer,
                   ),
@@ -55,6 +63,84 @@ final class DifficultBadge extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The pill that shows whether the unit on screen is difficult in one
+/// direction and toggles it, like its key.
+///
+/// Filled while the unit is difficult, outlined while it is not. Its focus
+/// node never takes focus, so clicking it while typing an answer or editing a
+/// field leaves the cursor where it was.
+final class DifficultPill extends StatefulWidget {
+  /// Creates a pill reading [label] above [keyName].
+  const DifficultPill({
+    super.key,
+    required this.difficult,
+    required this.onPressed,
+    this.label = LearnAnywhereMessage.learnDifficult,
+    this.keyName = 'F12',
+    this.tooltip,
+  });
+
+  /// Whether the unit is difficult in the pill's direction.
+  final bool difficult;
+
+  /// Toggles the unit's difficulty in the pill's direction.
+  final VoidCallback onPressed;
+
+  /// The pill's text.
+  final LearnAnywhereMessage label;
+
+  /// The key printed under [label].
+  final String keyName;
+
+  /// Shown on hover, or nothing when null.
+  final String? tooltip;
+
+  @override
+  State<DifficultPill> createState() => _DifficultPillState();
+}
+
+final class _DifficultPillState extends State<DifficultPill> {
+  final FocusNode _focusNode = FocusNode(
+    skipTraversal: true,
+    canRequestFocus: false,
+  );
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget label = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(LearnAnywhereLocalizations.of(context).message(widget.label)),
+        Text(widget.keyName, style: LearnAnywhereTokens.keyHint(context)),
+      ],
+    );
+    final Widget pill = Semantics(
+      toggled: widget.difficult,
+      child: widget.difficult
+          ? FilledButton.icon(
+              focusNode: _focusNode,
+              onPressed: widget.onPressed,
+              icon: const Icon(Icons.flag),
+              label: label,
+            )
+          : OutlinedButton.icon(
+              focusNode: _focusNode,
+              onPressed: widget.onPressed,
+              icon: const Icon(Icons.outlined_flag),
+              label: label,
+            ),
+    );
+    final String? tooltip = widget.tooltip;
+    return tooltip == null ? pill : Tooltip(message: tooltip, child: pill);
   }
 }
 

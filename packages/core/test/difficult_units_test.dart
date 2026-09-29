@@ -155,6 +155,15 @@ void main() {
       expect(mixed.flagsIn(const <QueryDirection>{}), noFlag);
     });
 
+    test('a mask names each direction with its own label', () {
+      final LearningMask named = mask.copyWith(
+        direction1Label: 'EN > DE',
+        direction2Label: 'DE > EN',
+      );
+      expect(named.labelFor(QueryDirection.direction1), 'EN > DE');
+      expect(named.labelFor(QueryDirection.direction2), 'DE > EN');
+    });
+
     test('a View covers its own direction, and Combined covers both', () {
       expect(StatisticsDirectionView.direction1.directions,
           <QueryDirection>{QueryDirection.direction1});

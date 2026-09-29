@@ -575,6 +575,14 @@ final class LearningMask {
   /// Ordered category definitions.
   final List<CategoryDefinition> categories;
 
+  /// The user-authored label for [direction].
+  String labelFor(QueryDirection direction) {
+    return switch (direction) {
+      QueryDirection.direction1 => direction1Label,
+      QueryDirection.direction2 => direction2Label,
+    };
+  }
+
   /// Finds a category by id.
   CategoryDefinition? categoryById(int id) {
     for (final CategoryDefinition category in categories) {

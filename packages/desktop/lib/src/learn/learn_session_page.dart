@@ -2137,7 +2137,7 @@ final class _SessionView extends StatelessWidget {
       return const <Widget>[];
     }
     return <Widget>[
-      _DifficultPill(
+      DifficultPill(
         key: const Key('learnDifficultPill'),
         difficult: unit.isDifficultIn(item.direction),
         onPressed: onToggle,
@@ -2615,7 +2615,7 @@ final class _SessionView extends StatelessWidget {
       _learnUnitHeader(messages, item.unitIndex, deck.units.length),
       if (_isLevelLearning) levelNameFor(levelNames, activeLevel),
       category.name,
-      _directionLabel(deck, item.direction),
+      deck.mask.labelFor(item.direction),
       if (!_isLevelLearning) _unitAccuracyLabel(messages),
     ];
     final String headerText = headerParts.join(' - ');
@@ -3589,13 +3589,6 @@ final class _NumberRowState extends State<_NumberRow> {
   }
 }
 
-String _directionLabel(LearningDeck deck, QueryDirection direction) {
-  return switch (direction) {
-    QueryDirection.direction1 => deck.mask.direction1Label,
-    QueryDirection.direction2 => deck.mask.direction2Label,
-  };
-}
-
 String _learnUnitHeader(
   LearnAnywhereLocalizations messages,
   int index,
@@ -3722,72 +3715,6 @@ final class _ToggleViewButtonState extends State<_ToggleViewButton> {
           Text(widget.hint, style: LearnAnywhereTokens.keyHint(context)),
         ],
       ),
-    );
-  }
-}
-
-// ─── Difficult pill and badge ────────────────────────────────────────────────
-
-/// The pill that shows whether the unit on screen is difficult and toggles
-/// it, like F12.
-///
-/// Filled while the unit is difficult, outlined while it is not. Its focus
-/// node never takes focus, so clicking it while typing an answer leaves the
-/// cursor in the answer field.
-final class _DifficultPill extends StatefulWidget {
-  const _DifficultPill({
-    super.key,
-    required this.difficult,
-    required this.onPressed,
-  });
-
-  final bool difficult;
-  final VoidCallback onPressed;
-
-  @override
-  State<_DifficultPill> createState() => _DifficultPillState();
-}
-
-final class _DifficultPillState extends State<_DifficultPill> {
-  final FocusNode _focusNode = FocusNode(
-    skipTraversal: true,
-    canRequestFocus: false,
-  );
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final Widget label = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Text(
-          LearnAnywhereLocalizations.of(
-            context,
-          ).message(LearnAnywhereMessage.learnDifficult),
-        ),
-        Text('F12', style: LearnAnywhereTokens.keyHint(context)),
-      ],
-    );
-    return Semantics(
-      toggled: widget.difficult,
-      child: widget.difficult
-          ? FilledButton.icon(
-              focusNode: _focusNode,
-              onPressed: widget.onPressed,
-              icon: const Icon(Icons.flag),
-              label: label,
-            )
-          : OutlinedButton.icon(
-              focusNode: _focusNode,
-              onPressed: widget.onPressed,
-              icon: const Icon(Icons.outlined_flag),
-              label: label,
-            ),
     );
   }
 }

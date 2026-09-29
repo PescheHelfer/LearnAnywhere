@@ -385,6 +385,115 @@ void main() {
     });
   });
 
+  testWidgets('the editor\'s pills follow the pending flags, its row is in '
+      'key order, and Shift+F12 saves Direction 2 alone', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'editor_direction2.vok');
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(_deck().copyWith(lastEdited: edited)),
+    );
+    await tester.runAsync(() async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final _ScriptedFilePicker picker = _ScriptedFilePicker()
+        ..nextOpenPath = deckPath;
+      await tester.pumpWidget(
+        LearnAnywhereDesktopApp(
+          prefs: prefs,
+          filePicker: picker,
+          settingsPath: p.join(temp.path, 'settings.json'),
+        ),
+      );
+      await settleAfterIo(tester);
+      await pickMenuItem(tester, 'File', 'Load deck...');
+      await pickMenuItem(tester, 'Edit', 'Unit editor');
+
+      // Every pill, in F-key order with Done and Cancel last.
+      expect(
+        find
+            .descendant(
+              of: find.byKey(const Key('editorActionRow')),
+              matching: find.byType(Text),
+            )
+            .evaluate()
+            .map((Element e) => (e.widget as Text).data)
+            .toList(),
+        <String>[
+          'Previous', 'F2', //
+          'Next', 'F3', //
+          'Search', 'F5', //
+          'Jump', 'F6', //
+          'Delete', 'F7', //
+          'Insert before', 'F8', //
+          'Difficult 1', 'F12', //
+          'Difficult 2', 'Shift+F12', //
+          'Done', 'F10', //
+          'Cancel', 'Esc', //
+        ],
+      );
+
+      bool filled(int direction) => find
+          .descendant(
+            of: find.byKey(Key('editorDifficultPill$direction')),
+            matching: find.byType(FilledButton),
+          )
+          .evaluate()
+          .isNotEmpty;
+      expect(filled(1), isFalse);
+      expect(filled(2), isFalse);
+
+      // F12, then Cancel: the pill showed it, the file never gets it.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await settle(tester);
+      expect(filled(1), isTrue);
+      expect(filled(2), isFalse);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(tester);
+      await tester.tap(find.text('Continue'));
+      await settle(tester);
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
+
+      await pickMenuItem(tester, 'Edit', 'Unit editor');
+      expect(filled(1), isFalse);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await settle(tester);
+      expect(filled(1), isFalse);
+      expect(filled(2), isTrue);
+      expect(find.byKey(const Key('editorDifficultBadge1')), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('editorDifficultBadge2')),
+          matching: find.text('Difficult 2'),
+        ),
+        findsOneWidget,
+      );
+      expect(unitOnDisk(deckPath).containsKey('manualDifficult2'), isFalse);
+
+      await tester.tap(find.text('Done'));
+      await settle(tester);
+      await pickMenuItem(tester, 'File', 'Save deck');
+      await untilOnDisk(tester, deckPath, 'manualDifficult2', present: true);
+      final Map<String, Object?> unit = unitOnDisk(deckPath);
+      expect(unit['manualDifficult2'], isTrue);
+      for (final String other in <String>[
+        'manualDifficult1',
+        'autoDifficult1',
+        'autoDifficult2',
+      ]) {
+        expect(unit.containsKey(other), isFalse, reason: other);
+      }
+      expect(
+        decodeDeckJson(File(deckPath).readAsStringSync()).lastEdited,
+        edited,
+      );
+    });
+  });
+
   testWidgets('a save with both a flag change and a content edit dates the '
       'deck and keeps both', (WidgetTester tester) async {
     final String deckPath = p.join(temp.path, 'editor_pending.vok');

@@ -523,6 +523,16 @@ enum LearnAnywhereMessage {
   /// Unit editor cancel action.
   editorCancel,
 
+  /// Unit editor pill toggling the unit's difficulty in direction 1 (F12).
+  editorDifficult1,
+
+  /// Unit editor pill toggling the unit's difficulty in direction 2
+  /// (Shift+F12).
+  editorDifficult2,
+
+  /// The key printed under the unit editor's Difficult 2 pill.
+  editorDifficult2Key,
+
   /// Unit editor bold action.
   editorBold,
 
@@ -1807,6 +1817,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorSearch: 'Search',
       LearnAnywhereMessage.editorDone: 'Done',
       LearnAnywhereMessage.editorCancel: 'Cancel',
+      LearnAnywhereMessage.editorDifficult1: 'Difficult 1',
+      LearnAnywhereMessage.editorDifficult2: 'Difficult 2',
+      LearnAnywhereMessage.editorDifficult2Key: 'Shift+F12',
       LearnAnywhereMessage.editorBold: 'Bold',
       LearnAnywhereMessage.editorItalic: 'Italic',
       LearnAnywhereMessage.editorUnderline: 'Underline',
@@ -2543,6 +2556,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.editorSearch: 'Suche',
       LearnAnywhereMessage.editorDone: 'Fertig',
       LearnAnywhereMessage.editorCancel: 'Abbruch',
+      LearnAnywhereMessage.editorDifficult1: 'Schwierig 1',
+      LearnAnywhereMessage.editorDifficult2: 'Schwierig 2',
+      LearnAnywhereMessage.editorDifficult2Key: 'Umschalt+F12',
       LearnAnywhereMessage.editorBold: 'Fett',
       LearnAnywhereMessage.editorItalic: 'Kursiv',
       LearnAnywhereMessage.editorUnderline: 'Unterstrichen',

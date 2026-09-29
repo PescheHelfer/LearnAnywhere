@@ -185,12 +185,15 @@ void main() {
 
       // The row is free to wrap to the deck's width; what the frame owes it is
       // that its widest single button is never squeezed. Measured against the
-      // real buttons, so a longer label or a new one fails here.
+      // real buttons, so a longer label or a new one fails here. Every kind
+      // of button: an unflagged Difficult pill is an outlined one.
       double widest = 0;
       for (final Element button in find
           .descendant(
             of: find.byKey(const Key('editorActionRow')),
-            matching: find.byType(FilledButton),
+            matching: find.byWidgetPredicate(
+              (Widget widget) => widget is ButtonStyleButton,
+            ),
           )
           .evaluate()) {
         widest = widest > button.size!.width ? widest : button.size!.width;

@@ -59,18 +59,19 @@ Gegenstück; siehe [Einstellungen](11-settings.md#darstellung-und-sprache).
 | `F6` | Zu Einheit springen |
 | `F7` | Einheit löschen (mit Bestätigung) |
 | `F8` | Einheit vor der aktuellen einfügen |
+| `F12` | Einheit in Abfragerichtung 1 als schwierig kennzeichnen oder ihre Schwierigkeit dort aufheben |
+| `Umschalt+F12` | Einheit in Abfragerichtung 2 als schwierig kennzeichnen oder ihre Schwierigkeit dort aufheben |
 | `F10` | Fertig — Änderungen behalten |
 | `Esc` | Abbruch — bei Änderungen mit Rückfrage |
-| `F12` | Einheit in Abfragerichtung 1 als schwierig kennzeichnen oder ihre Schwierigkeit dort aufheben |
 | `Enter` / `Tab` | Nächstes Feld |
 | `Rücktaste` (bei leerem Feld) | Vorheriges Feld |
 
 Was jede dieser Tasten im Einzelnen bewirkt, steht in
 [Lerneinheiten bearbeiten](04-unit-editor.md).
 
-Anders als in einer Lernsitzung schreibt `F12` hier nicht sofort auf die Festplatte: Die
-Änderung ist Teil der vorgenommenen Bearbeitung und erreicht die Datei erst beim
-Speichern. Siehe
+Anders als in einer Lernsitzung schreiben `F12` und `Umschalt+F12` hier nicht sofort
+auf die Festplatte: Die Änderung ist Teil der vorgenommenen Bearbeitung und erreicht
+die Datei erst beim Speichern. Siehe
 [Eine Einheit als schwierig kennzeichnen](04-unit-editor.md#eine-einheit-als-schwierig-kennzeichnen).
 
 ## Lernsitzung

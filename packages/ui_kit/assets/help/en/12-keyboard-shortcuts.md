@@ -56,16 +56,17 @@ to their German equivalents; see [Settings](11-settings.md#appearance-and-langua
 | `F6` | Jump to unit number |
 | `F7` | Delete unit (confirm) |
 | `F8` | Insert unit before the current one |
+| `F12` | Mark the unit difficult in Direction 1, or remove its difficulty there |
+| `Shift+F12` | Mark the unit difficult in Direction 2, or remove its difficulty there |
 | `F10` | Done — keep changes |
 | `Esc` | Cancel — confirm discard if anything changed |
-| `F12` | Mark the unit difficult in Direction 1, or remove its difficulty there |
 | `Enter` / `Tab` | Next field |
 | `Backspace` (on an empty field) | Previous field |
 
 See [The unit editor](04-unit-editor.md) for what each of these does in detail.
 
-Unlike in a learning session, `F12` here does not write to disk at once: the change is
-part of the pending edit and reaches the file only when you save. See
+Unlike in a learning session, `F12` and `Shift+F12` here do not write to disk at once:
+the change is part of the pending edit and reaches the file only when you save. See
 [Marking a unit difficult](04-unit-editor.md#marking-a-unit-difficult).
 
 ## Learning session

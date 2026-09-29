@@ -91,7 +91,7 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f12);
       await tester.pumpAndSettle();
-      // F12 acts on Direction 1 in the editor.
+      // Plain F12 acts on Direction 1 in the editor.
       expect(toggled, <(int, QueryDirection)>[(2, QueryDirection.direction1)]);
       expect(find.byTooltip('Manual flag'), findsNothing);
 
@@ -106,6 +106,112 @@ void main() {
         (1, QueryDirection.direction1),
       ]);
       expect(find.byTooltip('Manual flag'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Shift+F12 toggles Direction 2, and each direction has its own pill and '
+    'badge showing the pending flag',
+    (WidgetTester tester) async {
+      LearningDeck deck = const LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{0: FieldValue.plain('one')},
+          ),
+        ],
+      );
+      final List<(int, QueryDirection)> toggled = <(int, QueryDirection)>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return UnitEditorPage(
+                  deck: deck,
+                  onChanged:
+                      (LearningDeck value, {int? insertedAt, int? deletedAt}) {
+                        setState(() => deck = value);
+                      },
+                  onDone: () {},
+                  onCancel: () {},
+                  onToggleDifficult:
+                      (int unitIndex, QueryDirection direction) {
+                        toggled.add((unitIndex, direction));
+                        setState(
+                          () => deck = toggleDifficultAt(
+                            deck,
+                            unitIndex,
+                            direction,
+                          ),
+                        );
+                      },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final Finder pill1 = find.byKey(const Key('editorDifficultPill1'));
+      final Finder pill2 = find.byKey(const Key('editorDifficultPill2'));
+      final Finder badge1 = find.byKey(const Key('editorDifficultBadge1'));
+      final Finder badge2 = find.byKey(const Key('editorDifficultBadge2'));
+      bool filled(Finder pill) =>
+          find.descendant(of: pill, matching: find.byType(FilledButton))
+              .evaluate()
+              .isNotEmpty;
+
+      // Both outlined; each tooltip names the mask's label for its direction.
+      expect(filled(pill1), isFalse);
+      expect(filled(pill2), isFalse);
+      expect(
+        find.descendant(of: pill1, matching: find.byTooltip('A')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: pill2, matching: find.byTooltip('B')),
+        findsOneWidget,
+      );
+      expect(badge1, findsNothing);
+      expect(badge2, findsNothing);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pumpAndSettle();
+      expect(toggled, <(int, QueryDirection)>[(1, QueryDirection.direction2)]);
+      expect(filled(pill1), isFalse);
+      expect(filled(pill2), isTrue);
+      expect(badge1, findsNothing);
+      expect(
+        find.descendant(of: badge2, matching: find.text('Difficult 2')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: badge2, matching: find.byIcon(Icons.flag)),
+        findsOneWidget,
+      );
+      expect(find.byTooltip('Manual flag'), findsOneWidget);
+
+      // The pill does what its key does.
+      await tester.tap(pill1);
+      await tester.pumpAndSettle();
+      expect(toggled, <(int, QueryDirection)>[
+        (1, QueryDirection.direction2),
+        (1, QueryDirection.direction1),
+      ]);
+      expect(filled(pill1), isTrue);
+      expect(
+        find.descendant(of: badge1, matching: find.text('Difficult 1')),
+        findsOneWidget,
+      );
+      expect(badge2, findsOneWidget);
     },
   );
 
