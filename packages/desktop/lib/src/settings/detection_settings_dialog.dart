@@ -7,8 +7,8 @@ import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 /// three thresholds.
 typedef DetectionSettings = ({bool enabled, DetectionThresholds thresholds});
 
-/// Options ▸ Statistics ▸ Detect difficult units: shows the detection switch
-/// and the three thresholds, starting from [enabled] and [thresholds].
+/// Options ▸ Difficult units: shows the detection switch and the three
+/// thresholds, starting from [enabled] and [thresholds].
 ///
 /// Completes with the learner's choice on OK, or null on Cancel. OK is
 /// offered only while every threshold holds a whole number within its range

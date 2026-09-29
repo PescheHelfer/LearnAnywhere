@@ -177,7 +177,7 @@ lautet: Eine Einheit ist schwierig, wenn Sie sie **mindestens zweimal** und **in
 mindestens einem Drittel der Fälle** falsch beantwortet haben, und — falls Sie sie noch
 nie richtig beantwortet haben — erst nach **mindestens sechs Versuchen**. Das sind die
 Standardwerte: Alle drei Zahlen lassen sich ändern und die Prüfung lässt sich ausschalten,
-unter [Statistik-Optionen](11-settings.md#statistik-optionen).
+unter [Schwierige Einheiten](11-settings.md#schwierige-einheiten).
 
 - Beurteilt wird jede Einheit allein nach ihrer eigenen **Allzeit-Statistik**, nie danach,
   wie es im Rest der Lern-Datei läuft. Das Löschen der aktuellen Statistik macht die
@@ -193,7 +193,7 @@ unter [Statistik-Optionen](11-settings.md#statistik-optionen).
   **Kennzeichnung entfernen** in der
   [Einheitenliste](09-statistics.md#einheitenliste--wonach-erneut-gebt-werden-sollte)
   oder für die ganze Lern-Datei mit
-  [Automatische Kennzeichnungen der geöffneten Lern-Datei neu berechnen...](09-statistics.md#kennzeichnungen-neu-berechnen-und-entfernen).
+  [Automatische Kennzeichnungen neu berechnen...](09-statistics.md#kennzeichnungen-neu-berechnen-und-entfernen).
 - Die Lern-Datei wird nur geschrieben, wenn eine Kennzeichnung hinzukam, und wie das
   Kennzeichnen ist das keine Bearbeitung: **Zuletzt bearbeitet** ändert sich nicht. Lässt
   sich die Datei nicht schreiben, nennt eine Meldung sie; Ihre Statistik ist davon nicht

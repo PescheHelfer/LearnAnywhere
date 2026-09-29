@@ -185,15 +185,19 @@ enum LearnAnywhereMessage {
   /// Statistics submenu: open the statistics screen.
   menuStatisticsShow,
 
-  /// Statistics submenu: rebuild the open deck's automatic flags from its
-  /// lifetime record, behind
-  /// [LearnAnywhereMessage.confirmRecomputeAutomaticFlags]. Names the open
-  /// deck, because nothing else is touched.
+  /// Statistics submenu: the Manage difficult units submenu holding the open
+  /// deck's two flag commands.
+  menuStatisticsManageDifficult,
+
+  /// Statistics ▸ Manage difficult units: rebuild the open deck's automatic
+  /// flags from its lifetime record, behind
+  /// [LearnAnywhereMessage.confirmRecomputeAutomaticFlags], whose warning
+  /// names the deck.
   menuStatisticsRecomputeAutomatic,
 
-  /// Statistics submenu: clear every manual flag in the open deck, behind
-  /// [LearnAnywhereMessage.confirmRemoveManualFlags]. Names the open deck,
-  /// because nothing else is touched.
+  /// Statistics ▸ Manage difficult units: clear every manual flag in the open
+  /// deck, behind [LearnAnywhereMessage.confirmRemoveManualFlags], whose
+  /// warning names the deck.
   menuStatisticsRemoveManual,
 
   /// Lexicon menu label.
@@ -264,8 +268,8 @@ enum LearnAnywhereMessage {
   /// Explanation shown under the retention-count field: 0 keeps every file.
   keepStatisticsHint,
 
-  /// Options ▸ Statistics: opens the difficult-unit detection settings.
-  menuOptionsDetectDifficult,
+  /// Options menu: opens the difficult-unit detection settings.
+  menuOptionsDifficultUnits,
 
   /// Title of the difficult-unit detection settings dialog.
   detectDifficultTitle,
@@ -1626,10 +1630,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuLearnContinue: '&Continue', // C
       LearnAnywhereMessage.menuStatistics: '&Statistics', // top-bar S
       LearnAnywhereMessage.menuStatisticsShow: '&Show statistics', // S
+      LearnAnywhereMessage.menuStatisticsManageDifficult:
+          'Manage &difficult units', // D
       LearnAnywhereMessage.menuStatisticsRecomputeAutomatic:
-          'Recompute &automatic flags in the open deck...', // A
+          'Recompute &automatic flags...', // A
       LearnAnywhereMessage.menuStatisticsRemoveManual:
-          'Remove all &manual flags in the open deck...', // M
+          'Remove all &manual flags...', // M
       LearnAnywhereMessage.menuLexicon: 'Le&xicon', // top-bar X
       LearnAnywhereMessage.menuHelp: '&Help', // top-bar H
       LearnAnywhereMessage.helpUserGuide: '&User guide', // U
@@ -1648,11 +1654,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.keepStatisticsHint:
           'The oldest timestamped session files beyond this count are '
           'deleted after each new one is written. 0 keeps every file.',
-      // N: avoids the Options-level A P T Z C L I F, Theme's S H D B U,
-      // Language's E G, and the siblings O V K.
-      LearnAnywhereMessage.menuOptionsDetectDifficult:
-          'Detect difficult u&nits...', // N
-      LearnAnywhereMessage.detectDifficultTitle: 'Detect difficult units',
+      // N: avoids the Options-level A P T Z C L I F, and D, which Theme ▸
+      // Dark holds while Theme is open.
+      LearnAnywhereMessage.menuOptionsDifficultUnits:
+          'Difficult u&nits...', // N
+      LearnAnywhereMessage.detectDifficultTitle: 'Difficult units',
       LearnAnywhereMessage.detectDifficultEnabled:
           'Flag difficult units automatically when a session ends',
       LearnAnywhereMessage.detectDifficultHint:
@@ -2348,12 +2354,12 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.menuLearnContinue: '&Fortsetzen', // F
       LearnAnywhereMessage.menuStatistics: '&Statistik', // top-bar S
       LearnAnywhereMessage.menuStatisticsShow: 'Statistik &anzeigen', // A
+      LearnAnywhereMessage.menuStatisticsManageDifficult:
+          'Schwierige Einheiten &verwalten', // V
       LearnAnywhereMessage.menuStatisticsRecomputeAutomatic:
-          'Automatische Kennzeichnungen der geöffneten Lern-Datei &neu '
-          'berechnen...', // N
+          'Automatische Kennzeichnungen &neu berechnen...', // N
       LearnAnywhereMessage.menuStatisticsRemoveManual:
-          'Alle &manuellen Kennzeichnungen der geöffneten Lern-Datei '
-          'entfernen...', // M
+          'Alle &manuellen Kennzeichnungen entfernen...', // M
       LearnAnywhereMessage.menuLexicon: 'Le&xikon', // top-bar X
       LearnAnywhereMessage.menuHelp: '&Hilfe', // top-bar H
       LearnAnywhereMessage.helpUserGuide: '&Benutzerhandbuch', // B
@@ -2373,12 +2379,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.keepStatisticsHint:
           'Die ältesten Sitzungsdateien über diese Anzahl hinaus werden nach '
           'jeder neu geschriebenen Datei gelöscht. 0 behält alle Dateien.',
-      // C: avoids the Options-level E P D Z I S K O, Theme's Y H D B U,
-      // Language's G U, and the siblings L T N.
-      LearnAnywhereMessage.menuOptionsDetectDifficult:
-          'S&chwierige Einheiten erkennen...', // C
-      LearnAnywhereMessage.detectDifficultTitle:
-          'Schwierige Einheiten erkennen',
+      // C: avoids the Options-level E P D Z I S K O and every letter of
+      // Theme, Language and Statistics beneath it.
+      LearnAnywhereMessage.menuOptionsDifficultUnits:
+          'S&chwierige Einheiten...', // C
+      LearnAnywhereMessage.detectDifficultTitle: 'Schwierige Einheiten',
       LearnAnywhereMessage.detectDifficultEnabled:
           'Schwierige Einheiten am Ende einer Sitzung automatisch '
           'kennzeichnen',

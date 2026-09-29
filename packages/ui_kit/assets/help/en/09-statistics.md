@@ -1,8 +1,8 @@
 # Statistics
 
 The **Statistics** screen (**Statistics ▸ Show statistics**, `Alt+S` then `S`) reads
-the same counters your sessions write to. The same menu holds two commands for the
-flags of the open deck, described in
+the same counters your sessions write to. The menu's **Manage difficult units** submenu
+holds two commands for the flags of the open deck, described in
 [Recomputing and removing flags](#recomputing-and-removing-flags). The screen has three tabs:
 **Overview**, **Unit list**, and **Level Learning**.
 
@@ -167,8 +167,8 @@ mastered there is not invisible here.
 
 ## Recomputing and removing flags
 
-Two commands on the **Statistics** menu change the difficulty flags of every unit in the
-open deck at once — that deck only, as their names say. Each warns you first, naming the
+Two commands under **Statistics ▸ Manage difficult units** change the difficulty flags of
+every unit in the open deck at once — that deck only. Each warns you first, naming the
 deck, and changes nothing if you press **Cancel**. The deck file is written straight
 away (a deck never saved takes its flags along with its first save), and like any flag
 change neither counts as an edit: **Last edited** stays as it was. While the
@@ -176,7 +176,7 @@ change neither counts as an edit: **Last edited** stays as it was. While the
 changes, `Esc` discards them — because writing the deck would save your unfinished edits
 with it.
 
-- **Recompute automatic flags in the open deck...** checks every unit against its
+- **Recompute automatic flags...** checks every unit against its
   all-time statistics again, by the rule in
   [Difficult units found automatically](06-learning-sessions.md#difficult-units-found-automatically).
   Each direction is judged on its own: where a unit meets the rule it has the automatic
@@ -188,9 +188,9 @@ with it.
   unit separately. If the deck's all-time statistics could not be read when it was
   opened, it says so and changes nothing, rather than judging every unit by statistics it could not see. It
   judges by the numbers set under
-  [Statistics options](11-settings.md#statistics-options), and cannot be chosen while
+  [Difficult units](11-settings.md#difficult-units), and cannot be chosen while
   detection is switched off there.
-- **Remove all manual flags in the open deck...** removes every manual flag, in both
+- **Remove all manual flags...** removes every manual flag, in both
   directions, so you can start your own selection over. Automatic flags are never
   touched. A message reports how many were removed, counting each direction of a unit
   separately.

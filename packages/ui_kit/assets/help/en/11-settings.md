@@ -149,16 +149,16 @@ present and doing nothing.
 
 ## Statistics options
 
-**Options ▸ Statistics** holds auto-load, auto-save, the session-file retention count,
-and the detection of difficult units.
-
-The first three are covered in
+**Options ▸ Statistics** holds auto-load, auto-save and the session-file retention
+count. They are covered in
 [Working with files](03-managing-files.md#auto-load-and-auto-save), and concern session
 files only. The deck's lifetime record is kept whatever these are set to — see
 [The two records](09-statistics.md#the-two-records).
 
-**Detect difficult units...** decides how the program finds the units you keep getting
-wrong when a session ends, as described in
+## Difficult units
+
+**Options ▸ Difficult units...**, directly under the Statistics submenu, decides how the
+program finds the units you keep getting wrong when a session ends, as described in
 [Difficult units found automatically](06-learning-sessions.md#difficult-units-found-automatically):
 
 | Setting | Range | Default |
@@ -174,14 +174,14 @@ wrong when a session ends, as described in
 - The choice belongs to this computer, like the other settings in the settings file, and
   applies to every deck you open on it.
 - Saving changed numbers, with detection switched on and a deck open, leads straight to
-  the warning of **Recompute automatic flags in the open deck...**, because the flags the
-  deck carries were set by the old numbers. **Continue** rebuilds them by the new ones
+  the warning of **Recompute automatic flags...**, because the flags the deck carries
+  were set by the old numbers. **Continue** rebuilds them by the new ones
   (see [Recomputing and removing flags](09-statistics.md#recomputing-and-removing-flags));
   **Cancel** keeps them, and the new numbers apply from the next session end on. While
   the **Unit editor** is open you are asked to leave it first instead, and can run the
-  command from the **Statistics** menu afterwards.
-- Switched off, a session end flags nothing, and **Recompute automatic flags in the open
-  deck...** cannot be chosen. The flags already set stay, manual and automatic alike,
+  command from **Statistics ▸ Manage difficult units** afterwards.
+- Switched off, a session end flags nothing, and **Recompute automatic flags...** cannot
+  be chosen. The flags already set stay, manual and automatic alike,
   and you can still mark and unmark units yourself. Switching it off is also the way to
   keep a session from writing flags into a deck you are only trying out.
 

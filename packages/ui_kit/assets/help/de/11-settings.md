@@ -162,17 +162,18 @@ Menüpunkt ganz, statt vorhanden zu sein und nichts zu tun.
 
 ## Statistik-Optionen
 
-**Optionen ▸ Statistiken** enthält automatisches Laden, automatisches Speichern, die
-Anzahl der aufbewahrten Sitzungsdateien und die Erkennung schwieriger Einheiten.
-
-Die ersten drei sind in
+**Optionen ▸ Statistiken** enthält automatisches Laden, automatisches Speichern und die
+Anzahl der aufbewahrten Sitzungsdateien. Sie sind in
 [Arbeiten mit Dateien](03-managing-files.md#automatisch-laden-und-automatisch-speichern)
 beschrieben und betreffen allein die Sitzungsdateien. Die Allzeit-Statistik einer
 Lern-Datei wird unabhängig von diesen Einstellungen geführt — siehe
 [Die zwei Statistiken](09-statistics.md#die-zwei-statistiken).
 
-**Schwierige Einheiten erkennen...** legt fest, wie das Programm am Ende einer Sitzung
-die Einheiten findet, die Sie immer wieder falsch beantworten, wie unter
+## Schwierige Einheiten
+
+**Optionen ▸ Schwierige Einheiten...**, direkt unter dem Untermenü Statistiken, legt
+fest, wie das Programm am Ende einer Sitzung die Einheiten findet, die Sie immer wieder
+falsch beantworten, wie unter
 [Automatisch gefundene schwierige Einheiten](06-learning-sessions.md#automatisch-gefundene-schwierige-einheiten)
 beschrieben:
 
@@ -189,16 +190,17 @@ beschrieben:
 - Die Wahl gehört zu diesem Computer, wie die übrigen Einstellungen in der
   Einstellungsdatei, und gilt für jede Lern-Datei, die Sie darauf öffnen.
 - Speichern Sie geänderte Zahlen bei eingeschalteter Erkennung, während eine Lern-Datei
-  geöffnet ist, folgt gleich die Warnung von **Automatische Kennzeichnungen der
-  geöffneten Lern-Datei neu berechnen...**, denn die Kennzeichnungen der Lern-Datei
+  geöffnet ist, folgt gleich die Warnung von **Automatische Kennzeichnungen neu
+  berechnen...**, denn die Kennzeichnungen der Lern-Datei
   wurden nach den alten Zahlen gesetzt. **Weiter** berechnet sie nach den neuen neu
   (siehe
   [Kennzeichnungen neu berechnen und entfernen](09-statistics.md#kennzeichnungen-neu-berechnen-und-entfernen));
   **Abbruch** behält sie, und die neuen Zahlen gelten ab dem nächsten Sitzungsende. Ist
   die **Eingabe-Maske** geöffnet, werden Sie stattdessen gebeten, sie zuerst zu
-  verlassen, und können den Befehl danach im Menü **Statistik** ausführen.
+  verlassen, und können den Befehl danach unter **Statistik ▸ Schwierige Einheiten
+  verwalten** ausführen.
 - Ausgeschaltet kennzeichnet ein Sitzungsende nichts, und **Automatische Kennzeichnungen
-  der geöffneten Lern-Datei neu berechnen...** lässt sich nicht wählen. Bestehende
+  neu berechnen...** lässt sich nicht wählen. Bestehende
   Kennzeichnungen bleiben, manuelle wie automatische, und Sie können Einheiten weiterhin
   selbst kennzeichnen und die Kennzeichnung entfernen. Ausschalten ist auch der Weg, eine
   Sitzung davon abzuhalten, Kennzeichnungen in eine Lern-Datei zu schreiben, die Sie nur

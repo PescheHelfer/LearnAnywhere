@@ -162,7 +162,7 @@ gives them the automatic flag. The rule is: a unit is difficult when you have an
 it wrong **at least twice** and **at least a third of the time**, and — if you have never
 answered it correctly — only once you have tried it **at least six times**. Those are the
 defaults: you can change all three numbers, or switch the check off, under
-[Statistics options](11-settings.md#statistics-options).
+[Difficult units](11-settings.md#difficult-units).
 
 - It judges each unit by its own **all-time statistics** alone, never by how the rest of
   the deck is going, so clearing the current statistics does not blind it, and a deck
@@ -175,7 +175,7 @@ defaults: you can change all three numbers, or switch the check off, under
   you remove it — with `F12`, with **Unmark selected** in the
   [unit list](09-statistics.md#unit-list--finding-what-to-practice-again), or for the
   whole deck with
-  [Recompute automatic flags in the open deck...](09-statistics.md#recomputing-and-removing-flags).
+  [Recompute automatic flags...](09-statistics.md#recomputing-and-removing-flags).
 - The deck file is written only when a flag was added, and like marking a unit that is
   not an edit: **Last edited** does not change. If the file cannot be written, a message
   names it; your statistics are not affected.

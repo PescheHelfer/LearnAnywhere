@@ -1,8 +1,9 @@
 # Statistik
 
 Der Bildschirm **Statistik** (**Statistik ▸ Statistik anzeigen**, `Alt+S` und dann
-`A`) liest dieselben Zähler, in die Ihre Sitzungen schreiben. Dasselbe Menü enthält zwei
-Befehle für die Kennzeichnungen der geöffneten Lern-Datei, beschrieben unter
+`A`) liest dieselben Zähler, in die Ihre Sitzungen schreiben. Das Menü enthält im
+Untermenü **Schwierige Einheiten verwalten** zwei Befehle für die Kennzeichnungen der
+geöffneten Lern-Datei, beschrieben unter
 [Kennzeichnungen neu berechnen und entfernen](#kennzeichnungen-neu-berechnen-und-entfernen).
 Der Bildschirm hat drei Reiter: **Übersicht**, **Einheitenliste** und **Stufenlernen**.
 
@@ -189,9 +190,9 @@ Statistik, eine dort gemeisterte Einheit ist hier also nicht unsichtbar.
 
 ## Kennzeichnungen neu berechnen und entfernen
 
-Zwei Befehle im Menü **Statistik** ändern die Kennzeichnungen aller Einheiten der
-geöffneten Lern-Datei auf einmal — nur dieser Lern-Datei, wie ihre Namen sagen. Beide
-warnen zuerst und nennen dabei die Lern-Datei; mit **Abbruch** ändert sich nichts. Die
+Zwei Befehle unter **Statistik ▸ Schwierige Einheiten verwalten** ändern die
+Kennzeichnungen aller Einheiten der geöffneten Lern-Datei auf einmal — nur dieser
+Lern-Datei. Beide warnen zuerst und nennen dabei die Lern-Datei; mit **Abbruch** ändert sich nichts. Die
 Lern-Datei wird gleich geschrieben (eine noch nie gespeicherte nimmt ihre
 Kennzeichnungen beim ersten Speichern mit), und wie jede Kennzeichnung ist keiner der
 beiden eine Bearbeitung: **Zuletzt bearbeitet** bleibt, wie es war. Solange die
@@ -199,7 +200,7 @@ beiden eine Bearbeitung: **Zuletzt bearbeitet** bleibt, wie es war. Solange die
 behält Ihre Änderungen, `Esc` verwirft sie —, denn das Schreiben der Lern-Datei würde
 Ihre unfertigen Änderungen mitspeichern.
 
-- **Automatische Kennzeichnungen der geöffneten Lern-Datei neu berechnen...** misst jede
+- **Automatische Kennzeichnungen neu berechnen...** misst jede
   Einheit erneut an ihrer Allzeit-Statistik, nach der Regel unter
   [Automatisch gefundene schwierige Einheiten](06-learning-sessions.md#automatisch-gefundene-schwierige-einheiten).
   Jede Abfragerichtung wird für sich gemessen: Wo eine Einheit die Regel erfüllt, trägt
@@ -213,9 +214,9 @@ Ihre unfertigen Änderungen mitspeichern.
   Lern-Datei beim Öffnen nicht gelesen werden, sagt der Befehl das und ändert nichts,
   statt jede
   Einheit an einer Statistik zu messen, die er nicht sehen konnte. Er misst nach den
-  Zahlen unter [Statistik-Optionen](11-settings.md#statistik-optionen) und lässt sich
+  Zahlen unter [Schwierige Einheiten](11-settings.md#schwierige-einheiten) und lässt sich
   nicht wählen, solange die Erkennung dort ausgeschaltet ist.
-- **Alle manuellen Kennzeichnungen der geöffneten Lern-Datei entfernen...** entfernt jede
+- **Alle manuellen Kennzeichnungen entfernen...** entfernt jede
   manuelle Kennzeichnung in beiden Abfragerichtungen, damit Sie Ihre eigene Auswahl neu
   beginnen können. Automatische Kennzeichnungen bleiben unangetastet. Eine Meldung nennt,
   wie viele entfernt wurden, wobei jede Richtung einer Einheit einzeln zählt.

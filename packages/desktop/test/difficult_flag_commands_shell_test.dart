@@ -33,8 +33,9 @@ final class _ScriptedFilePicker extends DesktopFilePicker {
   Future<String?> pickDirectory({String? initialDirectory}) async => null;
 }
 
-const String _recompute = 'Recompute automatic flags in the open deck...';
-const String _removeManual = 'Remove all manual flags in the open deck...';
+const String _manage = 'Manage difficult units';
+const String _recompute = 'Recompute automatic flags...';
+const String _removeManual = 'Remove all manual flags...';
 
 void main() {
   late DesktopPrefs prefs;
@@ -102,12 +103,15 @@ void main() {
     );
   }
 
-  /// Opens the app on [deckPath].
-  Future<void> openDeck(WidgetTester tester, String deckPath) async {
+  /// Starts the app with no deck open, answering open dialogs through
+  /// [picker].
+  Future<void> pumpShell(
+    WidgetTester tester,
+    _ScriptedFilePicker picker,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    final _ScriptedFilePicker picker = _ScriptedFilePicker();
     await tester.pumpWidget(
       LearnAnywhereDesktopApp(
         prefs: prefs,
@@ -116,6 +120,12 @@ void main() {
       ),
     );
     await settleAfterIo(tester);
+  }
+
+  /// Opens the app on [deckPath].
+  Future<void> openDeck(WidgetTester tester, String deckPath) async {
+    final _ScriptedFilePicker picker = _ScriptedFilePicker();
+    await pumpShell(tester, picker);
     picker.nextOpenPath = deckPath;
     await pickMenuItem(tester, 'File', 'Load deck...');
   }
@@ -148,9 +158,24 @@ void main() {
   // status as well, so once the queued SnackBar arrives the text is there
   // twice — and whether it has arrived yet depends on the machine's load.
 
-  /// Picks [command] from the Statistics menu and waits for its warning.
+  /// Opens Statistics ▸ Manage difficult units.
+  Future<void> openFlagSubmenu(WidgetTester tester) async {
+    await tester.tap(find.text('Statistics').first);
+    await settle(tester);
+    await tester.tap(find.text(_manage));
+    await settle(tester);
+  }
+
+  /// Picks [command] from Statistics ▸ Manage difficult units.
+  Future<void> pickFlagCommand(WidgetTester tester, String command) async {
+    await openFlagSubmenu(tester);
+    await tester.tap(find.text(command).last);
+    await settleAfterIo(tester);
+  }
+
+  /// Picks [command] from the flag submenu and waits for its warning.
   Future<void> openWarning(WidgetTester tester, String command) async {
-    await pickMenuItem(tester, 'Statistics', command);
+    await pickFlagCommand(tester, command);
     await until(tester, () => find.byType(AlertDialog).evaluate().isNotEmpty);
   }
 
@@ -301,7 +326,7 @@ void main() {
 
     await tester.runAsync(() async {
       await openDeck(tester, deckPath);
-      await pickMenuItem(tester, 'Statistics', _recompute);
+      await pickFlagCommand(tester, _recompute);
 
       expect(find.byType(AlertDialog), findsNothing);
       final Finder message = find.textContaining(
@@ -328,7 +353,7 @@ void main() {
       await openDeck(tester, deckPath);
       await pickMenuItem(tester, 'Edit', 'Unit editor');
       for (final String command in <String>[_recompute, _removeManual]) {
-        await pickMenuItem(tester, 'Statistics', command);
+        await pickFlagCommand(tester, command);
         expect(find.byType(AlertDialog), findsNothing);
       }
       final Finder message = find.text(
@@ -349,23 +374,19 @@ void main() {
   Future<LearnAnywhereSettings> settingsOnDisk() =>
       readSettingsFile(p.join(temp.path, 'settings.json'));
 
-  /// Opens Options ▸ Statistics ▸ Detect difficult units.
+  /// Opens Options ▸ Difficult units.
   Future<void> openDetectionSettings(WidgetTester tester) async {
     await tester.tap(find.text('Options').first);
     await settle(tester);
-    // The submenu, not the top-level Statistics menu.
-    await tester.tap(find.text('Statistics').last);
-    await settle(tester);
-    await tester.tap(find.text('Detect difficult units...'));
+    await tester.tap(find.text('Difficult units...'));
     await settleAfterIo(tester);
-    expect(find.text('Detect difficult units'), findsOneWidget);
+    expect(find.text('Difficult units'), findsOneWidget);
   }
 
-  /// Whether Statistics ▸ Recompute automatic flags can be chosen; leaves
-  /// the menu closed again.
+  /// Whether Statistics ▸ Manage difficult units ▸ Recompute automatic flags
+  /// can be chosen; leaves the menu closed again.
   Future<bool> recomputeEnabled(WidgetTester tester) async {
-    await tester.tap(find.text('Statistics').first);
-    await settle(tester);
+    await openFlagSubmenu(tester);
     final bool enabled = tester
         .widget<MenuItemButton>(
           find.ancestor(
@@ -466,6 +487,22 @@ void main() {
       expect(await recomputeEnabled(tester), isFalse);
       // The automatic flag stays.
       expect(File(deckPath).readAsStringSync(), before);
+    });
+  });
+
+  testWidgets('Difficult units... sits on Options itself, no longer inside '
+      'Options ▸ Statistics', (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await pumpShell(tester, _ScriptedFilePicker());
+      await tester.tap(find.text('Options').first);
+      await settle(tester);
+      expect(find.text('Difficult units...'), findsOneWidget);
+      // The submenu, not the top-level Statistics menu.
+      await tester.tap(find.text('Statistics').last);
+      await settle(tester);
+      expect(find.text('Auto-save statistics'), findsOneWidget);
+      // Still the one on Options: the submenu adds no second.
+      expect(find.text('Difficult units...'), findsOneWidget);
     });
   });
 

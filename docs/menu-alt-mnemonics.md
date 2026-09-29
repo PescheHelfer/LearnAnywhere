@@ -114,6 +114,7 @@ crashes.
    | Centred content frame / Zentrierter Inhaltsrahmen | C | I |
    | Language / Sprache (submenu) | L | S |
    | Statistics / Statistiken (submenu) | I | K |
+   | Difficult units... / Schwierige Einheiten... | N | C |
    | Start folder... / Startordner... | F | O |
 
    | Nested item | EN | DE |
@@ -128,20 +129,22 @@ crashes.
    | Statistics ▸ Auto-load / automatisch laden | O | L |
    | Statistics ▸ Auto-save / automatisch speichern | V | T |
    | Statistics ▸ Keep last N / Nur die letzten N | K | N |
-   | Statistics ▸ Detect difficult units / Schwierige Einheiten erkennen | N | C |
 
-   Zoom level's own items carry no letters at all (see 3 above).
+   Zoom level's own items carry no letters at all (see 3 above). Difficult
+   units takes EN N, not the obvious D: Theme ▸ Dark already holds D, and an
+   Options-level leaf stays live while Theme is open (see 5 below).
 
 5. **Nested-submenu caveat (e.g. the Options → Theme/Language/Statistics
    subtree):** Flutter keeps a parent menu's *leaf* items and its *closed
    sibling submenu labels* registered while a deeper submenu is open. So a
    Theme/Language/Statistics item letter must also avoid the active
-   Options-level letters (Advanced Learning Options plus the Theme, Language,
-   and Statistics submenu labels themselves) and the closed sibling label
+   Options-level letters (every leaf there — Advanced Learning Options,
+   Speech, Centred content frame, Difficult units, Start folder — plus the
+   Theme, Language, and Statistics submenu labels themselves) and the closed sibling label
    (e.g. Language's letter while Theme is open, and vice-versa). See the
    `// Y (avoids S = Sprache label)` style notes in the DE catalog for worked
    examples. The same rule nests one level further for items *inside*
-   Statistics (auto-load/auto-save/keep-last-N/detect difficult units): they
+   Statistics (auto-load/auto-save/keep-last-N): they
    must also avoid Theme's and Language's own letters, not just their
    submenu's.
 

@@ -955,8 +955,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     unawaited(_saveSettings());
   }
 
-  /// Options ▸ Statistics ▸ Detect difficult units: the detection switch and
-  /// the rule's three thresholds, persisted in the settings file.
+  /// Options ▸ Difficult units: the detection switch and the rule's three
+  /// thresholds, persisted in the settings file.
   ///
   /// Changed thresholds judge differently from the flags the open deck
   /// already carries, so saving them — with detection on and a deck open —
@@ -1687,23 +1687,35 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
             ),
           ),
           const _MenuSeparator(),
-          MenuItemButton(
-            // Detection switched off leaves the automatic flags as they are,
-            // so rebuilding them is off too.
-            onPressed: _settings.detectDifficultUnits
-                ? _recomputeAutomaticFlags
-                : null,
+          SubmenuButton(
+            menuChildren: <Widget>[
+              MenuItemButton(
+                // Detection switched off leaves the automatic flags as they
+                // are, so rebuilding them is off too.
+                onPressed: _settings.detectDifficultUnits
+                    ? _recomputeAutomaticFlags
+                    : null,
+                child: MenuAcceleratorLabel(
+                  messages.message(
+                    LearnAnywhereMessage.menuStatisticsRecomputeAutomatic,
+                  ),
+                  builder: menuAcceleratorBuilder,
+                ),
+              ),
+              MenuItemButton(
+                onPressed: _removeManualFlags,
+                child: MenuAcceleratorLabel(
+                  messages.message(
+                    LearnAnywhereMessage.menuStatisticsRemoveManual,
+                  ),
+                  builder: menuAcceleratorBuilder,
+                ),
+              ),
+            ],
             child: MenuAcceleratorLabel(
               messages.message(
-                LearnAnywhereMessage.menuStatisticsRecomputeAutomatic,
+                LearnAnywhereMessage.menuStatisticsManageDifficult,
               ),
-              builder: menuAcceleratorBuilder,
-            ),
-          ),
-          MenuItemButton(
-            onPressed: _removeManualFlags,
-            child: MenuAcceleratorLabel(
-              messages.message(LearnAnywhereMessage.menuStatisticsRemoveManual),
               builder: menuAcceleratorBuilder,
             ),
           ),
@@ -1908,18 +1920,16 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
                   builder: menuAcceleratorBuilder,
                 ),
               ),
-              MenuItemButton(
-                onPressed: _promptDetectionSettings,
-                child: MenuAcceleratorLabel(
-                  messages.message(
-                    LearnAnywhereMessage.menuOptionsDetectDifficult,
-                  ),
-                  builder: menuAcceleratorBuilder,
-                ),
-              ),
             ],
             child: MenuAcceleratorLabel(
               messages.message(LearnAnywhereMessage.menuOptionsStatistics),
+              builder: menuAcceleratorBuilder,
+            ),
+          ),
+          MenuItemButton(
+            onPressed: _promptDetectionSettings,
+            child: MenuAcceleratorLabel(
+              messages.message(LearnAnywhereMessage.menuOptionsDifficultUnits),
               builder: menuAcceleratorBuilder,
             ),
           ),

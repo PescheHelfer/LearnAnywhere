@@ -4,8 +4,8 @@ import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_desktop/src/settings/detection_settings_dialog.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
-/// Options ▸ Statistics ▸ Detect difficult units: what it shows, what it
-/// accepts, and what it hands back.
+/// Options ▸ Difficult units: what it shows, what it accepts, and what it
+/// hands back.
 void main() {
   const String minWrong = 'Minimum wrong answers (1–10)';
   const String minWrongRate = 'Minimum wrong rate in % (10–90)';
@@ -71,7 +71,7 @@ void main() {
         minAttemptsWithoutCorrect: 8,
       ),
     );
-    expect(find.text('Detect difficult units'), findsOneWidget);
+    expect(find.text('Difficult units'), findsOneWidget);
     expect(
       tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
       isTrue,
