@@ -191,7 +191,7 @@ const List<(LearnAnywhereMessage, String)> _widestStatPills =
     <(LearnAnywhereMessage, String)>[
       (LearnAnywhereMessage.learnLiveAttempts, '99999'),
       (LearnAnywhereMessage.learnLiveMastered, '9999/9999'),
-      (LearnAnywhereMessage.learnLiveRemaining, '9999'),
+      (LearnAnywhereMessage.learnLiveRemaining, '9999 (9999)'),
       (LearnAnywhereMessage.learnLiveAccuracy, '9999/9999 (100%)'),
       (LearnAnywhereMessage.learnLiveTime, '999:99'),
     ];
@@ -419,6 +419,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   // unit; reset when a new unit is shown so the tone fires once per unit.
   bool _timeTonePlayed = false;
   bool _completed = false;
+  // Whether the completed session ran out of difficult units rather than
+  // mastering them; decided as it ends, so the view says the right thing.
+  bool _endedWithNoneLeft = false;
 
   // Level Learning: at level 3 the full solution is shown first; the student
   // presses "Hide & type" to memorize it, then types it from an empty field.
@@ -768,7 +771,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       return _EmptyLearnState(onOpenEditor: widget.onOpenEditor);
     }
     if (_completed) {
-      return _CompletionView(onExtend: _backToSetup);
+      return _CompletionView(
+        onExtend: _backToSetup,
+        noneLeft: _endedWithNoneLeft,
+      );
     }
     if (_currentItem == null) {
       return _SetupView(
@@ -1000,6 +1006,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     };
     if (next == null) {
       setState(() {
+        _endedWithNoneLeft = noDifficultUnitsLeft(
+          widget.deck,
+          _draftParameters,
+          lastItem: _currentItem,
+        );
         _currentItem = null;
         _completed = true;
         _evaluation = null;
@@ -2253,6 +2264,10 @@ final class _SessionView extends StatelessWidget {
   /// instead ([aggregateLadderAttempts]): only its level-0 attempts reach the
   /// mode-agnostic statistics, so its Attempts figure is deliberately larger
   /// than the statistics screen's total.
+  ///
+  /// The one exception is Remaining in a restricted session ([remainingReadout]):
+  /// "n (m)" adds what this session has left to ask, which reaches 0 exactly
+  /// when the drill ends. Every pill carries a tooltip saying what it counts.
   List<Widget> _statPills(
     LearnAnywhereLocalizations messages,
     bool timeWarning,
@@ -2287,6 +2302,11 @@ final class _SessionView extends StatelessWidget {
       _StatPill(
         label: messages.message(LearnAnywhereMessage.learnLiveAttempts),
         value: '$attempts',
+        tooltip: messages.message(
+          _isLevelLearning
+              ? LearnAnywhereMessage.learnLiveAttemptsLevelTooltip
+              : LearnAnywhereMessage.learnLiveAttemptsTooltip,
+        ),
       ),
     ];
     if (_isLevelLearning) {
@@ -2306,6 +2326,9 @@ final class _SessionView extends StatelessWidget {
           _StatPill(
             label: levelNameFor(levelNames, level),
             value: '$count ($pct%)',
+            tooltip: messages.message(
+              LearnAnywhereMessage.learnLiveLevelTooltip,
+            ),
           ),
         );
       }
@@ -2318,15 +2341,18 @@ final class _SessionView extends StatelessWidget {
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveMastered),
           value: '$mastered ($masteredPct%)',
+          tooltip: messages.message(
+            LearnAnywhereMessage.learnLiveMasteredLevelTooltip,
+          ),
         ),
       );
     } else {
-      final List<SessionItem> pool = activeSuperQueryPool(
+      final RemainingReadout remaining = remainingReadout(
         deck: deck,
         statistics: statistics,
-        parameters: readoutScope,
+        parameters: parameters,
       );
-      final int mastered = (totalItems - pool.length).clamp(0, totalItems);
+      final int mastered = (totalItems - remaining.inDeck).clamp(0, totalItems);
       // Non-null in this branch: only Level Learning skips the aggregation.
       final int correct = drillTotals!.totalCorrect;
       final int pct = attempts == 0 ? 0 : ((correct / attempts) * 100).round();
@@ -2334,14 +2360,30 @@ final class _SessionView extends StatelessWidget {
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveMastered),
           value: '$mastered/$totalItems',
+          tooltip: messages.message(
+            LearnAnywhereMessage.learnLiveMasteredTooltip,
+          ),
         ),
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveRemaining),
-          value: '${pool.length}',
+          value: remaining.text,
+          tooltip: remaining.restricted
+              ? messages
+                    .message(
+                      LearnAnywhereMessage.learnLiveRemainingRestrictedTooltip,
+                    )
+                    .replaceAll('{total}', '${remaining.inDeck}')
+                    .replaceAll('{count}', '${remaining.inSession}')
+              : messages.message(
+                  LearnAnywhereMessage.learnLiveRemainingTooltip,
+                ),
         ),
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveAccuracy),
           value: '$correct/$attempts ($pct%)',
+          tooltip: messages.message(
+            LearnAnywhereMessage.learnLiveAccuracyTooltip,
+          ),
         ),
       ]);
     }
@@ -2350,6 +2392,7 @@ final class _SessionView extends StatelessWidget {
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveTime),
           value: _clockText(elapsedSeconds),
+          tooltip: messages.message(LearnAnywhereMessage.learnLiveTimeTooltip),
           warning: timeWarning,
         ),
       );
@@ -3449,9 +3492,13 @@ final class _BlankInputCellState extends State<_BlankInputCell> {
 }
 
 final class _CompletionView extends StatelessWidget {
-  const _CompletionView({required this.onExtend});
+  const _CompletionView({required this.onExtend, required this.noneLeft});
 
   final VoidCallback onExtend;
+
+  /// Whether the session ran out of difficult units rather than mastering
+  /// them all ([noDifficultUnitsLeft]), so it must not claim the latter.
+  final bool noneLeft;
 
   @override
   Widget build(BuildContext context) {
@@ -3464,7 +3511,11 @@ final class _CompletionView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            messages.message(LearnAnywhereMessage.superQueryCompleted),
+            messages.message(
+              noneLeft
+                  ? LearnAnywhereMessage.learnNoDifficultUnitsLeft
+                  : LearnAnywhereMessage.superQueryCompleted,
+            ),
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: LearnAnywhereTokens.gapMedium),
@@ -3485,27 +3536,36 @@ final class _StatPill extends StatelessWidget {
   const _StatPill({
     required this.label,
     required this.value,
+    required this.tooltip,
     this.warning = false,
   });
 
   final String label;
   final String value;
+
+  /// What the pill counts, shown on hover.
+  final String tooltip;
   final bool warning;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: warning ? colors.errorContainer : colors.surfaceContainerHighest,
-        borderRadius: LearnAnywhereTokens.smallRadius,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: LearnAnywhereTokens.gapMedium,
-          vertical: LearnAnywhereTokens.gapSmall,
+    return Tooltip(
+      message: tooltip,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: warning
+              ? colors.errorContainer
+              : colors.surfaceContainerHighest,
+          borderRadius: LearnAnywhereTokens.smallRadius,
         ),
-        child: Text('$label: $value'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: LearnAnywhereTokens.gapMedium,
+            vertical: LearnAnywhereTokens.gapSmall,
+          ),
+          child: Text('$label: $value'),
+        ),
       ),
     );
   }

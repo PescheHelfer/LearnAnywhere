@@ -1772,6 +1772,8 @@ int accuracyPercent(DirectionStats stats) {
 // direction**. Restricting the unit range, or asking difficult units only,
 // narrows what is asked, never what is counted, so figures standing side by
 // side cannot contradict each other; selecting a single direction narrows both.
+// The one addition is Remaining's second figure in a restricted session
+// ([remainingReadout]), which counts what the session itself has left to ask.
 // Item selection keeps the session's own parameters — pass [deckWideScope] only
 // where a readout is computed.
 //
@@ -1882,6 +1884,87 @@ DifficultUnitCount countDifficultUnits(
     }
   }
   return DifficultUnitCount(inRange: inRange, inDeck: inDeck);
+}
+
+/// The drill's **Remaining** readout: questions not yet mastered in the whole
+/// deck ([inDeck], the readout rule's figure) and in what this session asks
+/// ([inSession]).
+final class RemainingReadout {
+  /// Creates a readout.
+  const RemainingReadout({
+    required this.inDeck,
+    required this.inSession,
+    required this.restricted,
+  });
+
+  /// Questions not yet mastered in the whole deck, in the session's direction.
+  final int inDeck;
+
+  /// Questions not yet mastered in what the session asks — its range and
+  /// **Difficult units only** applied. The drill ends exactly when it is 0.
+  final int inSession;
+
+  /// Whether the session asks less than the whole deck, so [inSession] is
+  /// worth showing. Fixed by the parameters, never by what is left.
+  final bool restricted;
+
+  /// The pill's value: "n (m)" when [restricted], else "n".
+  String get text => restricted ? '$inDeck ($inSession)' : '$inDeck';
+}
+
+/// The **Remaining** readout of a session run with [parameters] over [deck].
+///
+/// Both figures count questions, so a **Both** session counts a unit once per
+/// direction. The session figure is the drill's own pool
+/// ([activeSuperQueryPool] with [parameters]); the deck figure the same pool
+/// over [deckWideScope]. A session is restricted when **Difficult units only**
+/// is on or its range leaves a unit of the deck out.
+RemainingReadout remainingReadout({
+  required LearningDeck deck,
+  required List<UnitStats> statistics,
+  required SessionParameters parameters,
+}) {
+  final int unitCount = deck.units.length;
+  final bool restricted =
+      parameters.difficultOnly ||
+      (parameters.startIndex ?? 1) > 1 ||
+      (parameters.endIndex ?? unitCount) < unitCount;
+  final int inDeck = activeSuperQueryPool(
+    deck: deck,
+    statistics: statistics,
+    parameters: deckWideScope(parameters),
+  ).length;
+  return RemainingReadout(
+    inDeck: inDeck,
+    inSession: restricted
+        ? activeSuperQueryPool(
+            deck: deck,
+            statistics: statistics,
+            parameters: parameters,
+          ).length
+        : inDeck,
+    restricted: restricted,
+  );
+}
+
+/// Whether a **Difficult units only** session run with [parameters] that has
+/// run out did so because the learner unmarked what was left, not by mastering
+/// it — so it ends saying so, not "all mastered".
+///
+/// That is the case when no unit in its range is difficult in the asked
+/// direction any more, and also when [lastItem], the question asked last, no
+/// longer is: mastering a unit keeps its flag, so a drill whose other units are
+/// mastered still holds difficult units after the last one is unmarked.
+bool noDifficultUnitsLeft(
+  LearningDeck deck,
+  SessionParameters parameters, {
+  SessionItem? lastItem,
+}) {
+  if (!parameters.difficultOnly) {
+    return false;
+  }
+  final List<SessionItem> asked = itemsInScope(deck, parameters);
+  return asked.isEmpty || (lastItem != null && !asked.contains(lastItem));
 }
 
 final class _GroupedAnswer {

@@ -298,6 +298,295 @@ void main() {
     });
   }
 
+  /// The tooltip of the stat pill reading [text].
+  String pillTooltip(WidgetTester tester, String text) => tester
+      .widget<Tooltip>(
+        find
+            .ancestor(of: find.text(text), matching: find.byType(Tooltip))
+            .first,
+      )
+      .message!;
+
+  /// Answers the question on screen with [answer] and moves on.
+  Future<void> answer(WidgetTester tester, String answer) async {
+    await tester.enterText(find.byType(TextField).first, answer);
+    await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+    await settle(tester);
+    await tester.tap(find.text('Continue'));
+    await settleAfterIo(tester);
+  }
+
+  const String allMastered =
+      'You have now mastered all learning units in the selected range. '
+      'Congratulations!';
+  const String noneLeft = 'No difficult units left to ask.';
+
+  testWidgets('a restricted drill shows Remaining as "n (m)", m runs down to '
+      'the all-mastered ending, and every pill says what it counts', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'readout.vok');
+    const Map<String, String> answers = <String, String>{
+      'house': 'Haus',
+      'tree': 'Baum',
+      'dog': 'Hund',
+      'cat': 'Katze',
+    };
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', none, none),
+          ('tree', 'Baum', manual, none),
+          ('dog', 'Hund', none, none),
+          ('cat', 'Katze', automatic, none),
+        ]),
+      ),
+    );
+    File(settingsPath).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(
+          direction: DirectionSelection.direction1,
+          mode: SessionMode.superQuery,
+          difficultOnly: true,
+        ),
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await openSetup(tester, deckPath);
+      await tester.tap(find.text('Start session'));
+      await settleAfterIo(tester);
+
+      expect(find.text('Remaining: 4 (2)'), findsOneWidget);
+      expect(
+        pillTooltip(tester, 'Remaining: 4 (2)'),
+        'Questions not yet mastered: 4 in the whole deck, 2 of them in what '
+        'this session asks.',
+      );
+      expect(
+        pillTooltip(tester, 'Attempts: 0'),
+        "Answers given for the whole deck in this session's direction, from "
+        'the current statistics.',
+      );
+      expect(
+        pillTooltip(tester, 'Mastered: 0/4'),
+        'Questions mastered out of all questions in the whole deck, in this '
+        "session's direction.",
+      );
+      expect(
+        pillTooltip(tester, 'Accuracy: 0/0 (0%)'),
+        'Correct answers out of all answers, for the whole deck in this '
+        "session's direction.",
+      );
+
+      String question() => answers.keys.singleWhere(
+        (String q) => find.text(q, findRichText: true).evaluate().isNotEmpty,
+      );
+      await answer(tester, answers[question()]!);
+      expect(find.text('Remaining: 3 (1)'), findsOneWidget);
+      expect(find.text('Check'), findsOneWidget);
+
+      await answer(tester, answers[question()]!);
+      expect(find.text('Check'), findsNothing);
+      expect(find.text(allMastered), findsOneWidget);
+      expect(find.text(noneLeft), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('a whole-deck drill shows Remaining as a single figure', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'whole.vok');
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', manual, none),
+          ('tree', 'Baum', none, none),
+          ('dog', 'Hund', none, none),
+        ]),
+      ),
+    );
+    File(settingsPath).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(
+          direction: DirectionSelection.direction1,
+          mode: SessionMode.superQuery,
+        ),
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await openSetup(tester, deckPath);
+      await tester.tap(find.text('Start session'));
+      await settleAfterIo(tester);
+
+      expect(find.text('Remaining: 3'), findsOneWidget);
+      expect(
+        pillTooltip(tester, 'Remaining: 3'),
+        'Questions not yet mastered in the whole deck, in this '
+        "session's direction.",
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('F12 on the last difficult unit ends the drill with "none '
+      'left", not "all mastered"', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'last.vok');
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', none, none),
+          ('tree', 'Baum', manual, none),
+          ('dog', 'Hund', none, none),
+        ]),
+      ),
+    );
+    File(settingsPath).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(
+          direction: DirectionSelection.direction1,
+          mode: SessionMode.superQuery,
+          difficultOnly: true,
+        ),
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await openSetup(tester, deckPath);
+      await tester.tap(find.text('Start session'));
+      await settleAfterIo(tester);
+      expect(find.text('tree', findRichText: true), findsOneWidget);
+      expect(find.text('Remaining: 3 (1)'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await settleAfterIo(tester);
+      // The unit stays on screen, but the session has nothing left to ask.
+      expect(find.text('Remaining: 3 (0)'), findsOneWidget);
+
+      // A wrong answer: tree is not mastered, only no longer difficult.
+      await answer(tester, 'Bäume');
+      expect(find.text('Check'), findsNothing);
+      expect(find.text(noneLeft), findsOneWidget);
+      expect(find.text(allMastered), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('unmarking the last unit left ends with "none left" even while '
+      'a mastered unit keeps its flag', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'mastered.vok');
+    const Map<String, String> answers = <String, String>{
+      'house': 'Haus',
+      'tree': 'Baum',
+      'cat': 'Katze',
+    };
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', none, none),
+          ('tree', 'Baum', manual, none),
+          ('cat', 'Katze', automatic, none),
+        ]),
+      ),
+    );
+    File(settingsPath).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(
+          direction: DirectionSelection.direction1,
+          mode: SessionMode.superQuery,
+          difficultOnly: true,
+        ),
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await openSetup(tester, deckPath);
+      await tester.tap(find.text('Start session'));
+      await settleAfterIo(tester);
+
+      String question() => answers.keys.singleWhere(
+        (String q) => find.text(q, findRichText: true).evaluate().isNotEmpty,
+      );
+      // The first unit is mastered and keeps its flag.
+      await answer(tester, answers[question()]!);
+      expect(find.text('Remaining: 2 (1)'), findsOneWidget);
+
+      // The second is unmarked, then answered wrong.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await settleAfterIo(tester);
+      await answer(tester, 'x');
+      expect(find.text('Check'), findsNothing);
+      expect(find.text(noneLeft), findsOneWidget);
+      expect(find.text(allMastered), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('Level Learning pills and the clock carry tooltips, and there '
+      'is no Remaining', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'levels.vok');
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', none, none),
+          ('tree', 'Baum', none, none),
+        ]),
+      ),
+    );
+    File(settingsPath).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(
+          direction: DirectionSelection.direction1,
+          mode: SessionMode.levelLearning,
+          showClock: true,
+        ),
+      ),
+    );
+
+    Finder tooltipSaying(String message) => find.byWidgetPredicate(
+      (Widget widget) => widget is Tooltip && widget.message == message,
+    );
+
+    await tester.runAsync(() async {
+      await openSetup(tester, deckPath);
+      await tester.tap(find.text('Start session'));
+      await settleAfterIo(tester);
+
+      expect(find.textContaining('Remaining'), findsNothing);
+      expect(
+        tooltipSaying(
+          'Answers given for the whole deck on every level, in this '
+          "session's direction.",
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tooltipSaying(
+          'Units mastered without help, as a share of the whole deck, in '
+          "this session's direction.",
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tooltipSaying(
+          'Units currently at this level, as a share of the whole deck, in '
+          "this session's direction.",
+        ),
+        findsNWidgets(kMaxSupportLevel - kFreeRecallLevel + 1),
+      );
+      expect(
+        tooltipSaying(
+          'Time spent on this unit. At the time limit a tone sounds and the '
+          'clock is highlighted.',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   testWidgets('the option counts the difficult units in the range and the '
       'deck, following End and the direction', (WidgetTester tester) async {
     final String deckPath = p.join(temp.path, 'count.vok');

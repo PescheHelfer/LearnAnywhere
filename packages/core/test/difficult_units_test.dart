@@ -1223,6 +1223,188 @@ void main() {
       );
     });
 
+    group('the Remaining readout', () {
+      // Unit 1 is mastered in Direction 1, unit 5 in Direction 2.
+      const List<UnitStats> statistics = <UnitStats>[
+        UnitStats(
+          index: 1,
+          direction1: DirectionStats(attempts: 2, correct: 2),
+        ),
+        UnitStats(
+          index: 5,
+          direction2: DirectionStats(attempts: 1, correct: 1),
+        ),
+      ];
+
+      RemainingReadout readout(SessionParameters parameters) =>
+          remainingReadout(
+            deck: deck,
+            statistics: statistics,
+            parameters: parameters,
+          );
+
+      SessionParameters plain({
+        DirectionSelection directions = DirectionSelection.direction1,
+        int? start,
+        int? end,
+      }) => SessionParameters(
+        directionSelection: directions,
+        mode: SessionMode.superQuery,
+        startIndex: start,
+        endIndex: end,
+      );
+
+      test('a whole-deck session is not restricted and shows one figure', () {
+        for (final SessionParameters parameters in <SessionParameters>[
+          plain(),
+          plain(start: 1, end: 5),
+        ]) {
+          final RemainingReadout result = readout(parameters);
+          expect(result.restricted, isFalse);
+          expect((result.inDeck, result.inSession), (4, 4));
+          expect(result.text, '4');
+        }
+      });
+
+      test('a range counts what is left in it, next to the deck', () {
+        final RemainingReadout result = readout(plain(start: 1, end: 3));
+        expect(result.restricted, isTrue);
+        // Unit 1 is mastered; units 2 and 3 are left of 1 to 3.
+        expect((result.inDeck, result.inSession), (4, 2));
+        expect(result.text, '4 (2)');
+        expect(readout(plain(start: 2)).restricted, isTrue);
+      });
+
+      test('Difficult units only counts what is left of the difficult '
+          'units, even over the whole deck', () {
+        final RemainingReadout result = readout(only(SessionMode.superQuery));
+        expect(result.restricted, isTrue);
+        // Of 1, 3 and 4, unit 1 is mastered.
+        expect((result.inDeck, result.inSession), (4, 2));
+        expect(result.text, '4 (2)');
+      });
+
+      test('a range and Difficult units only together, counted in '
+          'questions under Both', () {
+        final RemainingReadout result = readout(
+          only(
+            SessionMode.superQuery,
+            directions: DirectionSelection.both,
+            start: 3,
+          ),
+        );
+        // Whole deck, both ways: ten questions less 1.1 and 5.2. Session:
+        // 3.1, 3.2, 4.1 and 5.2, less the mastered 5.2.
+        expect((result.inDeck, result.inSession), (8, 3));
+        expect(result.text, '8 (3)');
+      });
+
+      test('the session figure is the pool the drill draws from', () {
+        final SessionParameters parameters = only(
+          SessionMode.superQuery,
+          directions: DirectionSelection.both,
+          end: 4,
+        );
+        expect(
+          readout(parameters).inSession,
+          activeSuperQueryPool(
+            deck: deck,
+            statistics: statistics,
+            parameters: parameters,
+          ).length,
+        );
+      });
+    });
+
+    group('no difficult units left', () {
+      test('only under Difficult units only, once nothing in the range is '
+          'difficult in the asked direction', () {
+        expect(
+          noDifficultUnitsLeft(deck, only(SessionMode.superQuery)),
+          isFalse,
+        );
+        expect(
+          noDifficultUnitsLeft(
+            deck,
+            only(SessionMode.practice, start: 2, end: 2),
+          ),
+          isTrue,
+        );
+        expect(
+          noDifficultUnitsLeft(
+            deck,
+            only(
+              SessionMode.onceThrough,
+              directions: DirectionSelection.direction2,
+              end: 2,
+            ),
+          ),
+          isTrue,
+        );
+        expect(
+          noDifficultUnitsLeft(noneFlagged, only(SessionMode.superQuery)),
+          isTrue,
+        );
+        // Without the option nothing is ever "left" to run out of.
+        expect(
+          noDifficultUnitsLeft(
+            noneFlagged,
+            const SessionParameters(mode: SessionMode.superQuery),
+          ),
+          isFalse,
+        );
+      });
+
+      test('also when the unit asked last is no longer difficult, though a '
+          'mastered one still is', () {
+        // Unit 1 stays flagged (mastered, say); unit 4, asked last, was
+        // unmarked in Direction 1.
+        final LearningDeck unmarked = LearningDeck(
+          mask: mask,
+          units: <LearningUnit>[
+            word('one', 'eins', d1: manualFlag),
+            word('two', 'zwei'),
+            word('three', 'drei'),
+            word('four', 'vier'),
+          ],
+        );
+        const SessionItem last = SessionItem(
+          unitIndex: 4,
+          direction: QueryDirection.direction1,
+        );
+        final SessionParameters parameters = only(SessionMode.superQuery);
+        expect(noDifficultUnitsLeft(unmarked, parameters), isFalse);
+        expect(
+          noDifficultUnitsLeft(unmarked, parameters, lastItem: last),
+          isTrue,
+        );
+        // Still difficult when asked last: the session ran out by mastery.
+        expect(
+          noDifficultUnitsLeft(
+            unmarked,
+            parameters,
+            lastItem: const SessionItem(
+              unitIndex: 1,
+              direction: QueryDirection.direction1,
+            ),
+          ),
+          isFalse,
+        );
+        // Without the option, unmarking ends nothing.
+        expect(
+          noDifficultUnitsLeft(
+            unmarked,
+            const SessionParameters(
+              directionSelection: DirectionSelection.direction1,
+              mode: SessionMode.superQuery,
+            ),
+            lastItem: last,
+          ),
+          isFalse,
+        );
+      });
+    });
+
     test('copyWith keeps and changes the option', () {
       final SessionParameters on = only(SessionMode.practice);
       expect(on.copyWith(shuffle: true).difficultOnly, isTrue);

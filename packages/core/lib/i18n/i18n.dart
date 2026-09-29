@@ -771,6 +771,39 @@ enum LearnAnywhereMessage {
   /// Live accuracy label.
   learnLiveAccuracy,
 
+  /// Tooltip of the Attempts pill in a drill session.
+  learnLiveAttemptsTooltip,
+
+  /// Tooltip of the Attempts pill in Level Learning.
+  learnLiveAttemptsLevelTooltip,
+
+  /// Tooltip of the Accuracy pill.
+  learnLiveAccuracyTooltip,
+
+  /// Tooltip of the Mastered pill in a drill session.
+  learnLiveMasteredTooltip,
+
+  /// Tooltip of the Mastered pill in Level Learning.
+  learnLiveMasteredLevelTooltip,
+
+  /// Tooltip of the Remaining pill in a whole-deck session.
+  learnLiveRemainingTooltip,
+
+  /// Tooltip of the Remaining pill in a restricted session (a range, or
+  /// Difficult units only). Placeholders: {total} (the whole deck), {count}
+  /// (what the session asks).
+  learnLiveRemainingRestrictedTooltip,
+
+  /// Tooltip of each Level-Learning level pill.
+  learnLiveLevelTooltip,
+
+  /// Tooltip of the Time pill.
+  learnLiveTimeTooltip,
+
+  /// Completion message of a Difficult-units-only session that ran out because
+  /// nothing in its range is difficult any more; replaces the mastered one.
+  learnNoDifficultUnitsLeft,
+
   /// Label for the current unit's own accuracy, appended to the session
   /// header (non-Level modes).
   learnUnitAccuracy,
@@ -1942,6 +1975,35 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveMastered: 'Mastered',
       LearnAnywhereMessage.learnLiveRemaining: 'Remaining',
       LearnAnywhereMessage.learnLiveAccuracy: 'Accuracy',
+      LearnAnywhereMessage.learnLiveAttemptsTooltip:
+          "Answers given for the whole deck in this session's direction, from "
+          'the current statistics.',
+      LearnAnywhereMessage.learnLiveAttemptsLevelTooltip:
+          'Answers given for the whole deck on every level, in this '
+          "session's direction.",
+      LearnAnywhereMessage.learnLiveAccuracyTooltip:
+          'Correct answers out of all answers, for the whole deck in this '
+          "session's direction.",
+      LearnAnywhereMessage.learnLiveMasteredTooltip:
+          'Questions mastered out of all questions in the whole deck, in this '
+          "session's direction.",
+      LearnAnywhereMessage.learnLiveMasteredLevelTooltip:
+          'Units mastered without help, as a share of the whole deck, in this '
+          "session's direction.",
+      LearnAnywhereMessage.learnLiveRemainingTooltip:
+          'Questions not yet mastered in the whole deck, in this '
+          "session's direction.",
+      LearnAnywhereMessage.learnLiveRemainingRestrictedTooltip:
+          'Questions not yet mastered: {total} in the whole deck, {count} of '
+          'them in what this session asks.',
+      LearnAnywhereMessage.learnLiveLevelTooltip:
+          'Units currently at this level, as a share of the whole deck, in '
+          "this session's direction.",
+      LearnAnywhereMessage.learnLiveTimeTooltip:
+          'Time spent on this unit. At the time limit a tone sounds and the '
+          'clock is highlighted.',
+      LearnAnywhereMessage.learnNoDifficultUnitsLeft:
+          'No difficult units left to ask.',
       LearnAnywhereMessage.learnUnitAccuracy: 'Unit accuracy',
       LearnAnywhereMessage.learnSpeakField: 'Read this field aloud',
       LearnAnywhereMessage.learnSpeakNoVoice:
@@ -2692,6 +2754,35 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveMastered: 'Beherrscht',
       LearnAnywhereMessage.learnLiveRemaining: 'Übrig',
       LearnAnywhereMessage.learnLiveAccuracy: 'Korrekt',
+      LearnAnywhereMessage.learnLiveAttemptsTooltip:
+          'Abgegebene Antworten für die ganze Lern-Datei in der '
+          'Abfragerichtung dieser Übung, laut aktueller Statistik.',
+      LearnAnywhereMessage.learnLiveAttemptsLevelTooltip:
+          'Abgegebene Antworten für die ganze Lern-Datei auf allen Stufen, in '
+          'der Abfragerichtung dieser Übung.',
+      LearnAnywhereMessage.learnLiveAccuracyTooltip:
+          'Richtige Antworten von allen Antworten, für die ganze Lern-Datei in '
+          'der Abfragerichtung dieser Übung.',
+      LearnAnywhereMessage.learnLiveMasteredTooltip:
+          'Beherrschte Fragen von allen Fragen der ganzen Lern-Datei, in der '
+          'Abfragerichtung dieser Übung.',
+      LearnAnywhereMessage.learnLiveMasteredLevelTooltip:
+          'Ohne Hilfe beherrschte Einheiten, als Anteil der ganzen Lern-Datei, '
+          'in der Abfragerichtung dieser Übung.',
+      LearnAnywhereMessage.learnLiveRemainingTooltip:
+          'Noch nicht beherrschte Fragen der ganzen Lern-Datei, in der '
+          'Abfragerichtung dieser Übung.',
+      LearnAnywhereMessage.learnLiveRemainingRestrictedTooltip:
+          'Noch nicht beherrschte Fragen: {total} in der ganzen Lern-Datei, '
+          'davon {count} in dem, was diese Übung abfragt.',
+      LearnAnywhereMessage.learnLiveLevelTooltip:
+          'Einheiten, die gerade auf dieser Stufe sind, als Anteil der ganzen '
+          'Lern-Datei, in der Abfragerichtung dieser Übung.',
+      LearnAnywhereMessage.learnLiveTimeTooltip:
+          'Zeit für diese Einheit. Beim Zeitlimit ertönt ein Signal und die '
+          'Uhr wird hervorgehoben.',
+      LearnAnywhereMessage.learnNoDifficultUnitsLeft:
+          'Keine schwierigen Einheiten mehr abzufragen.',
       LearnAnywhereMessage.learnUnitAccuracy: 'Einheit korrekt',
       LearnAnywhereMessage.learnSpeakField: 'Dieses Feld vorlesen',
       LearnAnywhereMessage.learnSpeakNoVoice:

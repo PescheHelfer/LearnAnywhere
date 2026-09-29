@@ -98,8 +98,21 @@ gilt nur dieser einen Einheit, und **Zeit** ist die Uhr dieser Sitzung.) Ein
 eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das, was gezählt wird; die
 vier nebeneinanderstehenden Zahlen beschreiben also immer dieselbe Menge: eine Sitzung über
 die Einheiten 5–10 einer Datei mit 200 Einheiten weist **Beherrscht** und **Übrig**
-weiterhin von allen 200 aus. Ist unter **Abfragerichtung** eine der beiden Richtungen der
-Maske gewählt, zählen sie nur diese; bei **Beide** jede Einheit in beiden Richtungen.
+weiterhin von allen 200 aus (**Übrig** zeigt dann eine zweite Zahl, siehe unten). Ist
+unter **Abfragerichtung** eine der beiden Richtungen der Maske gewählt, zählen sie nur
+diese; bei **Beide** jede Einheit in beiden Richtungen.
+
+**Übrig** zeigt eine zweite Zahl, wenn die Sitzung weniger als die ganze Lern-Datei
+abfragt — einen Einheitenbereich oder
+[Nur schwierige Einheiten](#nur-schwierige-einheiten-abfragen): **Übrig: 120 (4)**
+heißt, 120 Fragen der Lern-Datei sind noch nicht beherrscht, und 4 davon liegen in dem,
+was diese Sitzung abfragt. Auf diese zweite Zahl kommt es an: Der Drill-Modus endet
+genau dann mit „alles beherrscht“, wenn sie 0 erreicht. Ob sie erscheint, wird beim Start der
+Sitzung entschieden; die Anzeige behält ihre Form also, bis Sie die Sitzung verlassen.
+Beide Zahlen zählen Fragen, bei **Beide** zählt eine Einheit also einmal je Richtung. Das
+Stufenlernen hat kein **Übrig**.
+
+Mit der Maus über einer dieser Anzeigen lesen Sie, was sie zählt.
 
 **Versuche** und **Korrekt** werden aus der Statistik der Lern-Datei gelesen — es sind
 keine Zähler für die aktuelle Sitzung. Sie beginnen mit dem, was bereits verzeichnet ist,
@@ -214,9 +227,11 @@ Ihnen Mühe gemacht haben.
 - Eine gemeisterte Einheit scheidet wie gewohnt aus der Sitzung aus, behält aber ihre
   Kennzeichnung. Wenn Sie sicher sind, dass Sie sie können, entfernen Sie sie mit `F12`.
 - Eine Einheit, deren Kennzeichnung Sie während der Sitzung mit `F12` entfernen, wird
-  nicht mehr gefragt, und entfernen Sie die letzte, endet die Sitzung.
-- **Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben weiterhin die ganze
-  Lern-Datei, genau wie bei einem eingeschränkten Einheitenbereich.
+  nicht mehr gefragt, und entfernen Sie die letzte, endet die Sitzung mit „Keine
+  schwierigen Einheiten mehr abzufragen.“, statt zu behaupten, Sie beherrschten alle.
+- **Versuche**, **Beherrscht** und **Korrekt** beschreiben weiterhin die ganze Lern-Datei,
+  genau wie bei einem eingeschränkten Einheitenbereich; **Übrig** zeigt die Zahl der
+  Lern-Datei und dahinter, was dieser Sitzung noch bleibt, etwa **Übrig: 120 (4)**.
 - Ist keine Einheit im Bereich in der gewählten Abfragerichtung schwierig, sagt die
   Einrichtung das, und **Sitzung starten** bleibt gesperrt, bis Sie die Option
   ausschalten, den Bereich erweitern, eine andere Richtung wählen oder eine Einheit
@@ -233,5 +248,9 @@ Ihnen Mühe gemacht haben.
 
 Sowohl Einmal durchgehen als auch der Drill-Modus enden, wenn nichts mehr zu fragen
 übrig ist — der Drill-Modus, wenn alles gemeistert ist, Einmal durchgehen nach der
-letzten Einheit. In beiden Fällen können Sie **Sitzung erweitern** drücken, um über das
+letzten Einheit. Eine Sitzung mit
+[Nur schwierige Einheiten](#nur-schwierige-einheiten-abfragen), der die Einheiten
+ausgehen, weil Sie der letzten schwierigen die Kennzeichnung entfernt haben, meldet
+stattdessen „Keine schwierigen Einheiten mehr abzufragen.“ In beiden Fällen können Sie
+**Sitzung erweitern** drücken, um über das
 Ende hinaus weiterzumachen, statt dort aufzuhören.

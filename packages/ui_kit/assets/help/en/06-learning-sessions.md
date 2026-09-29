@@ -91,9 +91,19 @@ readouts after them are deliberately narrower: **Unit accuracy** is about that o
 and **Time** is this sitting's clock.) Restricting the range narrows what you
 are asked, never what is counted, so the four figures standing side by side always describe
 the same population: a session on units 5–10 of a 200-unit deck still reports **Mastered**
-and **Remaining** out of all 200. With one of the mask's two directions chosen under
-**Direction** they cover that direction alone; with **Both**, every unit in both
-directions.
+and **Remaining** out of all 200 (**Remaining** then adds a second figure, below). With
+one of the mask's two directions chosen under **Direction** they cover that direction
+alone; with **Both**, every unit in both directions.
+
+**Remaining** adds a second figure when the session asks less than the whole deck — a
+unit range, or [Difficult units only](#asking-difficult-units-only): **Remaining: 120 (4)**
+means 120 questions of the deck are not yet mastered, and 4 of them are in what this
+session asks. That second figure is the one to watch: Drill mode ends with everything
+mastered exactly when it reaches 0. Whether it is shown is decided when the session
+starts, so the readout keeps its shape until you leave. Both figures count questions, so
+with **Both** a unit counts once per direction. Level Learning has no **Remaining**.
+
+Hover over any of these readouts to read what it counts.
 
 **Attempts** and **Accuracy** are read from the deck's statistics — they are not counters
 for this sitting. They open on whatever the deck has already recorded, keep their value
@@ -193,9 +203,11 @@ trouble, in the same deck.
 - Mastering a unit takes it out of the session as usual, but does not take its flag
   away. When you are sure you know it, unmark it with `F12`.
 - A unit you unmark with `F12` during the session is not asked again, and unmarking the
-  last one ends the session.
-- **Attempts**, **Mastered**, **Remaining** and **Accuracy** still describe the whole
-  deck, just as they do when you restrict the unit range.
+  last one ends the session with "No difficult units left to ask." rather than claiming
+  you mastered them all.
+- **Attempts**, **Mastered** and **Accuracy** still describe the whole deck, just as they
+  do when you restrict the unit range; **Remaining** shows the deck's figure followed by
+  what this session has left, such as **Remaining: 120 (4)**.
 - If no unit in the range is difficult in the chosen direction, the setup says so and
   **Start session** stays unavailable until you switch the option off, widen the range,
   choose another direction or mark a unit.
@@ -209,5 +221,7 @@ trouble, in the same deck.
 ## Finishing
 
 Once through and Drill mode both end when there is nothing left to ask —
-Drill mode with everything mastered, Once through after the last unit. Either way you
+Drill mode with everything mastered, Once through after the last unit. A session on
+[Difficult units only](#asking-difficult-units-only) that runs out because you unmarked
+the last difficult unit says "No difficult units left to ask." instead. Either way you
 can press **Extend session** to keep going past the end rather than stopping there.

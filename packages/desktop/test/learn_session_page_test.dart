@@ -1047,7 +1047,8 @@ void main() {
       expect(find.text('Accuracy: 6/9 (67%)'), findsOneWidget);
       // Units 1 and 3 are mastered in direction 1; 2, 4, 5 and 6 are not.
       expect(find.text('Mastered: 2/6'), findsOneWidget);
-      expect(find.text('Remaining: 4'), findsOneWidget);
+      // Remaining adds what the range itself has left: unit 2 of units 1-2.
+      expect(find.text('Remaining: 4 (1)'), findsOneWidget);
     },
   );
 
