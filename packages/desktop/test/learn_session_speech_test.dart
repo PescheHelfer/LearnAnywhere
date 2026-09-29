@@ -623,6 +623,29 @@ void main() {
         'Actually wrong', 'F6', //
         'No count', 'F7', //
       ]);
+
+      // The caption stands above the rating pills, flush with the first, and
+      // whatever shares their line lines up with the pills rather than with
+      // the caption. Which groups share it depends on the width.
+      final Rect caption = tester.getRect(find.text('Evaluate as:'));
+      final Rect correct = tester.getRect(
+        find.ancestor(
+          of: find.text('Correct'),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      expect(caption.bottom, lessThanOrEqualTo(correct.top));
+      expect(caption.left, correct.left);
+      final List<Rect> sameLine = <Rect>[
+        tester.getRect(find.byKey(const Key('learnActionPillsGroup'))),
+        tester.getRect(find.byKey(const Key('learnDifficultPill'))),
+      ].where(
+        (Rect pill) => pill.top < correct.bottom && pill.bottom > correct.top,
+      ).toList();
+      expect(sameLine, isNotEmpty);
+      for (final Rect pill in sameLine) {
+        expect(pill.bottom, correct.bottom);
+      }
     });
 
     testWidgets('the question stage shows it where the solution is on screen, '

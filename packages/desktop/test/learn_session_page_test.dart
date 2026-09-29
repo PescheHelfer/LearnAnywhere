@@ -1427,7 +1427,9 @@ void main() {
 
       // Wide window: one line, action pills first, evaluation group after,
       // with a bigger gap between the groups than between pills within one.
-      expect(actionGroupRect.top, evalGroupRect.top);
+      // The line is bottom-aligned: the evaluation group's caption stands
+      // above its pills, which line up with the action pills.
+      expect(actionGroupRect.bottom, evalGroupRect.bottom);
       expect(actionGroupRect.right, lessThan(evalGroupRect.left));
 
       // Compare whole-button edges (not text edges) so button padding/icons

@@ -300,11 +300,12 @@ double learnControlGroupWidth(
         ]),
         measureTextWidth('F5', keyHintStyle),
       );
-  final double evaluationGroup =
-      measureTextWidth(say(LearnAnywhereMessage.learnEvaluateAs), captionStyle) +
-      LearnAnywhereTokens.gapSmall +
-      3 * ratingPill +
-      2 * LearnAnywhereTokens.gapSmall;
+  // The caption sits above the three pills, so the group is as wide as the
+  // wider of the two.
+  final double evaluationGroup = max(
+    measureTextWidth(say(LearnAnywhereMessage.learnEvaluateAs), captionStyle),
+    3 * ratingPill + 2 * LearnAnywhereTokens.gapSmall,
+  );
 
   // ── The widest single live-statistics pill ───────────────────────────────
   double statisticPill = 0;
@@ -2749,6 +2750,9 @@ final class _SessionView extends StatelessWidget {
                 key: const Key('learnAnswerPills'),
                 spacing: LearnAnywhereTokens.gapLarge,
                 runSpacing: LearnAnywhereTokens.gapMedium,
+                // Bottom-aligned, so the pills beside the evaluation group
+                // line up with its buttons rather than with its caption.
+                crossAxisAlignment: WrapCrossAlignment.end,
                 children: <Widget>[
                   _PillGroup(
                     key: const Key('learnActionPillsGroup'),
@@ -2804,12 +2808,10 @@ final class _SessionView extends StatelessWidget {
                   ),
                   _PillGroup(
                     key: const Key('learnEvaluationPillsGroup'),
+                    caption: messages.message(
+                      LearnAnywhereMessage.learnEvaluateAs,
+                    ),
                     children: <Widget>[
-                      Text(
-                        messages.message(LearnAnywhereMessage.learnEvaluateAs),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(width: LearnAnywhereTokens.gapSmall),
                       for (
                         int i = 0;
                         i < ratingEntries.length;
@@ -2849,16 +2851,31 @@ final class _SessionView extends StatelessWidget {
 /// lines, and [FittedBox] shrinks it as a last resort instead of
 /// overflowing, on a window narrower than the group itself.
 final class _PillGroup extends StatelessWidget {
-  const _PillGroup({super.key, required this.children});
+  const _PillGroup({super.key, required this.children, this.caption});
 
   final List<Widget> children;
 
+  /// A small label above the pills, left-aligned with the first of them.
+  final String? caption;
+
   @override
   Widget build(BuildContext context) {
+    final Widget row = Row(mainAxisSize: MainAxisSize.min, children: children);
+    final String? caption = this.caption;
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
-      child: Row(mainAxisSize: MainAxisSize.min, children: children),
+      child: caption == null
+          ? row
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(caption, style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: LearnAnywhereTokens.gapSmall / 2),
+                row,
+              ],
+            ),
     );
   }
 }
