@@ -3816,9 +3816,11 @@ final class _ReadAloudPillState extends State<_ReadAloudPill> {
     super.dispose();
   }
 
+  // Tonal, like Cancel and the view switch: a secondary action, not a toggle,
+  // so it must not look like an unselected rating or an unflagged Difficult.
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
+    return FilledButton.tonalIcon(
       focusNode: _focusNode,
       onPressed: widget.onPressed,
       icon: const Icon(Icons.volume_up),
