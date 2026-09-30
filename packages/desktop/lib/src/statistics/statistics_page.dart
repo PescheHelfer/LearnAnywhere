@@ -255,7 +255,10 @@ final class _StatisticsPageState extends State<StatisticsPage> {
               Expanded(
                 child: TabBarView(
                   children: <Widget>[
-                    _DetailedStats(summary: summary),
+                    _DetailedStats(
+                      summary: summary,
+                      breakdown: difficultBreakdown(widget.deck, _view),
+                    ),
                     _PracticeList(
                       deck: widget.deck,
                       statistics: _statistics,
@@ -1162,9 +1165,12 @@ double? _parsePercent(String text) {
 }
 
 final class _DetailedStats extends StatelessWidget {
-  const _DetailedStats({required this.summary});
+  const _DetailedStats({required this.summary, required this.breakdown});
 
   final StatisticsSummary summary;
+
+  /// The deck's difficult units in the View, for the rows below the buckets.
+  final DifficultBreakdown breakdown;
 
   @override
   Widget build(BuildContext context) {
@@ -1174,12 +1180,6 @@ final class _DetailedStats extends StatelessWidget {
     final double practicedFraction = summary.totalUnits == 0
         ? 0
         : summary.queriedUnits / summary.totalUnits;
-    final int maxCount = math.max(
-      1,
-      summary.buckets
-          .map((BucketSummary bucket) => bucket.count)
-          .fold(0, math.max),
-    );
     return ListView(
       children: <Widget>[
         Text(
@@ -1222,75 +1222,194 @@ final class _DetailedStats extends StatelessWidget {
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columnSpacing: LearnAnywhereTokens.gapSmall,
-            horizontalMargin: LearnAnywhereTokens.gapSmall,
-            dataRowMinHeight: 28,
-            dataRowMaxHeight: 32,
-            headingRowHeight: 32,
-            columns: <DataColumn>[
-              DataColumn(
-                label: Text(
-                  messages.message(LearnAnywhereMessage.statisticsBucket),
-                ),
-              ),
-              DataColumn(
-                label: Text(
-                  messages.message(LearnAnywhereMessage.statisticsRange),
-                ),
-              ),
-              DataColumn(
-                numeric: true,
-                label: Text(
-                  messages.message(LearnAnywhereMessage.statisticsCount),
-                ),
-              ),
-              DataColumn(
-                numeric: true,
-                label: Text(
-                  messages.message(LearnAnywhereMessage.statisticsPercentAll),
-                ),
-              ),
-              DataColumn(
-                numeric: true,
-                label: Text(
-                  messages.message(
-                    LearnAnywhereMessage.statisticsPercentQueried,
+          child: _OverviewTable(summary: summary, breakdown: breakdown),
+        ),
+      ],
+    );
+  }
+}
+
+/// The Overview's table: a row per bucket, then — after a separating line and
+/// outside the bucket total — the deck's difficult units and, indented, the
+/// flags that make them so.
+///
+/// A plain [Table] laid out like the other tabs' [DataTable]s: a DataTable
+/// draws the same divider above every row, and the Difficult rows need a
+/// stronger one so they do not read as another bucket.
+final class _OverviewTable extends StatelessWidget {
+  const _OverviewTable({required this.summary, required this.breakdown});
+
+  final StatisticsSummary summary;
+  final DifficultBreakdown breakdown;
+
+  static const double _headingHeight = 32;
+  static const double _rowHeight = 28;
+  static const double _flagIconSize = 16;
+
+  /// Count, % of all and % of practiced, aligned to the end like a
+  /// DataTable's numeric columns.
+  static const Set<int> _numericColumns = <int>{2, 3, 4};
+  static const int _columnCount = 6;
+
+  @override
+  Widget build(BuildContext context) {
+    final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
+      context,
+    );
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colors = theme.colorScheme;
+    // One scale for every bar, so a Difficult bar compares with the buckets'.
+    final int maxCount = math.max(
+      1,
+      <int>[
+        for (final BucketSummary bucket in summary.buckets) bucket.count,
+        breakdown.difficult,
+      ].fold(0, math.max),
+    );
+    final BorderSide rowDivider = Divider.createBorderSide(context);
+    // The menus' separator colour: `outlineVariant` all but disappears in the
+    // Dark Blue theme, which opts into a brighter one.
+    final BorderSide groupDivider = BorderSide(
+      color:
+          theme.extension<LearnAnywhereChromeTheme>()?.separatorColor ??
+          colors.outlineVariant,
+      width: 2,
+    );
+
+    TableRow row(
+      List<Widget> cells, {
+      BorderSide? above,
+      double minHeight = _rowHeight,
+      TextStyle? style,
+    }) {
+      return TableRow(
+        decoration: above == null
+            ? null
+            : BoxDecoration(border: Border(top: above)),
+        children: <Widget>[
+          for (var column = 0; column < _columnCount; column += 1)
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minHeight),
+              child: Align(
+                alignment: _numericColumns.contains(column)
+                    ? AlignmentDirectional.centerEnd
+                    : AlignmentDirectional.centerStart,
+                child: Padding(
+                  padding: EdgeInsetsDirectional.only(
+                    start: column == 0
+                        ? LearnAnywhereTokens.gapSmall
+                        : LearnAnywhereTokens.gapSmall / 2,
+                    end: column == _columnCount - 1
+                        ? LearnAnywhereTokens.gapSmall
+                        : LearnAnywhereTokens.gapSmall / 2,
+                  ),
+                  child: DefaultTextStyle.merge(
+                    style: style,
+                    child: cells[column],
                   ),
                 ),
               ),
-              const DataColumn(label: SizedBox.shrink()),
-            ],
-            rows: summary.buckets
-                .map((BucketSummary bucket) {
-                  return DataRow(
-                    cells: <DataCell>[
-                      DataCell(Text(_bucketLabel(messages, bucket.bucket))),
-                      DataCell(Text(_bucketRange(bucket.bucket))),
-                      DataCell(Text(bucket.count.toString())),
-                      DataCell(Text(_percent(bucket.percentageOfAll))),
-                      // "% of practiced" is meaningless for the units that
-                      // have not been practiced at all — the engine reports a
-                      // hard 0 there, so show nothing instead (same
-                      // convention as _bucketRange for this bucket).
-                      DataCell(
-                        Text(
-                          bucket.bucket == HitRateBucket.notYetQueried
-                              ? ''
-                              : _percent(bucket.percentageOfQueried),
-                        ),
-                      ),
-                      DataCell(
-                        _BucketBar(
-                          fraction: bucket.count / maxCount,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  );
-                })
-                .toList(growable: false),
+            ),
+        ],
+      );
+    }
+
+    /// A Difficult row: Count and % of all only, as for "Not yet practiced",
+    /// and a bar in `tertiary` — the family of the badge's
+    /// `tertiaryContainer`, strong enough to read as a bar — rather than the
+    /// buckets' `primary`.
+    TableRow difficultRow(Widget label, int count, {BorderSide? above}) {
+      return row(<Widget>[
+        label,
+        const Text(''),
+        Text('$count'),
+        Text(_percent(breakdown.shareOfAll(count))),
+        const Text(''),
+        _BucketBar(fraction: count / maxCount, color: colors.tertiary),
+      ], above: above ?? rowDivider);
+    }
+
+    /// An indented flag row's label: the badge's icons for [flags], in a slot
+    /// wide enough for both so the texts line up, then [message].
+    Widget flagLabel(DifficultFlags flags, LearnAnywhereMessage message) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const SizedBox(width: LearnAnywhereTokens.gapLarge),
+          SizedBox(
+            width: _flagIconSize * 2,
+            child: Row(children: difficultFlagIcons(flags, _flagIconSize, null)),
           ),
+          const SizedBox(width: LearnAnywhereTokens.gapSmall),
+          Text(messages.message(message)),
+        ],
+      );
+    }
+
+    return Table(
+      key: const Key('statisticsOverviewTable'),
+      defaultColumnWidth: const IntrinsicColumnWidth(),
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: <TableRow>[
+        row(
+          <Widget>[
+            Text(messages.message(LearnAnywhereMessage.statisticsBucket)),
+            Text(messages.message(LearnAnywhereMessage.statisticsRange)),
+            Text(messages.message(LearnAnywhereMessage.statisticsCount)),
+            Text(messages.message(LearnAnywhereMessage.statisticsPercentAll)),
+            Text(
+              messages.message(LearnAnywhereMessage.statisticsPercentQueried),
+            ),
+            const SizedBox.shrink(),
+          ],
+          minHeight: _headingHeight,
+          style: theme.textTheme.titleSmall,
+        ),
+        for (final BucketSummary bucket in summary.buckets)
+          row(<Widget>[
+            Text(_bucketLabel(messages, bucket.bucket)),
+            Text(_bucketRange(bucket.bucket)),
+            Text(bucket.count.toString()),
+            Text(_percent(bucket.percentageOfAll)),
+            // "% of practiced" is meaningless for the units that have not
+            // been practiced at all — the engine reports a hard 0 there, so
+            // show nothing instead (same convention as _bucketRange for this
+            // bucket).
+            Text(
+              bucket.bucket == HitRateBucket.notYetQueried
+                  ? ''
+                  : _percent(bucket.percentageOfQueried),
+            ),
+            _BucketBar(
+              fraction: bucket.count / maxCount,
+              color: colors.primary,
+            ),
+          ], above: rowDivider),
+        difficultRow(
+          Text(messages.message(LearnAnywhereMessage.learnDifficult)),
+          breakdown.difficult,
+          above: groupDivider,
+        ),
+        difficultRow(
+          flagLabel(
+            const DifficultFlags(manual: true),
+            LearnAnywhereMessage.statisticsDifficultManualOnly,
+          ),
+          breakdown.manualOnly,
+        ),
+        difficultRow(
+          flagLabel(
+            const DifficultFlags(automatic: true),
+            LearnAnywhereMessage.statisticsDifficultAutomaticOnly,
+          ),
+          breakdown.automaticOnly,
+        ),
+        difficultRow(
+          flagLabel(
+            const DifficultFlags(manual: true, automatic: true),
+            LearnAnywhereMessage.statisticsDifficultBoth,
+          ),
+          breakdown.bothFlags,
         ),
       ],
     );

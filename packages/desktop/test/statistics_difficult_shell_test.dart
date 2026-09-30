@@ -110,12 +110,12 @@ void main() {
     await settle(tester);
   }
 
-  /// Opens the app on [deckPath] and goes to the statistics unit list; a save
-  /// dialog answers with [savePath].
+  /// Opens the app on [deckPath] and goes to the statistics screen, which
+  /// opens on its Overview; a save dialog answers with [savePath].
   ///
   /// The surface is the desktop shell tests' own, so a layout overflow on
   /// the way fails the test.
-  Future<void> openUnitList(
+  Future<void> openStatistics(
     WidgetTester tester,
     String deckPath, {
     String? savePath,
@@ -142,8 +142,38 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('Show statistics').last);
     await settle(tester);
+  }
+
+  /// Opens the app on [deckPath] and goes to the statistics unit list; a save
+  /// dialog answers with [savePath].
+  Future<void> openUnitList(
+    WidgetTester tester,
+    String deckPath, {
+    String? savePath,
+  }) async {
+    await openStatistics(tester, deckPath, savePath: savePath);
     await tester.tap(find.text('Unit list'));
     await settle(tester);
+  }
+
+  /// The Overview's Difficult rows, top to bottom, each as its label, Count
+  /// and % of all.
+  List<(String, String, String)> difficultRows(WidgetTester tester) {
+    final List<String> texts = tester
+        .widgetList<Text>(
+          find.descendant(
+            of: find.byKey(const Key('statisticsOverviewTable')),
+            matching: find.byType(Text),
+          ),
+        )
+        .map((Text text) => text.data!)
+        .toList();
+    // Five text cells a row — label, Range, Count, % of all, % of
+    // practiced — and the four Difficult rows come last.
+    return <(String, String, String)>[
+      for (var start = texts.length - 20; start < texts.length; start += 5)
+        (texts[start], texts[start + 2], texts[start + 3]),
+    ];
   }
 
   /// Taps the button or chip labelled [label], scrolling it into view first:
@@ -354,6 +384,81 @@ void main() {
         (none, none),
         (automatic, none),
         (none, manual),
+      ]);
+    });
+  });
+
+  testWidgets('the Overview counts the deck file\'s difficult units under '
+      'Direction 1 and Combined, and follows a mark made in the unit list', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'overview.vok');
+    // house: manual in Direction 1. cat: automatic in Direction 1 and manual
+    // in Direction 2, so both flags under Combined. dog: automatic in
+    // Direction 2 only.
+    final LearningDeck deck = _deck();
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        deck.copyWith(
+          units: <LearningUnit>[
+            deck.units[0].withFlags(QueryDirection.direction1, manual),
+            deck.units[1].withFlags(QueryDirection.direction2, manual),
+            deck.units[2].withFlags(QueryDirection.direction2, automatic),
+          ],
+        ),
+      ),
+    );
+    await tester.runAsync(() async {
+      await openStatistics(tester, deckPath);
+
+      // Direction 1, the default View: house manual, cat automatic.
+      expect(difficultRows(tester), <(String, String, String)>[
+        ('Difficult', '2', '67%'),
+        ('Manual flag only', '1', '33%'),
+        ('Automatic flag only', '1', '33%'),
+        ('Both flags', '0', '0%'),
+      ]);
+
+      // Combined: all three, each once, and cat's two flags from two
+      // directions make it "Both flags".
+      await selectView(tester, 'Combined');
+      expect(difficultRows(tester), <(String, String, String)>[
+        ('Difficult', '3', '100%'),
+        ('Manual flag only', '1', '33%'),
+        ('Automatic flag only', '1', '33%'),
+        ('Both flags', '1', '33%'),
+      ]);
+
+      // Marking dog under Combined gives it a manual flag in both
+      // directions beside its automatic one; once the deck file holds it,
+      // the Overview counts it among "Both flags". Sorted by Difficult, dog
+      // — automatic only — is the first row.
+      await tester.tap(find.text('Unit list'));
+      await settle(tester);
+      await press(tester, 'Difficult');
+      // Bringing the header into view scrolled the table sideways, past its
+      // checkbox column.
+      await tester.ensureVisible(find.byType(Checkbox).at(0));
+      await settle(tester);
+      await tick(tester, 0);
+      await press(tester, 'Mark selected');
+      await untilFlagsOnDisk(tester, deckPath, <_UnitFlags>[
+        (manual, none),
+        (automatic, manual),
+        (manual, both),
+      ]);
+      expect(flagsOnDisk(deckPath), <_UnitFlags>[
+        (manual, none),
+        (automatic, manual),
+        (manual, both),
+      ]);
+      await tester.tap(find.text('Overview'));
+      await settle(tester);
+      expect(difficultRows(tester), <(String, String, String)>[
+        ('Difficult', '3', '100%'),
+        ('Manual flag only', '1', '33%'),
+        ('Automatic flag only', '0', '0%'),
+        ('Both flags', '2', '67%'),
       ]);
     });
   });

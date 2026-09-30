@@ -114,6 +114,25 @@ Total units, practiced units, total attempts and correct attempts for the curren
 scope, then a table and bar chart breaking every unit down by bucket — count, percent
 of all units, and percent of practiced units.
 
+Below **Not yet practiced**, after a stronger line, the table counts the deck's
+[difficult](06-learning-sessions.md#marking-a-unit-difficult) units. These rows are not
+buckets: a difficult unit is still counted in its bucket too, so the buckets still add
+up to the whole deck.
+
+- **Difficult** — how many units are difficult.
+- Indented beneath it, which flags make them so — **Manual flag only** (a flag),
+  **Automatic flag only** (a sparkle) and **Both flags** (both side by side). Every
+  difficult unit sits in exactly one of the three, so they always add up to
+  **Difficult**.
+
+Only **Count** and **% of all** are filled in, and their bars are drawn in the flag
+colour rather than the buckets' colour. The rows follow the **Direction** switch, like
+the unit list: under **Direction 1** or **Direction 2** they count that direction's
+flags; under **Combined** a unit difficult in either direction counts once, and it is
+under **Both flags** when it has a manual flag and an automatic flag anywhere, even in
+different directions. The **Current** / **All-time** control does not change them,
+because the flags belong to the deck, not to either record.
+
 ## Unit list — finding what to practice again
 
 A sortable table of every unit: **Unit**, **Difficult**, **Question**, **Answer**,

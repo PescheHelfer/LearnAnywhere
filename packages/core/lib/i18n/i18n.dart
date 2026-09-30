@@ -1137,6 +1137,16 @@ enum LearnAnywhereMessage {
   /// Not yet practiced hit-rate bucket.
   statisticsBucketNotYetQueried,
 
+  /// Overview row under Difficult: units whose flags in view are manual only.
+  statisticsDifficultManualOnly,
+
+  /// Overview row under Difficult: units whose flags in view are automatic
+  /// only.
+  statisticsDifficultAutomaticOnly,
+
+  /// Overview row under Difficult: units carrying both kinds of flag in view.
+  statisticsDifficultBoth,
+
   /// Level-Learning statistics tab.
   statisticsLevelLearning,
 
@@ -2141,6 +2151,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsBucketVeryUnsure: 'Very unsure',
       LearnAnywhereMessage.statisticsBucketNeverKnown: 'Never known',
       LearnAnywhereMessage.statisticsBucketNotYetQueried: 'Not yet practiced',
+      LearnAnywhereMessage.statisticsDifficultManualOnly: 'Manual flag only',
+      LearnAnywhereMessage.statisticsDifficultAutomaticOnly:
+          'Automatic flag only',
+      LearnAnywhereMessage.statisticsDifficultBoth: 'Both flags',
       LearnAnywhereMessage.statisticsLevelLearning: 'Level Learning',
       LearnAnywhereMessage.statisticsTotal: 'Total',
       LearnAnywhereMessage.statisticsLevel: 'Level',
@@ -2938,6 +2952,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsBucketNeverKnown: 'Nie gewusst',
       LearnAnywhereMessage.statisticsBucketNotYetQueried:
           'Noch nicht abgefragt',
+      LearnAnywhereMessage.statisticsDifficultManualOnly:
+          'Nur manuelle Kennzeichnung',
+      LearnAnywhereMessage.statisticsDifficultAutomaticOnly:
+          'Nur automatische Kennzeichnung',
+      LearnAnywhereMessage.statisticsDifficultBoth: 'Beide Kennzeichnungen',
       LearnAnywhereMessage.statisticsLevelLearning: 'Stufenlernen',
       LearnAnywhereMessage.statisticsTotal: 'Gesamt',
       LearnAnywhereMessage.statisticsLevel: 'Stufe',

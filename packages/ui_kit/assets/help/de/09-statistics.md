@@ -128,6 +128,28 @@ Lerneinheiten gesamt, abgefragte Einheiten, Abfrage-Versuche und korrekte Versuc
 den aktuellen Bereich, dann eine Tabelle und ein Balkendiagramm, die jede Einheit nach
 Bereich aufschlüsseln — Anzahl, Prozent von allen und Prozent der abgefragten Einheiten.
 
+Unter **Noch nicht abgefragt** zählt die Tabelle nach einer kräftigeren Linie die
+[schwierigen](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen) Einheiten
+der Lern-Datei. Diese Zeilen sind keine Bereiche: eine schwierige Einheit zählt
+weiterhin auch in ihrem Bereich mit, die Bereiche ergeben also nach wie vor zusammen die
+ganze Lern-Datei.
+
+- **Schwierig** — wie viele Einheiten schwierig sind.
+- Eingerückt darunter, welche Kennzeichnungen sie dazu machen — **Nur manuelle
+  Kennzeichnung** (eine Fahne), **Nur automatische Kennzeichnung** (ein Funkeln) und
+  **Beide Kennzeichnungen** (beide nebeneinander). Jede schwierige Einheit steht in
+  genau einer der drei Zeilen, sie ergeben zusammen also immer **Schwierig**.
+
+Ausgefüllt sind nur **Anzahl** und **% von allen**, und ihre Balken sind in der Farbe
+der Kennzeichnung gezeichnet statt in der der Bereiche. Die Zeilen folgen dem Schalter
+**Richtung**, wie die Einheitenliste: bei **Abfragerichtung 1** oder
+**Abfragerichtung 2** zählen sie die Kennzeichnungen dieser Richtung; bei **Kombiniert**
+zählt eine Einheit, die in einer der beiden Richtungen schwierig ist, einmal, und sie
+steht unter **Beide Kennzeichnungen**, wenn sie irgendwo eine manuelle und irgendwo eine
+automatische Kennzeichnung hat, auch in verschiedenen Richtungen. Die Umschaltung
+**Aktuell** / **Allzeit** ändert sie nicht, denn die Kennzeichnungen gehören zur
+Lern-Datei, nicht zu einer der beiden Statistiken.
+
 ## Einheitenliste — wonach erneut geübt werden sollte
 
 Eine sortierbare Tabelle jeder Einheit: **Einheit**, **Schwierig**, **Frage**,

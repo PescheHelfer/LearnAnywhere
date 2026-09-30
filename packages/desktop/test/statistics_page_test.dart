@@ -58,24 +58,96 @@ void main() {
 
       // Detailed tab: the "Not yet practiced" row has no meaningful share of
       // the practiced units, so that cell renders empty rather than "0%".
-      final DataTable detailed = tester.widget<DataTable>(
-        find.byType(DataTable),
-      );
-      final DataRow notPractised = detailed.rows.singleWhere(
-        (DataRow row) => _cellText(row.cells[0]) == 'Not yet practiced',
-      );
-      expect(_cellText(notPractised.cells[4]), '');
+      expect(_overviewRow(tester, 'Not yet practiced')[4], '');
       // The practiced bucket still reports its share.
-      final DataRow perfect = detailed.rows.singleWhere(
-        (DataRow row) => _cellText(row.cells[0]) == 'Perfect',
-      );
-      expect(_cellText(perfect.cells[4]), '100%');
+      expect(_overviewRow(tester, 'Perfect')[4], '100%');
 
       await tester.tap(find.text('Unit list'));
       await tester.pumpAndSettle();
       expect(find.text(caption), findsOneWidget);
     },
   );
+
+  testWidgets('the Overview counts the difficult units below the buckets, '
+      'following the View but not the Scope', (WidgetTester tester) async {
+    widenSurface(tester);
+    await tester.pumpWidget(
+      buildPage(deck: twoWayFlaggedDeck(), statistics: const <UnitStats>[]),
+    );
+    await tester.pumpAndSettle();
+
+    // Below the last bucket, and outside it: nothing is practised, so all
+    // four units still sit in "Not yet practiced".
+    final List<String> labels = <String>[
+      for (final List<String> row in _overviewRows(tester)) row.first,
+    ];
+    expect(labels.sublist(labels.indexOf('Not yet practiced')), <String>[
+      'Not yet practiced',
+      'Difficult',
+      'Manual flag only',
+      'Automatic flag only',
+      'Both flags',
+    ]);
+    expect(_overviewRow(tester, 'Not yet practiced')[2], '4');
+
+    // A stronger line than the buckets' sets them apart, and the three flag
+    // rows carry the badge's icons: a flag on "Manual flag only" and "Both
+    // flags", a sparkle on "Automatic flag only" and "Both flags".
+    final Finder table = find.byKey(const Key('statisticsOverviewTable'));
+    final List<TableRow> tableRows = tester.widget<Table>(table).children;
+    double lineAbove(int row) =>
+        (tableRows[row].decoration! as BoxDecoration).border!.top.width;
+    final int difficultRow = labels.indexOf('Difficult') + 1; // + heading
+    expect(lineAbove(difficultRow), greaterThan(lineAbove(difficultRow - 1)));
+    expect(lineAbove(difficultRow + 1), lineAbove(difficultRow - 1));
+    Finder icon(IconData data) =>
+        find.descendant(of: table, matching: find.byIcon(data));
+    expect(icon(Icons.flag), findsNWidgets(2));
+    expect(icon(Icons.auto_awesome), findsNWidgets(2));
+
+    // Direction 1, the default View: the manual flags of units 2 and 4.
+    // Range and "% of practiced" stay blank.
+    void expectDifficultRows(List<String> counts, List<String> shares) {
+      expect(<List<String>>[
+        _overviewRow(tester, 'Difficult'),
+        _overviewRow(tester, 'Manual flag only'),
+        _overviewRow(tester, 'Automatic flag only'),
+        _overviewRow(tester, 'Both flags'),
+      ], <List<String>>[
+        <String>['Difficult', '', counts[0], shares[0], ''],
+        <String>['Manual flag only', '', counts[1], shares[1], ''],
+        <String>['Automatic flag only', '', counts[2], shares[2], ''],
+        <String>['Both flags', '', counts[3], shares[3], ''],
+      ]);
+    }
+
+    expectDifficultRows(
+      <String>['2', '2', '0', '0'],
+      <String>['50%', '50%', '0%', '0%'],
+    );
+
+    // The Scope does not change them: flags live on the deck.
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    expectDifficultRows(
+      <String>['2', '2', '0', '0'],
+      <String>['50%', '50%', '0%', '0%'],
+    );
+
+    // Combined: unit 2 manual, unit 3 automatic, unit 4 both — each once.
+    await selectCombined(tester);
+    expectDifficultRows(
+      <String>['3', '1', '1', '1'],
+      <String>['75%', '25%', '25%', '25%'],
+    );
+
+    // Direction 2: unit 3's automatic flag and unit 4's two.
+    await selectView(tester, 'Direction 2');
+    expectDifficultRows(
+      <String>['2', '0', '1', '1'],
+      <String>['50%', '0%', '25%', '25%'],
+    );
+  });
 
   testWidgets('keep practicing sorts by a tapped column header', (
     WidgetTester tester,
@@ -876,6 +948,28 @@ String _cellText(DataCell cell) {
   final Widget child = cell.child;
   return ((child is Tooltip ? child.child! : child) as Text).data!;
 }
+
+/// The Overview table's rows below its heading, top to bottom, each as its
+/// five text cells: label, Range, Count, % of all, % of practiced.
+List<List<String>> _overviewRows(WidgetTester tester) {
+  final List<String> texts = tester
+      .widgetList<Text>(
+        find.descendant(
+          of: find.byKey(const Key('statisticsOverviewTable')),
+          matching: find.byType(Text),
+        ),
+      )
+      .map((Text text) => text.data!)
+      .toList();
+  return <List<String>>[
+    for (var start = 5; start < texts.length; start += 5)
+      texts.sublist(start, start + 5),
+  ];
+}
+
+/// The Overview row labelled [label], as [_overviewRows] gives it.
+List<String> _overviewRow(WidgetTester tester, String label) =>
+    _overviewRows(tester).singleWhere((List<String> row) => row.first == label);
 
 /// The Unit column of the Keep-practicing table, top to bottom.
 ///

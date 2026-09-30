@@ -783,6 +783,75 @@ StatisticsSummary aggregateStatistics({
   );
 }
 
+/// How many of a deck's units are difficult in a statistics View, split by the
+/// flags that make them so.
+///
+/// Counts are units, never questions. The three flag counts never overlap, so
+/// they always add up to [difficult].
+final class DifficultBreakdown {
+  /// Creates a breakdown.
+  const DifficultBreakdown({
+    required this.totalUnits,
+    required this.manualOnly,
+    required this.automaticOnly,
+    required this.bothFlags,
+  });
+
+  /// The deck's units, difficult or not: what "% of all" is a share of.
+  final int totalUnits;
+
+  /// Units whose flags in view are manual ones only.
+  final int manualOnly;
+
+  /// Units whose flags in view are automatic ones only.
+  final int automaticOnly;
+
+  /// Units carrying a manual and an automatic flag in view, in the same
+  /// direction or not.
+  final int bothFlags;
+
+  /// Units difficult in view, whichever flag makes them so.
+  int get difficult => manualOnly + automaticOnly + bothFlags;
+
+  /// [count] as a share (0..1) of [totalUnits]; 0 for an empty deck.
+  double shareOfAll(int count) => totalUnits == 0 ? 0 : count / totalUnits;
+}
+
+/// How many units of [deck] are difficult under [view], and by which flags.
+///
+/// A unit is judged by its flags in the directions [view] covers, merged:
+/// under Combined it is difficult when either direction is, counted once, and
+/// it has both flags when it carries a manual and an automatic flag anywhere
+/// across its directions. Flags live on the deck, not in a record, so neither
+/// the current nor the all-time statistics change the result.
+DifficultBreakdown difficultBreakdown(
+  LearningDeck deck,
+  StatisticsDirectionView view,
+) {
+  final Set<QueryDirection> directions = view.directions;
+  var manualOnly = 0;
+  var automaticOnly = 0;
+  var bothFlags = 0;
+  for (final LearningUnit unit in deck.units) {
+    switch (unit.flagsIn(directions)) {
+      case DifficultFlags(manual: true, automatic: true):
+        bothFlags += 1;
+      case DifficultFlags(manual: true):
+        manualOnly += 1;
+      case DifficultFlags(automatic: true):
+        automaticOnly += 1;
+      default:
+        break;
+    }
+  }
+  return DifficultBreakdown(
+    totalUnits: deck.units.length,
+    manualOnly: manualOnly,
+    automaticOnly: automaticOnly,
+    bothFlags: bothFlags,
+  );
+}
+
 /// Whether anything has actually been recorded yet.
 ///
 /// True when any unit carries a drill attempt, or when the Level-Learning

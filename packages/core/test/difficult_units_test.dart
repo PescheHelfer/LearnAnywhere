@@ -1508,6 +1508,89 @@ void main() {
     });
   });
 
+  group('the statistics overview', () {
+    // Unit 1 is not difficult. Direction 1: 2 and 4 manual, 5 both, 6
+    // automatic. Direction 2: 3, 4 and 6 automatic.
+    final LearningDeck deck = LearningDeck(
+      mask: mask,
+      units: <LearningUnit>[
+        word('one', 'eins'),
+        word('two', 'zwei', d1: manualFlag),
+        word('three', 'drei', d2: autoFlag),
+        word('four', 'vier', d1: manualFlag, d2: autoFlag),
+        word('five', 'fünf', d1: bothFlags),
+        word('six', 'sechs', d1: autoFlag, d2: autoFlag),
+      ],
+    );
+
+    /// `(Difficult, Manual flag only, Automatic flag only, Both flags)` as
+    /// the Overview shows them under [view].
+    (int, int, int, int) rows(StatisticsDirectionView view) {
+      final DifficultBreakdown breakdown = difficultBreakdown(deck, view);
+      return (
+        breakdown.difficult,
+        breakdown.manualOnly,
+        breakdown.automaticOnly,
+        breakdown.bothFlags,
+      );
+    }
+
+    test("a direction counts that direction's flags only", () {
+      expect(rows(StatisticsDirectionView.direction1), (4, 2, 1, 1));
+      expect(rows(StatisticsDirectionView.direction2), (3, 0, 3, 0));
+    });
+
+    test('Combined counts a unit difficult either way once, and a manual '
+        'flag one way with an automatic flag the other is Both flags', () {
+      // Unit 4 is manual in Direction 1 and automatic in Direction 2: both.
+      // Unit 6 is automatic both ways: one unit, automatic only.
+      expect(rows(StatisticsDirectionView.combined), (5, 1, 2, 2));
+    });
+
+    test('the three flag rows add up to the Difficult row, which is what '
+        'the setup counts for the whole deck', () {
+      for (final DirectionSelection selection in DirectionSelection.values) {
+        final StatisticsDirectionView view = directionViewFor(selection);
+        final DifficultBreakdown breakdown = difficultBreakdown(deck, view);
+        expect(
+          breakdown.manualOnly + breakdown.automaticOnly + breakdown.bothFlags,
+          breakdown.difficult,
+          reason: '$view',
+        );
+        expect(
+          breakdown.difficult,
+          countDifficultUnits(
+            deck,
+            SessionParameters(directionSelection: selection),
+          ).inDeck,
+          reason: '$view',
+        );
+      }
+    });
+
+    test("% of all is of the deck's units, and an empty deck shares "
+        'nothing', () {
+      final DifficultBreakdown breakdown = difficultBreakdown(
+        deck,
+        StatisticsDirectionView.combined,
+      );
+      expect(breakdown.totalUnits, 6);
+      expect(breakdown.shareOfAll(breakdown.difficult), closeTo(5 / 6, 1e-9));
+      expect(breakdown.shareOfAll(breakdown.bothFlags), closeTo(2 / 6, 1e-9));
+
+      final LearningDeck empty = LearningDeck(
+        mask: mask,
+        units: const <LearningUnit>[],
+      );
+      final DifficultBreakdown none = difficultBreakdown(
+        empty,
+        StatisticsDirectionView.combined,
+      );
+      expect(none.difficult, 0);
+      expect(none.shareOfAll(none.difficult), 0);
+    });
+  });
+
   group('Lexicon', () {
     // Units 1, 3 and 4 are difficult, each by a different flag and unit 3
     // only in Direction 2; 2 and 5 are not. Every unit contains "e", so a

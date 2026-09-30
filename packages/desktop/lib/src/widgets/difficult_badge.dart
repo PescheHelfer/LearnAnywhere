@@ -48,7 +48,7 @@ final class DifficultBadge extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              ..._flagIcons(flags, 16, colors.onTertiaryContainer),
+              ...difficultFlagIcons(flags, 16, colors.onTertiaryContainer),
               const SizedBox(width: LearnAnywhereTokens.gapSmall / 2),
               Flexible(
                 child: Text(
@@ -182,7 +182,7 @@ final class DifficultFlagIndicator extends StatelessWidget {
           : _flagsByDirection(messages),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: _flagIcons(flags, 18, null),
+        children: difficultFlagIcons(flags, 18, null),
       ),
     );
   }
@@ -224,8 +224,12 @@ final class DifficultFlagIndicator extends StatelessWidget {
 }
 
 /// The icon of each flag in [flags]: the manual flag, then the automatic
-/// sparkle.
-List<Widget> _flagIcons(DifficultFlags flags, double size, Color? color) {
+/// sparkle. The badge's icons, wherever a flag is named.
+List<Widget> difficultFlagIcons(
+  DifficultFlags flags,
+  double size,
+  Color? color,
+) {
   return <Widget>[
     if (flags.manual) Icon(Icons.flag, size: size, color: color),
     if (flags.automatic) Icon(Icons.auto_awesome, size: size, color: color),
