@@ -14,6 +14,10 @@ erledigen.
   dieselbe Maske verwenden; tut sie das nicht, oder würde das Angleichen an die aktuelle
   Maske Daten verlieren, wird das Hinzuladen verweigert, statt eine der beiden Dateien
   stillschweigend zu beschädigen.
+- **Neue Version der Lerneinheiten übernehmen...** übernimmt eine neue Version der
+  geöffneten Lern-Datei — Tippfehler behoben, Einheiten ergänzt — und behält dabei Ihre
+  eigenen Kennzeichnungen als schwierig. Siehe
+  [Eine Lern-Datei teilen](#eine-lern-datei-teilen).
 - **Lerneinheiten speichern** schreibt in die geöffnete Datei zurück.
   **Lerneinheiten speichern unter...** schreibt in einen neuen Pfad und wechselt dorthin,
   die ursprüngliche Datei bleibt unangetastet.
@@ -93,6 +97,47 @@ Die Lern-Datei aus dem Programm heraus unter neuem Namen zu speichern ist nicht
 dasselbe: Die Allzeit-Statistik folgt der Lern-Datei an ihren neuen Ort — es sei denn,
 dort liegt bereits eine. Diese gehört zu einer anderen Lern-Datei und wird nie
 überschrieben; die Statuszeile sagt es.
+
+## Eine Lern-Datei teilen
+
+Lernen zwei Personen mit derselben Lern-Datei, behält jede Kopie der `.vok` ihre eigenen
+[Kennzeichnungen als schwierig](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen).
+Die Kennzeichnungen stehen in der Lern-Datei selbst: Die in Ihrer Kopie sind Ihre, die
+in der Kopie einer anderen Person sind deren.
+
+Das zählt, wenn eine **neue Version** der Lern-Datei verteilt wird — ein Tippfehler
+behoben, ein paar Einheiten ergänzt. Kopieren Sie die neue Datei im Dateimanager über
+Ihre, erhalten Sie die Kennzeichnungen aus der fremden Kopie statt Ihrer eigenen, und
+Ihre manuellen Kennzeichnungen sind endgültig verloren. Öffnen Sie stattdessen Ihre
+eigene Kopie, wählen Sie **Datei ▸ Neue Version der Lerneinheiten übernehmen...** und
+dann die neue Datei:
+
+- Ihre Lern-Datei übernimmt die Einheiten der neuen Version in deren Reihenfolge und
+  behält ihren eigenen Dateinamen und ihre Statistikdateien. Die Statistik folgt jeder
+  Einheit, wie unter
+  [Wenn die Lern-Datei anderswo bearbeitet wurde](#wenn-die-lern-datei-anderswo-bearbeitet-wurde)
+  beschrieben.
+- Ihre Kennzeichnungen wandern zu denselben Einheiten der neuen Version, jede
+  Abfragerichtung für sich, auch wenn Einheiten eingefügt oder umgestellt wurden. Eine
+  Einheit, deren Frage oder Antwort nur leicht korrigiert wurde, behält ihre
+  Kennzeichnungen ebenfalls — als geänderter Text beginnt ihre Statistik allerdings bei
+  null.
+- Die Kennzeichnungen aus der fremden Kopie werden nicht beachtet, und Einheiten, die
+  in dieser Version neu sind, beginnen ohne Kennzeichnung. Erkannt wird dabei nichts:
+  Über sie entscheiden Ihr eigenes Kennzeichnen und die nächste automatische Erkennung.
+- Die neue Datei wird nur gelesen, nie verändert; Sie können sie also unverändert
+  weitergeben.
+
+Danach meldet die Statuszeile das Ergebnis, zum Beispiel **„words.vok“ auf die neue
+Version gebracht: 3 Kennzeichnungen übernommen, 1 entfallen, weil ihre Einheit nicht
+mehr existiert.** Jede manuelle oder automatische Kennzeichnung zählt je
+Abfragerichtung einmal.
+
+Eine Datei mit einer anderen Maske wird verweigert — sie ist keine Version dieser
+Lern-Datei —, ebenso eine, die sich nur unter Datenverlust auf die neuere
+Masken-Revision bringen ließe; die Meldung nennt dann, was verloren ginge, wie beim
+Abgleich der Masken-Kopien. Eine Lern-Datei, die noch nie gespeichert wurde, hat
+keine Datei, die sich aktualisieren ließe: Speichern Sie sie zuerst.
 
 ## Automatisch laden und automatisch speichern
 

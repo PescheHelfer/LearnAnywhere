@@ -3,6 +3,7 @@ library;
 
 export 'compatibility/mask_compatibility.dart';
 export 'difficulty/difficult_units.dart';
+export 'difficulty/new_version.dart';
 export 'engine/engine.dart';
 export 'i18n/i18n.dart';
 export 'models/local_timestamp.dart';

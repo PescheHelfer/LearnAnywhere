@@ -134,6 +134,27 @@ enum LearnAnywhereMessage {
   /// Add or merge deck command.
   fileAddMergeDeck,
 
+  /// File ▸ Update deck from new version: takes another copy's content while
+  /// keeping the open deck's flags.
+  fileUpdateFromNewVersion,
+
+  /// Status after Update deck from new version. Carries `{deck}` (the deck's
+  /// file name), `{carried}` and `{dropped}` (counted in flags).
+  fileUpdateFromNewVersionDone,
+
+  /// Update deck from new version refused: the open deck has no file to
+  /// write the new version to.
+  errorNewVersionUnsaved,
+
+  /// Update deck from new version refused: the chosen file is on a different
+  /// mask, so it is not a version of the open deck.
+  errorNewVersionMaskMismatch,
+
+  /// Update deck from new version refused: bringing the chosen file onto the
+  /// newer mask revision would lose data (as mask sync refuses). `{detail}`
+  /// lists what would be lost, one mask-sync reason per line.
+  errorNewVersionWouldLoseData,
+
   /// Save command.
   fileSave,
 
@@ -1665,6 +1686,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileNewDeck: '&Clear units from memory...', // C
       LearnAnywhereMessage.fileOpenDeck: 'Load &deck...', // D
       LearnAnywhereMessage.fileAddMergeDeck: '&Add/merge deck...', // A
+      LearnAnywhereMessage.fileUpdateFromNewVersion:
+          '&Update deck from new version...', // U
       LearnAnywhereMessage.fileSave: '&Save deck', // S
       LearnAnywhereMessage.fileSaveAs: 'Sa&ve deck as...', // V
       LearnAnywhereMessage.fileLoadMask: '&Load mask...', // L
@@ -2325,6 +2348,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileNewDeckDone: 'New deck created.',
       LearnAnywhereMessage.fileOpenDeckDone: 'Deck loaded.',
       LearnAnywhereMessage.fileMergeDeckDone: 'Deck merged.',
+      LearnAnywhereMessage.fileUpdateFromNewVersionDone:
+          'Updated “{deck}” to the new version: {carried} flags carried over, '
+          '{dropped} dropped because their unit no longer exists.',
       LearnAnywhereMessage.fileSaveDeckDone: 'Deck saved.',
       LearnAnywhereMessage.fileSaveDeckAllTimeKept:
           'Deck saved. The all-time statistics already at that location belong '
@@ -2347,6 +2373,14 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.errorMergeWouldLoseData:
           'Cannot merge: updating the added units to the current mask would '
           'lose data.',
+      LearnAnywhereMessage.errorNewVersionUnsaved:
+          'Save the deck first: the new version is written to its file.',
+      LearnAnywhereMessage.errorNewVersionMaskMismatch:
+          'Cannot update: the selected file is not a version of this deck (it '
+          'belongs to a different mask).',
+      LearnAnywhereMessage.errorNewVersionWouldLoseData:
+          'Cannot update: bringing the new version onto the newest mask '
+          'revision would lose data:\n{detail}',
       LearnAnywhereMessage.errorSearchDirectoryMissing:
           'Search directory does not exist: {detail}',
       LearnAnywhereMessage.lexiconLoadMaskMismatch:
@@ -2422,6 +2456,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileOpenDeck: '&Lerneinheiten laden...', // L
       LearnAnywhereMessage.fileAddMergeDeck:
           'Lerneinheiten &hinzuladen...', // H
+      LearnAnywhereMessage.fileUpdateFromNewVersion:
+          'Neue &Version der Lerneinheiten übernehmen...', // V
       LearnAnywhereMessage.fileSave: 'Lerneinheiten &speichern', // S
       LearnAnywhereMessage.fileSaveAs:
           'Lerneinheiten speichern &unter...', // U
@@ -3141,6 +3177,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.fileNewDeckDone: 'Neue Lern-Datei erstellt.',
       LearnAnywhereMessage.fileOpenDeckDone: 'Lern-Datei geladen.',
       LearnAnywhereMessage.fileMergeDeckDone: 'Lern-Datei hinzugefügt.',
+      LearnAnywhereMessage.fileUpdateFromNewVersionDone:
+          '„{deck}“ auf die neue Version gebracht: {carried} Kennzeichnungen '
+          'übernommen, {dropped} entfallen, weil ihre Einheit nicht mehr '
+          'existiert.',
       LearnAnywhereMessage.fileSaveDeckDone: 'Lern-Datei gespeichert.',
       LearnAnywhereMessage.fileSaveDeckAllTimeKept:
           'Lern-Datei gespeichert. Die dort vorhandene Allzeit-Statistik '
@@ -3166,6 +3206,15 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.errorMergeWouldLoseData:
           'Hinzuladen nicht möglich: Beim Angleichen an die aktuelle Maske '
           'würden Daten verloren gehen.',
+      LearnAnywhereMessage.errorNewVersionUnsaved:
+          'Zuerst die Lerneinheiten speichern: Die neue Version wird in ihre '
+          'Datei geschrieben.',
+      LearnAnywhereMessage.errorNewVersionMaskMismatch:
+          'Übernehmen nicht möglich: Die gewählte Datei ist keine Version '
+          'dieser Lerneinheiten (sie gehört zu einer anderen Maske).',
+      LearnAnywhereMessage.errorNewVersionWouldLoseData:
+          'Übernehmen nicht möglich: Beim Angleichen der neuen Version an die '
+          'neueste Masken-Revision würden Daten verloren gehen:\n{detail}',
       LearnAnywhereMessage.errorSearchDirectoryMissing:
           'Suchordner existiert nicht: {detail}',
       LearnAnywhereMessage.lexiconLoadMaskMismatch:

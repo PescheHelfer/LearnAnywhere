@@ -47,18 +47,40 @@ String unitIdentityHash(LearningMask mask, LearningUnit unit) {
   // hash alike — a bare separator character could, since a value may contain
   // anything the user can type.
   final StringBuffer buffer = StringBuffer()..write('c${unit.categoryId}');
-  final CategoryDefinition? category = mask.categoryById(unit.categoryId);
-  if (category != null) {
-    for (final FieldDefinition field in category.fields) {
-      if (!_countsTowardsIdentity(field)) {
-        continue;
-      }
-      final String text = unit.valueForFieldId(field.id).plainText;
-      buffer.write('|${field.id}:${text.length}:$text');
-    }
+  for (final (int fieldId, String text) in _identityValues(mask, unit)) {
+    buffer.write('|$fieldId:${text.length}:$text');
   }
   final Digest digest = sha256.convert(utf8.encode(buffer.toString()));
   return digest.toString().substring(0, unitHashLength);
+}
+
+/// Returns the text [unitIdentityHash] covers for [unit] under [mask]: the
+/// plain values of its question and answer fields, in mask order, one per
+/// line. The category is not part of it.
+///
+/// For comparing how alike two units of one category are — the hash can only
+/// say whether they are identical.
+String unitIdentityText(LearningMask mask, LearningUnit unit) {
+  return <String>[
+    for (final (int _, String text) in _identityValues(mask, unit)) text,
+  ].join('\n');
+}
+
+/// The field id and plain text of each of [unit]'s values that counts toward
+/// its identity, in mask order. None when [mask] lacks the unit's category.
+Iterable<(int, String)> _identityValues(
+  LearningMask mask,
+  LearningUnit unit,
+) sync* {
+  final CategoryDefinition? category = mask.categoryById(unit.categoryId);
+  if (category == null) {
+    return;
+  }
+  for (final FieldDefinition field in category.fields) {
+    if (_countsTowardsIdentity(field)) {
+      yield (field.id, unit.valueForFieldId(field.id).plainText);
+    }
+  }
 }
 
 /// Returns the identity hash of every unit in [deck], in deck order.

@@ -11,6 +11,9 @@ and auto-save statistics — that quietly do some of this for you.
   open, instead of replacing it. The merged deck must use the same mask; if it does not,
   or if bringing it in line with the current mask would lose data, the merge is refused
   rather than silently damaging either file.
+- **Update deck from new version...** takes a new version of the open deck — typos
+  fixed, units added — while keeping your own difficult flags. See
+  [Sharing a deck](#sharing-a-deck).
 - **Save deck** writes back to the file you opened. **Save deck as...** writes to a new
   path and switches to it, leaving the original file untouched.
 - **Clear units from memory...** empties the workspace. After confirming, you choose
@@ -79,6 +82,39 @@ is restored. Saving the deck under a new name from inside the program is not the
 thing: the lifetime record follows the deck to its new location, unless a lifetime
 record already sits there — that one belongs to another deck and is never overwritten,
 and the status line says so.
+
+## Sharing a deck
+
+When two people learn from the same deck, each copy of the `.vok` keeps its own
+[difficult flags](06-learning-sessions.md#marking-a-unit-difficult). The flags are
+stored in the deck file itself, so the ones in your copy are yours, and the ones in
+someone else's copy are theirs.
+
+That matters when the deck's author sends round a **new version** — a typo fixed, a few
+units added. Copying the new file over yours in a file manager gives you the author's
+flags instead of your own, and your manual flags are lost for good. Instead, open your
+own copy and choose **File ▸ Update deck from new version...**, then pick the new file:
+
+- Your deck takes the new version's units, in the new order, and keeps its own file
+  name and its statistics files. The statistics follow each unit as described under
+  [When the deck was edited elsewhere](#when-the-deck-was-edited-elsewhere).
+- Your flags move to the same units in the new version, each direction on its own,
+  even where units were inserted or reordered. A unit whose question or answer was
+  only slightly corrected keeps its flags too — though, being changed text, it starts
+  its statistics from zero.
+- The flags in the author's copy are ignored, and units that are new in this version
+  start unflagged. Nothing is detected at this point: your own marking and the next
+  automatic detection decide about them.
+- The new file is only read, never changed, so you can pass it on as it is.
+
+When it is done, the status line reports the result, for example **Updated “words.vok”
+to the new version: 3 flags carried over, 1 dropped because their unit no longer
+exists.** Each manual or automatic flag counts once per direction.
+
+A file that uses a different mask is refused — it is not a version of this deck — and
+so is one that could only be brought onto the newer mask revision by losing data; the
+message then lists what would be lost, as updating the mask's other copies does. A
+deck that has never been saved has no file to update: save it first.
 
 ## Auto-load and auto-save
 

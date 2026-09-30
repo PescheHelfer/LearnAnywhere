@@ -101,6 +101,55 @@ final class DesktopFileService {
     );
   }
 
+  /// Takes the deck at [incomingPath] as a new version of the open deck
+  /// ([takeNewVersion]) and writes it over the open deck's own file; the
+  /// incoming file is only read.
+  ///
+  /// The written deck is dated as the new version is, or now when it carries
+  /// no date — its content did change. The statistics files beside the deck
+  /// are not touched: they realign onto the new units the next time they are
+  /// read. [current] is not updated; the caller reopens the deck from disk.
+  ///
+  /// Returns how many flags were carried over and dropped. Refused, with
+  /// nothing written, when the open deck has never been saved, or when
+  /// [takeNewVersion] refuses the file — a lossy re-key as a
+  /// [NewVersionLossException] carrying what would be lost.
+  Future<({int carried, int dropped})> updateDeckFromNewVersion(
+    DesktopDocument current,
+    String incomingPath,
+  ) async {
+    final String? deckPath = current.deckPath;
+    if (deckPath == null) {
+      throw const FileOperationException(
+        LearnAnywhereMessage.errorNewVersionUnsaved,
+      );
+    }
+    final LearningDeck incoming = decodeDeckJson(
+      await File(incomingPath).readAsString(),
+    );
+    switch (takeNewVersion(open: current.deck, incoming: incoming)) {
+      case NewVersionRefused(reason: NewVersionRefusal.differentMask):
+        throw const FileOperationException(
+          LearnAnywhereMessage.errorNewVersionMaskMismatch,
+        );
+      case NewVersionRefused(
+        reason: NewVersionRefusal.wouldLoseData,
+        :final List<MaskBreakingReason> reasons,
+      ):
+        throw NewVersionLossException(reasons);
+      case final NewVersionTaken taken:
+        await saveDeckSnapshot(
+          taken.deck.lastEdited == null
+              ? taken.deck.copyWith(
+                  lastEdited: LocalTimestamp.of(DateTime.now()),
+                )
+              : taken.deck,
+          deckPath,
+        );
+        return (carried: taken.carried, dropped: taken.dropped);
+    }
+  }
+
   /// Saves the current deck to [path] or its existing path.
   ///
   /// The deck itself always lands. Its lifetime record only follows it when the
@@ -1153,4 +1202,18 @@ final class FileOperationException implements Exception {
 
   @override
   String toString() => detail == null ? messageId.name : '${messageId.name}: $detail';
+}
+
+/// Update deck from new version refused because bringing the new version onto
+/// the newer mask revision would lose data. Carries the mask-sync reasons,
+/// which only the shell can put into words.
+final class NewVersionLossException implements Exception {
+  /// Creates the refusal with what would be lost.
+  const NewVersionLossException(this.reasons);
+
+  /// What the re-key would drop or truncate.
+  final List<MaskBreakingReason> reasons;
+
+  @override
+  String toString() => 'NewVersionLossException: $reasons';
 }

@@ -1575,6 +1575,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         menuChildren: <Widget>[
           _commandItem(messages, LearnAnywhereMessage.fileOpenDeck),
           _commandItem(messages, LearnAnywhereMessage.fileAddMergeDeck),
+          _commandItem(
+            messages,
+            LearnAnywhereMessage.fileUpdateFromNewVersion,
+          ),
           _commandItem(messages, LearnAnywhereMessage.fileSave),
           _commandItem(messages, LearnAnywhereMessage.fileSaveAs),
           _commandItem(messages, LearnAnywhereMessage.fileNewDeck),
@@ -3435,6 +3439,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         await _openDeck();
       case LearnAnywhereMessage.fileAddMergeDeck:
         await _mergeDeck();
+      case LearnAnywhereMessage.fileUpdateFromNewVersion:
+        await _updateDeckFromNewVersion();
       case LearnAnywhereMessage.fileSave:
         await _saveDeck(saveAs: false);
       case LearnAnywhereMessage.fileSaveAs:
@@ -3590,10 +3596,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     }
     await _guardedFileOperation(() async {
       _endLearnSessionBeforeDeckChange();
-      _document = await _fileService.openDeck(_document, path);
-      final LearnAnywhereMessage? maskStatus = await _reconcileLinkedMask();
-      _resetRangeForDeck();
-      _selectRoute(_DesktopRoute.fileOperations);
+      final LearnAnywhereMessage? maskStatus = await _readDeckIntoMemory(path);
       // A lifetime file that is there but unreadable outranks the mask note:
       // it is the one that says this whole sitting will not reach the record,
       // and the record refuses to be written over a file it never read.
@@ -3608,6 +3611,90 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       unawaited(_saveSettings());
     });
     await _maybeAutoLoadStatistics(path);
+  }
+
+  /// Makes the deck at [path] the open deck, with its lifetime record and
+  /// its linked mask reconciled, and returns the mask note, if any (see
+  /// [_reconcileLinkedMask]). Nothing is asked or saved first.
+  Future<LearnAnywhereMessage?> _readDeckIntoMemory(String path) async {
+    _document = await _fileService.openDeck(_document, path);
+    final LearnAnywhereMessage? maskStatus = await _reconcileLinkedMask();
+    _resetRangeForDeck();
+    _selectRoute(_DesktopRoute.fileOperations);
+    return maskStatus;
+  }
+
+  /// File ▸ Update deck from new version: takes another copy of the open
+  /// deck — typos fixed, units added — keeping the learner's own flags on the
+  /// matching units ([takeNewVersion]), and reports how many flags came across
+  /// and how many were lost with their unit.
+  ///
+  /// The new version is written over the open deck's own file, then read back
+  /// as opening it would, so its lifetime record and session statistics
+  /// realign onto the new units exactly as after an edit made elsewhere. It
+  /// runs no detection and offers no recompute: the next session end does.
+  Future<void> _updateDeckFromNewVersion() async {
+    if (_document.deckPath == null) {
+      _setFileStatus(LearnAnywhereMessage.errorNewVersionUnsaved);
+      return;
+    }
+    final String? incomingPath = await _pickOpenPath(
+      extension: 'vok',
+      typeLabel: LearnAnywhereMessage.filePickerDeckType,
+    );
+    if (incomingPath == null) {
+      return;
+    }
+    if (!await _confirmAndAutoSaveStats()) {
+      return;
+    }
+    String? updatedPath;
+    await _guardedFileOperation(() async {
+      // Ending a session queues detection's write of THIS deck; it must land
+      // before the new version does, not on top of it — and the flags it adds
+      // are the learner's to carry over.
+      _endLearnSessionBeforeDeckChange();
+      await _difficultWriteChain;
+      final String deckPath = _document.deckPath!;
+      final ({int carried, int dropped}) taken;
+      try {
+        taken = await _fileService.updateDeckFromNewVersion(
+          _document,
+          incomingPath,
+        );
+      } on NewVersionLossException catch (refusal) {
+        final LearnAnywhereLocalizations messages =
+            LearnAnywhereLocalizations.of(context);
+        _setFileStatus(
+          LearnAnywhereMessage.errorNewVersionWouldLoseData,
+          placeholders: <String, String>{
+            'detail': <String>[
+              for (final MaskBreakingReason reason in refusal.reasons)
+                '• ${describeBreakingReason(messages, reason)}',
+            ].join('\n'),
+          },
+        );
+        return;
+      }
+      await _readDeckIntoMemory(deckPath);
+      updatedPath = deckPath;
+      if (_document.allTime.isUnreadableAt(deckPath)) {
+        _setFileStatus(LearnAnywhereMessage.fileAllTimeUnreadable);
+      } else {
+        _setFileStatus(
+          LearnAnywhereMessage.fileUpdateFromNewVersionDone,
+          placeholders: <String, String>{
+            'deck': _filePicker.fileNameOf(deckPath),
+            'carried': '${taken.carried}',
+            'dropped': '${taken.dropped}',
+          },
+        );
+      }
+      _setLastDir('vok', incomingPath);
+    });
+    if (updatedPath case final String reopened) {
+      await _maybeAutoLoadStatistics(reopened);
+    }
   }
 
   /// Reconciles the just-opened deck's embedded mask cache against its
