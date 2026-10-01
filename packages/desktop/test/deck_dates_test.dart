@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -81,13 +82,133 @@ void main() {
       expect(lastEditedOnDisk(copy), earlier);
     });
 
-    test('an undated deck saved without an edit stays undated', () async {
+    test('an undated deck first saved without an edit keeps its file time as '
+        'the date', () async {
       final DesktopDocument opened = await openWritten(
         'deck.vok',
         _deck(<String>['one']),
       );
-      await service.saveDeck(opened);
-      expect(lastEditedOnDisk(opened.deckPath!), isNull);
+      final DateTime modified = DateTime(2025, 6, 7, 8, 9, 10);
+      File(opened.deckPath!).setLastModifiedSync(modified);
+
+      final DesktopDocument saved = await service.writeDeck(
+        opened.copyWith(
+          deck: opened.deck.copyWith(
+            units: <LearningUnit>[
+              opened.deck.units.single.copyWith(
+                direction1Flags: const DifficultFlags(manual: true),
+              ),
+            ],
+          ),
+        ),
+        opened.deckPath!,
+      );
+
+      expect(lastEditedOnDisk(opened.deckPath!), LocalTimestamp.of(modified));
+      expect(saved.deck.lastEdited, LocalTimestamp.of(modified));
+
+      // Later writes keep it: the file's time is now the write's own.
+      await service.writeDeck(saved, opened.deckPath!);
+      expect(lastEditedOnDisk(opened.deckPath!), LocalTimestamp.of(modified));
+    });
+
+    test('an undated deck whose file already carries a flag stays undated',
+        () async {
+      for (final String key in <String>[
+        'manualDifficult1',
+        'autoDifficult2',
+        'manualDifficult',
+        'autoDifficult',
+      ]) {
+        final String path = inTemp('$key.vok');
+        final Map<String, Object?> json =
+            jsonDecode(encodeDeckJson(_deck(<String>['one'])))
+                as Map<String, Object?>;
+        ((json['units']! as List<Object?>).single! as Map<String, Object?>)[key] =
+            true;
+        File(path)
+          ..writeAsStringSync(jsonEncode(json))
+          ..setLastModifiedSync(DateTime(2025, 6, 7, 8, 9, 10));
+        final DesktopDocument opened = await service.openDeck(
+          DesktopDocument.empty(_mask()),
+          path,
+        );
+
+        await service.writeDeck(opened, path);
+        expect(lastEditedOnDisk(path), isNull, reason: key);
+      }
+    });
+
+    test('a write to a path with no file yet seeds nothing', () async {
+      final DesktopDocument unsaved = DesktopDocument.empty(_mask()).copyWith(
+        deck: _deck(<String>['one']),
+      );
+      final String path = inTemp('new.vok');
+      await service.writeDeck(unsaved, path);
+      expect(lastEditedOnDisk(path), isNull);
+    });
+
+    test('a content write dates the deck now, not by its file time', () async {
+      final DesktopDocument opened = await openWritten(
+        'deck.vok',
+        _deck(<String>['one']),
+      );
+      File(opened.deckPath!).setLastModifiedSync(DateTime(2025, 6, 7, 8, 9, 10));
+
+      final DateTime before = DateTime.now();
+      await service.writeDeck(
+        opened.copyWith(unitsEdited: true),
+        opened.deckPath!,
+      );
+      expect(
+        lastEditedOnDisk(opened.deckPath!)!.instant.isBefore(
+          before.toUtc().subtract(const Duration(seconds: 1)),
+        ),
+        isFalse,
+      );
+    });
+
+    test('mask propagation and sync seed an undated, unflagged deck from its '
+        'file time and leave a flagged one undated', () async {
+      final DateTime modified = DateTime(2025, 6, 7, 8, 9, 10);
+      final String plain = inTemp('plain.vok');
+      final String flagged = inTemp('flagged.vok');
+      File(plain)
+        ..writeAsStringSync(encodeDeckJson(_deck(<String>['one'])))
+        ..setLastModifiedSync(modified);
+      File(flagged)
+        ..writeAsStringSync(
+          encodeDeckJson(
+            LearningDeck(
+              mask: _mask(),
+              units: <LearningUnit>[
+                LearningUnit(
+                  categoryId: 1,
+                  fields: <int, FieldValue>{0: FieldValue.plain('one')},
+                  direction2Flags: const DifficultFlags(automatic: true),
+                ),
+              ],
+            ),
+          ),
+        )
+        ..setLastModifiedSync(modified);
+
+      await service.applyMaskPropagation(
+        newMask: _mask().copyWith(revision: 7),
+        deckPaths: <String>[plain, flagged],
+      );
+      expect(lastEditedOnDisk(plain), LocalTimestamp.of(modified));
+      expect(lastEditedOnDisk(flagged), isNull);
+
+      final String viaSync = inTemp('sync.vok');
+      File(viaSync)
+        ..writeAsStringSync(encodeDeckJson(_deck(<String>['one'])))
+        ..setLastModifiedSync(modified);
+      await service.applyMaskSync(
+        reference: _mask().copyWith(revision: 8),
+        paths: <String>[viaSync],
+      );
+      expect(lastEditedOnDisk(viaSync), LocalTimestamp.of(modified));
     });
 
     test('opening a deck starts with no pending unit edit', () async {

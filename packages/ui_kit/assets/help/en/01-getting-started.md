@@ -84,8 +84,11 @@ have been neglecting:
 - **Last edited** — when you last changed the deck's units and saved them: typed in a
   field, added or removed a unit. Practising does not count, and neither does a change
   to the deck's mask. A deck last saved by an older
-  version of Learn Anywhere has no such date and shows **not recorded** until you next
-  edit and save it.
+  version of Learn Anywhere has no such date. It gets one the first time this version
+  saves it, taken from the file's own modification time, so the date is not lost. The
+  exception is a deck that a development build already marked with difficult flags: its
+  file time reflects that marking, not an edit, so it shows **not recorded** until you
+  next edit and save it.
 - **Last learned** — when you last practised the deck, read from the statistics files
   beside it. A deck you have never practised shows **not learned yet**.
 

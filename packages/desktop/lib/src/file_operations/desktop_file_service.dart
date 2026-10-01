@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:learn_anywhere_core/core.dart';
@@ -213,9 +214,34 @@ final class DesktopFileService {
   ) async {
     final LearningDeck deck = current.unitsEdited
         ? current.deck.copyWith(lastEdited: LocalTimestamp.of(DateTime.now()))
-        : current.deck;
+        : await _seededFromFile(current.deck, current.deckPath);
     await saveDeckSnapshot(deck, path);
     return current.copyWith(deck: deck, unitsEdited: false);
+  }
+
+  /// [deck] with the date its file's modification time vouches for, when the
+  /// deck is undated and about to be rewritten without a unit change.
+  ///
+  /// An older build left no date, so the file's own time is the only evidence
+  /// of the last real edit, and the write about to happen destroys it. A file
+  /// that is gone (or unreadable) vouches for nothing.
+  Future<LearningDeck> _seededFromFile(LearningDeck deck, String? path) async {
+    if (deck.lastEdited != null || path == null) {
+      return deck;
+    }
+    final File file = File(path);
+    try {
+      if (!await file.exists()) {
+        return deck;
+      }
+      final LocalTimestamp? date = _lastEditedEvidence(
+        await file.readAsString(),
+        await file.lastModified(),
+      );
+      return date == null ? deck : deck.copyWith(lastEdited: date);
+    } on Object {
+      return deck;
+    }
   }
 
   /// Saves [deck] to [path] without changing the current desktop document.
@@ -431,9 +457,14 @@ final class DesktopFileService {
     for (final String path in deckPaths) {
       bool wrote = false;
       try {
-        final LearningDeck deck = decodeDeckJson(await File(path).readAsString());
-        final LearningDeck updated = applyMaskToDeck(deck, newMask);
-        await File(path).writeAsString(encodeDeckJson(updated));
+        final File file = File(path);
+        final String text = await file.readAsString();
+        final DateTime modified = await file.lastModified();
+        final LearningDeck updated = applyMaskToDeck(
+          _seededFromText(decodeDeckJson(text), text, modified),
+          newMask,
+        );
+        await file.writeAsString(encodeDeckJson(updated));
         wrote = true;
       } on Object {
         wrote = false;
@@ -552,12 +583,17 @@ final class DesktopFileService {
           await File(path).writeAsString(encodeMaskJson(reference));
           wrote = true;
         } else if (DeckPaths.hasExtension(path, 'vok')) {
-          final LearningDeck deck = decodeDeckJson(
-            await File(path).readAsString(),
+          final File file = File(path);
+          final String text = await file.readAsString();
+          final DateTime modified = await file.lastModified();
+          final LearningDeck deck = _seededFromText(
+            decodeDeckJson(text),
+            text,
+            modified,
           );
-          await File(
-            path,
-          ).writeAsString(encodeDeckJson(applyMaskToDeck(deck, reference)));
+          await file.writeAsString(
+            encodeDeckJson(applyMaskToDeck(deck, reference)),
+          );
           wrote = true;
         }
       } on Object {
@@ -974,6 +1010,56 @@ final class DesktopFileService {
       totalUnits: summary.totalUnits,
     );
   }
+}
+
+/// The keys a unit carries once flagged: the four per-direction ones and the
+/// development builds' direction-less pair.
+const List<String> _flagKeys = <String>[
+  'manualDifficult1',
+  'manualDifficult2',
+  'autoDifficult1',
+  'autoDifficult2',
+  'manualDifficult',
+  'autoDifficult',
+];
+
+/// [deck], dated from the file it was decoded from when it has no date of its
+/// own; see [_lastEditedEvidence].
+LearningDeck _seededFromText(LearningDeck deck, String text, DateTime modified) {
+  if (deck.lastEdited != null) {
+    return deck;
+  }
+  final LocalTimestamp? date = _lastEditedEvidence(text, modified);
+  return date == null ? deck : deck.copyWith(lastEdited: date);
+}
+
+/// What the deck file [text], last modified at [modified], says about when its
+/// units were last edited, or `null` for "not recorded".
+///
+/// A date already in the file wins. Otherwise the modification time is the
+/// evidence — unless a unit carries a flag key, which only a development build
+/// wrote, so that time is a flag write and not an edit.
+LocalTimestamp? _lastEditedEvidence(String text, DateTime modified) {
+  final Object? json = jsonDecode(text);
+  if (json is! Map) {
+    return null;
+  }
+  final Object? stored = json['lastEdited'];
+  if (stored is String) {
+    final LocalTimestamp? parsed = LocalTimestamp.tryParse(stored);
+    if (parsed != null) {
+      return parsed;
+    }
+  }
+  final Object? units = json['units'];
+  if (units is List) {
+    for (final Object? unit in units) {
+      if (unit is Map && _flagKeys.any(unit.containsKey)) {
+        return null;
+      }
+    }
+  }
+  return LocalTimestamp.of(modified);
 }
 
 /// What became of a write of the deck's lifetime record.

@@ -90,8 +90,12 @@ Unter jedem Eintrag stehen zwei Daten. So erkennen Sie, welche Lern-Datei Sie eb
   gespeichert haben: ein Feld überschrieben, eine Lerneinheit hinzugefügt oder
   gelöscht. Das Üben zählt nicht, ebenso
   wenig eine Änderung an der Maske der Datei. Eine Lern-Datei, die zuletzt von einer
-  älteren Version von Learn Anywhere gespeichert wurde, kennt dieses Datum nicht und
-  zeigt **nicht erfasst**, bis Sie sie das nächste Mal bearbeiten und speichern.
+  älteren Version von Learn Anywhere gespeichert wurde, kennt dieses Datum nicht. Sie
+  erhält es, sobald diese Version sie zum ersten Mal speichert, und zwar aus dem
+  Änderungsdatum der Datei selbst, damit es nicht verloren geht. Ausgenommen ist eine
+  Datei, die ein Entwicklungs-Build schon mit Schwierig-Markierungen versehen hat: Ihr
+  Dateidatum stammt von dieser Markierung, nicht von einer Bearbeitung, daher zeigt sie
+  **nicht erfasst**, bis Sie sie das nächste Mal bearbeiten und speichern.
 - **Zuletzt gelernt** — wann Sie die Datei zuletzt geübt haben, abgelesen an den
   Statistik-Dateien daneben. Eine Datei, die Sie noch nie geübt haben, zeigt
   **noch nicht gelernt**.
