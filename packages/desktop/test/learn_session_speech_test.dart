@@ -126,7 +126,7 @@ void main() {
     LearningDeck sessionDeck,
     bool withInput,
     ValueChanged<List<UnitStats>> onStatisticsChanged,
-    ValueChanged<SessionItem>? onToggleDifficult,
+    DifficultFlags Function(SessionItem, DifficultFlags)? onToggleDifficult,
   ) {
     return MaterialApp(
       localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
@@ -162,7 +162,7 @@ void main() {
     LearningDeck? sessionDeck,
     bool withInput = false,
     ValueChanged<List<UnitStats>>? onStatisticsChanged,
-    ValueChanged<SessionItem>? onToggleDifficult,
+    DifficultFlags Function(SessionItem, DifficultFlags)? onToggleDifficult,
   }) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
@@ -600,7 +600,7 @@ void main() {
         tester,
         engine,
         withInput: true,
-        onToggleDifficult: (SessionItem _) {},
+        onToggleDifficult: (SessionItem _, DifficultFlags f) => f,
       );
       await tester.enterText(find.byType(TextField), 'Geburtstag');
       await tester.sendKeyEvent(LogicalKeyboardKey.f10);
@@ -659,7 +659,7 @@ void main() {
         tester,
         engine,
         mode: SessionMode.levelLearning,
-        onToggleDifficult: (SessionItem _) {},
+        onToggleDifficult: (SessionItem _, DifficultFlags f) => f,
       );
 
       // The top of the ladder shows the solution to be memorized: F4 reads

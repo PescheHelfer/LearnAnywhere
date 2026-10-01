@@ -160,6 +160,17 @@ dieser Richtung ganz auf — die automatische Kennzeichnung ebenso wie Ihre eige
 „nicht schwierig“ heißt nicht schwierig. Ist die Einheit in dieser Richtung nicht
 schwierig, setzt es dort Ihre manuelle Kennzeichnung.
 
+Trug die Einheit in dieser Richtung eine automatische Kennzeichnung, lässt sich ein
+versehentlicher Tastendruck rückgängig machen: `F12` durchläuft dann drei Zustände. Der
+erste Druck lässt keine Kennzeichnung übrig, der zweite setzt Ihre manuelle
+Kennzeichnung, und der dritte bringt die Kennzeichnungen zurück, die der erste entfernt
+hat, genau wie sie waren — die automatische, oder Ihre manuelle und die automatische,
+wenn es beide hatte. Ein vierter Druck beginnt von vorn. Die eigene Kennzeichnung des
+Programms zurückzubringen gilt nicht als manuelles Setzen. Der Durchlauf gilt, solange
+die Karte auf dem Bildschirm ist; wird die Einheit später wieder gefragt, beginnt er mit
+den Kennzeichnungen, die die Lern-Datei dann enthält. Eine Richtung ohne automatische
+Kennzeichnung wechselt einfach zwischen keiner Kennzeichnung und Ihrer manuellen.
+
 Die Kennzeichnung gehört zur Einheit und steht in der Lern-Datei; das Löschen einer der
 beiden Statistiken entfernt sie also nicht. Sie wird **sofort** in die Datei
 geschrieben, nicht erst beim nächsten Speichern, damit ein vergessenes Speichern oder

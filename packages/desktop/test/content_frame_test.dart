@@ -89,7 +89,7 @@ void main() {
                 onOpenEditor: () {},
                 onExit: () {},
                 // Offered, so the Difficult pill is laid out too.
-                onToggleDifficult: (SessionItem _) {},
+                onToggleDifficult: (SessionItem _, DifficultFlags f) => f,
                 // A host that speaks, so the Read aloud pill is laid out too.
                 speechEngine: const _SpeakingTtsEngine(),
               );

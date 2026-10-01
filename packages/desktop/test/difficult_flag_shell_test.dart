@@ -307,6 +307,73 @@ void main() {
     });
   });
 
+  testWidgets('F12 on an automatically flagged unit cycles none, manual, the '
+      'automatic flag back, none; a card served again starts over from what is '
+      'on disk', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'cycle.vok');
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(direction1Flags: const DifficultFlags(automatic: true)),
+      ),
+    );
+    await tester.runAsync(() async {
+      await startSession(tester, deckPath);
+      Future<void> press(String key, {required bool present}) async {
+        await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+        await untilOnDisk(tester, deckPath, key, present: present);
+      }
+
+      Set<String> flagKeys() => unitOnDisk(deckPath).keys
+          .where((String k) => k.contains('Difficult'))
+          .toSet();
+
+      await press('autoDifficult1', present: false);
+      expect(flagKeys(), isEmpty);
+      await press('manualDifficult1', present: true);
+      expect(flagKeys(), <String>{'manualDifficult1'});
+      expect(badgeShows(Icons.flag), findsOneWidget);
+      await press('autoDifficult1', present: true);
+      expect(flagKeys(), <String>{'autoDifficult1'});
+      expect(badgeShows(Icons.auto_awesome), findsOneWidget);
+      await press('autoDifficult1', present: false);
+      expect(flagKeys(), isEmpty);
+
+      // Serve the unit again: what is on disk now (no flag) is the start, so
+      // the flag removed on the earlier card is gone for good.
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await settle(tester);
+      await tester.tap(find.text('Continue'));
+      await settleAfterIo(tester);
+      expect(find.text('Check'), findsOneWidget);
+      await press('manualDifficult1', present: true);
+      expect(flagKeys(), <String>{'manualDifficult1'});
+      await press('manualDifficult1', present: false);
+      expect(flagKeys(), isEmpty);
+    });
+  });
+
+  testWidgets('F12 on a unit with no automatic flag toggles between none and '
+      'manual only', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'plain.vok');
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(direction1Flags: const DifficultFlags(manual: true)),
+      ),
+    );
+    await tester.runAsync(() async {
+      await startSession(tester, deckPath);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: false);
+      expect(unitOnDisk(deckPath).containsKey('autoDifficult1'), isFalse);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: true);
+      expect(unitOnDisk(deckPath).containsKey('autoDifficult1'), isFalse);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
+      await untilOnDisk(tester, deckPath, 'manualDifficult1', present: false);
+      expect(unitOnDisk(deckPath).containsKey('autoDifficult1'), isFalse);
+    });
+  });
+
   testWidgets('in a Direction 2 question F12 writes the Direction 2 manual '
       'flag at once, and the badge and pill show only that direction', (
     WidgetTester tester,

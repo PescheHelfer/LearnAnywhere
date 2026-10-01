@@ -27,6 +27,71 @@ LearningUnit toggleDifficult(LearningUnit unit, QueryDirection direction) {
   );
 }
 
+/// The outcome of one learning-session F12 press in one direction: the
+/// `flags` the direction now carries and the `cycleStart` to hand to the next
+/// press.
+typedef SessionToggle = ({DifficultFlags flags, DifficultFlags cycleStart});
+
+/// The learning session's F12 rule for one direction.
+///
+/// [current] is what the direction carries now; [cycleStart] is what the first
+/// press of the running cycle removed — [DifficultFlags.none] when no cycle
+/// has started, or when the direction held no automatic flag.
+///
+/// A direction that carried an automatic flag cycles through three states, so
+/// a press made by mistake can be undone: no flag, the manual flag, then the
+/// flags the first press removed, exactly as they were; a fourth press starts
+/// over. Any other direction toggles plainly between no flag and the manual
+/// flag, as [toggleDifficult] does. Restoring the automatic flag is not setting
+/// it by hand: it is the program's own verdict, put back.
+SessionToggle sessionToggleFlags(
+  DifficultFlags current,
+  DifficultFlags cycleStart,
+) {
+  if (cycleStart.automatic) {
+    if (!current.isDifficult) {
+      return (flags: const DifficultFlags(manual: true), cycleStart: cycleStart);
+    }
+    if (current == const DifficultFlags(manual: true)) {
+      return (flags: cycleStart, cycleStart: cycleStart);
+    }
+    return (flags: DifficultFlags.none, cycleStart: cycleStart);
+  }
+  if (current.isDifficult) {
+    return (
+      flags: DifficultFlags.none,
+      cycleStart: current.automatic ? current : DifficultFlags.none,
+    );
+  }
+  return (
+    flags: const DifficultFlags(manual: true),
+    cycleStart: DifficultFlags.none,
+  );
+}
+
+/// Returns [deck] with [sessionToggleFlags] applied in [direction] to the unit
+/// at the one-based [unitIndex], and the cycle start to carry to the next
+/// press. Like [toggleDifficultAt], it keeps the last-edited date.
+({LearningDeck deck, DifficultFlags cycleStart}) sessionToggleDifficultAt(
+  LearningDeck deck,
+  int unitIndex,
+  QueryDirection direction,
+  DifficultFlags cycleStart,
+) {
+  var next = cycleStart;
+  final LearningDeck toggled = _updateUnitsAt(deck, <int>{unitIndex}, (
+    LearningUnit unit,
+  ) {
+    final SessionToggle result = sessionToggleFlags(
+      unit.flagsFor(direction),
+      cycleStart,
+    );
+    next = result.cycleStart;
+    return unit.withFlags(direction, result.flags);
+  });
+  return (deck: toggled, cycleStart: next);
+}
+
 /// Returns [deck] with [toggleDifficult] applied in [direction] to the unit
 /// at the one-based [unitIndex].
 ///

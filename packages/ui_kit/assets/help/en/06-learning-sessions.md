@@ -146,6 +146,15 @@ altogether — the automatic flag as well as your own — because "not difficult
 difficult. Where the unit is not difficult in that direction, it sets your manual flag
 for it.
 
+If the unit carried an automatic flag in that direction, a press made by mistake can be
+undone: `F12` then cycles through three states. The first press leaves no flag, the
+second sets your manual flag, and the third brings back the flags the first press
+removed, exactly as they were — the automatic flag, or your manual and the automatic flag
+when it had both. A fourth press starts over. Bringing the program's own flag back does
+not count as setting it by hand. The cycle lasts while the card is on screen; when the
+unit is asked again later, it starts from the flags the deck then holds. A direction
+without an automatic flag simply switches between no flag and your manual flag.
+
 The flag belongs to the unit and is stored in the deck file, so clearing either kind of
 statistics does not remove it. It is written to the file **at once**, not at the next
 save, so a forgotten save or a crash cannot lose your verdict. Two things follow from

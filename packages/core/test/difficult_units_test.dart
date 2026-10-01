@@ -406,6 +406,86 @@ void main() {
     });
   });
 
+  group('sessionToggleFlags', () {
+    // Presses the rule [presses] times from [start] and returns each result.
+    List<DifficultFlags> press(DifficultFlags start, int presses) {
+      var current = start;
+      var cycleStart = noFlag;
+      final results = <DifficultFlags>[];
+      for (var i = 0; i < presses; i++) {
+        final SessionToggle step = sessionToggleFlags(current, cycleStart);
+        current = step.flags;
+        cycleStart = step.cycleStart;
+        results.add(current);
+      }
+      return results;
+    }
+
+    test('automatic only: none, manual, automatic back, then over', () {
+      expect(press(autoFlag, 4), <DifficultFlags>[
+        noFlag,
+        manualFlag,
+        autoFlag,
+        noFlag,
+      ]);
+    });
+
+    test('manual and automatic: the third press restores both', () {
+      expect(press(bothFlags, 5), <DifficultFlags>[
+        noFlag,
+        manualFlag,
+        bothFlags,
+        noFlag,
+        manualFlag,
+      ]);
+    });
+
+    test('manual only toggles plainly between none and manual', () {
+      expect(press(manualFlag, 3), <DifficultFlags>[
+        noFlag,
+        manualFlag,
+        noFlag,
+      ]);
+    });
+
+    test('none toggles plainly between manual and none', () {
+      expect(press(noFlag, 3), <DifficultFlags>[
+        manualFlag,
+        noFlag,
+        manualFlag,
+      ]);
+    });
+
+    test('a cycle that has not started carries nothing forward', () {
+      expect(sessionToggleFlags(manualFlag, noFlag).cycleStart, noFlag);
+      expect(sessionToggleFlags(noFlag, noFlag).cycleStart, noFlag);
+      expect(sessionToggleFlags(bothFlags, noFlag).cycleStart, bothFlags);
+    });
+
+    test('on a deck it changes one unit in one direction, keeps the date', () {
+      final LocalTimestamp edited = LocalTimestamp.tryParse(
+        '2026-09-25T16:32:11+02:00',
+      )!;
+      final LearningDeck deck = LearningDeck(
+        mask: mask,
+        units: <LearningUnit>[unit(d1: autoFlag, d2: autoFlag), unit()],
+        lastEdited: edited,
+      );
+      final result = sessionToggleDifficultAt(
+        deck,
+        1,
+        QueryDirection.direction1,
+        noFlag,
+      );
+      expect(flags(result.deck), <(DifficultFlags, DifficultFlags)>[
+        (noFlag, autoFlag),
+        (noFlag, noFlag),
+      ]);
+      expect(result.cycleStart, autoFlag);
+      expect(result.deck.lastEdited, edited);
+    });
+  });
+
   group('marking a selection', () {
     final LocalTimestamp edited = LocalTimestamp.tryParse(
       '2026-09-25T16:32:11+02:00',

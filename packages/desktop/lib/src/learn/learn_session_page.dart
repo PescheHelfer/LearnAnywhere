@@ -127,7 +127,12 @@ final class LearnSessionPage extends StatefulWidget {
   /// hands the changed deck back through [deck], which is what the pill and
   /// the badge read. Without it the session offers neither the key nor the
   /// pill.
-  final ValueChanged<SessionItem>? onToggleDifficult;
+  ///
+  /// The second argument is what the first press of the unit's running F12
+  /// cycle removed (none before it starts); the shell returns what the next
+  /// press should be given. The page forgets it when the next card is drawn.
+  final DifficultFlags Function(SessionItem item, DifficultFlags cycleStart)?
+  onToggleDifficult;
 
   /// The host's speech, injected by the shell.
   ///
@@ -408,6 +413,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   int _speechGeneration = 0;
 
   SessionItem? _currentItem;
+  // What the first F12 press on the card on screen removed, for the shell's
+  // three-state cycle. Lives only while the card does.
+  DifficultFlags _flagCycleStart = DifficultFlags.none;
   AnswerEvaluation? _evaluation;
   // Display classification of the revealed answer (correct/almost/wrong). Drives
   // the result message and which rating labels are offered; never recorded.
@@ -914,11 +922,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   /// was: marking never rates, reveals or moves on.
   void _toggleDifficult() {
     final SessionItem? item = _currentItem;
-    final ValueChanged<SessionItem>? onToggle = widget.onToggleDifficult;
+    final DifficultFlags Function(SessionItem, DifficultFlags)? onToggle =
+        widget.onToggleDifficult;
     if (item == null || onToggle == null) {
       return;
     }
-    onToggle(item);
+    _flagCycleStart = onToggle(item, _flagCycleStart);
   }
 
   /// The draft with the setup's unit range, clamped to the deck, and its
@@ -1026,6 +1035,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     _resetAnswerControllers(next);
     setState(() {
       _currentItem = next;
+      _flagCycleStart = DifficultFlags.none;
       _evaluation = null;
       _selectedRating = AttemptRating.noCount;
       _elapsedSeconds = 0;

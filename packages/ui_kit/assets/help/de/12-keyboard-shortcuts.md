@@ -85,7 +85,7 @@ die Datei erst beim Speichern. Siehe
 | `F7` | Bewertungsschaltfläche 3 |
 | `F9` | Antwortansicht durchschalten: Korrektur → Lösung → Ihre Antwort |
 | `F10` | Anzeigen (beim Stufenlernen auf Stufe 3: Verdecken & tippen, vor dem Anzeigen) |
-| `F12` | Einheit in der gefragten Abfragerichtung als schwierig kennzeichnen oder ihre Schwierigkeit dort aufheben — vor und nach dem Anzeigen der Antwort |
+| `F12` | Einheit in der gefragten Abfragerichtung als schwierig kennzeichnen oder ihre Schwierigkeit dort aufheben — vor und nach dem Anzeigen der Antwort. Nach einer automatischen Kennzeichnung: keine, manuelle, automatische zurück |
 | `Esc` | Sitzung abbrechen, zurück zur Einrichtung |
 | `Enter` / `Tab` | Nächste Lücke in einem mehrteiligen Feld |
 | `Rücktaste` (bei leerer Lücke) | Vorherige Lücke |

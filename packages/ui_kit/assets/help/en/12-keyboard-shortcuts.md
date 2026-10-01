@@ -80,7 +80,7 @@ the change is part of the pending edit and reaches the file only when you save. 
 | `F7` | Rating button 3 |
 | `F9` | Cycle answer view: Correction → Solution → Your answer |
 | `F10` | Reveal (in Level Learning at level 3: Hide & type, before Reveal) |
-| `F12` | Mark the unit difficult in the direction being asked, or remove its difficulty there — before and after the answer is shown |
+| `F12` | Mark the unit difficult in the direction being asked, or remove its difficulty there — before and after the answer is shown. After an automatic flag: none, manual, automatic back |
 | `Esc` | Cancel session, back to setup |
 | `Enter` / `Tab` | Next blank, in a multi-blank field |
 | `Backspace` (on an empty blank) | Previous blank |

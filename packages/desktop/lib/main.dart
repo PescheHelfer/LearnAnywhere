@@ -3151,9 +3151,22 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// flag stays in memory only, and goes out with the next write of the deck.
   /// A deck that has never been saved has no file yet: its flags ride along
   /// with the first save.
-  void _toggleDifficult(SessionItem item) {
-    _applyDifficultToggle(item.unitIndex, item.direction);
+  ///
+  /// The rule is the core's session cycle: a direction that carried an
+  /// automatic flag goes none, manual, then back as it was. [cycleStart] is
+  /// what the cycle's first press removed, and the flags to remember for the
+  /// next press are returned.
+  DifficultFlags _toggleDifficult(SessionItem item, DifficultFlags cycleStart) {
+    final ({LearningDeck deck, DifficultFlags cycleStart}) result =
+        sessionToggleDifficultAt(
+          _document.deck,
+          item.unitIndex,
+          item.direction,
+          cycleStart,
+        );
+    setState(() => _document = _document.copyWith(deck: result.deck));
     unawaited(_writeDifficultFlags());
+    return result.cycleStart;
   }
 
   /// Marks or unmarks the units selected in the statistics unit list — [change]
