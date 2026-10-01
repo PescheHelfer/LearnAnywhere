@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
-import '../widgets/difficult_badge.dart';
+import '../widgets/difficult_pill_and_indicator.dart';
 
 /// Acts on the units selected in the statistics unit list, given by their
 /// one-based indices in ascending order — only those the list shows under its

@@ -309,6 +309,42 @@ void main() {
     expect(reopened.statistics.single.direction1.attempts, 1);
   });
 
+  test('flags set on desktop arrive, are read, and are never rewritten', () async {
+    final String source = encodeDeckJson(
+      _deck(
+        extraUnits: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{0: PlainFieldValue('goodbye')},
+            direction1Flags: DifficultFlags(manual: true),
+            direction2Flags: DifficultFlags(automatic: true),
+          ),
+        ],
+      ),
+    );
+    final File fixture = File('${scratch.path}/flagged.vok')
+      ..writeAsStringSync(source);
+    await service.importFiles(<fs.XFile>[fs.XFile(fixture.path)]);
+    final File imported = File('${library.path}/flagged.vok');
+    final List<int> importedBytes = imported.readAsBytesSync();
+    expect(utf8.decode(importedBytes), source);
+
+    final MobileDeckDocument opened = await service.openDeck(imported.path);
+    final LearningUnit flagged = opened.deck.units[1];
+    expect(flagged.direction1Flags, const DifficultFlags(manual: true));
+    expect(flagged.direction2Flags, const DifficultFlags(automatic: true));
+
+    // Practising writes the statistics sidecar, never the deck.
+    await service.saveStatistics(opened, <UnitStats>[
+      const UnitStats(index: 1),
+      UnitStats(
+        index: 2,
+        direction1: recordAttempt(const DirectionStats(), AttemptRating.wrong),
+      ),
+    ]);
+    expect(imported.readAsBytesSync(), importedBytes);
+  });
+
   test('loadSettings and saveSettings round-trip, beside the library', () async {
     final LearnAnywhereSettings defaults = await service.loadSettings();
     expect(defaults.minimumAttemptsGuardEnabled, isFalse);

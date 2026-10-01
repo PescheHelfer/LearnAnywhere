@@ -68,8 +68,9 @@ which wrote the code.
   learned it, and a start folder can be set so every file dialog opens where your
   decks live.
 - **An Android companion.** Import your decks onto a phone and keep practising them
-  away from the computer: think-only, two taps per card, with its own statistics.
-  Read-only by design, so nothing is edited or synced back.
+  away from the computer: think-only, two taps per card, with its own statistics. Units
+  you flagged as difficult on the desktop carry their badge there too, and can be
+  drilled on their own. Read-only by design, so nothing is edited or synced back.
 - **No database, no account, no network.** Three plain UTF-8 JSON file types you can read, diff and back up with any tool.
 
 
@@ -181,7 +182,7 @@ phones and for emulators. Open it with your file manager and allow the installat
 Android asks. Installing a newer APK over an older one keeps your library and statistics.
 
 The companion carries its own version number, independent of the desktop app's, so one
-release can pair desktop 0.11.1 with companion 0.7.0. The number in the APK's name is the
+release can pair desktop 0.11.1 with companion 0.8.0. The number in the APK's name is the
 companion's.
 
 Android refuses to install a build whose version is older than the installed one, and
@@ -240,7 +241,7 @@ One pub workspace, four packages:
 ## Status
 
 The two applications ship separately, on independent version tracks and with different
-feature sets. The desktop application is at 0.11.1; the Android companion is at 0.7.0 and
+feature sets. The desktop application is at 0.11.1; the Android companion is at 0.8.0 and
 is distributed as a sideloaded APK.
 
 ## Credits

@@ -11,14 +11,15 @@ import '../settings/mobile_speech_settings_screen.dart';
 import '../statistics/mobile_statistics_screen.dart';
 import '../widgets/mobile_form_rows.dart';
 
-/// Practice-setup screen for one deck: direction, mode, shuffle, unit range,
-/// and (Drill only) mastery threshold. Reached by opening a deck from the
-/// library; starting pushes the session.
+/// Practice-setup screen for one deck: direction, mode, shuffle, Difficult
+/// units only, unit range, and (Drill only) mastery threshold. Reached by
+/// opening a deck from the library; starting pushes the session.
 ///
-/// Mode, direction, shuffle and the mastery threshold are read from and
-/// written straight back to the persisted [LearnAnywhereSettings] through
-/// [MobileAppScope], so each choice survives leaving the screen and restarting
-/// the app — the same options desktop remembers, in the same file. They are
+/// Mode, direction, shuffle, Difficult units only and the mastery threshold
+/// are read from and written straight back to the persisted
+/// [LearnAnywhereSettings] through [MobileAppScope], so each choice survives
+/// leaving the screen and restarting the app — the same options desktop
+/// remembers, in the same file. They are
 /// deliberately NOT mirrored into local state: a second copy could drift from
 /// the stored one, and the scope already rebuilds this screen on every change.
 ///
@@ -134,11 +135,14 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
     );
   }
 
-  Future<void> _startSession() async {
+  /// The session the current choices would start, its range clamped to the
+  /// deck: what the Difficult units only count and the empty-pool check
+  /// describe, so neither can disagree with what Start session runs.
+  SessionParameters _parameters() {
     final int start = _startUnit.clamp(1, _maxUnit).toInt();
     final int end = _endUnit.clamp(start, _maxUnit).toInt();
     final LearnAnywhereSettings settings = _settings;
-    final SessionParameters parameters = SessionParameters(
+    return SessionParameters(
       directionSelection: settings.direction,
       startIndex: start,
       endIndex: end,
@@ -148,7 +152,13 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
       masteryThreshold: settings.masteryThreshold,
       minimumAttemptsGuardEnabled: settings.minimumAttemptsGuardEnabled,
       minAttempts: settings.minAttempts,
+      difficultOnly: settings.difficultOnly,
     );
+  }
+
+  Future<void> _startSession() async {
+    final LearnAnywhereSettings settings = _settings;
+    final SessionParameters parameters = _parameters();
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (BuildContext context) => MobileSessionScreen(
@@ -174,6 +184,14 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
     );
     final LearnAnywhereSettings settings = _settings;
     final bool isDrill = settings.mode == SessionMode.superQuery;
+    final SessionParameters parameters = _parameters();
+    final DifficultUnitCount difficultCount = countDifficultUnits(
+      _document.deck,
+      parameters,
+    );
+    final bool nothingDifficultToAsk =
+        parameters.difficultOnly &&
+        itemsInScope(_document.deck, parameters).isEmpty;
     return Scaffold(
       appBar: AppBar(
         title: Text(_document.deckTitle),
@@ -259,6 +277,21 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
                 _apply(settings.copyWith(shuffle: value));
               },
             ),
+            MobileToggleRow(
+              label: difficultCount.optionLabel(messages),
+              tooltip: difficultCount.optionTooltip(messages),
+              value: settings.difficultOnly,
+              onChanged: (bool value) {
+                _apply(settings.copyWith(difficultOnly: value));
+              },
+            ),
+            // The desktop's own message: it names no way of marking, because
+            // the phone has none.
+            if (nothingDifficultToAsk)
+              Text(
+                messages.message(LearnAnywhereMessage.learnNoDifficultUnits),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             const SizedBox(height: LearnAnywhereTokens.gapSmall),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +332,10 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
             ),
             const SizedBox(height: LearnAnywhereTokens.gapLarge),
             FilledButton.icon(
-              onPressed: _document.deck.units.isEmpty ? null : _startSession,
+              onPressed:
+                  _document.deck.units.isEmpty || nothingDifficultToAsk
+                  ? null
+                  : _startSession,
               icon: const Icon(Icons.play_arrow),
               label: Text(
                 messages.message(LearnAnywhereMessage.learnStartSession),

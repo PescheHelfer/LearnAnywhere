@@ -52,6 +52,7 @@ final class MobileToggleRow extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.tooltip,
     super.key,
   });
 
@@ -64,14 +65,19 @@ final class MobileToggleRow extends StatelessWidget {
   /// Called when the toggle changes.
   final ValueChanged<bool> onChanged;
 
+  /// Shown on a long press, or nothing when null.
+  final String? tooltip;
+
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
+    final Widget row = SwitchListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(label),
       value: value,
       onChanged: onChanged,
     );
+    final String? tooltip = this.tooltip;
+    return tooltip == null ? row : Tooltip(message: tooltip, child: row);
   }
 }
 

@@ -21,6 +21,8 @@ It has:
 - Speaker icons and, if you switch it on, the answer read aloud automatically — see
   [Speech](#speech) below.
 - Per-deck statistics, saved after every card you rate.
+- The badge on units you flagged as difficult on the desktop, and practice restricted
+  to them — see [Difficult units](#difficult-units).
 - Theme and language settings, and the two guardrails described below.
 
 It deliberately does not have:
@@ -30,6 +32,8 @@ It deliberately does not have:
   less support, so it cannot exist without typing.
 - **Editing.** No unit editor, no mask editor, no lexicon. Decks are made on the
   desktop.
+- **Marking difficult units.** The phone shows the flags set on the desktop, but never
+  sets, clears or detects one, and has no settings for them.
 - **Sync.** The phone never sees the computer's statistics and the computer never sees
   the phone's. See "Two devices, two sets of statistics" below.
 
@@ -85,6 +89,7 @@ minus everything that only makes sense when you type:
 | **Mode** | **Drill mode**, **Endless mode**, or **Once through**. |
 | **Mastery threshold (%)** | Drill mode only: the accuracy a unit must reach before it leaves the pool. |
 | **Shuffle units** | On, cards come in a fresh random order each pass; off, they come in deck order. |
+| **Difficult units only ({count})** | Ask only the units flagged as difficult, each only in the direction it is difficult in; the count shows how many there are — see [Difficult units](#difficult-units). |
 | **Start unit** / **End unit** | Practise only part of the deck. |
 
 Your choices are remembered — all except the unit range, which resets each time you open
@@ -152,9 +157,18 @@ direction; the phone's Statistics screen always shows the combined figure, since
 no direction view of its own, so it only matches exactly when you practise **Both**
 directions.
 
+When the session asks less than the whole deck — a unit range, or
+[Difficult units only](#difficult-units) — a third figure joins them: **Remaining: 120
+(4)** means 120 questions of the deck are not yet mastered, and 4 of them are in what
+this session asks. That second figure is the one to watch: Drill mode ends with
+everything mastered exactly when it reaches 0. Both figures count questions, so with
+**Both** a unit counts once per direction. Touch and hold any of the figures for a
+reminder of what it counts.
+
 Between those deck-wide figures and the card sits the unit's own line: **Unit x/y**, then
 **Unit accuracy** — the attempts recorded against *this* unit in the direction being
-asked, as a fraction and a percentage, exactly as the desktop shows it. Do not confuse
+asked, as a fraction and a percentage, exactly as the desktop shows it — and, on a unit
+flagged as difficult, its [badge](#difficult-units). Do not confuse
 the two: **Accuracy** is the whole deck, **Unit accuracy** is the card in front of you. A
 unit you
 have never been asked reads **0/0 (0%)**, so "new to me" is never a blank. The figure
@@ -169,6 +183,39 @@ When a Drill or Once-through session runs out of cards, the app says so and offe
 **Your statistics are saved after every card you rate.** Nothing is left unsaved, and
 there is no save button — which matters on a phone, where Android may close the app the
 moment you switch away from it.
+
+## Difficult units
+
+On the desktop you can flag a unit as **difficult**, separately for each direction —
+by hand, or let the program flag the ones you keep getting wrong. The flags are stored
+in the deck file itself, so they arrive with the deck when you import it, and importing
+it again after marking more units on the computer brings the new flags along. The phone
+only reads them: it never sets, clears or finds a difficult unit on its own.
+
+**The badge.** A card that is difficult in the direction being asked shows a badge at
+the end of its unit line: a flag icon for a manual flag, a sparkle for an automatic one,
+or both, followed by **Difficult**. Touch and hold the badge to read which it is —
+**Manual flag**, **Automatic flag** or **Manual and automatic flag**. A unit that is
+difficult only the other way round shows no badge, because it is not hard in this
+question.
+
+**Practising only them.** Switch on **Difficult units only** in **Practice setup** to be
+asked just the difficult units, each only in the direction it is difficult in: with
+**Both** directions, a unit difficult only one way is never asked the easy way round. It
+works in every mode, within the unit range.
+
+- The option shows how big the session will be, in units: **(3)** when the range holds
+  every unit that is difficult in the chosen direction, **(1/3)** when the range leaves
+  some out — one of the deck's three. With **Both** a unit difficult either way counts
+  once. The count follows **Start unit**, **End unit** and the direction as you change
+  them; touch and hold the option to have it spelled out.
+- If no unit in the range is difficult in the chosen direction, the setup says so and
+  **Start session** stays unavailable until you switch the option off, widen the range
+  or choose another direction.
+- During the session, **Remaining** shows how much of it is left, as described in
+  [A card, in two taps](#a-card-in-two-taps).
+- Mastering a unit takes it out of a Drill session as usual, but does not take its flag
+  away. Only the desktop can unmark it.
 
 ## Speech
 

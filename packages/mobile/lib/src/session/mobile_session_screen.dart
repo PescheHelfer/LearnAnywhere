@@ -9,6 +9,9 @@ import '../mobile_file_service.dart';
 
 /// Mobile read-only learning session for one already-configured deck.
 ///
+/// Read-only for difficulty too: the card shows the badge desktop's flags
+/// earn, but nothing here can set or clear one.
+///
 /// Two taps per card: prompt with "Show answer" reveals the solution,
 /// remarks, and the Knew it / Didn't know / No count buttons — tapping any
 /// of those both rates the card and advances to the next one. Statistics are
@@ -376,21 +379,21 @@ final class _MobileSessionHeader extends StatelessWidget {
     // Deck total in the session's direction, matching desktop's live pills and
     // the statistics screen for this deck — never a narrower, range-restricted
     // slice and never a per-sitting counter. See deckWideScope/directionViewFor
-    // in engine.dart.
-    final SessionParameters readoutScope = deckWideScope(parameters);
+    // in engine.dart. Remaining's session figure is the one exception, and
+    // the readout keeps it apart.
     final StatisticsDirectionView view = directionViewFor(
       parameters.directionSelection,
     );
     final int total = sessionItemCount(
       unitCount: document.deck.units.length,
-      parameters: readoutScope,
+      parameters: deckWideScope(parameters),
     );
-    final int remaining = activeSuperQueryPool(
+    final RemainingReadout remaining = remainingReadout(
       deck: document.deck,
       statistics: document.statistics,
-      parameters: readoutScope,
-    ).length;
-    final int mastered = (total - remaining).clamp(0, total);
+      parameters: parameters,
+    );
+    final int mastered = (total - remaining.inDeck).clamp(0, total);
     final StatisticsSummary summary = aggregateStatistics(
       unitCount: document.deck.units.length,
       statistics: document.statistics,
@@ -442,17 +445,32 @@ final class _MobileSessionHeader extends StatelessWidget {
               spacing: LearnAnywhereTokens.gapSmall,
               runSpacing: LearnAnywhereTokens.gapSmall,
               children: <Widget>[
-                // Two pills, not three: on a phone the third pushed the row
-                // onto a second line, and shrinking the figures to buy that
-                // back would cost more than it saved. Mastered carries the
-                // total, exactly as the desktop's own drill pill does, so
-                // what is left is read off it and off the bar above.
+                // Two pills in a whole-deck session: on a phone a third
+                // pushed the row onto a second line, and shrinking the
+                // figures to buy that back would cost more than it saved.
+                // Mastered carries the total, exactly as the desktop's own
+                // drill pill does, so the deck's Remaining is read off it and
+                // off the bar above.
                 _InfoChip(
                   label: messages.message(
                     LearnAnywhereMessage.learnLiveMastered,
                   ),
                   value: '$mastered/$total',
+                  tooltip: messages.message(
+                    LearnAnywhereMessage.learnLiveMasteredTooltip,
+                  ),
                 ),
+                // A restricted session's own figure cannot be read off
+                // anything else, so it earns the third pill, worded and
+                // formatted as on desktop: "Remaining: n (m)".
+                if (remaining.restricted)
+                  _InfoChip(
+                    label: messages.message(
+                      LearnAnywhereMessage.learnLiveRemaining,
+                    ),
+                    value: remaining.text,
+                    tooltip: remaining.tooltip(messages),
+                  ),
                 _InfoChip(
                   label: messages.message(
                     LearnAnywhereMessage.learnLiveAccuracy,
@@ -460,6 +478,9 @@ final class _MobileSessionHeader extends StatelessWidget {
                   value:
                       '${summary.totalCorrect}/${summary.totalAttempts} '
                       '($accuracyPct%)',
+                  tooltip: messages.message(
+                    LearnAnywhereMessage.learnLiveAccuracyTooltip,
+                  ),
                 ),
               ],
             ),
@@ -471,24 +492,34 @@ final class _MobileSessionHeader extends StatelessWidget {
 }
 
 final class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.label, required this.value});
+  const _InfoChip({
+    required this.label,
+    required this.value,
+    required this.tooltip,
+  });
 
   final String label;
   final String value;
 
+  /// What the figure counts, shown on a long press.
+  final String tooltip;
+
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: LearnAnywhereTokens.smallRadius,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: LearnAnywhereTokens.gapSmall,
-          vertical: 6,
+    return Tooltip(
+      message: tooltip,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: LearnAnywhereTokens.smallRadius,
         ),
-        child: Text('$label: $value'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: LearnAnywhereTokens.gapSmall,
+            vertical: 6,
+          ),
+          child: Text('$label: $value'),
+        ),
       ),
     );
   }
@@ -979,6 +1010,7 @@ final class _UnitScaffold extends StatelessWidget {
       _learnUnitHeader(messages, item.unitIndex, document.deck.units.length),
       _unitAccuracyLabel(messages, document.statistics, item),
     ].join(' - ');
+    final LearningUnit unit = document.deck.units[item.unitIndex - 1];
     return Column(
       children: <Widget>[
         Padding(
@@ -988,14 +1020,28 @@ final class _UnitScaffold extends StatelessWidget {
             LearnAnywhereTokens.gapMedium,
             0,
           ),
+          // The badge sits on the unit's own line, as on desktop, and
+          // describes the direction being asked only: a unit difficult the
+          // other way round is not hard in this question. The Wrap drops it
+          // below the header when both do not fit.
           child: SizedBox(
             width: double.infinity,
-            child: Text(
-              header,
-              style: Theme.of(context).textTheme.labelLarge,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: LearnAnywhereTokens.gapSmall,
+              runSpacing: LearnAnywhereTokens.gapSmall / 2,
+              children: <Widget>[
+                Text(
+                  header,
+                  style: Theme.of(context).textTheme.labelLarge,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (unit.isDifficultIn(item.direction))
+                  DifficultBadge(flags: unit.flagsFor(item.direction)),
+              ],
             ),
           ),
         ),

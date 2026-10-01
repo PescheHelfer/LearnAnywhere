@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
-import '../widgets/difficult_badge.dart';
+import '../widgets/difficult_pill_and_indicator.dart';
 import 'desktop_query_options.dart';
 
 /// Desktop learning session page.
@@ -1999,19 +1999,8 @@ final class _SetupView extends StatelessWidget {
           onChanged: onShuffleChanged,
         ),
         _ToggleRow(
-          label: messages
-              .message(LearnAnywhereMessage.learnDifficultOnly)
-              .replaceAll('{count}', difficultCount.text),
-          tooltip: difficultCount.coversDeck
-              ? messages
-                    .message(LearnAnywhereMessage.learnDifficultOnlyDeckTooltip)
-                    .replaceAll('{total}', '${difficultCount.inDeck}')
-              : messages
-                    .message(
-                      LearnAnywhereMessage.learnDifficultOnlyRangeTooltip,
-                    )
-                    .replaceAll('{count}', '${difficultCount.inRange}')
-                    .replaceAll('{total}', '${difficultCount.inDeck}'),
+          label: difficultCount.optionLabel(messages),
+          tooltip: difficultCount.optionTooltip(messages),
           value: parameters.difficultOnly,
           onChanged: onDifficultOnlyChanged,
         ),
@@ -2377,16 +2366,7 @@ final class _SessionView extends StatelessWidget {
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveRemaining),
           value: remaining.text,
-          tooltip: remaining.restricted
-              ? messages
-                    .message(
-                      LearnAnywhereMessage.learnLiveRemainingRestrictedTooltip,
-                    )
-                    .replaceAll('{total}', '${remaining.inDeck}')
-                    .replaceAll('{count}', '${remaining.inSession}')
-              : messages.message(
-                  LearnAnywhereMessage.learnLiveRemainingTooltip,
-                ),
+          tooltip: remaining.tooltip(messages),
         ),
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveAccuracy),

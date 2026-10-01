@@ -1427,6 +1427,281 @@ void main() {
 
     expect(_hasAnyRichText(tester, <String>['hello']), isTrue);
   });
+
+  group('difficult units', () {
+    testWidgets('the card shows the badge for the asked direction only', (
+      WidgetTester tester,
+    ) async {
+      await _setPhoneSurface(tester);
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck(
+          'mobile_sample.vok',
+          _flaggedDeck(<DifficultFlags>[_manualFlag], <DifficultFlags>[
+            DifficultFlags.none,
+          ]),
+          statistics: const <UnitStats>[],
+        );
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('mobile_sample'));
+      await tester.pumpAndSettle();
+      await _tapStart(tester);
+
+      // Direction 1, where the unit carries a manual flag.
+      expect(find.byKey(const Key('learnDifficultBadge')), findsOneWidget);
+      expect(find.text('Difficult'), findsOneWidget);
+      expect(find.byIcon(Icons.flag), findsOneWidget);
+      await tester.longPress(find.byKey(const Key('learnDifficultBadge')));
+      await tester.pumpAndSettle();
+      expect(find.text('Manual flag'), findsOneWidget);
+
+      // Still there once the answer is up: it describes the card, not a stage.
+      await tester.tap(find.text('Show answer'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('learnDifficultBadge')), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Forward'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Backward').last);
+      await tester.pumpAndSettle();
+      await _tapStart(tester);
+
+      // Direction 2: the same unit, not difficult this way round.
+      expect(_hasAnyRichText(tester, <String>['bonjour']), isTrue);
+      expect(find.byKey(const Key('learnDifficultBadge')), findsNothing);
+    });
+
+    testWidgets('Difficult units only shows the count, restricts the session '
+        'and shows its Remaining figure', (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck(
+          'mobile_sample.vok',
+          // Unit 1 difficult in Direction 1, unit 2 nowhere, unit 3 in both.
+          _flaggedDeck(
+            <DifficultFlags>[_manualFlag, DifficultFlags.none, _automaticFlag],
+            <DifficultFlags>[
+              DifficultFlags.none,
+              DifficultFlags.none,
+              _manualFlag,
+            ],
+          ),
+          statistics: const <UnitStats>[],
+        );
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('mobile_sample'));
+      await tester.pumpAndSettle();
+
+      // The whole deck holds both of Direction 1's difficult units.
+      expect(find.text('Difficult units only (2)'), findsOneWidget);
+      await tester.longPress(find.text('Difficult units only (2)'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('2 units in this deck are difficult in the chosen direction.'),
+        findsOneWidget,
+      );
+
+      // A range that leaves unit 3 out says so.
+      await tester.enterText(find.widgetWithText(TextField, 'End unit'), '2');
+      await tester.pumpAndSettle();
+      expect(find.text('Difficult units only (1/2)'), findsOneWidget);
+
+      // The count follows the direction: Direction 2 has only unit 3.
+      await tester.tap(find.text('Forward'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Backward').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Difficult units only (0/1)'), findsOneWidget);
+      await tester.tap(find.text('Backward'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Forward').last);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.widgetWithText(TextField, 'End unit'), '3');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Difficult units only (2)'));
+      await tester.pumpAndSettle();
+      expect(fileService.savedSettings.difficultOnly, isTrue);
+
+      await _tapStart(tester);
+
+      // Three questions left in the deck, two of them in this session.
+      expect(find.text('Remaining: 3 (2)'), findsOneWidget);
+      expect(find.text('Mastered: 0/3'), findsOneWidget);
+      expect(
+        find.byTooltip(
+          'Questions not yet mastered: 3 in the whole deck, 2 of them in '
+          'what this session asks.',
+        ),
+        findsOneWidget,
+      );
+
+      // Only the difficult units are asked, each with its badge.
+      for (var card = 0; card < 6; card += 1) {
+        expect(_hasAnyRichText(tester, <String>['goodbye']), isFalse);
+        expect(_hasAnyRichText(tester, <String>['hello', 'thanks']), isTrue);
+        expect(find.byKey(const Key('learnDifficultBadge')), findsOneWidget);
+        await tester.tap(find.text('Show answer'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('No count'));
+        await tester.pumpAndSettle();
+      }
+    });
+
+    testWidgets('a whole-deck session shows one figure, a narrowed range '
+        'two', (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck(
+          'mobile_sample.vok',
+          _flaggedDeck(
+            <DifficultFlags>[
+              DifficultFlags.none,
+              DifficultFlags.none,
+              DifficultFlags.none,
+            ],
+            <DifficultFlags>[
+              DifficultFlags.none,
+              DifficultFlags.none,
+              DifficultFlags.none,
+            ],
+          ),
+          statistics: const <UnitStats>[],
+        );
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('mobile_sample'));
+      await tester.pumpAndSettle();
+      await _tapStart(tester);
+
+      // Mastered carries the whole-deck figure; no second pill repeats it.
+      expect(find.text('Mastered: 0/3'), findsOneWidget);
+      expect(find.textContaining('Remaining'), findsNothing);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextField, 'End unit'), '2');
+      await tester.pumpAndSettle();
+      await _tapStart(tester);
+
+      expect(find.text('Remaining: 3 (2)'), findsOneWidget);
+    });
+
+    testWidgets('with nothing difficult in range the setup says so and does '
+        'not start', (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck(
+          'mobile_sample.vok',
+          _flaggedDeck(<DifficultFlags>[DifficultFlags.none], <DifficultFlags>[
+            _manualFlag,
+          ]),
+          statistics: const <UnitStats>[],
+        );
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('mobile_sample'));
+      await tester.pumpAndSettle();
+
+      const String empty =
+          'No unit in the selected range is difficult in the chosen '
+          'direction, so there is nothing to ask.';
+      expect(find.text(empty), findsNothing);
+      await tester.tap(find.text('Difficult units only (0)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(empty), findsOneWidget);
+      expect(_startButton(tester).onPressed, isNull);
+
+      // Direction 2 has the flag, so the session can start.
+      await tester.tap(find.text('Forward'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Backward').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Difficult units only (1)'), findsOneWidget);
+      expect(find.text(empty), findsNothing);
+      await _tapStart(tester);
+      expect(find.byKey(const Key('learnDifficultBadge')), findsOneWidget);
+    });
+  });
+}
+
+const DifficultFlags _manualFlag = DifficultFlags(manual: true);
+const DifficultFlags _automaticFlag = DifficultFlags(automatic: true);
+
+/// A deck of up to three units ("hello", "goodbye", "thanks") on [_deck]'s
+/// mask, unit i flagged `direction1[i]` and `direction2[i]`.
+LearningDeck _flaggedDeck(
+  List<DifficultFlags> direction1,
+  List<DifficultFlags> direction2,
+) {
+  const List<(String, String)> words = <(String, String)>[
+    ('hello', 'bonjour'),
+    ('goodbye', 'au revoir'),
+    ('thanks', 'merci'),
+  ];
+  return LearningDeck(
+    mask: _deck().mask,
+    units: <LearningUnit>[
+      for (var i = 0; i < direction1.length; i += 1)
+        LearningUnit(
+          categoryId: 1,
+          fields: <int, FieldValue>{
+            0: PlainFieldValue(words[i].$1),
+            1: PlainFieldValue(words[i].$2),
+          },
+          direction1Flags: direction1[i],
+          direction2Flags: direction2[i],
+        ),
+    ],
+  );
+}
+
+/// The setup's Start session button.
+ButtonStyleButton _startButton(WidgetTester tester) {
+  return tester.widget<ButtonStyleButton>(
+    find.ancestor(
+      of: find.text('Start session'),
+      matching: find.byWidgetPredicate(
+        (Widget widget) => widget is ButtonStyleButton,
+      ),
+    ),
+  );
+}
+
+/// Scrolls the setup's Start session button into view and taps it.
+Future<void> _tapStart(WidgetTester tester) async {
+  await tester.ensureVisible(find.text('Start session'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Start session'));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _setPhoneSurface(WidgetTester tester, [Size size = const Size(360, 740)]) async {

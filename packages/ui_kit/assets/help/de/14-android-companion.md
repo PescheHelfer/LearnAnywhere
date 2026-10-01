@@ -23,6 +23,8 @@ Sie bietet:
 - Lautsprecher-Symbole und, wenn Sie es einschalten, die automatisch vorgelesene Antwort
   — siehe [Sprachausgabe](#sprachausgabe) unten.
 - Statistik je Lern-Datei, gespeichert nach jeder bewerteten Karte.
+- Das Abzeichen an Einheiten, die Sie am Desktop als schwierig gekennzeichnet haben, und
+  Üben nur dieser Einheiten — siehe [Schwierige Einheiten](#schwierige-einheiten).
 - Einstellungen für Darstellung und Sprache sowie die beiden unten beschriebenen
   Schutzregeln.
 
@@ -34,6 +36,9 @@ Bewusst nicht enthalten sind:
   Hilfestellung ab und kann ohne Tippen nicht existieren.
 - **Bearbeiten.** Keine Bearbeitung von Lerneinheiten, kein Mask Editor, kein Lexikon.
   Lern-Dateien entstehen am Desktop.
+- **Schwierige Einheiten kennzeichnen.** Das Telefon zeigt die am Desktop gesetzten
+  Kennzeichnungen, setzt, entfernt oder erkennt aber selbst nie eine und hat keine
+  Einstellungen dafür.
 - **Abgleich.** Das Telefon sieht nie die Statistik des Computers und der Computer nie
   die des Telefons. Siehe "Zwei Geräte, zwei Statistiken" weiter unten.
 
@@ -96,6 +101,7 @@ ergibt:
 | **Modus** | **Drill-Modus**, **Endlos-Modus** oder **Einmal durchgehen**. |
 | **Beherrschungsschwelle (%)** | Nur im Drill-Modus: die Trefferquote, die eine Einheit erreichen muss, um aus dem Pool zu fallen. |
 | **Einheiten mischen** | Eingeschaltet kommen die Karten in jedem Durchgang neu gemischt, ausgeschaltet in der Reihenfolge der Datei. |
+| **Nur schwierige Einheiten ({count})** | Nur die als schwierig gekennzeichneten Einheiten fragen, jede nur in der Abfragerichtung, in der sie schwierig ist; die Zahl zeigt, wie viele es sind — siehe [Schwierige Einheiten](#schwierige-einheiten). |
 | **Erste Einheit** / **Letzte Einheit** | Nur einen Teil der Lern-Datei üben. |
 
 Ihre Auswahl wird gemerkt — außer dem Einheitenbereich, der beim Öffnen einer Lern-Datei
@@ -169,10 +175,19 @@ Diese Zahlen stimmen mit den Live-Anzeigen des Desktops für dieselbe Datei und 
 Richtungsansicht hat, und stimmt deshalb nur genau überein, wenn Sie **Beide** Richtungen
 üben.
 
+Fragt die Sitzung weniger als die ganze Lern-Datei — einen Einheitenbereich oder
+[Nur schwierige Einheiten](#schwierige-einheiten) —, kommt eine dritte Zahl dazu:
+**Übrig: 120 (4)** heißt, dass 120 Fragen der Lern-Datei noch nicht beherrscht sind und 4
+davon in dem liegen, was diese Sitzung abfragt. Auf diese zweite Zahl kommt es an: Der
+Drill-Modus endet genau dann mit allem beherrscht, wenn sie 0 erreicht. Beide Zahlen
+zählen Fragen, bei **Beide** zählt eine Einheit also einmal je Richtung. Halten Sie eine
+der Zahlen gedrückt, um nachzulesen, was sie zählt.
+
 Zwischen diesen Zahlen zur ganzen Lern-Datei und der Karte steht die Zeile zur Einheit
 selbst: **Einheit x/y**, dann **Einheit korrekt** — die Versuche, die für *diese* Einheit
 in der gefragten Richtung aufgezeichnet sind, als Bruch und als Prozentzahl, genau wie
-der Desktop sie zeigt. Verwechseln Sie die beiden nicht: **Korrekt** meint die ganze
+der Desktop sie zeigt — und bei einer als schwierig gekennzeichneten Einheit ihr
+[Abzeichen](#schwierige-einheiten). Verwechseln Sie die beiden nicht: **Korrekt** meint die ganze
 Lern-Datei, **Einheit korrekt** die Karte vor Ihnen. Eine noch nie gefragte Einheit zeigt
 **0/0 (0%)**, damit "noch nie geübt" nie eine Lücke ist. Die Zahl stammt aus der
 gespeicherten Statistik der Lern-Datei und nicht aus dem laufenden Durchgang, übersteht
@@ -187,6 +202,43 @@ bietet **Sitzung erweitern** an, um weiterzumachen.
 **Ihre Statistik wird nach jeder bewerteten Karte gespeichert.** Es bleibt nichts
 ungespeichert, und es gibt keine Speichern-Schaltfläche — wichtig auf einem Telefon, wo
 Android die App in dem Moment beenden kann, in dem Sie zu etwas anderem wechseln.
+
+## Schwierige Einheiten
+
+Am Desktop können Sie eine Einheit als **schwierig** kennzeichnen, für jede
+Abfragerichtung getrennt — von Hand, oder das Programm kennzeichnet die, die Sie immer
+wieder falsch beantworten. Die Kennzeichnungen stehen in der Lern-Datei selbst, kommen
+also beim Importieren mit, und ein erneuter Import, nachdem Sie am Computer weitere
+Einheiten gekennzeichnet haben, bringt die neuen mit. Das Telefon liest sie nur: Es setzt,
+entfernt oder findet nie selbst eine schwierige Einheit.
+
+**Das Abzeichen.** Ist eine Karte in der gefragten Richtung schwierig, zeigt sie am Ende
+ihrer Einheitenzeile ein Abzeichen: ein Fähnchen für eine manuelle Kennzeichnung, ein
+Funkeln für eine automatische, oder beides, gefolgt von **Schwierig**. Halten Sie das
+Abzeichen gedrückt, um zu lesen, welche es ist — **Manuelle Kennzeichnung**,
+**Automatische Kennzeichnung** oder **Manuelle und automatische Kennzeichnung**. Eine
+Einheit, die nur andersherum schwierig ist, zeigt kein Abzeichen, denn bei dieser Frage
+ist sie nicht schwer.
+
+**Nur diese üben.** Schalten Sie in **Übung einrichten** **Nur schwierige Einheiten**
+ein, um nur die schwierigen Einheiten gefragt zu werden, jede nur in der
+Abfragerichtung, in der sie schwierig ist: Bei **Beide** Richtungen wird eine Einheit,
+die nur in einer Richtung schwierig ist, nie andersherum gefragt. Das wirkt in jedem
+Modus, innerhalb des Einheitenbereichs.
+
+- Die Option zeigt, wie groß die Sitzung wird, in Einheiten: **(3)**, wenn der Bereich
+  alle Einheiten enthält, die in der gewählten Abfragerichtung schwierig sind, **(1/3)**,
+  wenn er einige auslässt — eine der drei der Lern-Datei. Bei **Beide** zählt eine
+  Einheit, die in einer der Richtungen schwierig ist, einmal. Die Zahl folgt **Erste
+  Einheit**, **Letzte Einheit** und der Abfragerichtung, während Sie sie ändern; halten
+  Sie die Option gedrückt, um sie ausgeschrieben zu lesen.
+- Ist im Bereich keine Einheit in der gewählten Abfragerichtung schwierig, sagt die
+  Einrichtung das, und **Sitzung starten** bleibt gesperrt, bis Sie die Option
+  ausschalten, den Bereich erweitern oder eine andere Abfragerichtung wählen.
+- Während der Sitzung zeigt **Übrig**, wie viel davon noch bleibt, wie unter
+  [Eine Karte, zwei Antippen](#eine-karte-zwei-antippen) beschrieben.
+- Eine beherrschte Einheit fällt wie gewohnt aus einer Drill-Sitzung, behält aber ihre
+  Kennzeichnung. Entfernen kann sie nur der Desktop.
 
 ## Sprachausgabe
 

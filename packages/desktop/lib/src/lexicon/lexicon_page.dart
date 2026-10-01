@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
 
-import '../widgets/difficult_badge.dart';
+import '../widgets/difficult_pill_and_indicator.dart';
 
 /// Opens a folder picker and loads every `.vok` deck beneath the chosen folder
 /// (recursively), keyed by source path. Returns null when the user cancels.
