@@ -283,33 +283,9 @@ void main() {
     });
   });
 
-  testWidgets('F12 on an automatically flagged unit removes the flag', (
-    WidgetTester tester,
-  ) async {
-    final String deckPath = p.join(temp.path, 'auto.vok');
-    File(deckPath).writeAsStringSync(
-      encodeDeckJson(
-        _deck(direction1Flags: const DifficultFlags(automatic: true)),
-      ),
-    );
-    await tester.runAsync(() async {
-      await startSession(tester, deckPath);
-      expect(find.byTooltip('Automatic flag'), findsOneWidget);
-      expect(badgeShows(Icons.auto_awesome), findsOneWidget);
-      expect(badgeShows(Icons.flag), findsNothing);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.f12);
-      await untilOnDisk(tester, deckPath, 'autoDifficult1', present: false);
-      expect(unitOnDisk(deckPath).containsKey('autoDifficult1'), isFalse);
-      expect(unitOnDisk(deckPath).containsKey('manualDifficult1'), isFalse);
-      expect(find.byTooltip('Automatic flag'), findsNothing);
-      expect(find.byTooltip('Manual flag'), findsNothing);
-    });
-  });
-
   testWidgets('F12 on an automatically flagged unit cycles none, manual, the '
-      'automatic flag back, none; a card served again starts over from what is '
-      'on disk', (WidgetTester tester) async {
+      'automatic flag back, none, the badge and pill following; a card served '
+      'again starts over from what is on disk', (WidgetTester tester) async {
     final String deckPath = p.join(temp.path, 'cycle.vok');
     File(deckPath).writeAsStringSync(
       encodeDeckJson(
@@ -326,20 +302,49 @@ void main() {
       Set<String> flagKeys() => unitOnDisk(deckPath).keys
           .where((String k) => k.contains('Difficult'))
           .toSet();
+      bool pillFilled() => find
+          .descendant(
+            of: find.byKey(const Key('learnDifficultPill')),
+            matching: find.byType(FilledButton),
+          )
+          .evaluate()
+          .isNotEmpty;
 
+      expect(find.byTooltip('Automatic flag'), findsOneWidget);
+      expect(badgeShows(Icons.auto_awesome), findsOneWidget);
+      expect(badgeShows(Icons.flag), findsNothing);
+      expect(pillFilled(), isTrue);
+
+      // First press: no flag, neither kind.
       await press('autoDifficult1', present: false);
       expect(flagKeys(), isEmpty);
+      expect(badge, findsNothing);
+      expect(pillFilled(), isFalse);
+
+      // Second press: the manual flag only.
       await press('manualDifficult1', present: true);
       expect(flagKeys(), <String>{'manualDifficult1'});
       expect(badgeShows(Icons.flag), findsOneWidget);
-      await press('autoDifficult1', present: true);
+      expect(badgeShows(Icons.auto_awesome), findsNothing);
+      expect(pillFilled(), isTrue);
+
+      // Third press, by the pill: the automatic flag back, written at once,
+      // and not a manual one.
+      await tester.tap(find.byKey(const Key('learnDifficultPill')));
+      await untilOnDisk(tester, deckPath, 'autoDifficult1', present: true);
       expect(flagKeys(), <String>{'autoDifficult1'});
       expect(badgeShows(Icons.auto_awesome), findsOneWidget);
+      expect(badgeShows(Icons.flag), findsNothing);
+      expect(pillFilled(), isTrue);
+
+      // Fourth press: over again.
       await press('autoDifficult1', present: false);
       expect(flagKeys(), isEmpty);
+      expect(pillFilled(), isFalse);
 
       // Serve the unit again: what is on disk now (no flag) is the start, so
-      // the flag removed on the earlier card is gone for good.
+      // two presses go manual and back to none — had the earlier card's cycle
+      // survived, the second would restore the automatic flag instead.
       await tester.sendKeyEvent(LogicalKeyboardKey.f10);
       await settle(tester);
       await tester.tap(find.text('Continue'));

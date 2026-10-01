@@ -3111,20 +3111,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     });
   }
 
-  /// Applies the core toggle rule to the unit at the one-based [unitIndex] in
-  /// [direction], in memory only. Shared by [_toggleDifficultInEditor] and
-  /// [_toggleDifficult], which differ only in whether — and when — the
-  /// result is written to disk.
-  void _applyDifficultToggle(int unitIndex, QueryDirection direction) {
-    setState(() {
-      _document = _document.copyWith(
-        deck: toggleDifficultAt(_document.deck, unitIndex, direction),
-      );
-    });
-  }
-
   /// Toggles the difficulty of the unit at the one-based [unitIndex] in
-  /// [direction] in the unit editor, in memory only.
+  /// [direction] in the unit editor, in memory only, by the core's plain
+  /// toggle rule — the session's three-state cycle does not apply here.
   ///
   /// Unlike [_toggleDifficult], this never writes: the editor's own rule is
   /// that nothing reaches disk until the next save (F10/Done keeps the
@@ -3132,14 +3121,19 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   /// [DesktopDocument.unitsEdited] as it found it, so a save whose only
   /// change is this flag does not date the deck, while one that also has a
   /// pending field edit still does.
-  void _toggleDifficultInEditor(int unitIndex, QueryDirection direction) =>
-      _applyDifficultToggle(unitIndex, direction);
+  void _toggleDifficultInEditor(int unitIndex, QueryDirection direction) {
+    setState(() {
+      _document = _document.copyWith(
+        deck: toggleDifficultAt(_document.deck, unitIndex, direction),
+      );
+    });
+  }
 
   // Flag writes from a session are serialized through this chain, so two F12
   // presses in quick succession land on disk in the order they were made.
   Future<void> _difficultWriteChain = Future<void>.value();
 
-  /// Toggles the difficulty of the question on screen — its unit in the
+  /// Changes the difficulty of the question on screen — its unit in the
   /// direction being asked, [item] — and writes the deck at once: the manual
   /// flag is the only record of the learner's verdict, so it must not wait
   /// for a save (ADR-0005).
