@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
@@ -94,12 +92,6 @@ final class _MobileStatisticsScreenState
     final double practicedFraction = summary.totalUnits == 0
         ? 0
         : summary.queriedUnits / summary.totalUnits;
-    final int maxCount = math.max(
-      1,
-      summary.buckets
-          .map((BucketSummary bucket) => bucket.count)
-          .fold(0, math.max),
-    );
     return Scaffold(
       appBar: AppBar(
         title: Text(messages.message(LearnAnywhereMessage.statisticsTitle)),
@@ -150,7 +142,7 @@ final class _MobileStatisticsScreenState
               _BucketRow(
                 label: _bucketLabel(messages, bucket.bucket),
                 count: bucket.count,
-                maxCount: maxCount,
+                fraction: bucket.percentageOfAll,
               ),
             const SizedBox(height: LearnAnywhereTokens.gapLarge),
             FilledButton.icon(
@@ -191,17 +183,20 @@ final class _StatPill extends StatelessWidget {
   }
 }
 
-/// One mastery-bucket row: label, proportional bar, and raw count.
+/// One mastery-bucket row: label, a bar showing its share of the whole deck
+/// (a full bar is 100 %), and raw count.
 final class _BucketRow extends StatelessWidget {
   const _BucketRow({
     required this.label,
     required this.count,
-    required this.maxCount,
+    required this.fraction,
   });
 
   final String label;
   final int count;
-  final int maxCount;
+
+  /// The bucket's share of all units, 0..1.
+  final double fraction;
 
   @override
   Widget build(BuildContext context) {
@@ -226,7 +221,7 @@ final class _BucketRow extends StatelessWidget {
                 ),
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
-                  widthFactor: (count / maxCount).clamp(0, 1),
+                  widthFactor: fraction.clamp(0, 1),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: color,

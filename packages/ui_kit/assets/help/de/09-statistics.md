@@ -127,6 +127,8 @@ Bildschirm durchgängig verwendet werden:
 Lerneinheiten gesamt, abgefragte Einheiten, Abfrage-Versuche und korrekte Versuche für
 den aktuellen Bereich, dann eine Tabelle und ein Balkendiagramm, die jede Einheit nach
 Bereich aufschlüsseln — Anzahl, Prozent von allen und Prozent der abgefragten Einheiten.
+Jeder Balken zeigt den Anteil seiner Zeile an allen Einheiten, wie **% von allen**: Ein
+voller Balken ist die ganze Lern-Datei.
 
 Unter **Noch nicht abgefragt** zählt die Tabelle nach einer kräftigeren Linie die
 [schwierigen](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen) Einheiten

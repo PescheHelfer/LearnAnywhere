@@ -112,7 +112,8 @@ Every unit's accuracy sorts it into one of seven buckets, used throughout this s
 
 Total units, practiced units, total attempts and correct attempts for the current
 scope, then a table and bar chart breaking every unit down by bucket — count, percent
-of all units, and percent of practiced units.
+of all units, and percent of practiced units. Each bar is its row's share of all units,
+like **% of all**: a full bar is the whole deck.
 
 Below **Not yet practiced**, after a stronger line, the table counts the deck's
 [difficult](06-learning-sessions.md#marking-a-unit-difficult) units. These rows are not

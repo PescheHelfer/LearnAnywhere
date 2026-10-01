@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:learn_anywhere_core/core.dart';
@@ -1258,14 +1256,8 @@ final class _OverviewTable extends StatelessWidget {
     );
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
-    // One scale for every bar, so a Difficult bar compares with the buckets'.
-    final int maxCount = math.max(
-      1,
-      <int>[
-        for (final BucketSummary bucket in summary.buckets) bucket.count,
-        breakdown.difficult,
-      ].fold(0, math.max),
-    );
+    // Every bar is its row's "% of all": a full bar is the whole deck, never
+    // merely the largest row.
     final BorderSide rowDivider = Divider.createBorderSide(context);
     // The menus' separator colour: `outlineVariant` all but disappears in the
     // Dark Blue theme, which opts into a brighter one.
@@ -1325,7 +1317,10 @@ final class _OverviewTable extends StatelessWidget {
         Text('$count'),
         Text(_percent(breakdown.shareOfAll(count))),
         const Text(''),
-        _BucketBar(fraction: count / maxCount, color: colors.tertiary),
+        _BucketBar(
+          fraction: breakdown.shareOfAll(count),
+          color: colors.tertiary,
+        ),
       ], above: above ?? rowDivider);
     }
 
@@ -1381,7 +1376,7 @@ final class _OverviewTable extends StatelessWidget {
                   : _percent(bucket.percentageOfQueried),
             ),
             _BucketBar(
-              fraction: bucket.count / maxCount,
+              fraction: bucket.percentageOfAll,
               color: colors.primary,
             ),
           ], above: rowDivider),
@@ -1417,7 +1412,8 @@ final class _OverviewTable extends StatelessWidget {
 }
 
 /// A compact inline horizontal bar sized to [fraction] (0..1), used beside a
-/// bucket row to show its relative count without a separate chart tab.
+/// bucket row to show its share of the whole deck (a full bar is 100 %)
+/// without a separate chart tab.
 final class _BucketBar extends StatelessWidget {
   const _BucketBar({required this.fraction, required this.color});
 

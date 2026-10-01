@@ -266,7 +266,7 @@ The chart icon on a deck's setup screen opens **Statistics** for that deck:
   **Accuracy** across the whole deck.
 - The seven accuracy groups — **Perfect**, **Good**, **Fair**, **Unsure**, **Very
   unsure**, **Never known** and **Not yet practiced** — as labelled rows with a bar
-  showing how many units fall in each.
+  showing each group's share of the whole deck; a full bar is every unit.
 - **Clear stats...**, which asks for confirmation and then wipes this deck's history on
   this device.
 

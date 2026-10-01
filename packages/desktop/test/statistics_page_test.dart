@@ -149,6 +149,52 @@ void main() {
     );
   });
 
+  testWidgets('a full Overview bar is the whole deck, not the largest row', (
+    WidgetTester tester,
+  ) async {
+    widenSurface(tester);
+    // One of four units practised: no row holds the whole deck, so a bar
+    // scaled to the largest row would fill "Not yet practiced" completely.
+    await tester.pumpWidget(
+      buildPage(
+        deck: twoWayFlaggedDeck(),
+        statistics: const <UnitStats>[
+          UnitStats(
+            index: 1,
+            direction1: DirectionStats(attempts: 2, correct: 2),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final List<String> labels = <String>[
+      for (final List<String> row in _overviewRows(tester)) row.first,
+    ];
+    final List<double> bars = tester
+        .widgetList<FractionallySizedBox>(
+          find.descendant(
+            of: find.byKey(const Key('statisticsOverviewTable')),
+            matching: find.byType(FractionallySizedBox),
+          ),
+        )
+        .map((FractionallySizedBox bar) => bar.widthFactor!)
+        .toList();
+    expect(Map<String, double>.fromIterables(labels, bars), <String, double>{
+      'Perfect': 0.25,
+      'Good': 0,
+      'Fair': 0,
+      'Unsure': 0,
+      'Very unsure': 0,
+      'Never known': 0,
+      'Not yet practiced': 0.75,
+      'Difficult': 0.5,
+      'Manual flag only': 0.5,
+      'Automatic flag only': 0,
+      'Both flags': 0,
+    });
+  });
+
   testWidgets('keep practicing sorts by a tapped column header', (
     WidgetTester tester,
   ) async {

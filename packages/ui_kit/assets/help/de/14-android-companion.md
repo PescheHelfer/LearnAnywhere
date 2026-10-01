@@ -293,7 +293,8 @@ Das Diagramm-Symbol auf dem Einrichtungsbildschirm einer Lern-Datei öffnet die
   Versuche** und **Korrekt** über die ganze Lern-Datei.
 - Die sieben Trefferquoten-Gruppen — **Perfekt**, **Gut**, **Mittel**, **Unsicher**,
   **Sehr unsicher**, **Nie gewusst** und **Noch nicht abgefragt** — als beschriftete
-  Zeilen mit einem Balken, der zeigt, wie viele Einheiten in welche Gruppe fallen.
+  Zeilen mit einem Balken, der den Anteil der Gruppe an der ganzen Lern-Datei zeigt; ein
+  voller Balken sind alle Einheiten.
 - **Statistik löschen...**, was nach einer Bestätigung die Vorgeschichte dieser
   Lern-Datei auf diesem Gerät verwirft.
 

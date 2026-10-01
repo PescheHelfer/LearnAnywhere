@@ -5,6 +5,7 @@ import 'package:learn_anywhere_mobile/main.dart';
 import 'package:learn_anywhere_mobile/src/mobile_app_version.dart';
 import 'package:learn_anywhere_mobile/src/mobile_file_service.dart';
 import 'package:learn_anywhere_mobile/src/mobile_prefs.dart';
+import 'package:learn_anywhere_mobile/src/statistics/mobile_statistics_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -1016,6 +1017,65 @@ void main() {
       'mobile_sample.vok',
     );
     expect(cleared.single.direction1.attempts, 0);
+  });
+
+  testWidgets('a full statistics bar is the whole deck, not the largest group', (
+    WidgetTester tester,
+  ) async {
+    await _setPhoneSurface(tester);
+    // One of two units practised: each non-empty group holds half the deck,
+    // so a bar scaled to the largest group would fill both completely.
+    final LearningDeck deck = _deck(
+      extraUnits: const <LearningUnit>[
+        LearningUnit(
+          categoryId: 1,
+          fields: <int, FieldValue>{
+            0: PlainFieldValue('thanks'),
+            1: PlainFieldValue('merci'),
+          },
+        ),
+      ],
+    );
+    final List<UnitStats> recorded = <UnitStats>[
+      UnitStats(
+        index: 1,
+        direction1: recordAttempt(
+          const DirectionStats(),
+          AttemptRating.correct,
+        ),
+      ),
+      const UnitStats(index: 2),
+    ];
+    final _FakeMobileFileService fileService = _FakeMobileFileService()
+      ..seedDeck(
+        'mobile_sample.vok',
+        deck,
+        statistics: withUnitHashes(deck, recorded),
+      );
+
+    await tester.pumpWidget(
+      LearnAnywhereMobileApp(
+        prefs: await _fakePrefs(),
+        fileService: fileService,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('mobile_sample'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Statistics'));
+    await tester.pumpAndSettle();
+
+    final List<double> bars = tester
+        .widgetList<FractionallySizedBox>(
+          find.descendant(
+            of: find.byType(MobileStatisticsScreen),
+            matching: find.byType(FractionallySizedBox),
+          ),
+        )
+        .map((FractionallySizedBox bar) => bar.widthFactor!)
+        .toList();
+    // Perfect first, Not yet practiced last, as the rows are laid out.
+    expect(bars, <double>[0.5, 0, 0, 0, 0, 0, 0.5]);
   });
 
   testWidgets('settings round-trip theme and guardrails through fake stores', (
