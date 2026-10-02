@@ -56,6 +56,11 @@ which wrote the code.
 - **Statistics that mean something.** Per-unit, per-direction accuracy grouped into
   seven buckets, with a unit list you can filter and then save as a new deck of
   exactly the items you keep getting wrong.
+- **Difficult units.** Mark a unit difficult per direction with F12 (in a session or in
+  the unit editor) or in bulk from the unit list, or let the program detect them from
+  your results. Practise **Difficult units only** from the setup page, filter the unit
+  list and the Lexicon by **Difficult only**, and keep the flags when you export.
+  **Update deck from new version** carries your flags onto a deck you received again.
 - **Reads your cards aloud.** A mask says what language each field holds; in a session a
   speaker icon beside the field reads it out through the voices the operating system
   already has. Local, free and offline — nothing is uploaded and nothing is downloaded.
@@ -182,7 +187,7 @@ phones and for emulators. Open it with your file manager and allow the installat
 Android asks. Installing a newer APK over an older one keeps your library and statistics.
 
 The companion carries its own version number, independent of the desktop app's, so one
-release can pair desktop 0.11.1 with companion 0.8.0. The number in the APK's name is the
+release can pair desktop 1.0.0 with companion 0.8.0. The number in the APK's name is the
 companion's.
 
 Android refuses to install a build whose version is older than the installed one, and
@@ -241,7 +246,7 @@ One pub workspace, four packages:
 ## Status
 
 The two applications ship separately, on independent version tracks and with different
-feature sets. The desktop application is at 0.11.1; the Android companion is at 0.8.0 and
+feature sets. The desktop application is at 1.0.0; the Android companion is at 0.8.0 and
 is distributed as a sideloaded APK.
 
 ## Credits

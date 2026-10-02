@@ -509,6 +509,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 0.11.1.
   aboutVersion111,
 
+  /// About page version history entry for 1.0.0 (aboutVersion100 is 0.10.0).
+  aboutVersion1000,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1887,6 +1890,10 @@ final class LearnAnywhereCatalog {
           'hides formatting in fields with mistakes.',
       LearnAnywhereMessage.aboutVersion111:
           '0.11.1 – Session header names the per-unit figure "Unit accuracy".',
+      LearnAnywhereMessage.aboutVersion1000:
+          '1.0.0 – Difficult units per direction; Update deck from new '
+          'version; the drill no longer repeats its last unit; Lexicon loads '
+          'take the newest mask revision.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2677,6 +2684,11 @@ final class LearnAnywhereCatalog {
           'aus.',
       LearnAnywhereMessage.aboutVersion111:
           '0.11.1 – Sitzungskopf benennt die Einheitenzahl "Einheit korrekt".',
+      LearnAnywhereMessage.aboutVersion1000:
+          '1.0.0 – Schwierige Einheiten je Richtung; Lern-Datei aus neuer '
+          'Version aktualisieren; das Training wiederholt seine letzte '
+          'Einheit nicht mehr; Lexikon-Ladevorgänge nehmen die neueste '
+          'Maskenrevision.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

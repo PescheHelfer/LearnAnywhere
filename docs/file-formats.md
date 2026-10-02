@@ -138,7 +138,7 @@ The flags are not unit content: they never enter the per-unit identity `hash`
 in the `.sta` (so marking a unit never resets its statistics), and a write that
 changes only flags does not move `lastEdited`. Propagating a mask keeps them.
 
-**Older builds open a flagged deck but drop every flag when they re-save it**,
+**Builds before 1.0 open a flagged deck but drop every flag when they re-save it**,
 because their encoder writes only `categoryId` and `fields`. Accepted rather
 than bumping the version, which would lock older builds out of the file; update
 every machine that edits a deck. An automatic flag can be recomputed from the

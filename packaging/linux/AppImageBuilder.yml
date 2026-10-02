@@ -16,7 +16,7 @@ AppDir:
     id: com.sbitfire.learnanywhere
     name: Learn Anywhere
     icon: learn_anywhere
-    version: 0.11.1
+    version: 1.0.0
     exec: LearnAnywhere
     exec_args: $@
 
