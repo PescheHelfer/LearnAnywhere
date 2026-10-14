@@ -72,14 +72,15 @@ final class SpeechSettings {
   /// [voices] is keyed by canonical spoken-language tag; use [withVoice] to
   /// build one, which canonicalises the key for you.
   const SpeechSettings({
-    this.automatic = false,
+    this.automatic = true,
     this.rate = kDefaultSpeechRate,
     this.voices = const <String, VoiceChoice>{},
   });
 
   /// Whether the answer is read aloud the moment it is revealed.
   ///
-  /// Off by default, and the one switch that makes the program speak without
+  /// On by default: hearing every answer is what makes speech worth having
+  /// while learning. The one switch that makes the program speak without
   /// being asked: with it off nothing is ever said unless the learner clicks
   /// an icon or presses the replay key.
   final bool automatic;
@@ -213,9 +214,10 @@ SpeechSettings decodeSpeechSettings(Object? value) {
     }
   }
   return SpeechSettings(
-    // Anything but a plain true leaves it off: the program speaking of its own
-    // accord is the one thing a half-readable settings file must not turn on.
-    automatic: automatic is bool && automatic,
+    // Only a stored off turns it off; anything missing or unreadable reads as
+    // the default. Every file written since the switch existed stores it, so
+    // a learner who chose off keeps off.
+    automatic: automatic is! bool || automatic,
     rate: rate is num ? clampSpeechRate(rate.toDouble()) : kDefaultSpeechRate,
     voices: Map<String, VoiceChoice>.unmodifiable(choices),
   );

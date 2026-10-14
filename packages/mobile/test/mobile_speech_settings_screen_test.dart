@@ -196,11 +196,11 @@ void main() {
       engine: _RecordingTtsEngine(const <SpeechVoice>[hortense]),
     );
 
-    expect(settings().automatic, isFalse);
+    expect(settings().automatic, isTrue);
     await tester.tap(find.byKey(const Key('speechAutomatic')));
     await tester.pumpAndSettle();
 
-    expect(settings().automatic, isTrue);
+    expect(settings().automatic, isFalse);
   });
 }
 

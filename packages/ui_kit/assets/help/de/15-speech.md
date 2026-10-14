@@ -7,8 +7,8 @@ Sprache jedes Feld enthält und welche Felder vorgelesen werden dürfen.
 
 Hat ein Feld eine Sprache und die Erlaubnis, gesprochen zu werden, liest ein
 Lautsprecher-Symbol daneben es in einer Lernsitzung vor — siehe
-[Felder vorlesen lassen](#felder-vorlesen-lassen). Schalten Sie das automatische
-Vorlesen ein, liest sich die Antwort bei jedem Aufdecken von selbst vor, und `F4` gibt
+[Felder vorlesen lassen](#felder-vorlesen-lassen). Mit dem automatischen Vorlesen, das
+von Anfang an eingeschaltet ist, liest sich die Antwort bei jedem Aufdecken von selbst vor, und `F4` gibt
 sie erneut aus — siehe
 [Die Antwort automatisch vorlesen](#die-antwort-automatisch-vorlesen). Welche *Stimme*
 spricht, entscheidet
@@ -104,10 +104,11 @@ Wort zehnmal an, wenn es hilft.
 
 ## Die Antwort automatisch vorlesen
 
-Für jedes einzelne Wort auf ein Symbol zu klicken, wird schnell mühsam. Setzen Sie unter
-[Eine Stimme aussuchen](#eine-stimme-aussuchen) das Häkchen bei **Antwort automatisch
-vorlesen**, und die Antwort wird vorgelesen, sobald sie aufgedeckt ist — Sie können die
-Maus liegen lassen und weitertippen.
+Für jedes einzelne Wort auf ein Symbol zu klicken, wird schnell mühsam. Deshalb ist
+**Antwort automatisch vorlesen** von Anfang an eingeschaltet: Die Antwort wird vorgelesen,
+sobald sie aufgedeckt ist — Sie können die Maus liegen lassen und weitertippen. Unter
+[Eine Stimme aussuchen](#eine-stimme-aussuchen) entfernen Sie das Häkchen, wenn Sie lieber
+selbst wählen, was Sie hören.
 
 Vorgelesen wird die Antwort und nur die Antwort: jedes Feld, das vorgelesen werden darf
 und in der gefragten Richtung die Rolle Antwort hat, in der Reihenfolge der Maske. Die
@@ -207,8 +208,8 @@ Unter **Optionen ▸ Sprachausgabe...** entscheiden Sie, *welche* Stimme Ihres C
 welche Sprache spricht, wie schnell alles vorgelesen wird und ob die Antwort von selbst
 vorgelesen wird.
 
-**Antwort automatisch vorlesen** steht zuoberst auf dem Bildschirm. Es ist aus, bis Sie
-es einschalten, es wird über Sitzungen hinweg gemerkt, und was es tut, steht unter
+**Antwort automatisch vorlesen** steht zuoberst auf dem Bildschirm. Es ist eingeschaltet, bis Sie
+es ausschalten, es wird über Sitzungen hinweg gemerkt, und was es tut, steht unter
 [Die Antwort automatisch vorlesen](#die-antwort-automatisch-vorlesen).
 
 Der Bildschirm zeigt eine Zeile je Sprache: jede Sprache, die die Maske der geöffneten

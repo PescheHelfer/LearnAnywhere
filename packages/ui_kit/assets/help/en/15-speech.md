@@ -5,8 +5,8 @@ word you can only read is a word you cannot say. Speech starts in the mask: you 
 language each field holds, and which fields may be read aloud.
 
 Once a field has a language and permission to be spoken, a speaker icon beside it in a
-learning session reads it aloud — see [Hearing a field](#hearing-a-field). Switch on
-automatic speech and the answer reads itself out at every reveal, with `F4` to hear it
+learning session reads it aloud — see [Hearing a field](#hearing-a-field). With automatic
+speech, which is on from the start, the answer reads itself out at every reveal, with `F4` to hear it
 again — see [Reading the answer automatically](#reading-the-answer-automatically). What
 decides the *voice* is your computer, not your deck, and you pick which of its voices to
 use under [Choosing a voice](#choosing-a-voice). Not everything is here yet: see
@@ -96,9 +96,10 @@ Listening costs you nothing. It is never an attempt, it moves no
 
 ## Reading the answer automatically
 
-Clicking an icon for every single word gets old. Tick **Read the answer aloud
-automatically** under [Choosing a voice](#choosing-a-voice) and the answer is read out
-the moment it is revealed — you can leave the mouse alone and keep typing.
+Clicking an icon for every single word gets old, so **Read the answer aloud
+automatically** is ticked from the start: the answer is read out the moment it is
+revealed — you can leave the mouse alone and keep typing. Untick it under
+[Choosing a voice](#choosing-a-voice) if you would rather choose what to hear.
 
 What is read is the answer and only the answer: every field that may be spoken and holds
 the answer role in the direction you are being asked in, in the order the mask lists
@@ -193,8 +194,8 @@ inside Learn Anywhere for a new voice to be found.
 **Options ▸ Speech...** is where you decide *which* of your computer's voices speaks
 each language, how fast everything is read, and whether the answer is read out by itself.
 
-**Read the answer aloud automatically** sits at the top of the screen. It is off until
-you switch it on, it is remembered between sessions, and what it does is described under
+**Read the answer aloud automatically** sits at the top of the screen. It is on until
+you switch it off, it is remembered between sessions, and what it does is described under
 [Reading the answer automatically](#reading-the-answer-automatically).
 
 The screen lists one row per language: every language the open deck's mask uses, plus

@@ -20,7 +20,7 @@ Sie bietet:
 
 - Ihre importierten Lern-Dateien in einer Bibliothek auf dem Telefon.
 - Üben im **Drill-Modus**, im **Endlos-Modus** und **Einmal durchgehen**.
-- Lautsprecher-Symbole und, wenn Sie es einschalten, die automatisch vorgelesene Antwort
+- Lautsprecher-Symbole und die automatisch vorgelesene Antwort (eingeschaltet, solange Sie es nicht ausschalten)
   — siehe [Sprachausgabe](#sprachausgabe) unten.
 - Statistik je Lern-Datei, gespeichert nach jeder bewerteten Karte.
 - Das Abzeichen an Einheiten, die Sie am Desktop als schwierig gekennzeichnet haben, und
@@ -255,8 +255,8 @@ Bemerkungsfelder; die Frage ist einen Tipp auf den Umschalter **Frage** / **Lös
 entfernt. Tippen Sie ein Symbol an, und genau dieses Feld wird vorgelesen, in einer
 Stimme, die das Telefon für die Sprache des Feldes bereits hat.
 
-Schalten Sie **Antwort automatisch vorlesen** auf dem Bildschirm Sprachausgabe (unten)
-ein, wird die Antwort vorgelesen, sobald Sie auf **Antwort zeigen** tippen — richtig oder
+Ist **Antwort automatisch vorlesen** eingeschaltet — das ist es von Anfang an; der
+Bildschirm Sprachausgabe (unten) schaltet es aus —, wird die Antwort vorgelesen, sobald Sie auf **Antwort zeigen** tippen — richtig oder
 falsch macht keinen Unterschied, nichts wird also als Strafe zurückgehalten. Sie wird
 einmal je Karte vorgelesen: Der Umschalter **Frage** / **Lösung** wiederholt sie nicht,
 und **Antwort zeigen** bei der nächsten Karte bricht Laufendes ab, statt darüber

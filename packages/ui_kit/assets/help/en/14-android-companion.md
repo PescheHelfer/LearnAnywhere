@@ -18,7 +18,7 @@ It has:
 
 - Your imported decks, in a library on the phone.
 - Practice in **Drill mode**, **Endless mode** and **Once through**.
-- Speaker icons and, if you switch it on, the answer read aloud automatically — see
+- Speaker icons and the answer read aloud automatically (on unless you switch it off) — see
   [Speech](#speech) below.
 - Per-deck statistics, saved after every card you rate.
 - The badge on units you flagged as difficult on the desktop, and practice restricted
@@ -231,8 +231,8 @@ answer and any remark fields, and the question is a tap away behind the **Prompt
 **Solution** switch. Tap an icon and that one field is read aloud, in a voice the phone
 already has for the field's language.
 
-Turn on **Read the answer aloud automatically** in the Speech screen (below) and the
-answer is read out the moment you tap **Show answer** — right or wrong makes no
+With **Read the answer aloud automatically** on — it is from the start; the Speech screen
+(below) turns it off — the answer is read out the moment you tap **Show answer** — right or wrong makes no
 difference, so nothing is held back as a penalty. It reads once per card: switching the
 **Prompt** / **Solution** toggle back and forth does not repeat it, and tapping **Show
 answer** on the next card cuts off anything still being said rather than talking over it.

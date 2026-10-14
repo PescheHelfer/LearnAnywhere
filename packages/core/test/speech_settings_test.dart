@@ -120,8 +120,8 @@ void main() {
   });
 
   group('the automatic-speech switch', () {
-    test('starts off, so a program that never spoke stays silent', () {
-      expect(const SpeechSettings().automatic, isFalse);
+    test('starts on, so a new learner hears every answer from the start', () {
+      expect(const SpeechSettings().automatic, isTrue);
     });
 
     test('survives a round trip through JSON', () {
@@ -150,7 +150,7 @@ void main() {
 
     test('takes part in equality', () {
       expect(
-        const SpeechSettings(automatic: true),
+        const SpeechSettings(automatic: false),
         isNot(const SpeechSettings()),
       );
       expect(
@@ -159,13 +159,21 @@ void main() {
       );
     });
 
-    test('a missing or unreadable value leaves it off', () {
+    test('a missing or unreadable value reads as the default, on', () {
       expect(
         decodeSpeechSettings(<String, Object?>{'rate': 0.9}).automatic,
-        isFalse,
+        isTrue,
       );
       expect(
         decodeSpeechSettings(<String, Object?>{'automatic': 'yes'}).automatic,
+        isTrue,
+      );
+      expect(decodeSpeechSettings(null).automatic, isTrue);
+    });
+
+    test('a stored off stays off', () {
+      expect(
+        decodeSpeechSettings(<String, Object?>{'automatic': false}).automatic,
         isFalse,
       );
     });

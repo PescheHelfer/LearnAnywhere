@@ -158,7 +158,9 @@ void main() {
     WidgetTester tester,
     TtsEngine engine, {
     SessionMode mode = SessionMode.onceThrough,
-    SpeechSettings speechSettings = const SpeechSettings(),
+    // Off here, although the program's default is on: most tests look at one
+    // route to speech at a time, and the ones about automatic speech say so.
+    SpeechSettings speechSettings = const SpeechSettings(automatic: false),
     LearningDeck? sessionDeck,
     bool withInput = false,
     ValueChanged<List<UnitStats>>? onStatisticsChanged,
@@ -433,7 +435,11 @@ void main() {
       final _RecordingTtsEngine engine = _RecordingTtsEngine(
         const <SpeechVoice>[frenchVoice, germanVoice],
       );
-      await startSession(tester, engine);
+      await startSession(
+        tester,
+        engine,
+        speechSettings: const SpeechSettings(automatic: false),
+      );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f10);
       await tester.pumpAndSettle();

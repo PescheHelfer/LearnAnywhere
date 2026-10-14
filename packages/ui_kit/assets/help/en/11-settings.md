@@ -132,8 +132,8 @@ A row for a language your machine has no voice for says so instead, and the chap
 explains how to add one.
 
 **Read the answer aloud automatically** is the one switch that lets the program speak
-without being asked: with it ticked, every revealed answer is read out. It is off until you
-switch it on, and
+without being asked: with it ticked, every revealed answer is read out. It is on from the
+start — untick it if you would rather click for each word — and
 [Reading the answer automatically](15-speech.md#reading-the-answer-automatically) covers
 what it plays and when.
 

@@ -179,6 +179,8 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.f10);
       await settle(tester);
+      // Fresh settings read the answer aloud on reveal: on by default.
+      expect(engine.spoken, <String>['Haus']);
       expect(rowTexts('learnActionPillsGroup'), <String>[
         'Continue', 'F3', //
         'Read aloud', 'F4', //
@@ -200,7 +202,7 @@ void main() {
 
       await tester.tap(readAloudPill);
       await settle(tester);
-      expect(engine.spoken, <String>['Haus']);
+      expect(engine.spoken, <String>['Haus', 'Haus']);
       // Still on the answer: listening is not a rating.
       expect(find.text('Continue'), findsOneWidget);
       expect(tester.takeException(), isNull);

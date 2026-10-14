@@ -281,27 +281,27 @@ void main() {
     expect(engine.spoken.single.rate, settings().rate);
   });
 
-  testWidgets('the automatic-speech switch starts off and is stored when it '
-      'is turned on', (WidgetTester tester) async {
+  testWidgets('the automatic-speech switch starts on and is stored when it '
+      'is turned off', (WidgetTester tester) async {
     final SpeechSettings Function() settings = await pumpScreen(
       tester,
       engine: _RecordingTtsEngine(const <SpeechVoice>[hortense]),
     );
 
-    expect(settings().automatic, isFalse);
+    expect(settings().automatic, isTrue);
     expect(
       tester.widget<Checkbox>(find.byKey(const Key('speechAutomatic'))).value,
-      isFalse,
+      isTrue,
     );
 
     await tester.tap(find.byKey(const Key('speechAutomatic')));
     await tester.pumpAndSettle();
-    expect(settings().automatic, isTrue);
+    expect(settings().automatic, isFalse);
 
-    // And back off again, without disturbing anything else on the screen.
+    // And back on again, without disturbing anything else on the screen.
     await tester.tap(find.byKey(const Key('speechAutomatic')));
     await tester.pumpAndSettle();
-    expect(settings().automatic, isFalse);
+    expect(settings().automatic, isTrue);
     expect(settings().rate, kDefaultSpeechRate);
   });
 

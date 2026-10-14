@@ -143,8 +143,8 @@ Zeile für eine Sprache, für die Ihr Rechner keine Stimme hat, sagt das stattde
 Kapitel oben erklärt, wie Sie eine hinzufügen.
 
 **Antwort automatisch vorlesen** ist der einzige Schalter, der das Programm ungefragt
-sprechen lässt: ist er gesetzt, wird jede aufgedeckte Antwort vorgelesen. Er ist aus, bis Sie
-ihn einschalten;
+sprechen lässt: ist er gesetzt, wird jede aufgedeckte Antwort vorgelesen. Er ist von Anfang
+an eingeschaltet — entfernen Sie das Häkchen, wenn Sie lieber jedes Wort selbst anklicken;
 [Die Antwort automatisch vorlesen](15-speech.md#die-antwort-automatisch-vorlesen)
 beschreibt, was wann vorgelesen wird.
 
