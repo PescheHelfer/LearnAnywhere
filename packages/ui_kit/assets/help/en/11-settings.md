@@ -19,6 +19,7 @@ check an answer; changing one mid-session takes effect immediately.
 | Accept near-misses as 'Almost' | Off | Enables the Almost outcome |
 | 'Almost' similarity threshold (%) | 80 | How close a near-miss must be to count as Almost |
 | Unit time | Off | Shows the **Unit time** pill: how long the current unit has been on screen |
+| Sitting time | Off | Shows the **Sitting time** pill: this sitting's learning time, each rated unit counted at most five minutes |
 | Time limit (seconds) | 0 (no limit) | When one unit's time reaches it, a tone sounds and the **Unit time** pill is highlighted; the session goes on. Needs **Unit time** on |
 | Minimum-attempts guard | Off | See below |
 | Minimum attempts | 2 | Value for the guard above |

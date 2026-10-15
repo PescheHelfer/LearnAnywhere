@@ -199,6 +199,7 @@ const List<(LearnAnywhereMessage, String)> _widestStatPills =
       (LearnAnywhereMessage.learnLiveRemaining, '9999 (9999)'),
       (LearnAnywhereMessage.learnLiveAccuracy, '9999/9999 (100%)'),
       (LearnAnywhereMessage.learnLiveUnitTime, '99:59:59'),
+      (LearnAnywhereMessage.learnLiveSittingTime, '99:59:59'),
     ];
 
 /// The widest thing on the session screen that cannot be broken across lines.
@@ -426,8 +427,13 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   // the result message and which rating labels are offered; never recorded.
   AnswerOutcome _outcome = AnswerOutcome.correct;
   AttemptRating _selectedRating = AttemptRating.noCount;
-  Timer? _clockTimer;
-  int _elapsedSeconds = 0;
+  // Runs for the page's whole life, whether or not a pill shows it: the unit
+  // time is what the sitting's learning time is made of.
+  late final Timer _unitTimer;
+  int _unitSeconds = 0;
+  // The learning time of the units rated since Start session — each one's
+  // unit time, capped. Never stored; the next sitting starts at zero.
+  int _sittingSeconds = 0;
   // Whether the time-limit warning tone has already sounded for the current
   // unit; reset when a new unit is shown so the tone fires once per unit.
   bool _timeTonePlayed = false;
@@ -463,9 +469,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     _startIndex = _draftParameters.startIndex ?? 1;
     _endIndex = _draftParameters.endIndex ?? widget.deck.units.length;
     _thresholdPercent = (_draftParameters.masteryThreshold * 100).round();
-    if (widget.options.showUnitTime) {
-      _startClock();
-    }
+    _unitTimer = Timer.periodic(const Duration(seconds: 1), _tickUnitClock);
     unawaited(_loadVoices());
     // Created by Learn ▸ "Learn with last settings": skip the setup screen.
     if (widget.startSessionOnOpen) {
@@ -583,12 +587,6 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _levelStats = widget.levelStatistics;
     }
     _draftParameters = _optionsApplied(_draftParameters);
-    if (widget.options.showUnitTime && _clockTimer == null) {
-      _startClock();
-    } else if (!widget.options.showUnitTime && _clockTimer != null) {
-      _clockTimer?.cancel();
-      _clockTimer = null;
-    }
     if (_currentItem != null &&
         _currentItem!.unitIndex > widget.deck.units.length) {
       _currentItem = null;
@@ -651,7 +649,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       final ValueChanged<bool>? onChanged = widget.onSessionActiveChanged;
       WidgetsBinding.instance.addPostFrameCallback((_) => onChanged?.call(false));
     }
-    _clockTimer?.cancel();
+    _unitTimer.cancel();
     // Leaving the session cuts off a word still being spoken: a voice talking
     // over the screen the learner has just moved to is nobody's idea of help.
     unawaited(widget.speechEngine.stop());
@@ -897,7 +895,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       answerControllers: _answerControllers,
       answerFocusNodes: _answerFocusNodes,
       enteredAnswers: _lastEntered,
-      elapsedSeconds: _elapsedSeconds,
+      unitSeconds: _unitSeconds,
+      // The unit on screen counts as it runs, capped as it will be when
+      // rated — so rating it moves its seconds into the stored figure without
+      // the pill moving.
+      sittingSeconds: _sittingSeconds + unitLearningSeconds(_unitSeconds),
       viewMode: _viewMode,
       onReveal: _primaryPreCheck,
       onCellAnswerChanged: (int fieldId, String value) {
@@ -994,6 +996,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     );
     _orderPosition = 0;
     _viewMode = _AnswerViewMode.correction;
+    _sittingSeconds = 0;
     _selectNextItem();
   }
 
@@ -1054,7 +1057,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _flagCycleStart = DifficultFlags.none;
       _evaluation = null;
       _selectedRating = AttemptRating.noCount;
-      _elapsedSeconds = 0;
+      _unitSeconds = 0;
       _timeTonePlayed = false;
       _level3Memorized = false;
       _serveNonce += 1;
@@ -1592,6 +1595,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     // stats callbacks above so the shell's document already holds this attempt;
     // the shell queues the write asynchronously so it never stalls the cycle.
     widget.onPersistStatistics?.call();
+    // Every rating adds the unit's time, No count included: it is time spent
+    // learning even when the answer is not scored.
+    _sittingSeconds += unitLearningSeconds(_unitSeconds);
     _selectNextItem(statistics: recorded);
   }
 
@@ -1670,20 +1676,27 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     );
   }
 
-  void _startClock() {
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted || _currentItem == null) {
-        return;
-      }
-      setState(() => _elapsedSeconds += 1);
-      // Sound a one-shot warning tone the first second the limit is reached
-      // (0 = no limit). The visual red pill is driven separately in the view.
-      final int limit = widget.options.timeLimitSeconds;
-      if (limit > 0 && _elapsedSeconds >= limit && !_timeTonePlayed) {
-        _timeTonePlayed = true;
-        SystemSound.play(SystemSoundType.alert);
-      }
-    });
+  /// Whether a pill on screen reads the clock, so a tick must repaint.
+  bool get _timePillShown =>
+      widget.options.showUnitTime || widget.options.showSittingTime;
+
+  void _tickUnitClock(Timer _) {
+    if (!mounted || _currentItem == null) {
+      return;
+    }
+    // Without a time pill nothing on screen changes, and a rebuild of the
+    // whole card every second would buy nothing.
+    if (_timePillShown) {
+      setState(() => _unitSeconds += 1);
+    } else {
+      _unitSeconds += 1;
+    }
+    // Sound a one-shot warning tone the first second the limit is reached.
+    // The visual red pill is driven separately in the view, by the same test.
+    if (widget.options.timeLimitReached(_unitSeconds) && !_timeTonePlayed) {
+      _timeTonePlayed = true;
+      SystemSound.play(SystemSoundType.alert);
+    }
   }
 
   /// Returns the ordered rating entries shown as evaluation buttons.
@@ -2138,7 +2151,8 @@ final class _SessionView extends StatelessWidget {
     required this.answerControllers,
     required this.answerFocusNodes,
     required this.enteredAnswers,
-    required this.elapsedSeconds,
+    required this.unitSeconds,
+    required this.sittingSeconds,
     required this.viewMode,
     required this.onReveal,
     required this.onCellAnswerChanged,
@@ -2197,7 +2211,12 @@ final class _SessionView extends StatelessWidget {
   final Map<int, TextEditingController> answerControllers;
   final Map<int, FocusNode> answerFocusNodes;
   final Map<int, String> enteredAnswers;
-  final int elapsedSeconds;
+
+  /// How long the unit on screen has been there, uncapped.
+  final int unitSeconds;
+
+  /// The sitting's learning time so far, the unit on screen included.
+  final int sittingSeconds;
   final _AnswerViewMode viewMode;
   final VoidCallback onReveal;
 
@@ -2404,11 +2423,22 @@ final class _SessionView extends StatelessWidget {
       pills.add(
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveUnitTime),
-          value: formatElapsedTime(Duration(seconds: elapsedSeconds)),
+          value: formatElapsedTime(Duration(seconds: unitSeconds)),
           tooltip: messages.message(
             LearnAnywhereMessage.learnLiveUnitTimeTooltip,
           ),
           warning: timeWarning,
+        ),
+      );
+    }
+    if (options.showSittingTime) {
+      pills.add(
+        _StatPill(
+          label: messages.message(LearnAnywhereMessage.learnLiveSittingTime),
+          value: formatElapsedTime(Duration(seconds: sittingSeconds)),
+          tooltip: messages.message(
+            LearnAnywhereMessage.learnLiveSittingTimeTooltip,
+          ),
         ),
       );
     }
@@ -2744,10 +2774,7 @@ final class _SessionView extends StatelessWidget {
         )
         .toList(growable: false);
 
-    final bool timeWarning =
-        options.showUnitTime &&
-        options.timeLimitSeconds > 0 &&
-        elapsedSeconds >= options.timeLimitSeconds;
+    final bool timeWarning = options.timeLimitReached(unitSeconds);
 
     // Header: "Unit x/y", the level name (for Level Learning, right after the
     // unit), then category, direction, and — outside Level Learning, where a

@@ -94,11 +94,23 @@ die aktuelle Einheit schon auf dem Bildschirm steht. Ist ein **Zeitlimit (Sekund
 gesetzt, ertönt ein Signal und die Anzeige wird hervorgehoben, sobald eine Einheit es
 erreicht; die Sitzung geht weiter.
 
+Die **Sitzungszeit**, ebenfalls in den [Einstellungen](11-settings.md#lernoptionen)
+einzuschalten, zeigt, wie lange in dieser Sitzung gelernt wurde. Jede Einheit, die Sie
+bewerten, zählt ihre Einheitszeit dazu — auch mit **Nicht zählen** bewertet, und auch eine
+Karte, die Sie ohne Eingabe selbst bewerten —, eine Einheit aber höchstens fünf Minuten:
+Darüber hinaus gelten Sie als abwesend, während die **Einheitszeit** weiter die
+tatsächliche Zeit zeigt. Die Anzeige läuft sekündlich mit, solange eine Einheit auf dem
+Bildschirm steht — auch wenn die **Einheitszeit** nicht angezeigt wird —, und springt
+beim Bewerten nicht. Eine Einheit, die beim
+Beenden der Sitzung noch unbewertet ist, zählt nicht, obwohl die Anzeige sie schon
+mitgezählt hat. Gespeichert wird nichts: Jedes **Sitzung starten** beginnt wieder bei
+null, in jedem Modus.
+
 **Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben jeweils **die ganze
 Lern-Datei in der Richtung, in der diese Sitzung fragt** — nicht die Sitzung und nicht den
-Einheitenbereich. (Die beiden folgenden Anzeigen sind bewusst enger: **Einheit korrekt**
-gilt nur dieser einen Einheit, und **Einheitszeit** misst diese eine Einheit und beginnt
-mit jeder neu.) Ein eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das,
+Einheitenbereich. (Die folgenden Anzeigen sind bewusst enger: **Einheit korrekt** gilt
+nur dieser einen Einheit, **Einheitszeit** misst diese eine Einheit und beginnt mit jeder
+neu, und **Sitzungszeit** gilt nur dieser Sitzung.) Ein eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das,
 was gezählt wird; die
 vier nebeneinanderstehenden Zahlen beschreiben also immer dieselbe Menge: eine Sitzung über
 die Einheiten 5–10 einer Datei mit 200 Einheiten weist **Beherrscht** und **Übrig**

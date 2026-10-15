@@ -87,10 +87,20 @@ accuracy** — the current unit's own figure — and, if enabled in
 been on screen. With a **Time limit (seconds)** set, a tone sounds and the pill is
 highlighted once a unit reaches it; the session goes on.
 
+**Sitting time**, also switched on in [Settings](11-settings.md#learning-options), is how
+long this sitting has been learning. Every unit you rate adds its unit time — a **No
+count** rating too, and a card you rate yourself without typing — but one unit adds at
+most five minutes: beyond that you are taken to have been away, while **Unit time** keeps
+showing the real figure. The pill ticks every second while a unit is on screen — whether
+or not **Unit time** is shown — and rating the unit does not make it jump. A unit you leave unrated when you end
+the sitting adds nothing, even though the pill was already counting it. Nothing is kept:
+every **Start session** begins again at zero, in any mode.
+
 **Attempts**, **Mastered**, **Remaining** and **Accuracy** each describe **the whole deck,
-in the direction this session asks** — not the sitting, and not the unit range. (The two
+in the direction this session asks** — not the sitting, and not the unit range. (The
 readouts after them are deliberately narrower: **Unit accuracy** is about that one unit,
-and **Unit time** times that one unit, starting afresh with each.) Restricting the range
+**Unit time** times that one unit, starting afresh with each, and **Sitting time** covers
+this sitting alone.) Restricting the range
 narrows what you are asked, never what is counted, so the four figures standing side by
 side always describe
 the same population: a session on units 5–10 of a 200-unit deck still reports **Mastered**

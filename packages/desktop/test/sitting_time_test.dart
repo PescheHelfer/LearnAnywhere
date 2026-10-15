@@ -1,0 +1,316 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:learn_anywhere_core/core.dart';
+import 'package:learn_anywhere_desktop/src/learn/desktop_query_options.dart';
+import 'package:learn_anywhere_desktop/src/learn/learn_session_page.dart';
+import 'package:learn_anywhere_ui_kit/learn_anywhere_ui_kit.dart';
+
+// The Sitting time pill, driven by the fake clock: every step below pumps
+// without advancing time unless a test says how long the learner took, so a
+// pill's reading is exactly the seconds the test let pass.
+
+const DesktopQueryOptions _bothClocks = DesktopQueryOptions(
+  showUnitTime: true,
+  showSittingTime: true,
+);
+
+const SessionParameters _thinkOnly = SessionParameters(
+  withInput: false,
+  mode: SessionMode.onceThrough,
+  directionSelection: DirectionSelection.direction1,
+  shuffle: false,
+);
+
+void main() {
+  Future<void> open(
+    WidgetTester tester, {
+    DesktopQueryOptions options = _bothClocks,
+    SessionParameters parameters = _thinkOnly,
+  }) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      // A fresh key, so a second open starts a new page rather than updating
+      // the running one.
+      _Harness(
+        key: UniqueKey(),
+        deck: _deck,
+        options: options,
+        parameters: parameters,
+      ),
+    );
+    await tester.pump();
+  }
+
+  /// Lets the frame and its post-frame work run without moving the clock.
+  Future<void> step(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump();
+  }
+
+  Future<void> start(WidgetTester tester) async {
+    await tester.tap(find.text('Start session'));
+    await step(tester);
+    expect(find.textContaining('Unit 1/2'), findsOneWidget);
+  }
+
+  /// Reveals a think-only card and picks [rating]. Nothing is recorded until
+  /// [continueToNext].
+  Future<void> rateThinkOnly(WidgetTester tester, String rating) async {
+    await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+    await step(tester);
+    await tester.tap(find.text(rating));
+    await step(tester);
+  }
+
+  Future<void> continueToNext(WidgetTester tester) async {
+    await tester.tap(find.text('Continue'));
+    await step(tester);
+  }
+
+  testWidgets('the Sitting time pill appears exactly when its option is on', (
+    WidgetTester tester,
+  ) async {
+    await open(tester, options: const DesktopQueryOptions());
+    await start(tester);
+    expect(find.textContaining('Sitting time'), findsNothing);
+
+    await open(tester, options: const DesktopQueryOptions(showSittingTime: true));
+    await start(tester);
+    expect(find.text('Sitting time: 0:00'), findsOneWidget);
+    // Shown on its own: the unit clock is a separate option.
+    expect(find.textContaining('Unit time'), findsNothing);
+    expect(
+      find.byTooltip(
+        "This sitting's learning time: the time of every unit you rated, "
+        'each counted at most five minutes.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'the Sitting time pill ticks with the unit clock and does not jump when '
+    'the unit is rated',
+    (WidgetTester tester) async {
+      await open(tester);
+      await start(tester);
+      expect(find.text('Sitting time: 0:00'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 7));
+      expect(find.text('Unit time: 0:07'), findsOneWidget);
+      expect(find.text('Sitting time: 0:07'), findsOneWidget);
+
+      await rateThinkOnly(tester, 'Knew it');
+      await continueToNext(tester);
+      expect(find.textContaining('Unit 2/2'), findsOneWidget);
+      // The unit clock starts afresh; the sitting keeps what it showed.
+      expect(find.text('Unit time: 0:00'), findsOneWidget);
+      expect(find.text('Sitting time: 0:07'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('Unit time: 0:03'), findsOneWidget);
+      expect(find.text('Sitting time: 0:10'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a unit rated after six minutes adds five to the sitting time, while the '
+    'Unit time pill still shows six',
+    (WidgetTester tester) async {
+      await open(tester);
+      await start(tester);
+
+      await tester.pump(const Duration(minutes: 6));
+      expect(find.text('Unit time: 6:00'), findsOneWidget);
+      // Capped live as well, so rating it cannot make the pill jump back.
+      expect(find.text('Sitting time: 5:00'), findsOneWidget);
+
+      await rateThinkOnly(tester, 'Knew it');
+      await continueToNext(tester);
+      expect(find.text('Sitting time: 5:00'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 10));
+      expect(find.text('Sitting time: 5:10'), findsOneWidget);
+    },
+  );
+
+  testWidgets('a No count rating still adds its time', (
+    WidgetTester tester,
+  ) async {
+    await open(tester);
+    await start(tester);
+
+    await tester.pump(const Duration(seconds: 20));
+    await rateThinkOnly(tester, 'No count');
+    await continueToNext(tester);
+    expect(find.text('Sitting time: 0:20'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 5));
+    expect(find.text('Sitting time: 0:25'), findsOneWidget);
+  });
+
+  testWidgets('a typed answer adds its time', (WidgetTester tester) async {
+    await open(
+      tester,
+      parameters: const SessionParameters(
+        mode: SessionMode.onceThrough,
+        directionSelection: DirectionSelection.direction1,
+        shuffle: false,
+      ),
+    );
+    await start(tester);
+
+    await tester.pump(const Duration(seconds: 12));
+    await tester.enterText(find.byType(TextField), 'one');
+    await tester.tap(find.text('Check'));
+    await step(tester);
+    await continueToNext(tester);
+    expect(find.text('Sitting time: 0:12'), findsOneWidget);
+  });
+
+  testWidgets('a Level-Learning sitting counts as well', (
+    WidgetTester tester,
+  ) async {
+    await open(
+      tester,
+      parameters: const SessionParameters(
+        mode: SessionMode.levelLearning,
+        directionSelection: DirectionSelection.direction1,
+        // The ladder draws at random; one unit makes the draw known.
+        startIndex: 1,
+        endIndex: 1,
+        shuffle: false,
+      ),
+    );
+    await start(tester);
+
+    // A fresh deck starts at the top of the ladder: memorize, then type.
+    await tester.pump(const Duration(seconds: 9));
+    await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+    await step(tester);
+    await tester.enterText(find.byType(TextField), 'one');
+    await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+    await step(tester);
+    await continueToNext(tester);
+    expect(find.text('Sitting time: 0:09'), findsOneWidget);
+  });
+
+  testWidgets('the next sitting starts at zero', (WidgetTester tester) async {
+    await open(tester);
+    await start(tester);
+
+    await tester.pump(const Duration(seconds: 30));
+    await rateThinkOnly(tester, 'Knew it');
+    await continueToNext(tester);
+    await tester.pump(const Duration(seconds: 15));
+    await rateThinkOnly(tester, 'Knew it');
+    await continueToNext(tester);
+
+    // Both units asked once: the sitting is over.
+    await tester.tap(find.text('Extend session'));
+    await step(tester);
+    await start(tester);
+    expect(find.text('Sitting time: 0:00'), findsOneWidget);
+  });
+}
+
+/// Holds the statistics the page pushes back, as the shell's document does,
+/// so a drill session can run to its end.
+class _Harness extends StatefulWidget {
+  const _Harness({
+    super.key,
+    required this.deck,
+    required this.options,
+    required this.parameters,
+  });
+
+  final LearningDeck deck;
+  final DesktopQueryOptions options;
+  final SessionParameters parameters;
+
+  @override
+  State<_Harness> createState() => _HarnessState();
+}
+
+class _HarnessState extends State<_Harness> {
+  List<UnitStats> _statistics = const <UnitStats>[];
+  List<LevelUnitStats> _levelStatistics = const <LevelUnitStats>[];
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      localizationsDelegates: LearnAnywhereLocalizations.localizationsDelegates,
+      supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+      home: Scaffold(
+        body: LearnSessionPage(
+          deck: widget.deck,
+          statistics: _statistics,
+          levelStatistics: _levelStatistics,
+          options: widget.options,
+          parameters: widget.parameters,
+          onParametersChanged: (SessionParameters _) {},
+          onStatisticsChanged: (List<UnitStats> value) {
+            setState(() => _statistics = value);
+          },
+          onLevelStatisticsChanged: (List<LevelUnitStats> value) {
+            setState(() => _levelStatistics = value);
+          },
+          onOpenEditor: () {},
+          onExit: () {},
+        ),
+      ),
+    );
+  }
+}
+
+const LearningDeck _deck = LearningDeck(
+  mask: LearningMask(
+    maskId: 'm_new_sitting-time-fixture',
+    name: 'Fixture',
+    direction1Label: 'A',
+    direction2Label: 'B',
+    categories: <CategoryDefinition>[
+      CategoryDefinition(
+        id: 0,
+        name: 'Cat',
+        fields: <FieldDefinition>[
+          FieldDefinition(
+            id: 0,
+            name: 'Question',
+            length: 40,
+            equalGroup: 0,
+            role1: FieldRole.question,
+            role2: FieldRole.answer,
+          ),
+          FieldDefinition(
+            id: 1,
+            name: 'Answer',
+            length: 40,
+            equalGroup: 0,
+            role1: FieldRole.answer,
+            role2: FieldRole.question,
+          ),
+        ],
+      ),
+    ],
+  ),
+  units: <LearningUnit>[
+    LearningUnit(
+      categoryId: 0,
+      fields: <int, FieldValue>{
+        0: FieldValue.plain('eins'),
+        1: FieldValue.plain('one'),
+      },
+    ),
+    LearningUnit(
+      categoryId: 0,
+      fields: <int, FieldValue>{
+        0: FieldValue.plain('zwei'),
+        1: FieldValue.plain('two'),
+      },
+    ),
+  ],
+);

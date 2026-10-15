@@ -110,6 +110,7 @@ void main() {
   // The pill's value ticks while the test settles, so only its label is
   // matched.
   final Finder unitTimePill = find.textContaining('Unit time: ');
+  final Finder sittingTimePill = find.textContaining('Sitting time: ');
 
   /// Flips the learning option [label] on the Advanced Learning Options
   /// page, then leaves it with Esc (its Close button is below the fold).
@@ -144,13 +145,39 @@ void main() {
     });
   });
 
-  testWidgets('the other three time options show no pill yet', (
+  testWidgets('the Sitting time option shows and hides the Sitting time pill', (
+    WidgetTester tester,
+  ) async {
+    await tester.runAsync(() async {
+      await openDeck(tester);
+      await startSession(tester);
+      expect(sittingTimePill, findsNothing);
+
+      await toggleOption(tester, 'Sitting time');
+      await startSession(tester);
+      expect(sittingTimePill, findsOneWidget);
+      // Each option shows its own pill only.
+      expect(unitTimePill, findsNothing);
+      expect(
+        decodeSettingsJson(
+          File(settingsPath).readAsStringSync(),
+        ).showSittingTime,
+        isTrue,
+      );
+
+      await toggleOption(tester, 'Sitting time');
+      await startSession(tester);
+      expect(sittingTimePill, findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('the Statistics and Total time options show no pill yet', (
     WidgetTester tester,
   ) async {
     File(settingsPath).writeAsStringSync(
       encodeSettingsJson(
         const LearnAnywhereSettings(
-          showSittingTime: true,
           showStatisticsTime: true,
           showTotalTime: true,
         ),

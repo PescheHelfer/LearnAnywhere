@@ -78,6 +78,13 @@ final class DesktopQueryOptions {
     );
   }
 
+  /// Whether a unit on screen for [unitSeconds] has reached the time limit.
+  ///
+  /// The limit belongs to the Unit time pill: without it there is no limit,
+  /// so neither the tone nor the highlight.
+  bool timeLimitReached(int unitSeconds) =>
+      showUnitTime && timeLimitSeconds > 0 && unitSeconds >= timeLimitSeconds;
+
   /// Wrong-answer ceiling options derived from these desktop preferences.
   WrongAnswerCeiling get wrongAnswerCeilingOptions {
     return WrongAnswerCeiling(

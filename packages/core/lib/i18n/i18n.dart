@@ -824,6 +824,9 @@ enum LearnAnywhereMessage {
   /// Tooltip of the Unit time pill.
   learnLiveUnitTimeTooltip,
 
+  /// Tooltip of the Sitting time pill.
+  learnLiveSittingTimeTooltip,
+
   /// Completion message of a Difficult-units-only session that ran out because
   /// nothing in its range is difficult any more; replaces the mastered one.
   learnNoDifficultUnitsLeft,
@@ -882,6 +885,9 @@ enum LearnAnywhereMessage {
 
   /// Label of the Unit time pill: how long the current unit has been shown.
   learnLiveUnitTime,
+
+  /// Label of the Sitting time pill: this learning session's learning time.
+  learnLiveSittingTime,
 
   /// Current unit header.
   learnUnitHeader,
@@ -2051,6 +2057,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveUnitTimeTooltip:
           'Time spent on this unit. At the time limit a tone sounds and the '
           'clock is highlighted.',
+      LearnAnywhereMessage.learnLiveSittingTimeTooltip:
+          "This sitting's learning time: the time of every unit you rated, "
+          'each counted at most five minutes.',
       LearnAnywhereMessage.learnNoDifficultUnitsLeft:
           'No difficult units left to ask.',
       LearnAnywhereMessage.learnUnitAccuracy: 'Unit accuracy',
@@ -2077,6 +2086,7 @@ final class LearnAnywhereCatalog {
           'sitting ended are not saved. Your statistics are not affected. Use '
           'File ▸ Save deck once the file can be written again. ({detail})',
       LearnAnywhereMessage.learnLiveUnitTime: 'Unit time',
+      LearnAnywhereMessage.learnLiveSittingTime: 'Sitting time',
       LearnAnywhereMessage.learnUnitHeader: 'Unit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
       LearnAnywhereMessage.learnEvaluateAs: 'Evaluate as:',
@@ -2855,6 +2865,9 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveUnitTimeTooltip:
           'Zeit für diese Einheit. Beim Zeitlimit ertönt ein Signal und die '
           'Uhr wird hervorgehoben.',
+      LearnAnywhereMessage.learnLiveSittingTimeTooltip:
+          'Lernzeit dieser Sitzung: die Zeit jeder bewerteten Einheit, jede '
+          'höchstens fünf Minuten gezählt.',
       LearnAnywhereMessage.learnNoDifficultUnitsLeft:
           'Keine schwierigen Einheiten mehr abzufragen.',
       LearnAnywhereMessage.learnUnitAccuracy: 'Einheit korrekt',
@@ -2889,6 +2902,7 @@ final class LearnAnywhereCatalog {
           'Datei ▸ Lerneinheiten speichern, sobald die Datei wieder '
           'beschreibbar ist. ({detail})',
       LearnAnywhereMessage.learnLiveUnitTime: 'Einheitszeit',
+      LearnAnywhereMessage.learnLiveSittingTime: 'Sitzungszeit',
       LearnAnywhereMessage.learnUnitHeader: 'Einheit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
       LearnAnywhereMessage.learnEvaluateAs: 'Bewerten als:',
