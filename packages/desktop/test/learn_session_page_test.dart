@@ -681,6 +681,60 @@ void main() {
     },
   );
 
+  testWidgets(
+    'Enter on the completion view records nothing and starts no hidden '
+    'session',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final List<bool> activeReports = <bool>[];
+      await tester.pumpWidget(
+        _DrillHarness(
+          deck: deck,
+          statistics: const <UnitStats>[],
+          onSessionActiveChanged: activeReports.add,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start session'));
+      await tester.pumpAndSettle();
+      for (int i = 0; i < 2; i += 1) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text("Didn't know"));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('Extend session'), findsOneWidget);
+      final _DrillHarnessState harness = tester.state(
+        find.byType(_DrillHarness),
+      );
+      // Both units answered once, neither known.
+      String counters() => harness._statistics
+          .map(
+            (UnitStats s) =>
+                '${s.index}: ${s.direction1.attempts}/${s.direction1.correct}',
+          )
+          .join(', ');
+      expect(counters(), '1: 1/0, 2: 1/0');
+      expect(activeReports.last, isFalse);
+
+      // Start, reveal, continue: what Enter does in a running session.
+      for (int i = 0; i < 3; i += 1) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.text('Extend session'), findsOneWidget);
+      expect(counters(), '1: 1/0, 2: 1/0');
+      expect(activeReports.last, isFalse);
+    },
+  );
+
   // A third unit keeps the once-through session running past the two attempts
   // the readout tests make.
   final LearningDeck drillDeck = LearningDeck(
@@ -1568,10 +1622,14 @@ class _DrillHarness extends StatefulWidget {
       directionSelection: DirectionSelection.direction1,
       shuffle: false,
     ),
+    this.onSessionActiveChanged,
   });
 
   final LearningDeck deck;
   final List<UnitStats> statistics;
+
+  /// What the page reports to the shell as sessions start and end.
+  final ValueChanged<bool>? onSessionActiveChanged;
 
   /// The deck's lifetime record as the shell holds it.
   final AllTimeStatistics allTime;
@@ -1625,6 +1683,7 @@ class _DrillHarnessState extends State<_DrillHarness> {
           onAttemptRecorded: (RecordedAttempt attempt) {
             setState(() => allTime = allTime.record(attempt));
           },
+          onSessionActiveChanged: widget.onSessionActiveChanged,
           onOpenEditor: () {},
           onExit: () {},
         ),

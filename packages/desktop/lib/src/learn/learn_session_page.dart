@@ -1519,6 +1519,12 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   }
 
   void _continueShortcut() {
+    // The completion view has no unit either, but it is not the setup screen:
+    // a session started here would run unseen behind it, and the next two
+    // presses would reveal and rate a unit nobody was shown.
+    if (_completed) {
+      return;
+    }
     if (_currentItem == null) {
       _startSession();
     } else if (_evaluation == null) {
