@@ -26,6 +26,7 @@ final class StatisticsPage extends StatefulWidget {
     required this.deck,
     required this.statistics,
     required this.levelStatistics,
+    required this.statisticsSeconds,
     required this.allTimeStatistics,
     required this.allTimeLevelStatistics,
     required this.allTimeIsRefused,
@@ -50,6 +51,12 @@ final class StatisticsPage extends StatefulWidget {
 
   /// Current Level-Learning statistics (empty when the deck has none).
   final List<LevelUnitStats> levelStatistics;
+
+  /// The learning time the current statistics hold, in whole seconds.
+  ///
+  /// Shown in the Current scope whatever the View: it belongs to the deck,
+  /// not to a direction (ADR-0006).
+  final int statisticsSeconds;
 
   /// The deck's all-time per-unit counters (empty when nothing was recorded).
   final List<UnitStats> allTimeStatistics;
@@ -256,6 +263,9 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                     _DetailedStats(
                       summary: summary,
                       breakdown: difficultBreakdown(widget.deck, _view),
+                      statisticsSeconds: allTime
+                          ? null
+                          : widget.statisticsSeconds,
                     ),
                     _PracticeList(
                       deck: widget.deck,
@@ -1163,12 +1173,20 @@ double? _parsePercent(String text) {
 }
 
 final class _DetailedStats extends StatelessWidget {
-  const _DetailedStats({required this.summary, required this.breakdown});
+  const _DetailedStats({
+    required this.summary,
+    required this.breakdown,
+    required this.statisticsSeconds,
+  });
 
   final StatisticsSummary summary;
 
   /// The deck's difficult units in the View, for the rows below the buckets.
   final DifficultBreakdown breakdown;
+
+  /// The current statistics' learning time, or null where it is not shown
+  /// (the All-time scope).
+  final int? statisticsSeconds;
 
   @override
   Widget build(BuildContext context) {
@@ -1215,6 +1233,16 @@ final class _DetailedStats extends StatelessWidget {
                   '${summary.totalCorrect} '
                   '(${_percent(summary.attemptsHitRate ?? 0)})',
             ),
+            if (statisticsSeconds case final int seconds)
+              _StatPill(
+                label: messages.message(
+                  LearnAnywhereMessage.statisticsStatisticsTime,
+                ),
+                value: formatElapsedTime(Duration(seconds: seconds)),
+                tooltip: messages.message(
+                  LearnAnywhereMessage.statisticsStatisticsTimeTooltip,
+                ),
+              ),
           ],
         ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),
@@ -1614,14 +1642,17 @@ final class _AllTimeNotRecordedNotice extends StatelessWidget {
 }
 
 final class _StatPill extends StatelessWidget {
-  const _StatPill({required this.label, required this.value});
+  const _StatPill({required this.label, required this.value, this.tooltip});
 
   final String label;
   final String value;
 
+  /// What the figure measures, where its label alone cannot say.
+  final String? tooltip;
+
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    final Widget pill = DecoratedBox(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: LearnAnywhereTokens.smallRadius,
@@ -1634,6 +1665,8 @@ final class _StatPill extends StatelessWidget {
         child: Text('$label: $value'),
       ),
     );
+    final String? message = tooltip;
+    return message == null ? pill : Tooltip(message: message, child: pill);
   }
 }
 

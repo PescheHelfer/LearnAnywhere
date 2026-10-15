@@ -107,11 +107,25 @@ mitgezählt hat. **Sitzung erweitern** setzt dieselbe Sitzung fort; **Lern ▸ �
 einrichten** und **Lern ▸ Mit letzten Einstellungen lernen** beginnen eine neue bei null,
 in jedem Modus. Gespeichert wird nichts.
 
+Die **Statistikzeit**, ebenfalls in den [Einstellungen](11-settings.md#lernoptionen)
+einzuschalten, ist die Lernzeit der aktuellen Statistik: jede Sitzung seit dem letzten
+Löschen, genau wie die **Sitzungszeit** gezählt — sie wächst um genau das, was die Sitzung
+dazuzählt, läuft mit ihr mit, springt beim Bewerten nicht, und eine Einheit, die Sie
+unbewertet lassen, zählt auch hier nicht. Anders als die Sitzungszeit bleibt sie erhalten.
+Jede Antwort speichert sie zusammen mit der Statistik, sie ist also auch nach dem Schließen
+und erneuten Öffnen des Programms noch da; das Laden einer Sitzungsdatei bringt die Zeit
+zurück, die diese Datei enthält; und auf null zurück geht sie nur, wenn die aktuelle
+Statistik gelöscht wird, wie es **Aktuelle Statistik löschen...** tut. Sie ist eine einzige Zahl für die ganze Lern-Datei, gleich in welcher
+Richtung Sie gefragt werden. Der Bildschirm [Statistik](09-statistics.md#bersicht) zeigt
+dieselbe Zahl nach **Korrekte Versuche**.
+
 **Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben jeweils **die ganze
 Lern-Datei in der Richtung, in der diese Sitzung fragt** — nicht die Sitzung und nicht den
 Einheitenbereich. (Die folgenden Anzeigen sind bewusst enger: **Einheit korrekt** gilt
 nur dieser einen Einheit, **Einheitszeit** misst diese eine Einheit und beginnt mit jeder
-neu, und **Sitzungszeit** gilt nur dieser Sitzung.) Ein eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das,
+neu, und **Sitzungszeit** gilt nur dieser Sitzung. Allein die **Statistikzeit** reicht
+weiter: über die ganze Lern-Datei, beide Richtungen zusammen.) Ein eingeschränkter Bereich
+verkleinert, was Sie gefragt werden, nie das,
 was gezählt wird; die
 vier nebeneinanderstehenden Zahlen beschreiben also immer dieselbe Menge: eine Sitzung über
 die Einheiten 5–10 einer Datei mit 200 Einheiten weist **Beherrscht** und **Übrig**

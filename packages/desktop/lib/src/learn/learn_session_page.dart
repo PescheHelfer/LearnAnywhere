@@ -16,6 +16,7 @@ final class LearnSessionPage extends StatefulWidget {
   const LearnSessionPage({
     required this.deck,
     required this.statistics,
+    this.statisticsSeconds = 0,
     required this.options,
     required this.parameters,
     required this.onParametersChanged,
@@ -46,6 +47,14 @@ final class LearnSessionPage extends StatefulWidget {
 
   /// Current statistics.
   final List<UnitStats> statistics;
+
+  /// The learning time the current statistics hold, in whole seconds — the
+  /// statistics time, as stored.
+  ///
+  /// The page never adds to it: each rating hands its seconds to the shell in
+  /// [onAttemptRecorded], which hands the grown figure back here. The pill
+  /// shows this plus the running unit's capped seconds.
+  final int statisticsSeconds;
 
   /// Current Level-Learning statistics (`.sta` v2 section, may be empty).
   final List<LevelUnitStats> levelStatistics;
@@ -99,12 +108,15 @@ final class LearnSessionPage extends StatefulWidget {
   final VoidCallback? onPersistStatistics;
 
   /// Called with each attempt exactly as the working record took it, so the
-  /// shell can add the same amount to the deck's lifetime record.
+  /// shell can add the same amount to the deck's lifetime record, and with
+  /// the unit's capped learning seconds, which the shell adds to
+  /// [statisticsSeconds].
   ///
   /// Fires for every rating, including one the wrong-answer ceiling suppressed
   /// and a "no count" — both arrive carrying an empty delta, which the lifetime
-  /// record ignores. Fires BEFORE [onPersistStatistics], so the shell's
-  /// document already holds the attempt when the writes are queued.
+  /// record ignores, but still carry their time. Fires BEFORE
+  /// [onPersistStatistics], so the shell's document already holds the attempt
+  /// when the writes are queued.
   final ValueChanged<RecordedAttempt>? onAttemptRecorded;
 
   /// Called when the user wants to interrupt and edit the deck.
@@ -200,6 +212,8 @@ const List<(LearnAnywhereMessage, String)> _widestStatPills =
       (LearnAnywhereMessage.learnLiveAccuracy, '9999/9999 (100%)'),
       (LearnAnywhereMessage.learnLiveUnitTime, '99:59:59'),
       (LearnAnywhereMessage.learnLiveSittingTime, '99:59:59'),
+      // Accumulates over every sitting until the statistics are cleared.
+      (LearnAnywhereMessage.learnLiveStatisticsTime, '999:59:59'),
     ];
 
 /// The widest thing on the session screen that cannot be broken across lines.
@@ -905,6 +919,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       // rated — so rating it moves its seconds into the stored figure without
       // the pill moving.
       sittingSeconds: _sittingSeconds + unitLearningSeconds(_unitSeconds),
+      statisticsSeconds:
+          widget.statisticsSeconds + unitLearningSeconds(_unitSeconds),
       viewMode: _viewMode,
       onReveal: _primaryPreCheck,
       onCellAnswerChanged: (int fieldId, String value) {
@@ -1593,6 +1609,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       widget.onStatisticsChanged(updated);
       recorded = updated;
     }
+    // Every rating adds the unit's time, No count included: it is time spent
+    // learning even when the answer is not scored.
+    final int learningSeconds = unitLearningSeconds(_unitSeconds);
     widget.onAttemptRecorded?.call(
       RecordedAttempt(
         unitIndex: item.unitIndex,
@@ -1601,15 +1620,15 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         level: level,
         levelDelta: levelDelta,
         reachedLevel: reachedLevel,
+        learningSeconds: learningSeconds,
       ),
     );
     // Persist the just-recorded attempt to the auto-save target. Runs after the
-    // stats callbacks above so the shell's document already holds this attempt;
-    // the shell queues the write asynchronously so it never stalls the cycle.
+    // stats callbacks above so the shell's document already holds this attempt
+    // and its time; the shell queues the write asynchronously so it never
+    // stalls the cycle.
     widget.onPersistStatistics?.call();
-    // Every rating adds the unit's time, No count included: it is time spent
-    // learning even when the answer is not scored.
-    _sittingSeconds += unitLearningSeconds(_unitSeconds);
+    _sittingSeconds += learningSeconds;
     _selectNextItem(statistics: recorded);
   }
 
@@ -1690,7 +1709,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
 
   /// Whether a pill on screen reads the clock, so a tick must repaint.
   bool get _timePillShown =>
-      widget.options.showUnitTime || widget.options.showSittingTime;
+      widget.options.showUnitTime ||
+      widget.options.showSittingTime ||
+      widget.options.showStatisticsTime;
 
   void _tickUnitClock(Timer _) {
     if (!mounted || _currentItem == null) {
@@ -2165,6 +2186,7 @@ final class _SessionView extends StatelessWidget {
     required this.enteredAnswers,
     required this.unitSeconds,
     required this.sittingSeconds,
+    required this.statisticsSeconds,
     required this.viewMode,
     required this.onReveal,
     required this.onCellAnswerChanged,
@@ -2229,6 +2251,9 @@ final class _SessionView extends StatelessWidget {
 
   /// The sitting's learning time so far, the unit on screen included.
   final int sittingSeconds;
+
+  /// The current statistics' learning time, the unit on screen included.
+  final int statisticsSeconds;
   final _AnswerViewMode viewMode;
   final VoidCallback onReveal;
 
@@ -2450,6 +2475,17 @@ final class _SessionView extends StatelessWidget {
           value: formatElapsedTime(Duration(seconds: sittingSeconds)),
           tooltip: messages.message(
             LearnAnywhereMessage.learnLiveSittingTimeTooltip,
+          ),
+        ),
+      );
+    }
+    if (options.showStatisticsTime) {
+      pills.add(
+        _StatPill(
+          label: messages.message(LearnAnywhereMessage.learnLiveStatisticsTime),
+          value: formatElapsedTime(Duration(seconds: statisticsSeconds)),
+          tooltip: messages.message(
+            LearnAnywhereMessage.learnLiveStatisticsTimeTooltip,
           ),
         ),
       );

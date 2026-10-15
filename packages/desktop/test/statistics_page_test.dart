@@ -44,6 +44,60 @@ void main() {
     expect(find.textContaining('Practiced units'), findsOneWidget);
   });
 
+  testWidgets('the Statistics time follows Correct Attempts in the Current '
+      'scope, whatever the View', (WidgetTester tester) async {
+    widenSurface(tester);
+    await tester.pumpWidget(buildPage(statisticsSeconds: 3725));
+    await tester.pumpAndSettle();
+
+    final Finder pill = find.text('Statistics time: 1:02:05');
+    expect(pill, findsOneWidget);
+    expect(
+      find.byTooltip(
+        'The learning time held by the current statistics since they were '
+        'last cleared: the time of every unit you rated, each counted at '
+        'most five minutes.',
+      ),
+      findsOneWidget,
+    );
+    // Directly after Correct Attempts in the summary row.
+    final List<String> row = tester
+        .widgetList<Text>(
+          find.descendant(
+            of: find.ancestor(of: pill, matching: find.byType(Wrap)).first,
+            matching: find.byType(Text),
+          ),
+        )
+        .map((Text text) => text.data!)
+        .toList();
+    expect(row.last, 'Statistics time: 1:02:05');
+    expect(row[row.length - 2], startsWith('Correct Attempts: '));
+
+    // Learning time belongs to the deck, not to a direction.
+    await selectView(tester, 'Direction 2');
+    expect(pill, findsOneWidget);
+    await selectCombined(tester);
+    expect(pill, findsOneWidget);
+
+    // The lifetime record shows no statistics time.
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Statistics time'), findsNothing);
+
+    await tester.tap(find.text('Current'));
+    await tester.pumpAndSettle();
+    expect(pill, findsOneWidget);
+  });
+
+  testWidgets('cleared statistics show no time, not a missing pill', (
+    WidgetTester tester,
+  ) async {
+    widenSurface(tester);
+    await tester.pumpWidget(buildPage());
+    await tester.pumpAndSettle();
+    expect(find.text('Statistics time: 0:00'), findsOneWidget);
+  });
+
   testWidgets(
     'level-zero caption shows on the overall tabs, and "% of practiced" is '
     'blank for the never-practiced row',
@@ -950,6 +1004,7 @@ Widget buildPage({
     UnitStats(index: 2),
   ],
   List<LevelUnitStats> levelStatistics = const <LevelUnitStats>[],
+  int statisticsSeconds = 0,
   List<UnitStats> allTimeStatistics = const <UnitStats>[],
   List<LevelUnitStats> allTimeLevelStatistics = const <LevelUnitStats>[],
   bool allTimeIsRefused = false,
@@ -966,6 +1021,7 @@ Widget buildPage({
       deck: deck ?? sampleDeck(),
       statistics: statistics,
       levelStatistics: levelStatistics,
+      statisticsSeconds: statisticsSeconds,
       allTimeStatistics: allTimeStatistics,
       allTimeLevelStatistics: allTimeLevelStatistics,
       allTimeIsRefused: allTimeIsRefused,

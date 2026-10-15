@@ -95,6 +95,9 @@ final class AttemptDelta {
 /// ladder stands afterwards. A Level-Learning answer given at
 /// [kFreeRecallLevel] also carries a [drill] delta, because free recall is the
 /// same thing the drill modes test.
+///
+/// It also carries the unit's [learningSeconds], so the time is added to a
+/// record in the same step as the counters and needs no write of its own.
 final class RecordedAttempt {
   /// Creates a recorded attempt.
   const RecordedAttempt({
@@ -104,6 +107,7 @@ final class RecordedAttempt {
     this.level,
     this.levelDelta = AttemptDelta.none,
     this.reachedLevel,
+    this.learningSeconds = 0,
   });
 
   /// One-based unit index.
@@ -126,7 +130,16 @@ final class RecordedAttempt {
   /// this as the most recently reached level.
   final int? reachedLevel;
 
+  /// The learning time the answer adds, in whole seconds: the unit's time,
+  /// capped by `unitLearningSeconds`.
+  ///
+  /// Carried whatever the counters did — a "no count" rating moves no counter
+  /// but is still time spent learning (ADR-0006).
+  final int learningSeconds;
+
   /// Whether the working record counted nothing, so neither should this one.
+  ///
+  /// Counters only: [learningSeconds] does not make an attempt non-empty.
   bool get isEmpty => drill.isEmpty && levelDelta.isEmpty;
 }
 

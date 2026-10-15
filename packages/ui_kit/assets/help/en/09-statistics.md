@@ -27,7 +27,8 @@ looking at; the screen always opens on **Current**.
 - **Current** — the working record. This is the one the program learns from: it decides
   which units go into the practice pool, which count as mastered, and where you stand on
   the [Level learning](07-level-learning.md) ladder. It is what **Load stats...** and
-  **Save stats** read and write, and it is the record a session file holds.
+  **Save stats** read and write, and it is the record a session file holds — together
+  with its **Statistics time**, the learning time since it was last cleared.
 - **All-time** — the deck's whole history. It only ever grows: every answer you give is
   added to it as you give it, and nothing else ever changes it. Loading a statistics
   file, merging another deck or clearing the current record leaves it exactly as it was.
@@ -55,7 +56,8 @@ Each record is cleared on its own, from its own scope, and neither clear touches
 other.
 
 - **Clear current stats...**, in the **Current** scope, erases every recorded attempt in
-  the working record after confirming. The all-time statistics are not affected — the
+  the working record after confirming, and sets its **Statistics time** back to zero.
+  The all-time statistics are not affected — the
   dialog says so. This is the everyday reset: start the deck over without losing its
   history.
 - **Clear all-time stats...**, in the **All-time** scope, erases the deck's complete
@@ -114,6 +116,12 @@ Total units, practiced units, total attempts and correct attempts for the curren
 scope, then a table and bar chart breaking every unit down by bucket — count, percent
 of all units, and percent of practiced units. Each bar is its row's share of all units,
 like **% of all**: a full bar is the whole deck.
+
+In the **Current** scope, **Statistics time** follows **Correct Attempts**: the learning
+time the current statistics hold, the same figure as the
+[session pill](06-learning-sessions.md#during-a-session). It is always shown here, whether
+or not its pill is switched on for sessions, and the **Direction** switch does not change
+it, because learning time belongs to the whole deck, not to a direction.
 
 Below **Not yet practiced**, after a stronger line, the table counts the deck's
 [difficult](06-learning-sessions.md#marking-a-unit-difficult) units. These rows are not

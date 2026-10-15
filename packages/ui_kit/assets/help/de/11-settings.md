@@ -20,6 +20,7 @@ Antwortprüfung aus; eine Änderung mitten in einer Sitzung wirkt sofort.
 | Ähnlichkeitsschwelle für „Fast“ (%) | 80 | Wie nah ein Beinahe-Treffer sein muss, um als "Fast" zu zählen |
 | Einheitszeit | Aus | Zeigt die Anzeige **Einheitszeit**: wie lange die aktuelle Einheit schon auf dem Bildschirm steht |
 | Sitzungszeit | Aus | Zeigt die Anzeige **Sitzungszeit**: die Lernzeit dieser Sitzung, jede bewertete Einheit höchstens fünf Minuten gezählt |
+| Statistikzeit | Aus | Zeigt die Anzeige **Statistikzeit**: die Lernzeit der aktuellen Statistik seit dem letzten Löschen, ebenso gezählt |
 | Zeitlimit (Sekunden) | 0 (kein Limit) | Erreicht die Zeit einer Einheit diesen Wert, ertönt ein Signal und die Anzeige **Einheitszeit** wird hervorgehoben; die Sitzung geht weiter. Setzt **Einheitszeit** voraus |
 | Mindestabfragen beachten | Aus | Siehe unten |
 | Mindestabfragen | 2 | Wert für den obigen Schutz |

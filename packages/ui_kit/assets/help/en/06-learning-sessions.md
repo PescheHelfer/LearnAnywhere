@@ -97,11 +97,23 @@ the sitting adds nothing, even though the pill was already counting it. **Extend
 carries on with the same sitting; **Learn ▸ Practice setup** and **Learn ▸ Learn with last
 settings** begin a new one at zero, in any mode. Nothing is kept once you leave.
 
+**Statistics time**, switched on in [Settings](11-settings.md#learning-options) as well,
+is the learning time the current statistics hold: every sitting since they were last
+cleared, counted exactly like **Sitting time** — it grows by just what the sitting adds,
+ticks along with it, does not jump when you rate, and a unit you leave unrated adds nothing
+to it either. Unlike the sitting, it is kept. Each answer saves it together with the
+statistics, so it is still there after you close and reopen the program; loading a session
+file brings back the time that file holds; and it goes back to zero only when the current
+statistics are cleared, as **Clear current stats...** does. It is one figure for the whole deck, whichever direction you are asked. The
+[Statistics](09-statistics.md#overview) screen shows the same figure after **Correct
+Attempts**.
+
 **Attempts**, **Mastered**, **Remaining** and **Accuracy** each describe **the whole deck,
 in the direction this session asks** — not the sitting, and not the unit range. (The
 readouts after them are deliberately narrower: **Unit accuracy** is about that one unit,
 **Unit time** times that one unit, starting afresh with each, and **Sitting time** covers
-this sitting alone.) Restricting the range
+this sitting alone. **Statistics time** is the one that goes wider: the whole deck, in
+both directions together.) Restricting the range
 narrows what you are asked, never what is counted, so the four figures standing side by
 side always describe
 the same population: a session on units 5–10 of a 200-unit deck still reports **Mastered**

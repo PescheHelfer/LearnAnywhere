@@ -668,6 +668,9 @@ final class DesktopFileService {
       document: current.copyWith(
         statistics: realigned.statistics,
         levelStatistics: realigned.levelStatistics,
+        // Deck-wide, so realignment has nothing to say about it: the time
+        // comes back whole, even when some units' counters could not.
+        statisticsSeconds: statistics.learningSeconds,
         statisticsPath: path,
         clearStatisticsPath: isAllTime,
         clearAutoSaveTarget: isAllTime,
@@ -706,6 +709,7 @@ final class DesktopFileService {
           perUnit: withUnitHashes(document.deck, document.statistics),
           levelLearning: _levelSection(document.levelStatistics),
           lastSessionMode: document.lastSessionMode,
+          learningSeconds: document.statisticsSeconds,
         ),
       ),
     );
@@ -740,6 +744,7 @@ final class DesktopFileService {
     return current.copyWith(
       statistics: clearStatistics(current.deck),
       levelStatistics: const <LevelUnitStats>[],
+      statisticsSeconds: 0,
       // Nothing recorded means no mode to have recorded it in.
       clearLastSessionMode: true,
       clearStatisticsPath: true,

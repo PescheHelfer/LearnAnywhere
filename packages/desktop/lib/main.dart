@@ -1382,20 +1382,20 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     _queuePruneOldStatistics(target);
   }
 
-  /// Adds one attempt to the deck's lifetime record and queues the write.
+  /// Adds one attempt's learning time to the working record and its counters
+  /// to the deck's lifetime record, and queues the lifetime write.
   ///
-  /// [attempt] carries exactly what the working record took, so a suppressed
-  /// or uncounted attempt changes nothing and writes nothing. The write is
-  /// queued here rather than in [_persistSessionStatistics] because that one
-  /// stops when auto-saving is off, and the lifetime record must not.
-  void _recordAllTimeAttempt(RecordedAttempt attempt) {
-    if (attempt.isEmpty) {
-      return;
+  /// Runs before [_persistSessionStatistics], so the session file written for
+  /// this answer already holds its time. [attempt] carries exactly what the
+  /// working record took, so a suppressed or uncounted attempt changes no
+  /// lifetime counter and writes no lifetime file. That write is queued here
+  /// rather than in [_persistSessionStatistics] because that one stops when
+  /// auto-saving is off, and the lifetime record must not.
+  void _recordAttempt(RecordedAttempt attempt) {
+    setState(() => _document = _document.withAttempt(attempt));
+    if (!attempt.isEmpty) {
+      _queueAllTimeSave(_document);
     }
-    setState(() {
-      _document = _document.copyWith(allTime: _document.allTime.record(attempt));
-    });
-    _queueAllTimeSave(_document);
   }
 
   /// Persists statistics to the auto-save target after each check→continue
@@ -2912,6 +2912,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _DesktopRoute.learn => LearnSessionPage(
         deck: _document.deck,
         statistics: _document.statistics,
+        statisticsSeconds: _document.statisticsSeconds,
         speechEngine: widget.speechEngine,
         speechSettings: _settings.speech,
         levelStatistics: _document.levelStatistics,
@@ -2964,7 +2965,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         },
         onSessionStarted: _prepareSessionStart,
         onPersistStatistics: _persistSessionStatistics,
-        onAttemptRecorded: _recordAllTimeAttempt,
+        onAttemptRecorded: _recordAttempt,
         onToggleDifficult: _toggleDifficult,
         onOpenEditor: () => _selectRoute(_DesktopRoute.editor),
         onExit: () => _selectRoute(_DesktopRoute.home),
@@ -3002,6 +3003,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _DesktopRoute.statistics => StatisticsPage(
         deck: _document.deck,
         statistics: _document.statistics,
+        statisticsSeconds: _document.statisticsSeconds,
         levelStatistics: _document.levelStatistics,
         allTimeStatistics: _document.allTime.perUnit,
         allTimeLevelStatistics: _document.allTime.perLevel,
@@ -4358,6 +4360,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         // file it is first saved to is dated.
         unitsEdited: true,
         statistics: clearStatistics(deck),
+        statisticsSeconds: 0,
         allTime: AllTimeRecord.unread,
         clearDeckPath: true,
         clearStatisticsPath: true,

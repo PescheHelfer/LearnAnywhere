@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learn_anywhere_core/core.dart';
@@ -111,6 +112,7 @@ void main() {
   // matched.
   final Finder unitTimePill = find.textContaining('Unit time: ');
   final Finder sittingTimePill = find.textContaining('Sitting time: ');
+  final Finder statisticsTimePill = find.textContaining('Statistics time: ');
 
   /// Flips the learning option [label] on the Advanced Learning Options
   /// page, then leaves it with Esc (its Close button is below the fold).
@@ -172,16 +174,39 @@ void main() {
     });
   });
 
-  testWidgets('the Statistics and Total time options show no pill yet', (
+  testWidgets(
+    'the Statistics time option shows and hides the Statistics time pill',
+    (WidgetTester tester) async {
+      await tester.runAsync(() async {
+        await openDeck(tester);
+        await startSession(tester);
+        expect(statisticsTimePill, findsNothing);
+
+        await toggleOption(tester, 'Statistics time');
+        await startSession(tester);
+        expect(statisticsTimePill, findsOneWidget);
+        expect(unitTimePill, findsNothing);
+        expect(sittingTimePill, findsNothing);
+        expect(
+          decodeSettingsJson(
+            File(settingsPath).readAsStringSync(),
+          ).showStatisticsTime,
+          isTrue,
+        );
+
+        await toggleOption(tester, 'Statistics time');
+        await startSession(tester);
+        expect(statisticsTimePill, findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+    },
+  );
+
+  testWidgets('the Total time option shows no pill yet', (
     WidgetTester tester,
   ) async {
     File(settingsPath).writeAsStringSync(
-      encodeSettingsJson(
-        const LearnAnywhereSettings(
-          showStatisticsTime: true,
-          showTotalTime: true,
-        ),
-      ),
+      encodeSettingsJson(const LearnAnywhereSettings(showTotalTime: true)),
     );
 
     await tester.runAsync(() async {
@@ -191,6 +216,68 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  testWidgets(
+    'each answer saves its time into the session file, and a unit left '
+    'unrated when the sitting ends adds nothing',
+    (WidgetTester tester) async {
+      prefs.setAutoSaveStats(true);
+      File(settingsPath).writeAsStringSync(
+        encodeSettingsJson(
+          const LearnAnywhereSettings(showStatisticsTime: true),
+        ),
+      );
+
+      /// The one timestamped session file the sitting writes to.
+      File sessionFile() {
+        final RegExp pattern = DeckPaths.timestampedStatisticsPattern(
+          deckPath,
+        );
+        return temp
+            .listSync()
+            .whereType<File>()
+            .singleWhere((File file) => pattern.hasMatch(p.basename(file.path)));
+      }
+
+      int savedSeconds() => decodeStatisticsJson(
+        sessionFile().readAsStringSync(),
+      ).learningSeconds;
+
+      await tester.runAsync(() async {
+        await openDeck(tester);
+        await startSession(tester);
+        expect(statisticsTimePill, findsOneWidget);
+        expect(savedSeconds(), 0);
+
+        // The shell runs on real timers here: let the first unit's clock
+        // pass a couple of seconds, then answer it.
+        await Future<void>.delayed(const Duration(milliseconds: 2200));
+        await tester.enterText(find.byType(TextField), 'x');
+        await tester.tap(find.text('Check'));
+        await settle(tester);
+        await tester.tap(find.text('Continue'));
+        await settleAfterIo(tester);
+        final int saved = savedSeconds();
+        expect(saved, greaterThanOrEqualTo(2));
+
+        // The second unit runs as long again, is never rated, and the sitting
+        // ends.
+        expect(find.text('Check'), findsOneWidget);
+        await Future<void>.delayed(const Duration(milliseconds: 2200));
+        await pickMenuItem(tester, 'Learn', 'Practice setup');
+        expect(savedSeconds(), saved);
+
+        await pickMenuItem(tester, 'Statistics', 'Show statistics');
+        expect(
+          find.text(
+            'Statistics time: ${formatElapsedTime(Duration(seconds: saved))}',
+          ),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      });
+    },
+  );
 
   testWidgets('a settings file with Show clock on still shows the clock', (
     WidgetTester tester,
@@ -246,6 +333,13 @@ const LearningDeck _deck = LearningDeck(
       fields: <int, FieldValue>{
         0: FieldValue.plain('house'),
         1: FieldValue.plain('Haus'),
+      },
+    ),
+    LearningUnit(
+      categoryId: 1,
+      fields: <int, FieldValue>{
+        0: FieldValue.plain('tree'),
+        1: FieldValue.plain('Baum'),
       },
     ),
   ],

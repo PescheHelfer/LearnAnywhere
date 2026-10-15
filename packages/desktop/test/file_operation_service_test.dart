@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_desktop/src/file_operations/desktop_document.dart';
 import 'package:learn_anywhere_desktop/src/file_operations/desktop_file_service.dart';
+import 'package:path/path.dart' as p;
 
 void main() {
   group('DesktopFileService', () {
@@ -1347,6 +1348,126 @@ void main() {
       expect(unknown.lastSessionMode, isNull);
 
       await temp.delete(recursive: true);
+    });
+
+    test('the statistics time travels with the working record: written to '
+        'every session file, restored by a load, zeroed by a clear', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_stats_time',
+      );
+      addTearDown(() => temp.delete(recursive: true));
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = p.join(temp.path, 'deck.vok');
+      final String statsPath = p.join(temp.path, 'deck_20261015_101500.sta');
+      final String savedAsPath = p.join(temp.path, 'elsewhere.sta');
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{0: FieldValue.plain('Q')},
+          ),
+        ],
+      );
+      final DesktopDocument document = DesktopDocument(
+        deck: deck,
+        statistics: clearStatistics(deck),
+        statisticsSeconds: 754,
+        deckPath: deckPath,
+        autoSaveTargetPath: statsPath,
+        autoSaveStatistics: true,
+      );
+
+      // The per-answer auto-save and Save stats as both carry it.
+      await service.autoSaveStatistics(document);
+      await service.saveStatistics(document, savedAsPath);
+      for (final String path in <String>[statsPath, savedAsPath]) {
+        expect(
+          decodeStatisticsJson(File(path).readAsStringSync()).learningSeconds,
+          754,
+        );
+      }
+
+      // Loading a session file restores it in place of what was held.
+      final DesktopDocument loaded = (await service.loadStatistics(
+        DesktopDocument(
+          deck: deck,
+          statistics: clearStatistics(deck),
+          statisticsSeconds: 5,
+        ),
+        savedAsPath,
+      )).document;
+      expect(loaded.statisticsSeconds, 754);
+
+      // A file written before the key existed holds no time.
+      await File(savedAsPath).writeAsString(
+        encodeStatisticsJson(
+          StatisticsFile(deckRef: 'deck.vok', perUnit: clearStatistics(deck)),
+        ),
+      );
+      expect(
+        (await service.loadStatistics(loaded, savedAsPath))
+            .document
+            .statisticsSeconds,
+        0,
+      );
+
+      // Clearing writes the sitting out with its time, then starts at zero.
+      final DesktopDocument cleared = await service.clearCurrentStatistics(
+        loaded.copyWith(autoSaveTargetPath: statsPath, autoSaveStatistics: true),
+      );
+      expect(cleared.statisticsSeconds, 0);
+      expect(
+        decodeStatisticsJson(
+          File(statsPath).readAsStringSync(),
+        ).learningSeconds,
+        754,
+      );
+
+      // A deck opened afresh holds none either.
+      await File(deckPath).writeAsString(encodeDeckJson(deck));
+      expect((await service.openDeck(loaded, deckPath)).statisticsSeconds, 0);
+    });
+
+    test('an answer adds its learning time to the working record, a No count '
+        'one too', () {
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{0: FieldValue.plain('Q')},
+          ),
+        ],
+      );
+      final DesktopDocument document = DesktopDocument(
+        deck: deck,
+        statistics: clearStatistics(deck),
+        statisticsSeconds: 100,
+      );
+
+      final DesktopDocument counted = document.withAttempt(
+        const RecordedAttempt(
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+          drill: AttemptDelta(attempts: 1, correct: 1),
+          learningSeconds: 42,
+        ),
+      );
+      expect(counted.statisticsSeconds, 142);
+      expect(counted.allTime.perUnit.single.direction1.attempts, 1);
+
+      // No counter moved, so the lifetime record is left alone — but the
+      // time was still spent learning.
+      final DesktopDocument noCount = counted.withAttempt(
+        const RecordedAttempt(
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+          learningSeconds: 20,
+        ),
+      );
+      expect(noCount.statisticsSeconds, 162);
+      expect(noCount.allTime.perUnit.single.direction1.attempts, 1);
     });
 
     test('realigns loaded statistics onto a deck edited outside the app', () async {

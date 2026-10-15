@@ -28,7 +28,8 @@ const int currentFormatVersion = 1;
 /// version 2 rather than a version 3: unknown keys are ignored in both
 /// directions, so a file with hashes still loads in a build that predates them,
 /// and a file without hashes still loads here. Bumping the version would only
-/// make older builds reject the file for no gain.
+/// make older builds reject the file for no gain. The `scope` marker and the
+/// `learningSeconds` total are additive at version 2 for the same reason.
 const int currentStatisticsVersion = 2;
 
 /// A user-facing validation failure for a loaded file.
@@ -182,12 +183,19 @@ StatisticsFile decodeStatistics(Object? value) {
             .where((SessionMode mode) => mode.name == rawMode)
             .firstOrNull
       : null;
+  // Additive at version 2 and read tolerantly: absent in every file written
+  // before learning time existed, and anything but a whole, non-negative
+  // number of seconds reads as "no time recorded" rather than failing the load.
+  final Object? rawLearningSeconds = json['learningSeconds'];
   return StatisticsFile(
     deckRef: deckRef,
     scope: scope,
     perUnit: List<UnitStats>.unmodifiable(perUnit),
     levelLearning: levelLearning,
     lastSessionMode: lastSessionMode,
+    learningSeconds: rawLearningSeconds is int && rawLearningSeconds > 0
+        ? rawLearningSeconds
+        : 0,
   );
 }
 
@@ -201,6 +209,11 @@ Map<String, Object?> encodeStatistics(StatisticsFile statistics) {
     if (statistics.scope != StatisticsScope.session)
       'scope': statistics.scope.name,
     'deckRef': statistics.deckRef,
+    // Written only when there is some, so a record holding no time stays
+    // byte-identical to what builds predating the key produce. Placed before
+    // the units so someone reading the file sees it without scrolling.
+    if (statistics.learningSeconds > 0)
+      'learningSeconds': statistics.learningSeconds,
     'perUnit': statistics.perUnit.map(_encodeUnitStats).toList(growable: false),
     if (statistics.levelLearning != null)
       'levelLearning': _encodeLevelLearning(statistics.levelLearning!),

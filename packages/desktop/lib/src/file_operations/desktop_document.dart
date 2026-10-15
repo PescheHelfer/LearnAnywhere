@@ -7,6 +7,7 @@ final class DesktopDocument {
     required this.deck,
     required this.statistics,
     this.levelStatistics = const <LevelUnitStats>[],
+    this.statisticsSeconds = 0,
     this.allTime = AllTimeRecord.unread,
     this.deckPath,
     this.statisticsPath,
@@ -29,6 +30,15 @@ final class DesktopDocument {
   /// on demand by the engine (`activeLevelLearningPool`) and materialized here
   /// as the student answers Level-Learning units.
   final List<LevelUnitStats> levelStatistics;
+
+  /// The learning time the current statistics hold, in whole seconds: the
+  /// statistics time (ADR-0006).
+  ///
+  /// Part of the working record, so it travels with [statistics] into every
+  /// session file, comes back when one is loaded, and goes back to zero only
+  /// when the current statistics are cleared. It grows in [withAttempt], with
+  /// the answer it belongs to, and needs no save of its own.
+  final int statisticsSeconds;
 
   /// The deck's lifetime record, written beside it as `<deck>_alltime.sta`.
   ///
@@ -98,6 +108,7 @@ final class DesktopDocument {
     LearningDeck? deck,
     List<UnitStats>? statistics,
     List<LevelUnitStats>? levelStatistics,
+    int? statisticsSeconds,
     AllTimeRecord? allTime,
     String? deckPath,
     String? statisticsPath,
@@ -115,6 +126,7 @@ final class DesktopDocument {
       deck: deck ?? this.deck,
       statistics: statistics ?? this.statistics,
       levelStatistics: levelStatistics ?? this.levelStatistics,
+      statisticsSeconds: statisticsSeconds ?? this.statisticsSeconds,
       allTime: allTime ?? this.allTime,
       deckPath: clearDeckPath ? null : deckPath ?? this.deckPath,
       statisticsPath: clearStatisticsPath
@@ -129,6 +141,21 @@ final class DesktopDocument {
           ? null
           : lastSessionMode ?? this.lastSessionMode,
       unitsEdited: unitsEdited ?? this.unitsEdited,
+    );
+  }
+
+  /// Returns a copy with [attempt] added to both records: its learning time
+  /// to the working record, its counters to the lifetime record.
+  ///
+  /// The working record's counters arrive separately, already applied by the
+  /// session; this is the rest of the same step. It runs before the answer's
+  /// session file is written, so the time reaches the file with the answer.
+  /// The time is added even when no counter moved — a "no count" rating is
+  /// still time spent learning.
+  DesktopDocument withAttempt(RecordedAttempt attempt) {
+    return copyWith(
+      statisticsSeconds: statisticsSeconds + attempt.learningSeconds,
+      allTime: allTime.record(attempt),
     );
   }
 }

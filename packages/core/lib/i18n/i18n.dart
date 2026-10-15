@@ -827,6 +827,9 @@ enum LearnAnywhereMessage {
   /// Tooltip of the Sitting time pill.
   learnLiveSittingTimeTooltip,
 
+  /// Tooltip of the Statistics time pill.
+  learnLiveStatisticsTimeTooltip,
+
   /// Completion message of a Difficult-units-only session that ran out because
   /// nothing in its range is difficult any more; replaces the mastered one.
   learnNoDifficultUnitsLeft,
@@ -888,6 +891,10 @@ enum LearnAnywhereMessage {
 
   /// Label of the Sitting time pill: this learning session's learning time.
   learnLiveSittingTime,
+
+  /// Label of the Statistics time pill: the learning time the current
+  /// statistics hold.
+  learnLiveStatisticsTime,
 
   /// Current unit header.
   learnUnitHeader,
@@ -1014,6 +1021,13 @@ enum LearnAnywhereMessage {
 
   /// Correct attempts label (Detailed view).
   statisticsCorrectAttempts,
+
+  /// Statistics time label (Detailed view, Current scope): the learning time
+  /// the current statistics hold.
+  statisticsStatisticsTime,
+
+  /// Tooltip of the Statistics time label on the statistics screen.
+  statisticsStatisticsTimeTooltip,
 
   /// Statistics bucket column label.
   statisticsBucket,
@@ -2060,6 +2074,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveSittingTimeTooltip:
           "This sitting's learning time: the time of every unit you rated, "
           'each counted at most five minutes.',
+      LearnAnywhereMessage.learnLiveStatisticsTimeTooltip:
+          'The learning time held by the current statistics since they were '
+          'last cleared: the time of every unit you rated, each counted at '
+          'most five minutes.',
       LearnAnywhereMessage.learnNoDifficultUnitsLeft:
           'No difficult units left to ask.',
       LearnAnywhereMessage.learnUnitAccuracy: 'Unit accuracy',
@@ -2087,6 +2105,7 @@ final class LearnAnywhereCatalog {
           'File ▸ Save deck once the file can be written again. ({detail})',
       LearnAnywhereMessage.learnLiveUnitTime: 'Unit time',
       LearnAnywhereMessage.learnLiveSittingTime: 'Sitting time',
+      LearnAnywhereMessage.learnLiveStatisticsTime: 'Statistics time',
       LearnAnywhereMessage.learnUnitHeader: 'Unit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
       LearnAnywhereMessage.learnEvaluateAs: 'Evaluate as:',
@@ -2138,6 +2157,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsQueriedUnits: 'Practiced units',
       LearnAnywhereMessage.statisticsTotalAttempts: 'Total Attempts',
       LearnAnywhereMessage.statisticsCorrectAttempts: 'Correct Attempts',
+      LearnAnywhereMessage.statisticsStatisticsTime: 'Statistics time',
+      LearnAnywhereMessage.statisticsStatisticsTimeTooltip:
+          'The learning time held by the current statistics since they were '
+          'last cleared: the time of every unit you rated, each counted at '
+          'most five minutes.',
       LearnAnywhereMessage.statisticsBucket: 'Bucket',
       LearnAnywhereMessage.statisticsCount: 'Count',
       LearnAnywhereMessage.statisticsPercentAll: '% of all',
@@ -2868,6 +2892,10 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveSittingTimeTooltip:
           'Lernzeit dieser Sitzung: die Zeit jeder bewerteten Einheit, jede '
           'höchstens fünf Minuten gezählt.',
+      LearnAnywhereMessage.learnLiveStatisticsTimeTooltip:
+          'Lernzeit der aktuellen Statistik seit dem letzten Löschen: die '
+          'Zeit jeder bewerteten Einheit, jede höchstens fünf Minuten '
+          'gezählt.',
       LearnAnywhereMessage.learnNoDifficultUnitsLeft:
           'Keine schwierigen Einheiten mehr abzufragen.',
       LearnAnywhereMessage.learnUnitAccuracy: 'Einheit korrekt',
@@ -2903,6 +2931,7 @@ final class LearnAnywhereCatalog {
           'beschreibbar ist. ({detail})',
       LearnAnywhereMessage.learnLiveUnitTime: 'Einheitszeit',
       LearnAnywhereMessage.learnLiveSittingTime: 'Sitzungszeit',
+      LearnAnywhereMessage.learnLiveStatisticsTime: 'Statistikzeit',
       LearnAnywhereMessage.learnUnitHeader: 'Einheit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
       LearnAnywhereMessage.learnEvaluateAs: 'Bewerten als:',
@@ -2956,6 +2985,11 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.statisticsQueriedUnits: 'Abgefragte Einheiten',
       LearnAnywhereMessage.statisticsTotalAttempts: 'Abfrage-Versuche',
       LearnAnywhereMessage.statisticsCorrectAttempts: 'Korrekte Versuche',
+      LearnAnywhereMessage.statisticsStatisticsTime: 'Statistikzeit',
+      LearnAnywhereMessage.statisticsStatisticsTimeTooltip:
+          'Lernzeit der aktuellen Statistik seit dem letzten Löschen: die '
+          'Zeit jeder bewerteten Einheit, jede höchstens fünf Minuten '
+          'gezählt.',
       LearnAnywhereMessage.statisticsBucket: 'Bereich',
       LearnAnywhereMessage.statisticsCount: 'Anzahl',
       LearnAnywhereMessage.statisticsPercentAll: '% von allen',

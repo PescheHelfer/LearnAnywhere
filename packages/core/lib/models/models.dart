@@ -1068,10 +1068,19 @@ final class StatisticsFile {
     this.levelLearning,
     this.lastSessionMode,
     this.scope = StatisticsScope.session,
+    this.learningSeconds = 0,
   });
 
   /// Deck path or file name referenced by this statistics file.
   final String deckRef;
+
+  /// The learning time this record holds, in whole seconds (ADR-0006).
+  ///
+  /// One figure for the whole deck — no per-unit or per-direction split. In a
+  /// working file it is the statistics time, in a lifetime file the total
+  /// time. Additive at format version 2 like [scope]: a file without the key
+  /// decodes as zero, and a build that predates the key ignores it.
+  final int learningSeconds;
 
   /// Which record this file holds.
   ///

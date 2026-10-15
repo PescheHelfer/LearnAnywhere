@@ -31,7 +31,8 @@ wählt, welche Sie gerade sehen; der Bildschirm öffnet stets mit **Aktuell**.
   Einheiten in den Übungspool kommen, welche als gemeistert gelten und wo Sie auf der
   Leiter des [Stufenlernens](07-level-learning.md) stehen. Sie ist es, die
   **Statistik laden...** und **Statistik speichern** lesen und schreiben, und sie ist
-  das, was eine Sitzungsdatei enthält.
+  das, was eine Sitzungsdatei enthält — samt ihrer **Statistikzeit**, der Lernzeit seit
+  dem letzten Löschen.
 - **Allzeit** — die gesamte Vorgeschichte der Lern-Datei. Sie wächst nur: jede Antwort
   wird ihr in dem Moment hinzugefügt, in dem Sie sie geben, und sonst ändert sie nichts.
   Eine geladene Statistikdatei, eine hinzugefügte Lern-Datei oder das Löschen der
@@ -62,7 +63,8 @@ Jede der beiden Aufzeichnungen wird für sich gelöscht, aus ihrem eigenen Berei
 heraus, und keines der beiden Löschen berührt das andere.
 
 - **Aktuelle Statistik löschen...** im Bereich **Aktuell** löscht nach Bestätigung jeden
-  verzeichneten Versuch der Arbeitsstatistik. Die Allzeit-Statistik bleibt davon
+  verzeichneten Versuch der Arbeitsstatistik und setzt ihre **Statistikzeit** auf null
+  zurück. Die Allzeit-Statistik bleibt davon
   unberührt — der Dialog sagt es. Das ist der alltägliche Neuanfang: die Lern-Datei von
   vorn beginnen, ohne ihre Vorgeschichte zu verlieren.
 - **Allzeit-Statistik löschen...** im Bereich **Allzeit** löscht den gesamten bisherigen
@@ -129,6 +131,13 @@ den aktuellen Bereich, dann eine Tabelle und ein Balkendiagramm, die jede Einhei
 Bereich aufschlüsseln — Anzahl, Prozent von allen und Prozent der abgefragten Einheiten.
 Jeder Balken zeigt den Anteil seiner Zeile an allen Einheiten, wie **% von allen**: Ein
 voller Balken ist die ganze Lern-Datei.
+
+Im Bereich **Aktuell** folgt auf **Korrekte Versuche** die **Statistikzeit**: die
+Lernzeit der aktuellen Statistik, dieselbe Zahl wie die
+[Anzeige in der Sitzung](06-learning-sessions.md#whrend-einer-sitzung). Hier steht sie
+immer, ob ihre Anzeige für Sitzungen eingeschaltet ist oder nicht, und der Schalter
+**Richtung** ändert sie nicht, denn Lernzeit gehört zur ganzen Lern-Datei, nicht zu
+einer Richtung.
 
 Unter **Noch nicht abgefragt** zählt die Tabelle nach einer kräftigeren Linie die
 [schwierigen](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen) Einheiten

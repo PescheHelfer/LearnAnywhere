@@ -150,7 +150,8 @@ Only `attempts` + `correct` per unit+direction are stored (in the separate
 ## `.sta` (statistics sidecar) — per-unit `hash`
 
 Top-level `format` is `learn-anywhere/statistics`, `version` `2`, then an
-optional `scope`, `deckRef` and `perUnit`. Each `perUnit` entry has `index`
+optional `scope`, `deckRef`, an optional `learningSeconds` (see below) and
+`perUnit`. Each `perUnit` entry has `index`
 (1-based), `dir1`, `dir2`, and
 **optionally `hash`** — the identity of the unit those counters were recorded
 for, so a deck edited outside the app can have its statistics realigned instead
@@ -218,3 +219,26 @@ three:
   `"scope": "allTime"`; a file that does not carry the marker must not be given
   that name. Readers check the marker, `DeckPaths` owns the name, and a
   disagreement between the two is a bug in whichever tool wrote the file.
+
+## `.sta` — `learningSeconds`, the record's learning time
+
+`learningSeconds` is the learning time the record holds, as one whole number of
+seconds for the **whole deck** — there is no per-unit or per-direction split
+(ADR-0006). In a working file it is the **statistics time**: every sitting since
+the current statistics were last cleared. In a lifetime file it is the **total
+time**.
+
+- **What it sums.** Each rated unit adds its unit time, capped at 300 seconds
+  (`kUnitLearningSecondsCap`, `packages/core/lib/time/learning_time.dart`) —
+  *No count* and think-only ratings included. A unit left unrated adds nothing.
+  The time is added in the same write that records the answer's counters.
+- **Written only when non-zero.** A record holding no time omits the key, so it
+  encodes byte-identically to what earlier builds produced.
+- **Absent, or not a whole non-negative number → `0`.** Every file written
+  before the key existed reads as "no time recorded", never as an error.
+- **Clearing the current statistics zeroes it;** loading a session file restores
+  it; *Save stats as* writes it.
+- **Additive at version `2`,** on the same terms as `hash` and `scope`: a build
+  predating the key ignores it. Do **not** bump the version for it.
+- **Android writes no `learningSeconds`.** The companion keeps no learning time;
+  the phone and the desktop never exchange statistics.
