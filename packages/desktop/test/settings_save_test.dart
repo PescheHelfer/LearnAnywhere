@@ -44,6 +44,70 @@ void main() {
     expect(next.levelNamesDe, <String>['E', 'F', 'G', 'H']);
   });
 
+  test('each time pill option is saved on its own', () {
+    for (final DesktopQueryOptions options in const <DesktopQueryOptions>[
+      DesktopQueryOptions(showUnitTime: true),
+      DesktopQueryOptions(showSittingTime: true),
+      DesktopQueryOptions(showStatisticsTime: true),
+      DesktopQueryOptions(showTotalTime: true),
+    ]) {
+      final LearnAnywhereSettings saved = decodeSettingsJson(
+        encodeSettingsJson(
+          nextSettingsForSave(
+            previous: const LearnAnywhereSettings(),
+            queryOptions: options,
+            learnParameters: const SessionParameters(),
+            deckPath: null,
+            maskPath: null,
+          ),
+        ),
+      );
+      expect(
+        <bool>[
+          saved.showUnitTime,
+          saved.showSittingTime,
+          saved.showStatisticsTime,
+          saved.showTotalTime,
+        ],
+        <bool>[
+          options.showUnitTime,
+          options.showSittingTime,
+          options.showStatisticsTime,
+          options.showTotalTime,
+        ],
+      );
+    }
+  });
+
+  test('a Show clock choice outlives the first save as unit time', () {
+    final LearnAnywhereSettings previous = decodeSettingsJson(
+      '{"format": "learn-anywhere/settings", "version": 1, '
+      '"showClock": true}',
+    );
+
+    final String written = encodeSettingsJson(
+      nextSettingsForSave(
+        previous: previous,
+        queryOptions: DesktopQueryOptions(
+          showUnitTime: previous.showUnitTime,
+          showSittingTime: previous.showSittingTime,
+          showStatisticsTime: previous.showStatisticsTime,
+          showTotalTime: previous.showTotalTime,
+        ),
+        learnParameters: const SessionParameters(),
+        deckPath: null,
+        maskPath: null,
+      ),
+    );
+
+    expect(written, isNot(contains('showClock')));
+    final LearnAnywhereSettings reloaded = decodeSettingsJson(written);
+    expect(reloaded.showUnitTime, isTrue);
+    expect(reloaded.showSittingTime, isFalse);
+    expect(reloaded.showStatisticsTime, isFalse);
+    expect(reloaded.showTotalTime, isFalse);
+  });
+
   test('opening a deck puts it at the head of the recent list', () {
     const LearnAnywhereSettings previous = LearnAnywhereSettings(
       recentDeckPaths: <String>['/decks/latin.vok'],

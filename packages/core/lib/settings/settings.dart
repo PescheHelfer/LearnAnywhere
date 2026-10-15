@@ -132,7 +132,10 @@ final class LearnAnywhereSettings {
     this.accentSensitive = true,
     this.almostEnabled = false,
     this.almostThreshold = kDefaultAlmostThreshold,
-    this.showClock = false,
+    this.showUnitTime = false,
+    this.showSittingTime = false,
+    this.showStatisticsTime = false,
+    this.showTotalTime = false,
     this.timeLimitSeconds = 0,
     this.minimumAttemptsGuardEnabled = false,
     this.minAttempts = 2,
@@ -175,8 +178,19 @@ final class LearnAnywhereSettings {
   /// classified as "Almost".
   final double almostThreshold;
 
-  /// Whether to show a running clock during learning.
-  final bool showClock;
+  /// Whether the learning screen shows the **unit time** pill: how long the
+  /// unit in front of the learner has been there, which the time limit
+  /// measures.
+  final bool showUnitTime;
+
+  /// Whether the learning screen shows the **sitting time** pill.
+  final bool showSittingTime;
+
+  /// Whether the learning screen shows the **statistics time** pill.
+  final bool showStatisticsTime;
+
+  /// Whether the learning screen shows the **total time** pill.
+  final bool showTotalTime;
 
   /// Warning time limit in seconds. Zero disables the warning.
   final int timeLimitSeconds;
@@ -270,7 +284,10 @@ final class LearnAnywhereSettings {
     bool? accentSensitive,
     bool? almostEnabled,
     double? almostThreshold,
-    bool? showClock,
+    bool? showUnitTime,
+    bool? showSittingTime,
+    bool? showStatisticsTime,
+    bool? showTotalTime,
     int? timeLimitSeconds,
     bool? minimumAttemptsGuardEnabled,
     int? minAttempts,
@@ -302,7 +319,10 @@ final class LearnAnywhereSettings {
       accentSensitive: accentSensitive ?? this.accentSensitive,
       almostEnabled: almostEnabled ?? this.almostEnabled,
       almostThreshold: almostThreshold ?? this.almostThreshold,
-      showClock: showClock ?? this.showClock,
+      showUnitTime: showUnitTime ?? this.showUnitTime,
+      showSittingTime: showSittingTime ?? this.showSittingTime,
+      showStatisticsTime: showStatisticsTime ?? this.showStatisticsTime,
+      showTotalTime: showTotalTime ?? this.showTotalTime,
       timeLimitSeconds: timeLimitSeconds ?? this.timeLimitSeconds,
       minimumAttemptsGuardEnabled:
           minimumAttemptsGuardEnabled ?? this.minimumAttemptsGuardEnabled,
@@ -338,7 +358,10 @@ final class LearnAnywhereSettings {
         other.accentSensitive == accentSensitive &&
         other.almostEnabled == almostEnabled &&
         other.almostThreshold == almostThreshold &&
-        other.showClock == showClock &&
+        other.showUnitTime == showUnitTime &&
+        other.showSittingTime == showSittingTime &&
+        other.showStatisticsTime == showStatisticsTime &&
+        other.showTotalTime == showTotalTime &&
         other.timeLimitSeconds == timeLimitSeconds &&
         other.minimumAttemptsGuardEnabled == minimumAttemptsGuardEnabled &&
         other.minAttempts == minAttempts &&
@@ -369,7 +392,10 @@ final class LearnAnywhereSettings {
     accentSensitive,
     almostEnabled,
     almostThreshold,
-    showClock,
+    showUnitTime,
+    showSittingTime,
+    showStatisticsTime,
+    showTotalTime,
     timeLimitSeconds,
     minimumAttemptsGuardEnabled,
     minAttempts,
@@ -419,7 +445,10 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
     'accentSensitive': settings.accentSensitive,
     'almostEnabled': settings.almostEnabled,
     'almostThreshold': settings.almostThreshold,
-    'showClock': settings.showClock,
+    'showUnitTime': settings.showUnitTime,
+    'showSittingTime': settings.showSittingTime,
+    'showStatisticsTime': settings.showStatisticsTime,
+    'showTotalTime': settings.showTotalTime,
     'timeLimitSeconds': settings.timeLimitSeconds,
     'minimumAttemptsGuardEnabled': settings.minimumAttemptsGuardEnabled,
     'minAttempts': settings.minAttempts,
@@ -476,7 +505,18 @@ LearnAnywhereSettings decodeSettings(Object? value) {
       json['almostThreshold'],
       defaults.almostThreshold,
     ),
-    showClock: _bool(json['showClock'], defaults.showClock),
+    // A file from before the four time pills holds only the one clock flag,
+    // and that clock is the unit time.
+    showUnitTime: _bool(
+      json['showUnitTime'],
+      _bool(json['showClock'], defaults.showUnitTime),
+    ),
+    showSittingTime: _bool(json['showSittingTime'], defaults.showSittingTime),
+    showStatisticsTime: _bool(
+      json['showStatisticsTime'],
+      defaults.showStatisticsTime,
+    ),
+    showTotalTime: _bool(json['showTotalTime'], defaults.showTotalTime),
     timeLimitSeconds: _int(json['timeLimitSeconds'], defaults.timeLimitSeconds),
     minimumAttemptsGuardEnabled: _bool(
       json['minimumAttemptsGuardEnabled'],

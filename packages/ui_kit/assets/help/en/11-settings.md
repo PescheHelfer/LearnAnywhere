@@ -18,8 +18,8 @@ check an answer; changing one mid-session takes effect immediately.
 | Accent sensitive | On | Distinguishes accented characters when matching |
 | Accept near-misses as 'Almost' | Off | Enables the Almost outcome |
 | 'Almost' similarity threshold (%) | 80 | How close a near-miss must be to count as Almost |
-| Show clock | Off | Shows elapsed time during a session |
-| Time limit (seconds) | 0 (no limit) | Caps how long a session may run |
+| Unit time | Off | Shows the **Unit time** pill: how long the current unit has been on screen |
+| Time limit (seconds) | 0 (no limit) | When one unit's time reaches it, a tone sounds and the **Unit time** pill is highlighted; the session goes on. Needs **Unit time** on |
 | Minimum-attempts guard | Off | See below |
 | Minimum attempts | 2 | Value for the guard above |
 | Wrong-answer ceiling | Off | See below |

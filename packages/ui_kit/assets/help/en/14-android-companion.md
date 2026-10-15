@@ -318,8 +318,8 @@ unit's wrong-answer count from climbing without limit, so a card you once had tr
 with can still recover a decent accuracy figure.
 
 Nothing else from the desktop's Advanced Learning Options appears here. Case sensitivity,
-accent sensitivity, the *Almost* verdict, complete-input and the session clock all judge
-typed answers, and there are none.
+accent sensitivity, the *Almost* verdict and complete-input all judge typed answers, and
+there are none; and the phone shows no unit time.
 
 **Theme and language** are stored in Android's own preference store. **The two
 guardrails and your Speech voice choices** go into `learn_anywhere.settings.json`, the

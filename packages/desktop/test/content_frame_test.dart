@@ -73,9 +73,9 @@ void main() {
                 startSessionOnOpen: true,
                 deck: deck,
                 statistics: const <UnitStats>[],
-                // The clock adds the one optional pill, so the statistic row
+                // Unit time adds the one optional pill, so the statistic row
                 // laid out here is the widest the drill modes can produce.
-                options: const DesktopQueryOptions(showClock: true),
+                options: const DesktopQueryOptions(showUnitTime: true),
                 parameters: SessionParameters(
                   // Typed input, so the view-toggle pill is present and the
                   // action row is at its widest.

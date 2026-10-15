@@ -821,8 +821,8 @@ enum LearnAnywhereMessage {
   /// Tooltip of each Level-Learning level pill.
   learnLiveLevelTooltip,
 
-  /// Tooltip of the Time pill.
-  learnLiveTimeTooltip,
+  /// Tooltip of the Unit time pill.
+  learnLiveUnitTimeTooltip,
 
   /// Completion message of a Difficult-units-only session that ran out because
   /// nothing in its range is difficult any more; replaces the mastered one.
@@ -880,8 +880,8 @@ enum LearnAnywhereMessage {
   /// deck's file name) and `{detail}`.
   learnDetectedWriteFailed,
 
-  /// Live elapsed-time label.
-  learnLiveTime,
+  /// Label of the Unit time pill: how long the current unit has been shown.
+  learnLiveUnitTime,
 
   /// Current unit header.
   learnUnitHeader,
@@ -940,8 +940,17 @@ enum LearnAnywhereMessage {
   /// "Almost" similarity threshold (percent) option.
   queryOptionAlmostThreshold,
 
-  /// Show clock option.
-  queryOptionShowClock,
+  /// Option showing the Unit time pill while learning.
+  queryOptionShowUnitTime,
+
+  /// Option showing the Sitting time pill while learning.
+  queryOptionShowSittingTime,
+
+  /// Option showing the Statistics time pill while learning.
+  queryOptionShowStatisticsTime,
+
+  /// Option showing the Total time pill while learning.
+  queryOptionShowTotalTime,
 
   /// Time limit option.
   queryOptionTimeLimit,
@@ -2039,7 +2048,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveLevelTooltip:
           'Units currently at this level, as a share of the whole deck, in '
           "this session's direction.",
-      LearnAnywhereMessage.learnLiveTimeTooltip:
+      LearnAnywhereMessage.learnLiveUnitTimeTooltip:
           'Time spent on this unit. At the time limit a tone sounds and the '
           'clock is highlighted.',
       LearnAnywhereMessage.learnNoDifficultUnitsLeft:
@@ -2067,7 +2076,7 @@ final class LearnAnywhereCatalog {
           'Could not write "{file}", so the automatic flags found when the '
           'sitting ended are not saved. Your statistics are not affected. Use '
           'File ▸ Save deck once the file can be written again. ({detail})',
-      LearnAnywhereMessage.learnLiveTime: 'Time',
+      LearnAnywhereMessage.learnLiveUnitTime: 'Unit time',
       LearnAnywhereMessage.learnUnitHeader: 'Unit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Extend session',
       LearnAnywhereMessage.learnEvaluateAs: 'Evaluate as:',
@@ -2093,7 +2102,10 @@ final class LearnAnywhereCatalog {
           "Accept near-misses as 'Almost'",
       LearnAnywhereMessage.queryOptionAlmostThreshold:
           "'Almost' similarity threshold (%)",
-      LearnAnywhereMessage.queryOptionShowClock: 'Show clock',
+      LearnAnywhereMessage.queryOptionShowUnitTime: 'Unit time',
+      LearnAnywhereMessage.queryOptionShowSittingTime: 'Sitting time',
+      LearnAnywhereMessage.queryOptionShowStatisticsTime: 'Statistics time',
+      LearnAnywhereMessage.queryOptionShowTotalTime: 'Total time',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Time limit (seconds)',
       LearnAnywhereMessage.queryOptionWithAnswerInput: 'Require typed answers',
       LearnAnywhereMessage.queryOptionMinimumAttemptsGuard:
@@ -2840,7 +2852,7 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.learnLiveLevelTooltip:
           'Einheiten, die gerade auf dieser Stufe sind, als Anteil der ganzen '
           'Lern-Datei, in der Abfragerichtung dieser Übung.',
-      LearnAnywhereMessage.learnLiveTimeTooltip:
+      LearnAnywhereMessage.learnLiveUnitTimeTooltip:
           'Zeit für diese Einheit. Beim Zeitlimit ertönt ein Signal und die '
           'Uhr wird hervorgehoben.',
       LearnAnywhereMessage.learnNoDifficultUnitsLeft:
@@ -2876,7 +2888,7 @@ final class LearnAnywhereCatalog {
           'gespeichert. Ihre Statistik ist davon nicht betroffen. Wählen Sie '
           'Datei ▸ Lerneinheiten speichern, sobald die Datei wieder '
           'beschreibbar ist. ({detail})',
-      LearnAnywhereMessage.learnLiveTime: 'Zeit',
+      LearnAnywhereMessage.learnLiveUnitTime: 'Einheitszeit',
       LearnAnywhereMessage.learnUnitHeader: 'Einheit {index}/{total}',
       LearnAnywhereMessage.learnExtendSession: 'Sitzung erweitern',
       LearnAnywhereMessage.learnEvaluateAs: 'Bewerten als:',
@@ -2903,7 +2915,10 @@ final class LearnAnywhereCatalog {
           'Beinahe-Treffer als „Fast“ akzeptieren',
       LearnAnywhereMessage.queryOptionAlmostThreshold:
           'Ähnlichkeitsschwelle für „Fast“ (%)',
-      LearnAnywhereMessage.queryOptionShowClock: 'Uhr anzeigen',
+      LearnAnywhereMessage.queryOptionShowUnitTime: 'Einheitszeit',
+      LearnAnywhereMessage.queryOptionShowSittingTime: 'Sitzungszeit',
+      LearnAnywhereMessage.queryOptionShowStatisticsTime: 'Statistikzeit',
+      LearnAnywhereMessage.queryOptionShowTotalTime: 'Allzeit',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Zeitlimit (Sekunden)',
       LearnAnywhereMessage.queryOptionWithAnswerInput:
           'Mit Eingabe der Antwort',

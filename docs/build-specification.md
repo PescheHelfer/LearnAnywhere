@@ -528,8 +528,10 @@ Session flow:
 - **Complete input required** — see §5.1 step 4.
 - **Case sensitive** — on/off.
 - **Accent sensitive** — on/off.
-- **Show clock** — running timer in the session.
-- **Time limit** — warning tone after N seconds (0 = off).
+- **Unit time** — running timer of the current unit, restarting with each (formerly
+  **Show clock**). Sitting, statistics and total time each have their own toggle too; see
+  [ADR-0006](adr/0006-learning-time-is-a-capped-deck-wide-total.md).
+- **Time limit** — warning tone after N seconds on one unit (0 = off).
 - **With answer input** — when off, the user cannot type; reveal + self-rate flow is used.
 - **Minimum-attempts guard** — optional, default off; with value (default 2). See §5.3.
 - **Wrong-answer ceiling** — optional, default off; with value (default 10). See §5.3.

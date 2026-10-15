@@ -19,3 +19,4 @@ export 'speech/tts_engine.dart';
 export 'statistics/all_time.dart';
 export 'statistics/last_learned.dart';
 export 'statistics/unit_identity.dart';
+export 'time/elapsed_time.dart';

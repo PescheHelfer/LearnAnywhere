@@ -148,10 +148,39 @@ final class QueryOptionsPage extends StatelessWidget {
             },
           ),
           _SwitchOption(
-            title: messages.message(LearnAnywhereMessage.queryOptionShowClock),
-            value: options.showClock,
+            title: messages.message(
+              LearnAnywhereMessage.queryOptionShowUnitTime,
+            ),
+            value: options.showUnitTime,
             onChanged: (bool value) {
-              onChanged(options.copyWith(showClock: value));
+              onChanged(options.copyWith(showUnitTime: value));
+            },
+          ),
+          _SwitchOption(
+            title: messages.message(
+              LearnAnywhereMessage.queryOptionShowSittingTime,
+            ),
+            value: options.showSittingTime,
+            onChanged: (bool value) {
+              onChanged(options.copyWith(showSittingTime: value));
+            },
+          ),
+          _SwitchOption(
+            title: messages.message(
+              LearnAnywhereMessage.queryOptionShowStatisticsTime,
+            ),
+            value: options.showStatisticsTime,
+            onChanged: (bool value) {
+              onChanged(options.copyWith(showStatisticsTime: value));
+            },
+          ),
+          _SwitchOption(
+            title: messages.message(
+              LearnAnywhereMessage.queryOptionShowTotalTime,
+            ),
+            value: options.showTotalTime,
+            onChanged: (bool value) {
+              onChanged(options.copyWith(showTotalTime: value));
             },
           ),
           _NumberOption(

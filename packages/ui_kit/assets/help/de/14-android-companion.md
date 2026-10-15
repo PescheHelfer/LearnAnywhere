@@ -353,8 +353,9 @@ sodass eine Karte, mit der Sie einmal Mühe hatten, wieder eine brauchbare Treff
 erreichen kann.
 
 Sonst erscheint hier nichts aus den Erweiterten Lernoptionen des Desktops. Groß- und
-Kleinschreibung, Akzente, das Urteil *Fast*, vollständige Eingabe und die Uhr bewerten
-alle getippte Antworten — und die gibt es hier nicht.
+Kleinschreibung, Akzente, das Urteil *Fast* und vollständige Eingabe bewerten alle
+getippte Antworten — und die gibt es hier nicht; eine Einheitszeit zeigt das Telefon auch
+nicht.
 
 **Darstellung und Sprache** werden in Androids eigenem Einstellungsspeicher abgelegt.
 **Die beiden Schutzregeln und Ihre Stimmwahl unter Sprachausgabe** landen in

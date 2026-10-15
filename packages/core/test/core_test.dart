@@ -2437,7 +2437,10 @@ void main() {
         completeInputRequired: false,
         caseSensitive: true,
         accentSensitive: true,
-        showClock: true,
+        showUnitTime: true,
+        showSittingTime: false,
+        showStatisticsTime: true,
+        showTotalTime: true,
         timeLimitSeconds: 90,
         minimumAttemptsGuardEnabled: true,
         minAttempts: 4,
@@ -2457,6 +2460,46 @@ void main() {
         encodeSettingsJson(settings),
       );
       expect(restored, settings);
+    });
+
+    test('each time pill flag round-trips on its own', () {
+      for (final LearnAnywhereSettings settings in const <LearnAnywhereSettings>[
+        LearnAnywhereSettings(showUnitTime: true),
+        LearnAnywhereSettings(showSittingTime: true),
+        LearnAnywhereSettings(showStatisticsTime: true),
+        LearnAnywhereSettings(showTotalTime: true),
+      ]) {
+        expect(decodeSettingsJson(encodeSettingsJson(settings)), settings);
+      }
+    });
+
+    test('a settings file from before the time pills keeps its clock as '
+        'unit time', () {
+      final LearnAnywhereSettings clockOn = decodeSettingsJson(
+        '{"format": "learn-anywhere/settings", "version": 1, '
+        '"showClock": true}',
+      );
+      expect(clockOn.showUnitTime, isTrue);
+      expect(clockOn.showSittingTime, isFalse);
+      expect(clockOn.showStatisticsTime, isFalse);
+      expect(clockOn.showTotalTime, isFalse);
+
+      final LearnAnywhereSettings clockOff = decodeSettingsJson(
+        '{"format": "learn-anywhere/settings", "version": 1, '
+        '"showClock": false}',
+      );
+      expect(clockOff.showUnitTime, isFalse);
+      expect(clockOff.showSittingTime, isFalse);
+      expect(clockOff.showStatisticsTime, isFalse);
+      expect(clockOff.showTotalTime, isFalse);
+    });
+
+    test('a saved unit-time choice wins over a leftover clock key', () {
+      final LearnAnywhereSettings settings = decodeSettingsJson(
+        '{"format": "learn-anywhere/settings", "version": 1, '
+        '"showClock": true, "showUnitTime": false}',
+      );
+      expect(settings.showUnitTime, isFalse);
     });
 
     test('carries the machine speech choices through JSON', () {

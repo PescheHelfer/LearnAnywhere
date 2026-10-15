@@ -83,13 +83,16 @@ spoken and your computer can speak at all.
 
 A live panel tracks **Attempts**, **Mastered**, **Remaining**, **Accuracy**, **Unit
 accuracy** — the current unit's own figure — and, if enabled in
-[Settings](11-settings.md#learning-options), elapsed **Time**.
+[Settings](11-settings.md#learning-options), **Unit time**: how long the current unit has
+been on screen. With a **Time limit (seconds)** set, a tone sounds and the pill is
+highlighted once a unit reaches it; the session goes on.
 
 **Attempts**, **Mastered**, **Remaining** and **Accuracy** each describe **the whole deck,
 in the direction this session asks** — not the sitting, and not the unit range. (The two
 readouts after them are deliberately narrower: **Unit accuracy** is about that one unit,
-and **Time** is this sitting's clock.) Restricting the range narrows what you
-are asked, never what is counted, so the four figures standing side by side always describe
+and **Unit time** times that one unit, starting afresh with each.) Restricting the range
+narrows what you are asked, never what is counted, so the four figures standing side by
+side always describe
 the same population: a session on units 5–10 of a 200-unit deck still reports **Mastered**
 and **Remaining** out of all 200 (**Remaining** then adds a second figure, below). With
 one of the mask's two directions chosen under **Direction** they cover that direction

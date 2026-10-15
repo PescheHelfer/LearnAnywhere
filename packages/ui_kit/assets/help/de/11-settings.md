@@ -18,8 +18,8 @@ Antwortprüfung aus; eine Änderung mitten in einer Sitzung wirkt sofort.
 | Akzente beachten | An | Unterscheidet Akzente beim Vergleich |
 | Beinahe-Treffer als „Fast“ akzeptieren | Aus | Schaltet das Ergebnis "Fast" frei |
 | Ähnlichkeitsschwelle für „Fast“ (%) | 80 | Wie nah ein Beinahe-Treffer sein muss, um als "Fast" zu zählen |
-| Uhr anzeigen | Aus | Zeigt die verstrichene Zeit während einer Sitzung |
-| Zeitlimit (Sekunden) | 0 (kein Limit) | Begrenzt, wie lange eine Sitzung laufen darf |
+| Einheitszeit | Aus | Zeigt die Anzeige **Einheitszeit**: wie lange die aktuelle Einheit schon auf dem Bildschirm steht |
+| Zeitlimit (Sekunden) | 0 (kein Limit) | Erreicht die Zeit einer Einheit diesen Wert, ertönt ein Signal und die Anzeige **Einheitszeit** wird hervorgehoben; die Sitzung geht weiter. Setzt **Einheitszeit** voraus |
 | Mindestabfragen beachten | Aus | Siehe unten |
 | Mindestabfragen | 2 | Wert für den obigen Schutz |
 | Falsch-Antworten begrenzen | Aus | Siehe unten |

@@ -89,13 +89,17 @@ das Vorlesen eines Antwortfeldes erlaubt und Ihr Computer überhaupt sprechen ka
 
 Eine Live-Anzeige verfolgt **Versuche**, **Beherrscht**, **Übrig**, **Korrekt**, **Einheit
 korrekt** — die Zahl der aktuellen Einheit — sowie, falls in den
-[Einstellungen](11-settings.md#lernoptionen) eingeschaltet, die verstrichene **Zeit**.
+[Einstellungen](11-settings.md#lernoptionen) eingeschaltet, die **Einheitszeit**: wie lange
+die aktuelle Einheit schon auf dem Bildschirm steht. Ist ein **Zeitlimit (Sekunden)**
+gesetzt, ertönt ein Signal und die Anzeige wird hervorgehoben, sobald eine Einheit es
+erreicht; die Sitzung geht weiter.
 
 **Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben jeweils **die ganze
 Lern-Datei in der Richtung, in der diese Sitzung fragt** — nicht die Sitzung und nicht den
 Einheitenbereich. (Die beiden folgenden Anzeigen sind bewusst enger: **Einheit korrekt**
-gilt nur dieser einen Einheit, und **Zeit** ist die Uhr dieser Sitzung.) Ein
-eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das, was gezählt wird; die
+gilt nur dieser einen Einheit, und **Einheitszeit** misst diese eine Einheit und beginnt
+mit jeder neu.) Ein eingeschränkter Bereich verkleinert, was Sie gefragt werden, nie das,
+was gezählt wird; die
 vier nebeneinanderstehenden Zahlen beschreiben also immer dieselbe Menge: eine Sitzung über
 die Einheiten 5–10 einer Datei mit 200 Einheiten weist **Beherrscht** und **Übrig**
 weiterhin von allen 200 aus (**Übrig** zeigt dann eine zweite Zahl, siehe unten). Ist

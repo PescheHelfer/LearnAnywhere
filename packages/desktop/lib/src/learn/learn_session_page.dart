@@ -198,7 +198,7 @@ const List<(LearnAnywhereMessage, String)> _widestStatPills =
       (LearnAnywhereMessage.learnLiveMastered, '9999/9999'),
       (LearnAnywhereMessage.learnLiveRemaining, '9999 (9999)'),
       (LearnAnywhereMessage.learnLiveAccuracy, '9999/9999 (100%)'),
-      (LearnAnywhereMessage.learnLiveTime, '999:99'),
+      (LearnAnywhereMessage.learnLiveUnitTime, '99:59:59'),
     ];
 
 /// The widest thing on the session screen that cannot be broken across lines.
@@ -463,7 +463,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     _startIndex = _draftParameters.startIndex ?? 1;
     _endIndex = _draftParameters.endIndex ?? widget.deck.units.length;
     _thresholdPercent = (_draftParameters.masteryThreshold * 100).round();
-    if (widget.options.showClock) {
+    if (widget.options.showUnitTime) {
       _startClock();
     }
     unawaited(_loadVoices());
@@ -583,9 +583,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _levelStats = widget.levelStatistics;
     }
     _draftParameters = _optionsApplied(_draftParameters);
-    if (widget.options.showClock && _clockTimer == null) {
+    if (widget.options.showUnitTime && _clockTimer == null) {
       _startClock();
-    } else if (!widget.options.showClock && _clockTimer != null) {
+    } else if (!widget.options.showUnitTime && _clockTimer != null) {
       _clockTimer?.cancel();
       _clockTimer = null;
     }
@@ -2400,12 +2400,14 @@ final class _SessionView extends StatelessWidget {
         ),
       ]);
     }
-    if (options.showClock) {
+    if (options.showUnitTime) {
       pills.add(
         _StatPill(
-          label: messages.message(LearnAnywhereMessage.learnLiveTime),
-          value: _clockText(elapsedSeconds),
-          tooltip: messages.message(LearnAnywhereMessage.learnLiveTimeTooltip),
+          label: messages.message(LearnAnywhereMessage.learnLiveUnitTime),
+          value: formatElapsedTime(Duration(seconds: elapsedSeconds)),
+          tooltip: messages.message(
+            LearnAnywhereMessage.learnLiveUnitTimeTooltip,
+          ),
           warning: timeWarning,
         ),
       );
@@ -2743,7 +2745,7 @@ final class _SessionView extends StatelessWidget {
         .toList(growable: false);
 
     final bool timeWarning =
-        options.showClock &&
+        options.showUnitTime &&
         options.timeLimitSeconds > 0 &&
         elapsedSeconds >= options.timeLimitSeconds;
 
@@ -3818,12 +3820,6 @@ String _learnUnitHeader(
       .message(LearnAnywhereMessage.learnUnitHeader)
       .replaceAll('{index}', index.toString())
       .replaceAll('{total}', total.toString());
-}
-
-String _clockText(int seconds) {
-  final int minutes = seconds ~/ 60;
-  final int rest = seconds % 60;
-  return '$minutes:${rest.toString().padLeft(2, '0')}';
 }
 
 // ─── Evaluation button (Fix 1: skipTraversal focus node) ─────────────────────

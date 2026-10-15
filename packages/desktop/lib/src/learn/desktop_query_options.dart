@@ -10,7 +10,10 @@ final class DesktopQueryOptions {
     this.accentSensitive = false,
     this.almostEnabled = false,
     this.almostThreshold = kDefaultAlmostThreshold,
-    this.showClock = false,
+    this.showUnitTime = false,
+    this.showSittingTime = false,
+    this.showStatisticsTime = false,
+    this.showTotalTime = false,
     this.timeLimitSeconds = 0,
     this.minimumAttemptsGuardEnabled = false,
     this.minAttempts = 2,
@@ -38,8 +41,18 @@ final class DesktopQueryOptions {
   /// classified as "Almost".
   final double almostThreshold;
 
-  /// Whether to show a running clock during learning.
-  final bool showClock;
+  /// Whether the learning screen shows the Unit time pill, which the time
+  /// limit measures.
+  final bool showUnitTime;
+
+  /// Whether the learning screen shows the Sitting time pill.
+  final bool showSittingTime;
+
+  /// Whether the learning screen shows the Statistics time pill.
+  final bool showStatisticsTime;
+
+  /// Whether the learning screen shows the Total time pill.
+  final bool showTotalTime;
 
   /// Warning time limit in seconds. Zero disables the warning.
   final int timeLimitSeconds;
@@ -81,7 +94,10 @@ final class DesktopQueryOptions {
     bool? accentSensitive,
     bool? almostEnabled,
     double? almostThreshold,
-    bool? showClock,
+    bool? showUnitTime,
+    bool? showSittingTime,
+    bool? showStatisticsTime,
+    bool? showTotalTime,
     int? timeLimitSeconds,
     bool? minimumAttemptsGuardEnabled,
     int? minAttempts,
@@ -97,7 +113,10 @@ final class DesktopQueryOptions {
       accentSensitive: accentSensitive ?? this.accentSensitive,
       almostEnabled: almostEnabled ?? this.almostEnabled,
       almostThreshold: almostThreshold ?? this.almostThreshold,
-      showClock: showClock ?? this.showClock,
+      showUnitTime: showUnitTime ?? this.showUnitTime,
+      showSittingTime: showSittingTime ?? this.showSittingTime,
+      showStatisticsTime: showStatisticsTime ?? this.showStatisticsTime,
+      showTotalTime: showTotalTime ?? this.showTotalTime,
       timeLimitSeconds: timeLimitSeconds ?? this.timeLimitSeconds,
       minimumAttemptsGuardEnabled:
           minimumAttemptsGuardEnabled ?? this.minimumAttemptsGuardEnabled,

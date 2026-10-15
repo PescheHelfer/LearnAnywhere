@@ -540,7 +540,7 @@ void main() {
         const LearnAnywhereSettings(
           direction: DirectionSelection.direction1,
           mode: SessionMode.levelLearning,
-          showClock: true,
+          showUnitTime: true,
         ),
       ),
     );
