@@ -1710,6 +1710,82 @@ void main() {
       await _tapStart(tester);
       expect(find.byKey(const Key('learnDifficultBadge')), findsOneWidget);
     });
+
+    testWidgets('an empty range is reported once the field is left, not '
+        'while a number is still being typed', (WidgetTester tester) async {
+      await _setPhoneSurface(tester);
+      final _FakeMobileFileService fileService = _FakeMobileFileService()
+        ..seedDeck(
+          'mobile_sample.vok',
+          // Only unit 3 is difficult, in Direction 1.
+          _flaggedDeck(
+            <DifficultFlags>[
+              DifficultFlags.none,
+              DifficultFlags.none,
+              _manualFlag,
+            ],
+            <DifficultFlags>[
+              DifficultFlags.none,
+              DifficultFlags.none,
+              DifficultFlags.none,
+            ],
+          ),
+          statistics: const <UnitStats>[],
+        );
+
+      await tester.pumpWidget(
+        LearnAnywhereMobileApp(
+          prefs: await _fakePrefs(),
+          fileService: fileService,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('mobile_sample'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Difficult units only (1)'));
+      await tester.pumpAndSettle();
+
+      const String empty =
+          'No unit in the selected range is difficult in the chosen '
+          'direction, so there is nothing to ask.';
+      final Finder end = find.widgetWithText(TextField, 'End unit');
+
+      /// Whether Start session can be pressed; scrolls it on screen first,
+      /// because the phone surface leaves it below the fold.
+      Future<bool> canStart() async {
+        await tester.ensureVisible(
+          find.text('Start session', skipOffstage: false),
+        );
+        await tester.pumpAndSettle();
+        return _startButton(tester).onPressed != null;
+      }
+
+      // On the way to "20", say: the count follows, the verdict waits.
+      await tester.enterText(end, '2');
+      await tester.pumpAndSettle();
+      expect(find.text('Difficult units only (0/1)'), findsOneWidget);
+      expect(find.text(empty), findsNothing);
+      expect(await canStart(), isTrue);
+
+      // Leaving the field ("Done" on the keyboard) gives the verdict.
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.text(empty), findsOneWidget);
+      expect(await canStart(), isFalse);
+
+      // A keystroke that fixes the range clears it at once.
+      await tester.enterText(end, '3');
+      await tester.pumpAndSettle();
+      expect(find.text(empty), findsNothing);
+
+      // Trying to start mid-typing refuses, and says why straight away.
+      await tester.enterText(end, '2');
+      await tester.pumpAndSettle();
+      expect(find.text(empty), findsNothing);
+      await _tapStart(tester);
+      expect(find.byKey(const Key('learnDifficultBadge')), findsNothing);
+      expect(find.text(empty), findsOneWidget);
+    });
   });
 }
 

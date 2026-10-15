@@ -699,6 +699,109 @@ void main() {
       expect(find.text('Check'), findsOneWidget);
     });
   });
+
+  testWidgets('an empty range is reported once the field is left, not while '
+      'a number is still being typed', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'typing.vok');
+    // Only unit 3 is difficult, in Direction 1.
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', none, none),
+          ('tree', 'Baum', none, none),
+          ('dog', 'Hund', manual, none),
+          ('cat', 'Katze', none, none),
+        ]),
+      ),
+    );
+    File(settingsPath).writeAsStringSync(
+      encodeSettingsJson(
+        const LearnAnywhereSettings(
+          direction: DirectionSelection.direction1,
+          difficultOnly: true,
+        ),
+      ),
+    );
+
+    VoidCallback? startPressed() => tester
+        .widget<FilledButton>(
+          find.ancestor(
+            of: find.text('Start session'),
+            matching: find.byWidgetPredicate(
+              (Widget widget) => widget is FilledButton,
+            ),
+          ),
+        )
+        .onPressed;
+    final Finder end = find.widgetWithText(TextField, 'End unit');
+
+    await tester.runAsync(() async {
+      await openSetup(tester, deckPath);
+      expect(find.text(noDifficultUnits), findsNothing);
+
+      // On the way to "20", say: the count follows, the verdict waits.
+      await tester.enterText(end, '2');
+      await settle(tester);
+      expect(find.text('Difficult units only (0/1)'), findsOneWidget);
+      expect(find.text(noDifficultUnits), findsNothing);
+      expect(startPressed(), isNotNull);
+
+      // Leaving the field (Enter) gives the verdict.
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await settle(tester);
+      expect(find.text(noDifficultUnits), findsOneWidget);
+      expect(startPressed(), isNull);
+
+      // A keystroke that fixes the range clears it at once.
+      await tester.enterText(end, '3');
+      await settle(tester);
+      expect(find.text(noDifficultUnits), findsNothing);
+      expect(startPressed(), isNotNull);
+
+      // Trying to start mid-typing refuses, and says why straight away.
+      await tester.enterText(end, '2');
+      await settle(tester);
+      expect(find.text(noDifficultUnits), findsNothing);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f3);
+      await settleAfterIo(tester);
+      expect(find.text('Check'), findsNothing);
+      expect(find.text(noDifficultUnits), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('the help icon follows the Difficult units only label, before '
+      'the switch', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'icon.vok');
+    File(deckPath).writeAsStringSync(
+      encodeDeckJson(
+        _deck(<(String, String, DifficultFlags, DifficultFlags)>[
+          ('house', 'Haus', manual, none),
+        ]),
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await openSetup(tester, deckPath);
+      final Finder label = find.textContaining('Difficult units only');
+      final Finder row = find
+          .ancestor(of: label, matching: find.byType(InkWell))
+          .first;
+      final Finder icon = find.descendant(
+        of: row,
+        matching: find.byIcon(Icons.help_outline),
+      );
+      final Finder toggle = find.descendant(
+        of: row,
+        matching: find.byType(Switch),
+      );
+      expect(
+        tester.getTopLeft(icon).dx,
+        greaterThanOrEqualTo(tester.getTopRight(label).dx),
+      );
+      expect(tester.getTopLeft(icon).dx, lessThan(tester.getTopLeft(toggle).dx));
+    });
+  });
 }
 
 const DifficultFlags none = DifficultFlags.none;

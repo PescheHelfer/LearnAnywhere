@@ -92,6 +92,7 @@ final class MobileNumberRow extends StatefulWidget {
     this.minimum = 0,
     this.maximum,
     this.enabled = true,
+    this.onEditingDone,
     super.key,
   });
 
@@ -100,6 +101,10 @@ final class MobileNumberRow extends StatefulWidget {
 
   /// Current value.
   final int value;
+
+  /// Called once editing ends (the field loses focus, which "Done" on the
+  /// keyboard also does), after the value has settled.
+  final VoidCallback? onEditingDone;
 
   /// Inclusive lower bound.
   final int minimum;
@@ -175,6 +180,7 @@ final class _MobileNumberRowState extends State<MobileNumberRow> {
     if (settled != widget.value) {
       widget.onChanged(settled);
     }
+    widget.onEditingDone?.call();
   }
 
   int _clamp(int? value) {

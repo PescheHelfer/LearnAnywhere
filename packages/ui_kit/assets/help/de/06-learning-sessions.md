@@ -246,7 +246,9 @@ Ihnen Mühe gemacht haben.
 - Ist keine Einheit im Bereich in der gewählten Abfragerichtung schwierig, sagt die
   Einrichtung das, und **Sitzung starten** bleibt gesperrt, bis Sie die Option
   ausschalten, den Bereich erweitern, eine andere Richtung wählen oder eine Einheit
-  kennzeichnen.
+  kennzeichnen. Solange Sie in **Erste Einheit** oder **Letzte Einheit** noch tippen,
+  wartet sie damit, bis Sie das Feld verlassen oder `Enter` drücken; so wird die 5 auf
+  dem Weg zur 50 nicht für sich allein beurteilt.
 - Die Option zeigt, wie groß die Abfrage wird, in Einheiten: **(3)**, wenn der Bereich
   jede in der gewählten Abfragerichtung schwierige Einheit enthält (mit **Alle
   Einheiten verwenden ({count})** immer), **(1/3)**, wenn er einige auslässt — eine von den drei

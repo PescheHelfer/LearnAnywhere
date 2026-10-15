@@ -234,7 +234,10 @@ Modus, innerhalb des Einheitenbereichs.
   Sie die Option gedrückt, um sie ausgeschrieben zu lesen.
 - Ist im Bereich keine Einheit in der gewählten Abfragerichtung schwierig, sagt die
   Einrichtung das, und **Sitzung starten** bleibt gesperrt, bis Sie die Option
-  ausschalten, den Bereich erweitern oder eine andere Abfragerichtung wählen.
+  ausschalten, den Bereich erweitern oder eine andere Abfragerichtung wählen. Solange
+  Sie in **Erste Einheit** oder **Letzte Einheit** noch tippen, wartet sie damit, bis
+  Sie das Feld verlassen; so wird die 5 auf dem Weg zur 50 nicht für sich allein
+  beurteilt.
 - Während der Sitzung zeigt **Übrig**, wie viel davon noch bleibt, wie unter
   [Eine Karte, zwei Antippen](#eine-karte-zwei-antippen) beschrieben.
 - Eine beherrschte Einheit fällt wie gewohnt aus einer Drill-Sitzung, behält aber ihre

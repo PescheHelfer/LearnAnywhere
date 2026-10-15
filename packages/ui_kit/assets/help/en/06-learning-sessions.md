@@ -219,7 +219,9 @@ trouble, in the same deck.
   what this session has left, such as **Remaining: 120 (4)**.
 - If no unit in the range is difficult in the chosen direction, the setup says so and
   **Start session** stays unavailable until you switch the option off, widen the range,
-  choose another direction or mark a unit.
+  choose another direction or mark a unit. While you are typing in **Start unit** or
+  **End unit** it waits until you leave the field or press `Enter`, so the 5 on the way
+  to 50 is not judged on its own.
 - The option shows how big the session will be, in units: **(3)** when the range holds
   every unit that is difficult in the chosen direction (always so with **Use all units
   ({count})**), **(1/3)** when the range leaves some out — one of the deck's three. With

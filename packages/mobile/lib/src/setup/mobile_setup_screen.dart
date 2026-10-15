@@ -62,6 +62,11 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
   late int _startUnit;
   late int _endUnit;
 
+  /// Whether Start unit or End unit has been typed in and not yet left. Until
+  /// then an empty Difficult-only range is not reported: "5" on the way to
+  /// "50" is no verdict. The count on the option still follows every key.
+  bool _rangeEditPending = false;
+
   int get _maxUnit =>
       _document.deck.units.length < 1 ? 1 : _document.deck.units.length;
 
@@ -159,6 +164,13 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
   Future<void> _startSession() async {
     final LearnAnywhereSettings settings = _settings;
     final SessionParameters parameters = _parameters();
+    // Refused before anything else. The setup shows why — at once, even if a
+    // range field is still being typed in.
+    if (parameters.difficultOnly &&
+        itemsInScope(_document.deck, parameters).isEmpty) {
+      setState(() => _rangeEditPending = false);
+      return;
+    }
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (BuildContext context) => MobileSessionScreen(
@@ -177,6 +189,10 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
     await _reload();
   }
 
+  void _rangeEditingDone() {
+    setState(() => _rangeEditPending = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final LearnAnywhereLocalizations messages = LearnAnywhereLocalizations.of(
@@ -190,6 +206,7 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
       parameters,
     );
     final bool nothingDifficultToAsk =
+        !_rangeEditPending &&
         parameters.difficultOnly &&
         itemsInScope(_document.deck, parameters).isEmpty;
     return Scaffold(
@@ -310,8 +327,10 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
                         if (_endUnit < _startUnit) {
                           _endUnit = _startUnit;
                         }
+                        _rangeEditPending = true;
                       });
                     },
+                    onEditingDone: _rangeEditingDone,
                   ),
                 ),
                 const SizedBox(width: LearnAnywhereTokens.gapMedium),
@@ -324,8 +343,12 @@ final class _MobileSetupScreenState extends State<MobileSetupScreen> {
                     minimum: _startUnit,
                     maximum: _maxUnit,
                     onChanged: (int value) {
-                      setState(() => _endUnit = value);
+                      setState(() {
+                        _endUnit = value;
+                        _rangeEditPending = true;
+                      });
                     },
+                    onEditingDone: _rangeEditingDone,
                   ),
                 ),
               ],

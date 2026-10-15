@@ -211,7 +211,8 @@ works in every mode, within the unit range.
   them; touch and hold the option to have it spelled out.
 - If no unit in the range is difficult in the chosen direction, the setup says so and
   **Start session** stays unavailable until you switch the option off, widen the range
-  or choose another direction.
+  or choose another direction. While you are typing in **Start unit** or **End unit** it
+  waits until you leave the field, so the 5 on the way to 50 is not judged on its own.
 - During the session, **Remaining** shows how much of it is left, as described in
   [A card, in two taps](#a-card-in-two-taps).
 - Mastering a unit takes it out of a Drill session as usual, but does not take its flag

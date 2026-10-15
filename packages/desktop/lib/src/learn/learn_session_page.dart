@@ -397,6 +397,11 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   // by itself, so opening the setup screen never starts with dead fields.
   bool _useAllUnits = false;
 
+  // Whether Start unit or End unit has been typed in and not yet left. Until
+  // then an empty Difficult-only range is not reported: "5" on the way to
+  // "50" is no verdict. The count on the option still follows every key.
+  bool _rangeEditPending = false;
+
   List<SessionItem> _order = const <SessionItem>[];
   int _orderPosition = 0;
   Map<int, String> _lastEntered = <int, String>{};
@@ -822,7 +827,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         onShuffleChanged: (bool value) {
           _applyDraft(_parametersWith(shuffle: value));
         },
-        nothingDifficultToAsk: _nothingDifficultToAsk,
+        nothingDifficultToAsk: _nothingDifficultToAsk && !_rangeEditPending,
         difficultCount: countDifficultUnits(widget.deck, _scopedDraft()),
         onDifficultOnlyChanged: (bool value) {
           _applyDraft(_parametersWith(difficultOnly: value));
@@ -831,12 +836,21 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
           _applyDraft(_parametersWith(withInput: value));
         },
         onStartChanged: (int value) {
-          setState(() => _startIndex = value);
+          setState(() {
+            _startIndex = value;
+            _rangeEditPending = true;
+          });
           widget.onStartUnitChanged?.call(value);
         },
         onEndChanged: (int value) {
-          setState(() => _endIndex = value);
+          setState(() {
+            _endIndex = value;
+            _rangeEditPending = true;
+          });
           widget.onEndUnitChanged?.call(value);
+        },
+        onRangeEditingDone: () {
+          setState(() => _rangeEditPending = false);
         },
         onThresholdChanged: (int value) {
           setState(() => _thresholdPercent = value.clamp(1, 100).toInt());
@@ -950,8 +964,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       itemsInScope(widget.deck, _scopedDraft()).isEmpty;
 
   Future<void> _startSession() async {
-    // Refused before anything else: the setup already shows why.
+    // Refused before anything else. The setup shows why — at once, even if a
+    // range field is still being typed in.
     if (_nothingDifficultToAsk) {
+      setState(() => _rangeEditPending = false);
       return;
     }
     // Give the shell a chance to create a fresh timestamped auto-save target
@@ -1844,6 +1860,7 @@ final class _SetupView extends StatelessWidget {
     required this.onUseAllUnitsChanged,
     required this.onStartChanged,
     required this.onEndChanged,
+    required this.onRangeEditingDone,
     required this.onThresholdChanged,
     required this.onStartSession,
     required this.onCancel,
@@ -1866,7 +1883,8 @@ final class _SetupView extends StatelessWidget {
   final ValueChanged<bool> onShuffleChanged;
 
   /// Whether Difficult units only leaves nothing to ask in the chosen range;
-  /// the setup then says so and cannot start.
+  /// the setup then says so and cannot start. Held back while a range field
+  /// is still being typed in.
   final bool nothingDifficultToAsk;
 
   /// The difficult units in the chosen range and direction, of the deck's;
@@ -1877,6 +1895,9 @@ final class _SetupView extends StatelessWidget {
   final ValueChanged<bool> onUseAllUnitsChanged;
   final ValueChanged<int> onStartChanged;
   final ValueChanged<int> onEndChanged;
+
+  /// Called when Start unit or End unit loses focus.
+  final VoidCallback onRangeEditingDone;
   final ValueChanged<int> onThresholdChanged;
   final VoidCallback onStartSession;
   final VoidCallback onCancel;
@@ -2036,6 +2057,7 @@ final class _SetupView extends StatelessWidget {
                 maximum: deck.units.length,
                 enabled: !useAllUnits,
                 onChanged: onStartChanged,
+                onEditingDone: onRangeEditingDone,
               ),
             ),
             const SizedBox(width: LearnAnywhereTokens.gapMedium),
@@ -2052,6 +2074,7 @@ final class _SetupView extends StatelessWidget {
                 emptyFallback: deck.units.length,
                 enabled: !useAllUnits,
                 onChanged: onEndChanged,
+                onEditingDone: onRangeEditingDone,
               ),
             ),
           ],
@@ -3577,6 +3600,9 @@ final class _ToggleRow extends StatelessWidget {
   final ValueChanged<bool> onChanged;
 
   /// Explanation shown on hover, plus a help icon marking it as available.
+  ///
+  /// The icon follows the label, not the switch: it explains what the label
+  /// says (such as the counts in it), not what the switch does.
   final String? tooltip;
 
   @override
@@ -3592,14 +3618,25 @@ final class _ToggleRow extends StatelessWidget {
           children: <Widget>[
             SizedBox(
               width: LearnAnywhereZoom.scaleBox(context, 280),
-              child: Text(label, style: Theme.of(context).textTheme.bodyLarge),
+              child: Row(
+                children: <Widget>[
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                  if (tooltip != null) ...<Widget>[
+                    const SizedBox(width: LearnAnywhereTokens.gapSmall),
+                    Tooltip(
+                      message: tooltip,
+                      child: const Icon(Icons.help_outline, size: 18),
+                    ),
+                  ],
+                ],
+              ),
             ),
             Switch(value: value, onChanged: onChanged),
-            if (tooltip != null)
-              Tooltip(
-                message: tooltip,
-                child: const Icon(Icons.help_outline, size: 18),
-              ),
           ],
         ),
       ),
@@ -3663,6 +3700,7 @@ final class _NumberRow extends StatefulWidget {
     this.emptyFallback,
     this.enabled = true,
     this.tooltip,
+    this.onEditingDone,
   });
 
   final String label;
@@ -3670,6 +3708,10 @@ final class _NumberRow extends StatefulWidget {
   final int minimum;
   final int? maximum;
   final ValueChanged<int> onChanged;
+
+  /// Called when the field loses focus — leaving it, or pressing Enter — so
+  /// a check that would be premature mid-number can wait until then.
+  final VoidCallback? onEditingDone;
 
   /// Explanation shown on hover, plus a help icon marking it as available.
   final String? tooltip;
@@ -3690,11 +3732,19 @@ final class _NumberRow extends StatefulWidget {
 
 final class _NumberRowState extends State<_NumberRow> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.value.toString());
+    _focusNode = FocusNode()..addListener(_onFocusChanged);
+  }
+
+  void _onFocusChanged() {
+    if (!_focusNode.hasFocus) {
+      widget.onEditingDone?.call();
+    }
   }
 
   @override
@@ -3708,6 +3758,9 @@ final class _NumberRowState extends State<_NumberRow> {
 
   @override
   void dispose() {
+    _focusNode
+      ..removeListener(_onFocusChanged)
+      ..dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -3719,8 +3772,10 @@ final class _NumberRowState extends State<_NumberRow> {
       padding: const EdgeInsets.only(bottom: LearnAnywhereTokens.gapMedium),
       child: TextField(
         controller: _controller,
+        focusNode: _focusNode,
         enabled: widget.enabled,
         keyboardType: TextInputType.number,
+        onSubmitted: (String _) => _focusNode.unfocus(),
         inputFormatters: <TextInputFormatter>[
           FilteringTextInputFormatter.digitsOnly,
         ],
