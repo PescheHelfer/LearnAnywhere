@@ -431,8 +431,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   // time is what the sitting's learning time is made of.
   late final Timer _unitTimer;
   int _unitSeconds = 0;
-  // The learning time of the units rated since Start session — each one's
-  // unit time, capped. Never stored; the next sitting starts at zero.
+  // The learning time of the units rated in this sitting — each one's unit
+  // time, capped. Never stored. Extend session keeps it; Practice setup and
+  // Learn with last settings begin a new sitting at zero.
   int _sittingSeconds = 0;
   // Whether the time-limit warning tone has already sounded for the current
   // unit; reset when a new unit is shown so the tone fires once per unit.
@@ -597,6 +598,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     if (widget.resetToSetupSignal != oldWidget.resetToSetupSignal) {
       _completed = false;
       _currentItem = null;
+      // It also ends the sitting; Extend session is the way to keep one going.
+      _sittingSeconds = 0;
       _notifySessionActive(false);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _rootFocusNode.requestFocus();
@@ -619,6 +622,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       return;
     }
     _completed = false;
+    // A new sitting, even straight from the completion view.
+    _sittingSeconds = 0;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _currentItem == null) {
         unawaited(_startSession());
@@ -996,7 +1001,6 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     );
     _orderPosition = 0;
     _viewMode = _AnswerViewMode.correction;
-    _sittingSeconds = 0;
     _selectNextItem();
   }
 

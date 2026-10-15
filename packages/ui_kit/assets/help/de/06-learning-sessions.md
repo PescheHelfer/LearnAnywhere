@@ -103,8 +103,9 @@ tatsächliche Zeit zeigt. Die Anzeige läuft sekündlich mit, solange eine Einhe
 Bildschirm steht — auch wenn die **Einheitszeit** nicht angezeigt wird —, und springt
 beim Bewerten nicht. Eine Einheit, die beim
 Beenden der Sitzung noch unbewertet ist, zählt nicht, obwohl die Anzeige sie schon
-mitgezählt hat. Gespeichert wird nichts: Jedes **Sitzung starten** beginnt wieder bei
-null, in jedem Modus.
+mitgezählt hat. **Sitzung erweitern** setzt dieselbe Sitzung fort; **Lern ▸ Übung
+einrichten** und **Lern ▸ Mit letzten Einstellungen lernen** beginnen eine neue bei null,
+in jedem Modus. Gespeichert wird nichts.
 
 **Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben jeweils **die ganze
 Lern-Datei in der Richtung, in der diese Sitzung fragt** — nicht die Sitzung und nicht den

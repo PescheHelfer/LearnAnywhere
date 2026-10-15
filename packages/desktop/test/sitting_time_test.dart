@@ -198,21 +198,72 @@ void main() {
     expect(find.text('Sitting time: 0:09'), findsOneWidget);
   });
 
-  testWidgets('the next sitting starts at zero', (WidgetTester tester) async {
-    await open(tester);
-    await start(tester);
-
+  /// Answers both units, 30 and 15 seconds, so the once-through session
+  /// reaches its completion view with 0:45 of sitting time.
+  Future<void> finishSession(WidgetTester tester) async {
     await tester.pump(const Duration(seconds: 30));
     await rateThinkOnly(tester, 'Knew it');
     await continueToNext(tester);
     await tester.pump(const Duration(seconds: 15));
     await rateThinkOnly(tester, 'Knew it');
     await continueToNext(tester);
+    expect(find.text('Extend session'), findsOneWidget);
+  }
 
-    // Both units asked once: the sitting is over.
+  _HarnessState harness(WidgetTester tester) =>
+      tester.state<_HarnessState>(find.byType(_Harness));
+
+  testWidgets('Extend session continues the sitting', (
+    WidgetTester tester,
+  ) async {
+    await open(tester);
+    await start(tester);
+    await finishSession(tester);
+
     await tester.tap(find.text('Extend session'));
     await step(tester);
     await start(tester);
+    expect(find.text('Sitting time: 0:45'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 5));
+    expect(find.text('Sitting time: 0:50'), findsOneWidget);
+  });
+
+  testWidgets('Practice setup starts a new sitting at zero', (
+    WidgetTester tester,
+  ) async {
+    await open(tester);
+    await start(tester);
+    await tester.pump(const Duration(seconds: 20));
+    await rateThinkOnly(tester, 'Knew it');
+    await continueToNext(tester);
+
+    // Mid-session.
+    harness(tester).choosePracticeSetup();
+    await step(tester);
+    await start(tester);
+    expect(find.text('Sitting time: 0:00'), findsOneWidget);
+
+    // And after Extend session, which it overrides.
+    await finishSession(tester);
+    await tester.tap(find.text('Extend session'));
+    await step(tester);
+    harness(tester).choosePracticeSetup();
+    await step(tester);
+    await start(tester);
+    expect(find.text('Sitting time: 0:00'), findsOneWidget);
+  });
+
+  testWidgets('Learn with last settings starts a new sitting at zero', (
+    WidgetTester tester,
+  ) async {
+    await open(tester);
+    await start(tester);
+    await finishSession(tester);
+
+    harness(tester).learnWithLastSettings();
+    await step(tester);
+    expect(find.textContaining('Unit 1/2'), findsOneWidget);
     expect(find.text('Sitting time: 0:00'), findsOneWidget);
   });
 }
@@ -238,6 +289,14 @@ class _Harness extends StatefulWidget {
 class _HarnessState extends State<_Harness> {
   List<UnitStats> _statistics = const <UnitStats>[];
   List<LevelUnitStats> _levelStatistics = const <LevelUnitStats>[];
+  int _resetSignal = 0;
+  bool _startOnOpen = false;
+
+  /// Mimics Learn ▸ Practice setup: back to the setup screen.
+  void choosePracticeSetup() => setState(() => _resetSignal += 1);
+
+  /// Mimics Learn ▸ Learn with last settings: straight into a session.
+  void learnWithLastSettings() => setState(() => _startOnOpen = true);
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +308,8 @@ class _HarnessState extends State<_Harness> {
           deck: widget.deck,
           statistics: _statistics,
           levelStatistics: _levelStatistics,
+          resetToSetupSignal: _resetSignal,
+          startSessionOnOpen: _startOnOpen,
           options: widget.options,
           parameters: widget.parameters,
           onParametersChanged: (SessionParameters _) {},

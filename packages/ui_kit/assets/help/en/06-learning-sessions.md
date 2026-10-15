@@ -93,8 +93,9 @@ count** rating too, and a card you rate yourself without typing — but one unit
 most five minutes: beyond that you are taken to have been away, while **Unit time** keeps
 showing the real figure. The pill ticks every second while a unit is on screen — whether
 or not **Unit time** is shown — and rating the unit does not make it jump. A unit you leave unrated when you end
-the sitting adds nothing, even though the pill was already counting it. Nothing is kept:
-every **Start session** begins again at zero, in any mode.
+the sitting adds nothing, even though the pill was already counting it. **Extend session**
+carries on with the same sitting; **Learn ▸ Practice setup** and **Learn ▸ Learn with last
+settings** begin a new one at zero, in any mode. Nothing is kept once you leave.
 
 **Attempts**, **Mastered**, **Remaining** and **Accuracy** each describe **the whole deck,
 in the direction this session asks** — not the sitting, and not the unit range. (The
