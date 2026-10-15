@@ -18,7 +18,8 @@ learner. Also called *the working record* when contrasting it with the one below
 
 **All-time statistics** — the lifetime record of a deck. It holds everything ever
 answered for that deck and only ever grows. It decides nothing — no pool, no mastery, no
-ladder position — and is never shown during a learning session. Also called *the
+ladder position — and none of its figures is shown during a learning session except its
+**total time**. Also called *the
 lifetime record*. In German it is **Allzeit-Statistik**; never "Gesamt-Statistik".
 
 The two are separate records of the same deck, not two views of one. They can disagree
@@ -45,6 +46,30 @@ Two further uses are *not* domain terms and should never be introduced into pros
   statistics*.
 - "Session" in the ordinary computing sense (a process run, a connection) does not
   appear in this domain at all.
+
+## Time
+
+**Unit time** — how long the unit now in front of the learner has been there. It
+starts afresh with every unit and belongs to nothing else; it is what a time limit is
+measured against. In German **Einheitszeit**.
+
+**Sitting time** — the learning time of one learning session: the sum of the unit
+times of the units the learner rated, each counted only up to a cap, beyond which the
+learner is taken to have been away. A unit left unrated when the sitting ends adds
+nothing. Learning time belongs to the deck, not to a direction. In German
+**Sitzungszeit**.
+
+**Statistics time** — the learning time held by the **current statistics**: every
+sitting's time since that record was last cleared. It grows by exactly a sitting's time,
+travels with the working record into each session file, and goes back to zero only
+when the working record is cleared. In German **Statistikzeit**. Not the time of one
+learning session, and not a lifetime figure.
+
+**Total time** — the learning time held by the **all-time statistics**: every sitting's
+time since that record began, never reset. It only counts sittings since the record
+learned to keep time, so it can fall short of the deck's true history. In German
+**Allzeit** — never *Gesamtzeit*, for the same reason the record is never
+*Gesamt-Statistik*.
 
 ## Neighbouring terms these lean on
 
