@@ -73,7 +73,7 @@ the change is part of the pending edit and reaches the file only when you save. 
 
 | Key | Action |
 |---|---|
-| `F3` or `Enter` | Check answer / Continue |
+| `F3` or `Enter` | Check answer / Continue; at the end, Extend session |
 | `F4` | Read the answer aloud again (the **Read aloud** button) |
 | `F5` | Rating button 1 |
 | `F6` | Rating button 2 |

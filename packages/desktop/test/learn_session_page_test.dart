@@ -682,8 +682,8 @@ void main() {
   );
 
   testWidgets(
-    'Enter on the completion view records nothing and starts no hidden '
-    'session',
+    'Enter on the completion view extends the session and records nothing, '
+    'no unit is served unseen',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1.0;
@@ -723,15 +723,20 @@ void main() {
       expect(counters(), '1: 1/0, 2: 1/0');
       expect(activeReports.last, isFalse);
 
-      // Start, reveal, continue: what Enter does in a running session.
-      for (int i = 0; i < 3; i += 1) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-        await tester.pumpAndSettle();
-      }
-
-      expect(find.text('Extend session'), findsOneWidget);
+      // Enter presses the view's one button, as it does on every other stage.
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.text('Extend session'), findsNothing);
+      expect(find.text('Start session'), findsOneWidget);
       expect(counters(), '1: 1/0, 2: 1/0');
       expect(activeReports.last, isFalse);
+
+      // Only the setup screen's own Enter starts a session — in plain view.
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Unit 1/2'), findsOneWidget);
+      expect(activeReports.last, isTrue);
+      expect(counters(), '1: 1/0, 2: 1/0');
     },
   );
 

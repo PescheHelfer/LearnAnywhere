@@ -78,7 +78,7 @@ die Datei erst beim Speichern. Siehe
 
 | Taste | Aktion |
 |---|---|
-| `F3` oder `Enter` | Antwort prüfen / Weiter |
+| `F3` oder `Enter` | Antwort prüfen / Weiter; am Ende Sitzung erweitern |
 | `F4` | Antwort erneut vorlesen (die Schaltfläche **Vorlesen**) |
 | `F5` | Bewertungsschaltfläche 1 |
 | `F6` | Bewertungsschaltfläche 2 |

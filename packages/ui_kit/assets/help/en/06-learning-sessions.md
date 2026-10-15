@@ -249,4 +249,5 @@ Once through and Drill mode both end when there is nothing left to ask —
 Drill mode with everything mastered, Once through after the last unit. A session on
 [Difficult units only](#asking-difficult-units-only) that runs out because you unmarked
 the last difficult unit says "No difficult units left to ask." instead. Either way you
-can press **Extend session** to keep going past the end rather than stopping there.
+can press **Extend session** (or `Enter`) to keep going past the end rather than stopping
+there.

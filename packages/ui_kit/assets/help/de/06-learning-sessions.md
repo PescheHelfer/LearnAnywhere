@@ -282,5 +282,5 @@ letzten Einheit. Eine Sitzung mit
 [Nur schwierige Einheiten](#nur-schwierige-einheiten-abfragen), der die Einheiten
 ausgehen, weil Sie der letzten schwierigen die Kennzeichnung entfernt haben, meldet
 stattdessen „Keine schwierigen Einheiten mehr abzufragen.“ In beiden Fällen können Sie
-**Sitzung erweitern** drücken, um über das
+**Sitzung erweitern** (oder `Enter`) drücken, um über das
 Ende hinaus weiterzumachen, statt dort aufzuhören.
