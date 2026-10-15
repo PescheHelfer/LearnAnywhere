@@ -105,6 +105,12 @@ Accepted, and visible:
   text, language, resolved voice, rate — is on the `SpeechUtterance` the policy produced.
   An engine is a dispatcher, which is what makes a recording fake a complete stand-in for
   it in tests.
+- **A lead-in is planned, and made by the engine per host.** The utterance carries
+  whether a short silence goes before it (`leadIn`); the engine decides how, because the
+  hosts wake differently: Windows plays a muted filler, Android wraps the word in SSML
+  with a `<break>`. That keeps the engine stateless, at one cost to name here: an Android
+  speech engine without SSML support reads the markup aloud. That is audible, not silent,
+  and the only remedy is the learner switching the lead-in off, which the help text says.
 - **A plugin failure is silence, not an error.** `FlutterTtsEngine` treats a
   `PlatformException` or `MissingPluginException` as nothing said. Speech is presentation
   only: it creates no attempt, moves no counter, and touches neither mastery nor the

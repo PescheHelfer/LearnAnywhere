@@ -73,6 +73,7 @@ final class SpeechSettings {
   /// build one, which canonicalises the key for you.
   const SpeechSettings({
     this.automatic = true,
+    this.wakeAudio = true,
     this.rate = kDefaultSpeechRate,
     this.voices = const <String, VoiceChoice>{},
   });
@@ -84,6 +85,14 @@ final class SpeechSettings {
   /// being asked: with it off nothing is ever said unless the learner clicks
   /// an icon or presses the replay key.
   final bool automatic;
+
+  /// Whether a short silence goes before each read, to wake the audio output.
+  ///
+  /// Some outputs doze off between words and lose the start of the next one
+  /// as they wake — wired headphones on Windows drop the first syllable, and
+  /// Android fades it in. On by default, so a learner never meets that; one
+  /// who only uses speakers can switch it off and lose the short delay.
+  final bool wakeAudio;
 
   /// Speech speed as a share of the voice's own normal speed, between
   /// [kMinSpeechRate] and [kMaxSpeechRate].
@@ -111,6 +120,7 @@ final class SpeechSettings {
     }
     return SpeechSettings(
       automatic: automatic,
+      wakeAudio: wakeAudio,
       rate: rate,
       voices: Map<String, VoiceChoice>.unmodifiable(next),
     );
@@ -119,11 +129,13 @@ final class SpeechSettings {
   /// Returns a copy with selected fields changed.
   SpeechSettings copyWith({
     bool? automatic,
+    bool? wakeAudio,
     double? rate,
     Map<String, VoiceChoice>? voices,
   }) {
     return SpeechSettings(
       automatic: automatic ?? this.automatic,
+      wakeAudio: wakeAudio ?? this.wakeAudio,
       rate: rate ?? this.rate,
       voices: voices ?? this.voices,
     );
@@ -133,6 +145,7 @@ final class SpeechSettings {
   bool operator ==(Object other) {
     if (other is! SpeechSettings ||
         other.automatic != automatic ||
+        other.wakeAudio != wakeAudio ||
         other.rate != rate) {
       return false;
     }
@@ -150,6 +163,7 @@ final class SpeechSettings {
   @override
   int get hashCode => Object.hash(
     automatic,
+    wakeAudio,
     rate,
     Object.hashAllUnordered(<Object>[
       for (final MapEntry<String, VoiceChoice> entry in voices.entries)
@@ -162,6 +176,7 @@ final class SpeechSettings {
 Map<String, Object?> encodeSpeechSettings(SpeechSettings settings) {
   return <String, Object?>{
     'automatic': settings.automatic,
+    'wakeAudio': settings.wakeAudio,
     'rate': settings.rate,
     'voices': <String, Object?>{
       for (final MapEntry<String, VoiceChoice> entry in settings.voices.entries)
@@ -184,6 +199,7 @@ SpeechSettings decodeSpeechSettings(Object? value) {
     return const SpeechSettings();
   }
   final Object? automatic = value['automatic'];
+  final Object? wakeAudio = value['wakeAudio'];
   final Object? rate = value['rate'];
   final Object? voices = value['voices'];
   final Map<String, VoiceChoice> choices = <String, VoiceChoice>{};
@@ -218,6 +234,9 @@ SpeechSettings decodeSpeechSettings(Object? value) {
     // the default. Every file written since the switch existed stores it, so
     // a learner who chose off keeps off.
     automatic: automatic is! bool || automatic,
+    // The same rule, and it matters more here: every file written before the
+    // switch existed lacks it, and those learners must get the fix too.
+    wakeAudio: wakeAudio is! bool || wakeAudio,
     rate: rate is num ? clampSpeechRate(rate.toDouble()) : kDefaultSpeechRate,
     voices: Map<String, VoiceChoice>.unmodifiable(choices),
   );

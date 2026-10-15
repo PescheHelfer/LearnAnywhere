@@ -188,6 +188,40 @@ void main() {
     expect(engine.spoken.single.text, speechSampleFor('fr-FR'));
   });
 
+  testWidgets('the wake-audio switch starts on and persists through '
+      'onChanged', (WidgetTester tester) async {
+    final SpeechSettings Function() settings = await pumpScreen(
+      tester,
+      engine: _RecordingTtsEngine(const <SpeechVoice>[hortense]),
+    );
+
+    expect(find.text('Wake the audio output before speaking'), findsOneWidget);
+    expect(settings().wakeAudio, isTrue);
+    await tester.tap(find.byKey(const Key('speechWakeAudio')));
+    await tester.pumpAndSettle();
+
+    expect(settings().wakeAudio, isFalse);
+    expect(settings().automatic, isTrue);
+  });
+
+  testWidgets('the test button plays the lead-in exactly when it is '
+      'switched on', (WidgetTester tester) async {
+    final _RecordingTtsEngine engine = _RecordingTtsEngine(
+      const <SpeechVoice>[hortense],
+    );
+    await pumpScreen(tester, engine: engine);
+
+    await tester.tap(find.byKey(const Key('speechTest-fr-FR')));
+    await tester.pumpAndSettle();
+    expect(engine.spoken.last.leadIn, isTrue);
+
+    await tester.tap(find.byKey(const Key('speechWakeAudio')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('speechTest-fr-FR')));
+    await tester.pumpAndSettle();
+    expect(engine.spoken.last.leadIn, isFalse);
+  });
+
   testWidgets('the automatic-speech switch persists through onChanged', (
     WidgetTester tester,
   ) async {

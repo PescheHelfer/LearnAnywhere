@@ -891,6 +891,213 @@ void main() {
     });
   });
 
+  group('the lead-in that wakes the audio output', () {
+    const SpeechVoice french = SpeechVoice(
+      id: 'Microsoft Hortense',
+      name: 'Microsoft Hortense',
+      language: 'fr-FR',
+    );
+    SpeechUtterance say(String text, {bool leadIn = true}) => SpeechUtterance(
+      fieldId: 0,
+      text: text,
+      language: 'fr-FR',
+      voice: french,
+      leadIn: leadIn,
+    );
+
+    group('on Windows, a muted filler', () {
+      test('is said at volume 0 and cut off before the word, which is said '
+          'at full volume', () async {
+        final _FakeFlutterTts host = _FakeFlutterTts();
+        final FlutterTtsEngine engine = FlutterTtsEngine(
+          tts: host,
+          platform: TargetPlatform.windows,
+        );
+
+        final Future<void> speaking = engine.speak(say('chat'));
+        await Future<void>.delayed(
+          FlutterTtsEngine.windowsLeadIn + const Duration(milliseconds: 100),
+        );
+        // The filler is the word's own text, so it is in the same voice and
+        // language, repeated so it outlasts the lead-in and is always cut.
+        final String filler = host.spoken.first;
+        expect(filler, startsWith('chat chat'));
+        expect(host.log, <String>[
+          'stop', // whatever was being said before
+          'volume 0.0',
+          'speak $filler',
+          'stop', // the filler, cut once the output is awake
+          'volume 1.0',
+          'speak chat',
+        ]);
+
+        host.reportComplete();
+        await speaking.timeout(const Duration(seconds: 5));
+      });
+
+      test('is not played for an utterance that carries no lead-in, whose '
+          'volume is still set to full', () async {
+        final _FakeFlutterTts host = _FakeFlutterTts();
+        final FlutterTtsEngine engine = FlutterTtsEngine(
+          tts: host,
+          platform: TargetPlatform.windows,
+        );
+
+        final Future<void> speaking = engine.speak(
+          say('maison', leadIn: false),
+        );
+        await pumpEventQueue();
+        // Volume is host-wide state: never trust an earlier word to have
+        // restored it.
+        expect(host.log, <String>['stop', 'volume 1.0', 'speak maison']);
+
+        host.reportComplete();
+        await speaking.timeout(const Duration(seconds: 5));
+      });
+
+      test('is replaced, word and all, by a newer utterance', () async {
+        final _FakeFlutterTts host = _FakeFlutterTts();
+        final FlutterTtsEngine engine = FlutterTtsEngine(
+          tts: host,
+          platform: TargetPlatform.windows,
+        );
+
+        final Future<void> first = engine.speak(say('chat'));
+        await pumpEventQueue();
+        final Future<void> second = engine.speak(say('chien'));
+        await first.timeout(const Duration(seconds: 5));
+        await Future<void>.delayed(
+          FlutterTtsEngine.windowsLeadIn + const Duration(milliseconds: 100),
+        );
+        expect(host.spoken, isNot(contains('chat')));
+        expect(host.spoken.last, 'chien');
+
+        host.reportComplete();
+        await second.timeout(const Duration(seconds: 5));
+      });
+
+      test('is never handed over once a newer utterance arrived while it was '
+          'being set up', () async {
+        final _FakeFlutterTts host = _FakeFlutterTts();
+        final FlutterTtsEngine engine = FlutterTtsEngine(
+          tts: host,
+          platform: TargetPlatform.windows,
+        );
+        Future<void>? second;
+        host.onSetVolume = (double volume) {
+          if (volume == 0.0 && second == null) {
+            second = engine.speak(say('chien', leadIn: false));
+          }
+        };
+
+        final Future<void> first = engine.speak(say('chat'));
+        await first.timeout(const Duration(seconds: 5));
+        await pumpEventQueue();
+        // A filler handed over now would play among the newer word's setup,
+        // and nothing would ever cut it.
+        expect(host.spoken, <String>['chien']);
+
+        host.reportComplete();
+        await second!.timeout(const Duration(seconds: 5));
+      });
+
+      test('ends with stop, which says no word and stops the host', () async {
+        final _FakeFlutterTts host = _FakeFlutterTts();
+        final FlutterTtsEngine engine = FlutterTtsEngine(
+          tts: host,
+          platform: TargetPlatform.windows,
+        );
+
+        final Future<void> speaking = engine.speak(say('chat'));
+        await pumpEventQueue();
+        host.log.clear();
+        await engine.stop();
+        await speaking.timeout(const Duration(seconds: 1));
+        await Future<void>.delayed(
+          FlutterTtsEngine.windowsLeadIn + const Duration(milliseconds: 100),
+        );
+        expect(host.log, <String>['stop']);
+        expect(host.spoken, isNot(contains('chat')));
+      });
+
+      test('that the host refuses is skipped, and the word is still '
+          'said', () async {
+        final _FakeFlutterTts host = _FakeFlutterTts()
+          ..acceptsFor = (String text) => text == 'chat' ? 1 : 0;
+        final FlutterTtsEngine engine = FlutterTtsEngine(
+          tts: host,
+          platform: TargetPlatform.windows,
+        );
+
+        final Future<void> speaking = engine.speak(say('chat'));
+        await pumpEventQueue();
+        expect(host.spoken.last, 'chat');
+        expect(host.log.last, 'speak chat');
+        expect(host.log, contains('volume 1.0'));
+
+        host.reportComplete();
+        await speaking.timeout(const Duration(seconds: 5));
+      });
+    });
+
+    group('on Android, an SSML break', () {
+      test('goes in front of the word, in the same utterance', () async {
+        final _FakeFlutterTts host = _FakeFlutterTts();
+        final FlutterTtsEngine engine = FlutterTtsEngine(
+          tts: host,
+          platform: TargetPlatform.android,
+        );
+
+        final Future<void> speaking = engine.speak(say('chat'));
+        await pumpEventQueue();
+        // One utterance, no filler and no volume change: a separate stream
+        // does nothing for Android's fade-in, silence inside this one does.
+        expect(host.log, <String>[
+          'stop',
+          'speak <speak><break time="300ms"/>chat</speak>',
+        ]);
+
+        host.reportComplete();
+        await speaking.timeout(const Duration(seconds: 5));
+      });
+
+      test('escapes the text, so a field can never break the markup', () async {
+        final _FakeFlutterTts host = _FakeFlutterTts();
+        final FlutterTtsEngine engine = FlutterTtsEngine(
+          tts: host,
+          platform: TargetPlatform.android,
+        );
+
+        final Future<void> speaking = engine.speak(say('Tom & <Jerry>'));
+        await pumpEventQueue();
+        expect(
+          host.spoken.single,
+          '<speak><break time="300ms"/>Tom &amp; &lt;Jerry&gt;</speak>',
+        );
+
+        host.reportComplete();
+        await speaking.timeout(const Duration(seconds: 5));
+      });
+
+      test('is not added when the utterance carries no lead-in', () async {
+        final _FakeFlutterTts host = _FakeFlutterTts();
+        final FlutterTtsEngine engine = FlutterTtsEngine(
+          tts: host,
+          platform: TargetPlatform.android,
+        );
+
+        final Future<void> speaking = engine.speak(
+          say('Tom & Jerry', leadIn: false),
+        );
+        await pumpEventQueue();
+        expect(host.spoken.single, 'Tom & Jerry');
+
+        host.reportComplete();
+        await speaking.timeout(const Duration(seconds: 5));
+      });
+    });
+  });
+
   group('speech rate', () {
     test('normal speed lands on the plugin scale\'s own normal', () {
       // The plugin takes 0.0..1.0 and treats 0.5 as the voice's normal speed
@@ -1171,6 +1378,15 @@ final class _FakeFlutterTts extends FlutterTts {
   /// Every text handed over, in order.
   final List<String> spoken = <String>[];
 
+  /// Every speak, stop and volume change, in the order the host saw them.
+  final List<String> log = <String>[];
+
+  /// What [speak] answers for a given text, overriding [accepts] when set.
+  Object Function(String text)? acceptsFor;
+
+  /// Run while the volume is being set, to make something happen mid-setup.
+  void Function(double volume)? onSetVolume;
+
   VoidCallback? _completion;
   VoidCallback? _cancel;
 
@@ -1202,11 +1418,22 @@ final class _FakeFlutterTts extends FlutterTts {
   }
 
   @override
-  Future<dynamic> speak(String text, {bool focus = false}) async {
-    spoken.add(text);
-    return accepts;
+  Future<dynamic> setVolume(double volume) async {
+    log.add('volume $volume');
+    onSetVolume?.call(volume);
+    return 1;
   }
 
   @override
-  Future<dynamic> stop() async => 1;
+  Future<dynamic> speak(String text, {bool focus = false}) async {
+    spoken.add(text);
+    log.add('speak $text');
+    return acceptsFor?.call(text) ?? accepts;
+  }
+
+  @override
+  Future<dynamic> stop() async {
+    log.add('stop');
+    return 1;
+  }
 }

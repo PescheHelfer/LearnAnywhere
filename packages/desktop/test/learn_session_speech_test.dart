@@ -319,6 +319,39 @@ void main() {
       expect(engine.events, <String>['stop', 'speak:Geburtstag']);
     });
 
+    testWidgets('starts the reveal and every F4 with the lead-in that wakes '
+        'the audio output', (WidgetTester tester) async {
+      final _RecordingTtsEngine engine = _RecordingTtsEngine(
+        const <SpeechVoice>[frenchVoice, germanVoice],
+      );
+      await startSession(tester, engine, speechSettings: automatic);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f4);
+      await tester.pumpAndSettle();
+      // Each is a new read after a pause the output may have dozed through.
+      expect(
+        engine.spoken.map((SpeechUtterance u) => u.leadIn),
+        <bool>[true, true],
+      );
+    });
+
+    testWidgets('plays no lead-in when waking the audio output is switched '
+        'off', (WidgetTester tester) async {
+      final _RecordingTtsEngine quiet = _RecordingTtsEngine(
+        const <SpeechVoice>[frenchVoice, germanVoice],
+      );
+      await startSession(
+        tester,
+        quiet,
+        speechSettings: const SpeechSettings(wakeAudio: false),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+      expect(quiet.spoken.single.leadIn, isFalse);
+    });
+
     testWidgets('reads the answer out on a wrong answer too, and cycling the '
         'answer view does not repeat it', (WidgetTester tester) async {
       final _RecordingTtsEngine engine = _RecordingTtsEngine(

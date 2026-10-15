@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:learn_anywhere_core/core.dart';
@@ -15,7 +16,13 @@ import 'package:learn_anywhere_core/core.dart';
 /// the shell selects [UnavailableTtsEngine] there instead.
 final class FlutterTtsEngine implements TtsEngine {
   /// Creates an engine over [tts], or over a fresh `FlutterTts`.
-  FlutterTtsEngine({FlutterTts? tts}) : _tts = tts ?? FlutterTts() {
+  ///
+  /// [platform] decides how a lead-in is made, because the two hosts wake
+  /// differently; it defaults to the one this program runs on, and tests pass
+  /// it so both mechanisms run on any host.
+  FlutterTtsEngine({FlutterTts? tts, TargetPlatform? platform})
+    : _tts = tts ?? FlutterTts(),
+      _platform = platform ?? defaultTargetPlatform {
     // The host tells us when a word is over, and [speak] does not return
     // before then. That is what lets a caller reading two answer fields say
     // them in order: without it the second would cut off the first, and only
@@ -36,7 +43,28 @@ final class FlutterTtsEngine implements TtsEngine {
   /// is a refusal, and no completion will ever be reported for it.
   static const Object _accepted = 1;
 
+  /// How long the muted filler plays on Windows before the word.
+  ///
+  /// Measured from handing the filler over, so the synthesis time is part of
+  /// it and the audible silence is shorter still. Set by ear on wired
+  /// headphones that lost the first syllable without it.
+  static const Duration windowsLeadIn = Duration(milliseconds: 100);
+
+  /// How long the SSML break in front of the word lasts on Android.
+  ///
+  /// Android ramps the volume up over the start of every new stream, and the
+  /// break has to outlast the ramp: by ear, a faint fade-in remained at 100
+  /// and 200 ms, none at 300 ms.
+  static const Duration androidLeadIn = Duration(milliseconds: 300);
+
+  /// How long a filler is at least, so it outlasts [windowsLeadIn] at the
+  /// fastest rate and is always cut rather than finishing early.
+  static const int _fillerLength = 40;
+
   final FlutterTts _tts;
+
+  /// Which host this engine speaks on, which decides how a lead-in is made.
+  final TargetPlatform _platform;
 
   /// The utterance the host is speaking, or null when it is saying nothing.
   ///
@@ -104,11 +132,31 @@ final class FlutterTtsEngine implements TtsEngine {
         'name': voice.id,
         'locale': voice.language,
       });
+      String text = utterance.text;
+      switch (_platform) {
+        case TargetPlatform.windows:
+          if (utterance.leadIn) {
+            await _playMutedFiller(request, utterance.text);
+            if (!identical(_current, request)) {
+              return null;
+            }
+          }
+          // The volume is the host's, not this utterance's: set before every
+          // word, so none is ever said at the filler's volume 0.
+          await _ask(() => _tts.setVolume(1.0));
+        case TargetPlatform.android:
+          if (utterance.leadIn) {
+            text = androidLeadInText(utterance.text);
+          }
+        case _:
+          // No other host is known to need waking.
+          break;
+      }
       // Handed over here, and marked as handed over here: the stop above has
       // already been answered, so every report that follows is about this
       // utterance and not about the one it replaced.
       request.issued = true;
-      return await _tts.speak(utterance.text);
+      return await _tts.speak(text);
     });
     if (!identical(_current, request)) {
       // Replaced while the host was being set up. The utterance that replaced
@@ -141,6 +189,64 @@ final class FlutterTtsEngine implements TtsEngine {
     // Not left to the host's own cancel report: a host that sends none would
     // leave a caller waiting on a word that is no longer being said.
     request?.finish();
+  }
+
+  /// [text] as SSML with an [androidLeadIn] break in front of it.
+  ///
+  /// The break is silence inside the word's own audio stream, so Android's
+  /// volume ramp passes over it instead of the first syllable — a separate
+  /// silent utterance would start a stream, and a ramp, of its own. The text
+  /// is escaped, so whatever a field holds can never break the markup.
+  ///
+  /// SSML is understood by the phone's speech engine, not by Android itself:
+  /// an engine without it would read the tags out, which the learner stops by
+  /// switching the lead-in off.
+  @visibleForTesting
+  static String androidLeadInText(String text) {
+    final String escaped = text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    return '<speak><break time="${androidLeadIn.inMilliseconds}ms"/>'
+        '$escaped</speak>';
+  }
+
+  /// Plays [text], repeated, at volume 0 for [windowsLeadIn], then cuts it.
+  ///
+  /// Windows' headphone output dozes off while the learner types, and loses
+  /// the first syllable of the next word while it wakes. This plugin only
+  /// synthesises plain text, so it cannot be handed a pause; but a filler at
+  /// volume 0 is a real audio stream of digital silence, and that wakes it.
+  /// Being the word's own text, the filler is in the same voice and language.
+  ///
+  /// Its end reports are not the word's: [request] is not issued yet, so
+  /// [_hostFinished] ignores them. That includes the cancel the cut causes,
+  /// which the host reports before `stop` answers — exactly what the stop at
+  /// the top of [speak] already relies on. A newer request or a stop during the
+  /// filler ends the wait at once — whoever did that has stopped the host
+  /// already. A filler the host refuses is simply skipped.
+  Future<void> _playMutedFiller(_SpokenRequest request, String text) async {
+    final StringBuffer filler = StringBuffer(text);
+    while (filler.length < _fillerLength) {
+      filler.write(' $text');
+    }
+    await _ask(() => _tts.setVolume(0.0));
+    if (!identical(_current, request)) {
+      // Replaced while the volume was being set: a filler handed over now
+      // would play among its successor's setup and never be cut.
+      return;
+    }
+    final Object? accepted = await _ask(() => _tts.speak(filler.toString()));
+    if (accepted != _accepted) {
+      return;
+    }
+    await Future.any(<Future<void>>[
+      request.done,
+      Future<void>.delayed(windowsLeadIn),
+    ]);
+    if (identical(_current, request)) {
+      await _ask(() => _tts.stop());
+    }
   }
 
   /// Translates an app speech rate into the number the plugin takes.

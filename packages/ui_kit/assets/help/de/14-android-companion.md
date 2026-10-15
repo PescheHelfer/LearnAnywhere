@@ -279,6 +279,10 @@ unter **Einstellungen**, auch ohne geöffnete Lern-Datei. Beide bieten dasselbe:
   die das Telefon keine Stimme hat, sagt das, statt eine leere Liste zu zeigen.
 - **Sprechtempo**, das für alles gilt, was das Telefon vorliest.
 - **Antwort automatisch vorlesen**, wie oben beschrieben.
+- **Audioausgabe vor dem Vorlesen wecken**, von Anfang an eingeschaltet: Bevor das
+  Telefon zu sprechen beginnt, kommt ein Moment Stille, damit die Sprachausgabe nicht über die erste Silbe hinweg
+  einblendet. Liest das Telefon je Wörter wie "speak" oder "break" vor, kann seine
+  Sprachausgabe das nicht — schalten Sie es dann aus.
 
 Welche Stimme eine Sprache spricht, ist eine Entscheidung, die **diesem Telefon** gehört
 — genau wie sie jedem Desktop-Rechner für sich gehört: Eine Lern-Datei sagt nur, dass ein

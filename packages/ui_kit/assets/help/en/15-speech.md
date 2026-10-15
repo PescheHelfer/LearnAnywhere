@@ -157,8 +157,21 @@ like a field nobody enabled speech for, and you would have no way to tell which 
 
 **Options ▸ Speech...** says the same thing before a session starts, and for every
 language at once: a row reading **"This computer has no voice for it-IT"** is that
-language telling you in advance that it will be silent. The next section is how to
-change that.
+language telling you in advance that it will be silent.
+[Installing a voice on Windows](#installing-a-voice-on-windows) is how to change that.
+
+## When the first syllable is missing
+
+Some headphones — simple wired ones in the headphone jack especially — doze off while you
+type. The next word wakes them, and its first syllable is lost while they do: the first
+word read after you confirm an answer starts in the middle, while `F4` straight away plays
+it in full. The built-in speakers, and other programs, are not affected.
+
+**Wake the audio output before speaking**, under [Choosing a voice](#choosing-a-voice), is
+the cure, and it is on from the start: before each read the program plays a tenth of a
+second of silence, which wakes the output before the word begins. Only the first field of
+an answer gets it; the fields after it follow too closely for the output to doze off again.
+If you only ever listen through speakers, you can switch it off and lose that short delay.
 
 ## Installing a voice on Windows
 
@@ -197,6 +210,10 @@ each language, how fast everything is read, and whether the answer is read out b
 **Read the answer aloud automatically** sits at the top of the screen. It is on until
 you switch it off, it is remembered between sessions, and what it does is described under
 [Reading the answer automatically](#reading-the-answer-automatically).
+
+**Wake the audio output before speaking** sits just below it, and is on from the start
+too. It plays a moment of silence before each read so that the start of the word is not
+lost — see [When the first syllable is missing](#when-the-first-syllable-is-missing).
 
 The screen lists one row per language: every language the open deck's mask uses, plus
 any language you have already chosen a voice for — so a choice made for another deck is

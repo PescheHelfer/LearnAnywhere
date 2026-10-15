@@ -252,6 +252,10 @@ it offers the same things:
   choosing it. A language your phone has no voice for says so instead of an empty list.
 - **Speech rate**, applying to everything the phone reads aloud.
 - **Read the answer aloud automatically**, described above.
+- **Wake the audio output before speaking**, on from the start: a moment of silence goes
+  before the phone starts speaking, so speech does not fade in over the first syllable. Should the phone
+  ever read out words like "speak" or "break", its speech engine cannot do this — switch
+  it off.
 
 Which voice speaks a language is a choice that belongs to **this phone**, exactly as it
 belongs to each desktop machine on its own — a deck says only that a field is French, and

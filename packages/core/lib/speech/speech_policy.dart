@@ -62,11 +62,28 @@ final class SpeechPlan {
   /// one rule for both. A field holding the remark role in both directions is
   /// therefore never played automatically however loudly its `speak` flag is
   /// set — it stays available through its own icon, which is intended.
-  Iterable<SpeechUtterance> get answerUtterances =>
-      _byFieldId.values.where(
-        (SpeechUtterance utterance) =>
-            _answerFieldIds.contains(utterance.fieldId),
-      );
+  ///
+  /// It is read as one sequence, so a planned lead-in stays only on the first
+  /// field that can actually be spoken: that word wakes the audio output, and
+  /// the fields after it follow too closely for it to doze off again. A
+  /// lead-in before each of them would only lengthen the pause between them.
+  Iterable<SpeechUtterance> get answerUtterances {
+    final List<SpeechUtterance> sequence = <SpeechUtterance>[];
+    bool woken = false;
+    for (final SpeechUtterance utterance in _byFieldId.values) {
+      if (!_answerFieldIds.contains(utterance.fieldId)) {
+        continue;
+      }
+      if (utterance.canBeSpoken && !woken) {
+        woken = true;
+        sequence.add(utterance);
+      } else {
+        // Skipped unsaid, or following a word that already woke the output.
+        sequence.add(utterance.withLeadIn(false));
+      }
+    }
+    return sequence;
+  }
 
   /// The utterance for the field with [fieldId], or null when that field
   /// offers no speech in the current state.
@@ -138,6 +155,10 @@ SpeechPlan buildSpeechPlan({
           engineId: engineId,
         ),
         rate: settings.rate,
+        // Every utterance on its own is a read of one word — an icon click,
+        // after any pause at all — so each carries the lead-in; reading the
+        // answer as a sequence keeps it on the first word only.
+        leadIn: settings.wakeAudio,
       ),
     );
   }

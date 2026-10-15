@@ -305,6 +305,46 @@ void main() {
     expect(settings().rate, kDefaultSpeechRate);
   });
 
+  testWidgets('the wake-audio checkbox starts on and is stored when it is '
+      'turned off', (WidgetTester tester) async {
+    final SpeechSettings Function() settings = await pumpScreen(
+      tester,
+      engine: _RecordingTtsEngine(const <SpeechVoice>[hortense]),
+    );
+
+    expect(find.text('Wake the audio output before speaking'), findsOneWidget);
+    expect(
+      tester.widget<Checkbox>(find.byKey(const Key('speechWakeAudio'))).value,
+      isTrue,
+    );
+
+    await tester.tap(find.byKey(const Key('speechWakeAudio')));
+    await tester.pumpAndSettle();
+    expect(settings().wakeAudio, isFalse);
+    // Nothing else on the screen moves with it.
+    expect(settings().automatic, isTrue);
+    expect(settings().rate, kDefaultSpeechRate);
+  });
+
+  testWidgets('the test button plays the lead-in exactly when it is '
+      'switched on', (WidgetTester tester) async {
+    final _RecordingTtsEngine engine = _RecordingTtsEngine(
+      const <SpeechVoice>[hortense],
+    );
+    await pumpScreen(tester, engine: engine);
+
+    await tester.tap(find.byKey(const Key('speechTest-fr-FR')));
+    await tester.pumpAndSettle();
+    expect(engine.spoken.last.leadIn, isTrue);
+
+    await tester.tap(find.byKey(const Key('speechWakeAudio')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('speechTest-fr-FR')));
+    await tester.pumpAndSettle();
+    // What is tested is what will be heard while learning.
+    expect(engine.spoken.last.leadIn, isFalse);
+  });
+
   testWidgets('choosing a voice leaves automatic speech switched on', (
     WidgetTester tester,
   ) async {

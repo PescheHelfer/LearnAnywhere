@@ -94,6 +94,8 @@ final class _SpeechSettingsPageState extends State<SpeechSettingsPage> {
         language: language,
         voice: voice,
         rate: widget.settings.rate,
+        // What is tested is what will be heard while learning.
+        leadIn: widget.settings.wakeAudio,
       ),
     );
   }
@@ -145,6 +147,30 @@ final class _SpeechSettingsPageState extends State<SpeechSettingsPage> {
           ),
           Text(
             messages.message(LearnAnywhereMessage.speechAutomaticHint),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapMedium),
+          Row(
+            children: <Widget>[
+              Checkbox(
+                key: const Key('speechWakeAudio'),
+                value: widget.settings.wakeAudio,
+                onChanged: (bool? value) {
+                  widget.onChanged(
+                    widget.settings.copyWith(wakeAudio: value ?? false),
+                  );
+                },
+              ),
+              Expanded(
+                child: Text(
+                  messages.message(LearnAnywhereMessage.speechWakeAudioLabel),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            messages.message(LearnAnywhereMessage.speechWakeAudioHint),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: LearnAnywhereTokens.gapLarge),

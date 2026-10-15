@@ -119,6 +119,58 @@ void main() {
     });
   });
 
+  group('the wake-audio switch', () {
+    test('starts on, so headphones never swallow the first word unasked', () {
+      expect(const SpeechSettings().wakeAudio, isTrue);
+    });
+
+    test('survives a round trip through JSON', () {
+      const SpeechSettings off = SpeechSettings(wakeAudio: false);
+      expect(decodeSpeechSettings(encodeSpeechSettings(off)), off);
+      expect(
+        decodeSpeechSettings(encodeSpeechSettings(off)).wakeAudio,
+        isFalse,
+      );
+    });
+
+    test('reads as on from a settings file written before it existed', () {
+      expect(
+        decodeSpeechSettings(<String, Object?>{
+          'automatic': false,
+          'rate': 0.9,
+        }).wakeAudio,
+        isTrue,
+      );
+      expect(
+        decodeSpeechSettings(<String, Object?>{'wakeAudio': 'yes'}).wakeAudio,
+        isTrue,
+      );
+    });
+
+    test('is carried through withVoice and copyWith', () {
+      const SpeechSettings off = SpeechSettings(wakeAudio: false);
+      const VoiceChoice hortenseChoice = VoiceChoice(
+        engine: kSystemSpeechEngineId,
+        voiceId: 'Hortense',
+      );
+      expect(off.withVoice('fr-FR', hortenseChoice).wakeAudio, isFalse);
+      expect(off.copyWith(rate: 0.6).wakeAudio, isFalse);
+      expect(off.copyWith(automatic: false).wakeAudio, isFalse);
+      expect(off.copyWith(wakeAudio: true).wakeAudio, isTrue);
+    });
+
+    test('takes part in equality', () {
+      expect(
+        const SpeechSettings(wakeAudio: false),
+        isNot(const SpeechSettings()),
+      );
+      expect(
+        const SpeechSettings(wakeAudio: false).hashCode,
+        const SpeechSettings(wakeAudio: false).hashCode,
+      );
+    });
+  });
+
   group('the automatic-speech switch', () {
     test('starts on, so a new learner hears every answer from the start', () {
       expect(const SpeechSettings().automatic, isTrue);

@@ -94,6 +94,8 @@ final class _MobileSpeechSettingsScreenState
         language: language,
         voice: voice,
         rate: widget.settings.rate,
+        // What is tested is what will be heard while learning.
+        leadIn: widget.settings.wakeAudio,
       ),
     );
   }
@@ -134,6 +136,22 @@ final class _MobileSpeechSettingsScreenState
               value: widget.settings.automatic,
               onChanged: (bool value) {
                 widget.onChanged(widget.settings.copyWith(automatic: value));
+              },
+            ),
+            SwitchListTile(
+              key: const Key('speechWakeAudio'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                messages.message(LearnAnywhereMessage.speechWakeAudioLabel),
+              ),
+              subtitle: Text(
+                messages.message(
+                  LearnAnywhereMessage.speechWakeAudioHintMobile,
+                ),
+              ),
+              value: widget.settings.wakeAudio,
+              onChanged: (bool value) {
+                widget.onChanged(widget.settings.copyWith(wakeAudio: value));
               },
             ),
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
