@@ -28,6 +28,7 @@ void main() {
     DesktopQueryOptions options = _bothClocks,
     SessionParameters parameters = _thinkOnly,
     int statisticsSeconds = 0,
+    int totalSeconds = 0,
   }) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
@@ -41,6 +42,7 @@ void main() {
         options: options,
         parameters: parameters,
         statisticsSeconds: statisticsSeconds,
+        totalSeconds: totalSeconds,
       ),
     );
     await tester.pump();
@@ -365,11 +367,79 @@ void main() {
       expect(find.text('Statistics time: 2:00'), findsOneWidget);
     });
   });
+
+  group('Total time', () {
+    const DesktopQueryOptions totalClock = DesktopQueryOptions(
+      showUnitTime: true,
+      showTotalTime: true,
+    );
+
+    testWidgets('the pill appears exactly when its option is on, showing what '
+        'the all-time statistics hold', (WidgetTester tester) async {
+      await open(
+        tester,
+        options: const DesktopQueryOptions(),
+        totalSeconds: 45296,
+      );
+      await start(tester);
+      expect(find.textContaining('Total time'), findsNothing);
+
+      await open(
+        tester,
+        options: const DesktopQueryOptions(showTotalTime: true),
+        statisticsSeconds: 60,
+        totalSeconds: 45296,
+      );
+      await start(tester);
+      expect(find.text('Total time: 12:34:56'), findsOneWidget);
+      // Shown on its own: the other clocks are separate options.
+      expect(find.textContaining('Unit time'), findsNothing);
+      expect(find.textContaining('Sitting time'), findsNothing);
+      expect(find.textContaining('Statistics time'), findsNothing);
+      expect(
+        find.byTooltip(
+          'The learning time held by the all-time statistics: the time of '
+          'every unit you rated, each counted at most five minutes. It counts '
+          'only from the program version that began keeping it.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the pill ticks with the unit clock, and rating the unit moves '
+        'its seconds into the total without the pill jumping — a No count '
+        'one too', (WidgetTester tester) async {
+      await open(
+        tester,
+        options: totalClock,
+        statisticsSeconds: 5,
+        totalSeconds: 3600,
+      );
+      await start(tester);
+      expect(find.text('Total time: 1:00:00'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 7));
+      expect(find.text('Total time: 1:00:07'), findsOneWidget);
+
+      await rateThinkOnly(tester, 'No count');
+      await continueToNext(tester);
+      expect(find.text('Unit time: 0:00'), findsOneWidget);
+      expect(find.text('Total time: 1:00:07'), findsOneWidget);
+      expect(harness(tester).totalSeconds, 3607);
+
+      // Six minutes on one unit count as five.
+      await tester.pump(const Duration(minutes: 6));
+      expect(find.text('Total time: 1:05:07'), findsOneWidget);
+      await rateThinkOnly(tester, 'Knew it');
+      await continueToNext(tester);
+      expect(harness(tester).totalSeconds, 3907);
+    });
+  });
 }
 
 /// Holds the statistics the page pushes back, as the shell's document does,
-/// so a drill session can run to its end — the statistics time included,
-/// which grows by each recorded answer's learning seconds.
+/// so a drill session can run to its end — the statistics and total time
+/// included, which both grow by each recorded answer's learning seconds.
 class _Harness extends StatefulWidget {
   const _Harness({
     super.key,
@@ -377,12 +447,14 @@ class _Harness extends StatefulWidget {
     required this.options,
     required this.parameters,
     this.statisticsSeconds = 0,
+    this.totalSeconds = 0,
   });
 
   final LearningDeck deck;
   final DesktopQueryOptions options;
   final SessionParameters parameters;
   final int statisticsSeconds;
+  final int totalSeconds;
 
   @override
   State<_Harness> createState() => _HarnessState();
@@ -392,6 +464,7 @@ class _HarnessState extends State<_Harness> {
   List<UnitStats> _statistics = const <UnitStats>[];
   List<LevelUnitStats> _levelStatistics = const <LevelUnitStats>[];
   late int statisticsSeconds = widget.statisticsSeconds;
+  late int totalSeconds = widget.totalSeconds;
   int _resetSignal = 0;
   bool _startOnOpen = false;
 
@@ -411,6 +484,7 @@ class _HarnessState extends State<_Harness> {
           deck: widget.deck,
           statistics: _statistics,
           statisticsSeconds: statisticsSeconds,
+          totalSeconds: totalSeconds,
           levelStatistics: _levelStatistics,
           resetToSetupSignal: _resetSignal,
           startSessionOnOpen: _startOnOpen,
@@ -424,7 +498,10 @@ class _HarnessState extends State<_Harness> {
             setState(() => _levelStatistics = value);
           },
           onAttemptRecorded: (RecordedAttempt attempt) {
-            setState(() => statisticsSeconds += attempt.learningSeconds);
+            setState(() {
+              statisticsSeconds += attempt.learningSeconds;
+              totalSeconds += attempt.learningSeconds;
+            });
           },
           onOpenEditor: () {},
           onExit: () {},

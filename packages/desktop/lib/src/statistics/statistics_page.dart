@@ -27,6 +27,7 @@ final class StatisticsPage extends StatefulWidget {
     required this.statistics,
     required this.levelStatistics,
     required this.statisticsSeconds,
+    required this.totalSeconds,
     required this.allTimeStatistics,
     required this.allTimeLevelStatistics,
     required this.allTimeIsRefused,
@@ -57,6 +58,10 @@ final class StatisticsPage extends StatefulWidget {
   /// Shown in the Current scope whatever the View: it belongs to the deck,
   /// not to a direction (ADR-0006).
   final int statisticsSeconds;
+
+  /// The learning time the all-time statistics hold, in whole seconds: the
+  /// total time, shown in the All-time scope whatever the View.
+  final int totalSeconds;
 
   /// The deck's all-time per-unit counters (empty when nothing was recorded).
   final List<UnitStats> allTimeStatistics;
@@ -263,9 +268,21 @@ final class _StatisticsPageState extends State<StatisticsPage> {
                     _DetailedStats(
                       summary: summary,
                       breakdown: difficultBreakdown(widget.deck, _view),
-                      statisticsSeconds: allTime
-                          ? null
-                          : widget.statisticsSeconds,
+                      // Each scope shows its own record's time.
+                      timePill: allTime
+                          ? (
+                              label: LearnAnywhereMessage.statisticsTotalTime,
+                              tooltip: LearnAnywhereMessage
+                                  .statisticsTotalTimeTooltip,
+                              seconds: widget.totalSeconds,
+                            )
+                          : (
+                              label: LearnAnywhereMessage
+                                  .statisticsStatisticsTime,
+                              tooltip: LearnAnywhereMessage
+                                  .statisticsStatisticsTimeTooltip,
+                              seconds: widget.statisticsSeconds,
+                            ),
                     ),
                     _PracticeList(
                       deck: widget.deck,
@@ -1176,7 +1193,7 @@ final class _DetailedStats extends StatelessWidget {
   const _DetailedStats({
     required this.summary,
     required this.breakdown,
-    required this.statisticsSeconds,
+    required this.timePill,
   });
 
   final StatisticsSummary summary;
@@ -1184,9 +1201,14 @@ final class _DetailedStats extends StatelessWidget {
   /// The deck's difficult units in the View, for the rows below the buckets.
   final DifficultBreakdown breakdown;
 
-  /// The current statistics' learning time, or null where it is not shown
-  /// (the All-time scope).
-  final int? statisticsSeconds;
+  /// The scope's learning time and the catalogue keys naming it: Statistics
+  /// time in the Current scope, Total time in the All-time scope.
+  final ({
+    LearnAnywhereMessage label,
+    LearnAnywhereMessage tooltip,
+    int seconds,
+  })
+  timePill;
 
   @override
   Widget build(BuildContext context) {
@@ -1233,16 +1255,11 @@ final class _DetailedStats extends StatelessWidget {
                   '${summary.totalCorrect} '
                   '(${_percent(summary.attemptsHitRate ?? 0)})',
             ),
-            if (statisticsSeconds case final int seconds)
-              _StatPill(
-                label: messages.message(
-                  LearnAnywhereMessage.statisticsStatisticsTime,
-                ),
-                value: formatElapsedTime(Duration(seconds: seconds)),
-                tooltip: messages.message(
-                  LearnAnywhereMessage.statisticsStatisticsTimeTooltip,
-                ),
-              ),
+            _StatPill(
+              label: messages.message(timePill.label),
+              value: formatElapsedTime(Duration(seconds: timePill.seconds)),
+              tooltip: messages.message(timePill.tooltip),
+            ),
           ],
         ),
         const SizedBox(height: LearnAnywhereTokens.gapMedium),

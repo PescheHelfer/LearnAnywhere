@@ -21,6 +21,7 @@ check an answer; changing one mid-session takes effect immediately.
 | Unit time | Off | Shows the **Unit time** pill: how long the current unit has been on screen |
 | Sitting time | Off | Shows the **Sitting time** pill: this sitting's learning time, each rated unit counted at most five minutes |
 | Statistics time | Off | Shows the **Statistics time** pill: the learning time the current statistics hold since they were last cleared, counted the same way |
+| Total time | Off | Shows the **Total time** pill: the learning time the all-time statistics hold, counted the same way; it counts only from the program version that began keeping it |
 | Time limit (seconds) | 0 (no limit) | When one unit's time reaches it, a tone sounds and the **Unit time** pill is highlighted; the session goes on. Needs **Unit time** on |
 | Minimum-attempts guard | Off | See below |
 | Minimum attempts | 2 | Value for the guard above |

@@ -669,7 +669,10 @@ final class DesktopFileService {
         statistics: realigned.statistics,
         levelStatistics: realigned.levelStatistics,
         // Deck-wide, so realignment has nothing to say about it: the time
-        // comes back whole, even when some units' counters could not.
+        // comes back whole, even when some units' counters could not. A
+        // lifetime file's total time comes along with its counters, so the
+        // statistics time keeps describing the record now being learned from;
+        // the lifetime record itself is not touched.
         statisticsSeconds: statistics.learningSeconds,
         statisticsPath: path,
         clearStatisticsPath: isAllTime,
@@ -857,6 +860,7 @@ final class DesktopFileService {
             resizeUnitStats(document.allTime.perUnit, document.deck.units.length),
           ),
           levelLearning: _levelSection(document.allTime.perLevel),
+          learningSeconds: document.allTime.learningSeconds,
         ),
       ),
     );

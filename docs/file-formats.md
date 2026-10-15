@@ -238,6 +238,16 @@ time**.
   before the key existed reads as "no time recorded", never as an error.
 - **Clearing the current statistics zeroes it;** loading a session file restores
   it; *Save stats as* writes it.
+- **In the lifetime file it only grows.** Each answer adds its seconds in the same
+  delta as its counters, under the same write authority (ADR-0001) — a *No count*
+  answer moves no counter but still adds its time, so it alone can create the
+  file. Clearing the current statistics leaves it alone; only the
+  learner-confirmed clear of the all-time record zeroes it. Lifetime files
+  written before the key read as `0`, so total time covers only sittings since
+  then.
+- **Loading a lifetime file by hand as the current statistics** takes its
+  `learningSeconds` as the statistics time, along with its counters; the
+  lifetime record itself is unchanged.
 - **Additive at version `2`,** on the same terms as `hash` and `scope`: a build
   predating the key ignores it. Do **not** bump the version for it.
 - **Android writes no `learningSeconds`.** The companion keeps no learning time;

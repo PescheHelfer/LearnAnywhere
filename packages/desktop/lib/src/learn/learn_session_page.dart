@@ -17,6 +17,7 @@ final class LearnSessionPage extends StatefulWidget {
     required this.deck,
     required this.statistics,
     this.statisticsSeconds = 0,
+    this.totalSeconds = 0,
     required this.options,
     required this.parameters,
     required this.onParametersChanged,
@@ -55,6 +56,12 @@ final class LearnSessionPage extends StatefulWidget {
   /// [onAttemptRecorded], which hands the grown figure back here. The pill
   /// shows this plus the running unit's capped seconds.
   final int statisticsSeconds;
+
+  /// The learning time the all-time statistics hold, in whole seconds — the
+  /// total time, as stored, and the one lifetime figure the page shows.
+  ///
+  /// Grows exactly like [statisticsSeconds], through [onAttemptRecorded].
+  final int totalSeconds;
 
   /// Current Level-Learning statistics (`.sta` v2 section, may be empty).
   final List<LevelUnitStats> levelStatistics;
@@ -110,11 +117,11 @@ final class LearnSessionPage extends StatefulWidget {
   /// Called with each attempt exactly as the working record took it, so the
   /// shell can add the same amount to the deck's lifetime record, and with
   /// the unit's capped learning seconds, which the shell adds to
-  /// [statisticsSeconds].
+  /// [statisticsSeconds] and [totalSeconds].
   ///
   /// Fires for every rating, including one the wrong-answer ceiling suppressed
   /// and a "no count" — both arrive carrying an empty delta, which the lifetime
-  /// record ignores, but still carry their time. Fires BEFORE
+  /// counters ignore, but still carry their time. Fires BEFORE
   /// [onPersistStatistics], so the shell's document already holds the attempt
   /// when the writes are queued.
   final ValueChanged<RecordedAttempt>? onAttemptRecorded;
@@ -214,6 +221,8 @@ const List<(LearnAnywhereMessage, String)> _widestStatPills =
       (LearnAnywhereMessage.learnLiveSittingTime, '99:59:59'),
       // Accumulates over every sitting until the statistics are cleared.
       (LearnAnywhereMessage.learnLiveStatisticsTime, '999:59:59'),
+      // Accumulates over the deck's whole recorded life.
+      (LearnAnywhereMessage.learnLiveTotalTime, '9999:59:59'),
     ];
 
 /// The widest thing on the session screen that cannot be broken across lines.
@@ -885,6 +894,10 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
     // speak gets the silent plan, so no icon is rendered at all — a disabled
     // one would only offer what the machine cannot do.
     final SpeechPlan speechPlan = _speechPlan();
+    // The unit on screen counts as it runs, capped as it will be when rated —
+    // so rating it moves its seconds into the stored figures without the
+    // pills moving.
+    final int runningSeconds = unitLearningSeconds(_unitSeconds);
     return _SessionView(
       deck: widget.deck,
       statistics: widget.statistics,
@@ -915,12 +928,9 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       answerFocusNodes: _answerFocusNodes,
       enteredAnswers: _lastEntered,
       unitSeconds: _unitSeconds,
-      // The unit on screen counts as it runs, capped as it will be when
-      // rated — so rating it moves its seconds into the stored figure without
-      // the pill moving.
-      sittingSeconds: _sittingSeconds + unitLearningSeconds(_unitSeconds),
-      statisticsSeconds:
-          widget.statisticsSeconds + unitLearningSeconds(_unitSeconds),
+      sittingSeconds: _sittingSeconds + runningSeconds,
+      statisticsSeconds: widget.statisticsSeconds + runningSeconds,
+      totalSeconds: widget.totalSeconds + runningSeconds,
       viewMode: _viewMode,
       onReveal: _primaryPreCheck,
       onCellAnswerChanged: (int fieldId, String value) {
@@ -1711,7 +1721,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   bool get _timePillShown =>
       widget.options.showUnitTime ||
       widget.options.showSittingTime ||
-      widget.options.showStatisticsTime;
+      widget.options.showStatisticsTime ||
+      widget.options.showTotalTime;
 
   void _tickUnitClock(Timer _) {
     if (!mounted || _currentItem == null) {
@@ -2187,6 +2198,7 @@ final class _SessionView extends StatelessWidget {
     required this.unitSeconds,
     required this.sittingSeconds,
     required this.statisticsSeconds,
+    required this.totalSeconds,
     required this.viewMode,
     required this.onReveal,
     required this.onCellAnswerChanged,
@@ -2254,6 +2266,9 @@ final class _SessionView extends StatelessWidget {
 
   /// The current statistics' learning time, the unit on screen included.
   final int statisticsSeconds;
+
+  /// The all-time statistics' learning time, the unit on screen included.
+  final int totalSeconds;
   final _AnswerViewMode viewMode;
   final VoidCallback onReveal;
 
@@ -2486,6 +2501,17 @@ final class _SessionView extends StatelessWidget {
           value: formatElapsedTime(Duration(seconds: statisticsSeconds)),
           tooltip: messages.message(
             LearnAnywhereMessage.learnLiveStatisticsTimeTooltip,
+          ),
+        ),
+      );
+    }
+    if (options.showTotalTime) {
+      pills.add(
+        _StatPill(
+          label: messages.message(LearnAnywhereMessage.learnLiveTotalTime),
+          value: formatElapsedTime(Duration(seconds: totalSeconds)),
+          tooltip: messages.message(
+            LearnAnywhereMessage.learnLiveTotalTimeTooltip,
           ),
         ),
       );

@@ -119,12 +119,27 @@ Statistik gelöscht wird, wie es **Aktuelle Statistik löschen...** tut. Sie ist
 Richtung Sie gefragt werden. Der Bildschirm [Statistik](09-statistics.md#bersicht) zeigt
 dieselbe Zahl nach **Korrekte Versuche**.
 
+Die Anzeige **Allzeit**, die letzte dieser Optionen in den
+[Einstellungen](11-settings.md#lernoptionen), ist die Lernzeit der
+[Allzeit-Statistik](09-statistics.md#die-zwei-statistiken) der Lern-Datei: jede Sitzung,
+seit diese Aufzeichnung Zeit erfasst, genau wie die **Sitzungszeit** gezählt und mit ihr
+mitlaufend. Sie ist die einzige Zahl der Allzeit-Statistik, die während einer Sitzung zu
+sehen ist. Jede Antwort speichert sie in die Allzeit-Datei der Lern-Datei, auch eine mit
+**Nicht zählen** bewertete; das Löschen der aktuellen Statistik lässt sie unberührt, und
+auf null zurück setzt sie nur **Allzeit-Statistik löschen...**. Allzeit-Dateien früherer
+Programmversionen enthalten keine Zeit, die Anzeige **Allzeit** zählt also erst ab der
+Version, die sie erfasst, und kann kleiner sein als Ihre tatsächliche Vorgeschichte mit
+der Lern-Datei. Lässt sich die Allzeit-Datei nicht schreiben, fehlt ihr die Zeit genau
+wie die Antworten, und die Sitzung geht weiter. Der Bildschirm
+[Statistik](09-statistics.md#bersicht) zeigt sie im Bereich **Allzeit** nach **Korrekte
+Versuche**.
+
 **Versuche**, **Beherrscht**, **Übrig** und **Korrekt** beschreiben jeweils **die ganze
 Lern-Datei in der Richtung, in der diese Sitzung fragt** — nicht die Sitzung und nicht den
 Einheitenbereich. (Die folgenden Anzeigen sind bewusst enger: **Einheit korrekt** gilt
 nur dieser einen Einheit, **Einheitszeit** misst diese eine Einheit und beginnt mit jeder
-neu, und **Sitzungszeit** gilt nur dieser Sitzung. Allein die **Statistikzeit** reicht
-weiter: über die ganze Lern-Datei, beide Richtungen zusammen.) Ein eingeschränkter Bereich
+neu, und **Sitzungszeit** gilt nur dieser Sitzung. Allein **Statistikzeit** und
+**Allzeit** reichen weiter: über die ganze Lern-Datei, beide Richtungen zusammen.) Ein eingeschränkter Bereich
 verkleinert, was Sie gefragt werden, nie das,
 was gezählt wird; die
 vier nebeneinanderstehenden Zahlen beschreiben also immer dieselbe Menge: eine Sitzung über
@@ -150,7 +165,7 @@ keine Zähler für die aktuelle Sitzung. Sie beginnen mit dem, was bereits verze
 behalten ihren Wert, wenn Sie eine Sitzung verlassen und eine neue starten, und sind auch
 nach dem Schließen und erneuten Öffnen des Programms noch da. Damit sind es dieselben
 Zahlen, die der Bildschirm [Statistik](09-statistics.md) als **Abfrage-Versuche** und
-**Korrekte Versuche** ausweist, sofern dessen Schalter **Ansicht** zur Sitzung passt:
+**Korrekte Versuche** ausweist, sofern dessen Schalter **Richtung** zur Sitzung passt:
 **Kombiniert** bei **Beide**, sonst **Abfragerichtung 1** bzw. **Abfragerichtung 2**. (Der
 Bildschirm öffnet sich auf **Abfragerichtung 1**, zum Vergleichen also umschalten.) Es
 gibt somit nur einen Satz Zahlen, dem Sie trauen müssen. Beim Laden einer anderen

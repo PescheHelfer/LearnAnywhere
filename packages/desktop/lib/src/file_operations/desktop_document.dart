@@ -145,7 +145,7 @@ final class DesktopDocument {
   }
 
   /// Returns a copy with [attempt] added to both records: its learning time
-  /// to the working record, its counters to the lifetime record.
+  /// to both, its counters to the lifetime record.
   ///
   /// The working record's counters arrive separately, already applied by the
   /// session; this is the rest of the same step. It runs before the answer's

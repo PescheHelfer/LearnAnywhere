@@ -108,12 +108,25 @@ statistics are cleared, as **Clear current stats...** does. It is one figure for
 [Statistics](09-statistics.md#overview) screen shows the same figure after **Correct
 Attempts**.
 
+**Total time**, the last of these options in [Settings](11-settings.md#learning-options),
+is the learning time the deck's [all-time statistics](09-statistics.md#the-two-records)
+hold: every sitting since that record began keeping time, counted exactly like **Sitting
+time** and ticking along with it. It is the one figure of the all-time statistics shown
+during a session. Each answer saves it into the deck's all-time file, a **No count**
+rating too; clearing the current statistics leaves it alone, and only **Clear all-time
+stats...** sets it back to zero. All-time files written by earlier versions of the program
+hold no time, so **Total time** counts only from the version that began keeping it and can
+be smaller than your real history with the deck. If the all-time file cannot be written,
+it misses the time exactly as it misses the answers, and the session goes on. The
+[Statistics](09-statistics.md#overview) screen shows it after **Correct Attempts** in the
+**All-time** scope.
+
 **Attempts**, **Mastered**, **Remaining** and **Accuracy** each describe **the whole deck,
 in the direction this session asks** — not the sitting, and not the unit range. (The
 readouts after them are deliberately narrower: **Unit accuracy** is about that one unit,
 **Unit time** times that one unit, starting afresh with each, and **Sitting time** covers
-this sitting alone. **Statistics time** is the one that goes wider: the whole deck, in
-both directions together.) Restricting the range
+this sitting alone. **Statistics time** and **Total time** are the ones that go wider: the
+whole deck, in both directions together.) Restricting the range
 narrows what you are asked, never what is counted, so the four figures standing side by
 side always describe
 the same population: a session on units 5–10 of a 200-unit deck still reports **Mastered**
@@ -135,7 +148,7 @@ Hover over any of these readouts to read what it counts.
 for this sitting. They open on whatever the deck has already recorded, keep their value
 when you leave a session and start another, and are still there after you close and reopen
 the program. That makes them the same figures the [Statistics](09-statistics.md) screen
-reports as **Total Attempts** and **Correct Attempts** when its **View** switch matches the
+reports as **Total Attempts** and **Correct Attempts** when its **Direction** switch matches the
 session: **Combined** for a **Both** session, **Direction 1** or **Direction 2** for a
 single-direction one. (The screen opens on **Direction 1**, so switch it to compare.) There
 is only one set of numbers to trust. Loading another deck shows that deck's own totals and

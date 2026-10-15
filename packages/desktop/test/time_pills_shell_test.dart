@@ -113,6 +113,7 @@ void main() {
   final Finder unitTimePill = find.textContaining('Unit time: ');
   final Finder sittingTimePill = find.textContaining('Sitting time: ');
   final Finder statisticsTimePill = find.textContaining('Statistics time: ');
+  final Finder totalTimePill = find.textContaining('Total time: ');
 
   /// Flips the learning option [label] on the Advanced Learning Options
   /// page, then leaves it with Esc (its Close button is below the fold).
@@ -202,17 +203,83 @@ void main() {
     },
   );
 
-  testWidgets('the Total time option shows no pill yet', (
+  testWidgets('the Total time option shows and hides the Total time pill', (
     WidgetTester tester,
   ) async {
+    await tester.runAsync(() async {
+      await openDeck(tester);
+      await startSession(tester);
+      expect(totalTimePill, findsNothing);
+
+      await toggleOption(tester, 'Total time');
+      await startSession(tester);
+      expect(totalTimePill, findsOneWidget);
+      expect(unitTimePill, findsNothing);
+      expect(sittingTimePill, findsNothing);
+      expect(statisticsTimePill, findsNothing);
+      expect(
+        decodeSettingsJson(File(settingsPath).readAsStringSync()).showTotalTime,
+        isTrue,
+      );
+
+      await toggleOption(tester, 'Total time');
+      await startSession(tester);
+      expect(totalTimePill, findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('a No count answer writes its time to the lifetime file, which '
+      'the pill starts from on the next open', (WidgetTester tester) async {
     File(settingsPath).writeAsStringSync(
       encodeSettingsJson(const LearnAnywhereSettings(showTotalTime: true)),
     );
+    final File lifetimeFile = File(p.join(temp.path, 'deck_alltime.sta'));
 
     await tester.runAsync(() async {
       await openDeck(tester);
       await startSession(tester);
-      expect(find.textContaining('time:'), findsNothing);
+      expect(lifetimeFile.existsSync(), isFalse);
+
+      // The shell runs on real timers here: let the unit's clock pass a
+      // couple of seconds, then answer it and rate it No count.
+      await Future<void>.delayed(const Duration(milliseconds: 2200));
+      await tester.enterText(find.byType(TextField), 'x');
+      await tester.tap(find.text('Check'));
+      await settle(tester);
+      await tester.sendKeyEvent(LogicalKeyboardKey.f7);
+      await settle(tester);
+      await tester.tap(find.text('Continue'));
+      await settleAfterIo(tester);
+
+      // No counter moved, yet the answer reached the lifetime file.
+      final StatisticsFile written = decodeStatisticsJson(
+        lifetimeFile.readAsStringSync(),
+      );
+      expect(written.scope, StatisticsScope.allTime);
+      expect(written.learningSeconds, greaterThanOrEqualTo(2));
+      expect(
+        written.perUnit.every(
+          (UnitStats stats) =>
+              stats.direction1.attempts == 0 && stats.direction2.attempts == 0,
+        ),
+        isTrue,
+      );
+
+      // Reopened, the deck reads its total back, and the pill starts there
+      // (plus whatever the new unit has run for).
+      await pickMenuItem(tester, 'File', 'Load deck...');
+      await startSession(tester);
+      final String shown = tester
+          .widget<Text>(totalTimePill)
+          .data!
+          .substring('Total time: '.length);
+      final int shownSeconds = shown
+          .split(':')
+          .map(int.parse)
+          .fold(0, (int total, int part) => total * 60 + part);
+      expect(shownSeconds, greaterThanOrEqualTo(written.learningSeconds));
+      expect(shownSeconds, lessThan(written.learningSeconds + 10));
       expect(tester.takeException(), isNull);
     });
   });

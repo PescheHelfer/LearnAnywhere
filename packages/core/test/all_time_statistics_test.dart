@@ -673,6 +673,153 @@ void main() {
       expect(posix.speaksFor('/decks/./french.vok', context: p.posix), isTrue);
     });
   });
+
+  group('total time', () {
+    const AllTimeStatistics lifetime = AllTimeStatistics(
+      perUnit: <UnitStats>[
+        UnitStats(index: 1, direction1: DirectionStats(attempts: 9, correct: 6)),
+      ],
+      learningSeconds: 600,
+    );
+
+    test('a counted answer adds its time in the same step as its counters', () {
+      final AllTimeStatistics updated = lifetime.record(
+        const RecordedAttempt(
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+          drill: AttemptDelta(attempts: 1, correct: 1),
+          learningSeconds: 42,
+        ),
+      );
+      expect(
+        updated.perUnit.single.direction1,
+        const DirectionStats(attempts: 10, correct: 7),
+      );
+      expect(updated.learningSeconds, 642);
+    });
+
+    test('a "no count" answer adds its time although no counter moves', () {
+      const DirectionStats before = DirectionStats(attempts: 9, correct: 6);
+      final RecordedAttempt attempt = RecordedAttempt(
+        unitIndex: 1,
+        direction: QueryDirection.direction1,
+        drill: AttemptDelta.between(
+          before,
+          recordAttempt(before, AttemptRating.noCount),
+        ),
+        learningSeconds: 30,
+      );
+      // Nothing to record means no counter change AND no time.
+      expect(attempt.isEmpty, isFalse);
+
+      final AllTimeStatistics updated = lifetime.record(attempt);
+      expect(updated.perUnit.single.direction1, before);
+      expect(updated.perLevel, isEmpty);
+      expect(updated.learningSeconds, 630);
+    });
+
+    test('an answer carrying neither counters nor time changes nothing', () {
+      const RecordedAttempt attempt = RecordedAttempt(
+        unitIndex: 1,
+        direction: QueryDirection.direction1,
+      );
+      expect(attempt.isEmpty, isTrue);
+      expect(identical(lifetime.record(attempt), lifetime), isTrue);
+    });
+
+    test('a record holding only time is not empty, so its file is written', () {
+      final AllTimeStatistics updated = AllTimeStatistics.empty.record(
+        const RecordedAttempt(
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+          learningSeconds: 12,
+        ),
+      );
+      expect(updated.isEmpty, isFalse);
+      expect(updated.perUnit, isEmpty);
+      expect(updated.learningSeconds, 12);
+    });
+
+    test('round-trips through a lifetime .sta', () {
+      final StatisticsFile decoded = decodeStatisticsJson(
+        encodeStatisticsJson(
+          StatisticsFile(
+            deckRef: 'french.vok',
+            scope: StatisticsScope.allTime,
+            perUnit: lifetime.perUnit,
+            learningSeconds: lifetime.learningSeconds,
+          ),
+        ),
+      );
+      expect(decoded.scope, StatisticsScope.allTime);
+      expect(AllTimeStatistics.fromFile(decoded).learningSeconds, 600);
+    });
+
+    test('a lifetime file written before total time existed reads as none', () {
+      final AllTimeStatistics read = AllTimeStatistics.fromFile(
+        decodeStatistics(<String, Object?>{
+          'format': statisticsFormat,
+          'version': currentStatisticsVersion,
+          'scope': 'allTime',
+          'deckRef': 'french.vok',
+          'perUnit': <Object?>[],
+        }),
+      );
+      expect(read.learningSeconds, 0);
+    });
+
+    test('deck-shape changes and realignment keep the time whole', () {
+      expect(lifetime.resized(3).learningSeconds, 600);
+      expect(lifetime.afterInsert(1, 2).learningSeconds, 600);
+      expect(lifetime.afterDelete(1, 0).learningSeconds, 600);
+      final LearningDeck deck = LearningDeck(
+        mask: _mask,
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{
+              0: FieldValue.plain('eins'),
+              1: FieldValue.plain('one'),
+            },
+          ),
+        ],
+      );
+      expect(
+        realignAllTimeStatistics(deck: deck, allTime: lifetime).learningSeconds,
+        600,
+      );
+      expect(
+        realignAllTimeStatistics(
+          deck: deck,
+          allTime: AllTimeStatistics(
+            perUnit: withUnitHashes(deck, lifetime.perUnit),
+            learningSeconds: 600,
+          ),
+        ).learningSeconds,
+        600,
+      );
+    });
+
+    test('the record adds time under its own authority, and only the '
+        'learner-confirmed clear of the lifetime record zeroes it', () {
+      const AllTimeRecord read = AllTimeRecord.loaded(
+        lifetime,
+        '/decks/french.vok',
+      );
+      final AllTimeRecord updated = read.record(
+        const RecordedAttempt(
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+          learningSeconds: 5,
+        ),
+      );
+      expect(updated.learningSeconds, 605);
+      expect(updated.speaksFor('/decks/french.vok', context: p.posix), isTrue);
+      expect(updated.refusedAt('/x.vok').learningSeconds, 605);
+      expect(updated.adoptedAt('/x.vok').learningSeconds, 605);
+      expect(updated.cleared().learningSeconds, 0);
+    });
+  });
 }
 
 const LearningMask _mask = LearningMask(

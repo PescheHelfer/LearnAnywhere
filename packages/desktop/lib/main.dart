@@ -1382,13 +1382,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     _queuePruneOldStatistics(target);
   }
 
-  /// Adds one attempt's learning time to the working record and its counters
-  /// to the deck's lifetime record, and queues the lifetime write.
+  /// Adds one attempt's learning time to both records and its counters to the
+  /// deck's lifetime record, and queues the lifetime write.
   ///
   /// Runs before [_persistSessionStatistics], so the session file written for
   /// this answer already holds its time. [attempt] carries exactly what the
   /// working record took, so a suppressed or uncounted attempt changes no
-  /// lifetime counter and writes no lifetime file. That write is queued here
+  /// lifetime counter — but its time still reaches the lifetime file, and only
+  /// an attempt carrying neither writes nothing. That write is queued here
   /// rather than in [_persistSessionStatistics] because that one stops when
   /// auto-saving is off, and the lifetime record must not.
   void _recordAttempt(RecordedAttempt attempt) {
@@ -2913,6 +2914,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         deck: _document.deck,
         statistics: _document.statistics,
         statisticsSeconds: _document.statisticsSeconds,
+        totalSeconds: _document.allTime.learningSeconds,
         speechEngine: widget.speechEngine,
         speechSettings: _settings.speech,
         levelStatistics: _document.levelStatistics,
@@ -3005,6 +3007,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         statistics: _document.statistics,
         statisticsSeconds: _document.statisticsSeconds,
         levelStatistics: _document.levelStatistics,
+        totalSeconds: _document.allTime.learningSeconds,
         allTimeStatistics: _document.allTime.perUnit,
         allTimeLevelStatistics: _document.allTime.perLevel,
         allTimeIsRefused: _document.allTime.isRefused,

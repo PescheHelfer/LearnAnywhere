@@ -30,10 +30,12 @@ looking at; the screen always opens on **Current**.
   **Save stats** read and write, and it is the record a session file holds — together
   with its **Statistics time**, the learning time since it was last cleared.
 - **All-time** — the deck's whole history. It only ever grows: every answer you give is
-  added to it as you give it, and nothing else ever changes it. Loading a statistics
-  file, merging another deck or clearing the current record leaves it exactly as it was.
-  It decides nothing — no practice pool, no mastery, no ladder position — and it never
-  appears in the readouts during a session.
+  added to it as you give it, together with its time, and nothing else ever changes it.
+  Loading a statistics file, merging another deck or clearing the current record leaves
+  it exactly as it was. It decides nothing — no practice pool, no mastery, no ladder
+  position — and the only figure of it shown during a session is its **Total time**, the
+  learning time it holds. That time counts only from the program version that began
+  keeping it, so it can be smaller than the deck's real history.
 
 The all-time record is kept whether or not **Auto-save statistics** is switched on. That
 option governs session files only; the lifetime record is written on every answer
@@ -57,7 +59,7 @@ other.
 
 - **Clear current stats...**, in the **Current** scope, erases every recorded attempt in
   the working record after confirming, and sets its **Statistics time** back to zero.
-  The all-time statistics are not affected — the
+  The all-time statistics are not affected, their **Total time** included — the
   dialog says so. This is the everyday reset: start the deck over without losing its
   history.
 - **Clear all-time stats...**, in the **All-time** scope, erases the deck's complete
@@ -75,7 +77,7 @@ other.
 
 **Clearing the all-time record cannot be undone.** There is no copy to restore it from:
 the numbers live in `<deck name>_alltime.sta` beside the deck, and confirming zeroes
-that file. Your current statistics, your session files and the deck itself are
+that file, its **Total time** included. Your current statistics, your session files and the deck itself are
 untouched, and answers given afterwards start accumulating a new history from zero. If
 you want the old figures kept, copy that file somewhere else before you clear.
 
@@ -91,7 +93,9 @@ the numbers replace the current statistics and decide which units are asked next
 further answers go to a **new** session file, and the all-time statistics themselves
 stay untouched. Decline and nothing at all changes.
 
-Accept and the practice pool is rebuilt from those figures. The program will not offer
+Accept and the practice pool is rebuilt from those figures. The record's **Total time**
+comes along with them and becomes the **Statistics time** of the current statistics; the
+all-time record keeps its own. The program will not offer
 to auto-save into that file, and never treats it as the file **Save stats** writes to,
 so no ordinary save can reach it. Meanwhile the lifetime record carries on accumulating
 in the background exactly as it would have done anyway.
@@ -122,6 +126,12 @@ time the current statistics hold, the same figure as the
 [session pill](06-learning-sessions.md#during-a-session). It is always shown here, whether
 or not its pill is switched on for sessions, and the **Direction** switch does not change
 it, because learning time belongs to the whole deck, not to a direction.
+
+In the **All-time** scope the same place holds **Total time**: the learning time the
+all-time statistics hold, the same figure as its
+[session pill](06-learning-sessions.md#during-a-session), shown and left unchanged by the
+**Direction** switch in the same way. It counts only from the program version that began
+keeping it.
 
 Below **Not yet practiced**, after a stronger line, the table counts the deck's
 [difficult](06-learning-sessions.md#marking-a-unit-difficult) units. These rows are not

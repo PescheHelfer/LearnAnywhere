@@ -89,6 +89,63 @@ void main() {
     expect(pill, findsOneWidget);
   });
 
+  testWidgets('the Total time follows Correct Attempts in the All-time scope, '
+      'whatever the View', (WidgetTester tester) async {
+    widenSurface(tester);
+    await tester.pumpWidget(
+      buildPage(statisticsSeconds: 3725, totalSeconds: 45296),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder pill = find.text('Total time: 12:34:56');
+    // The lifetime figure stays in its own scope.
+    expect(pill, findsNothing);
+
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    expect(pill, findsOneWidget);
+    expect(find.textContaining('Statistics time'), findsNothing);
+    expect(
+      find.byTooltip(
+        'The learning time held by the all-time statistics: the time of '
+        'every unit you rated, each counted at most five minutes. It counts '
+        'only from the program version that began keeping it.',
+      ),
+      findsOneWidget,
+    );
+    final List<String> row = tester
+        .widgetList<Text>(
+          find.descendant(
+            of: find.ancestor(of: pill, matching: find.byType(Wrap)).first,
+            matching: find.byType(Text),
+          ),
+        )
+        .map((Text text) => text.data!)
+        .toList();
+    expect(row.last, 'Total time: 12:34:56');
+    expect(row[row.length - 2], startsWith('Correct Attempts: '));
+
+    await selectView(tester, 'Direction 2');
+    expect(pill, findsOneWidget);
+    await selectCombined(tester);
+    expect(pill, findsOneWidget);
+
+    await tester.tap(find.text('Current'));
+    await tester.pumpAndSettle();
+    expect(pill, findsNothing);
+    expect(find.text('Statistics time: 1:02:05'), findsOneWidget);
+  });
+
+  testWidgets('a lifetime record with no time yet shows 0:00 in the All-time '
+      'scope', (WidgetTester tester) async {
+    widenSurface(tester);
+    await tester.pumpWidget(buildPage());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All-time'));
+    await tester.pumpAndSettle();
+    expect(find.text('Total time: 0:00'), findsOneWidget);
+  });
+
   testWidgets('cleared statistics show no time, not a missing pill', (
     WidgetTester tester,
   ) async {
@@ -1005,6 +1062,7 @@ Widget buildPage({
   ],
   List<LevelUnitStats> levelStatistics = const <LevelUnitStats>[],
   int statisticsSeconds = 0,
+  int totalSeconds = 0,
   List<UnitStats> allTimeStatistics = const <UnitStats>[],
   List<LevelUnitStats> allTimeLevelStatistics = const <LevelUnitStats>[],
   bool allTimeIsRefused = false,
@@ -1022,6 +1080,7 @@ Widget buildPage({
       statistics: statistics,
       levelStatistics: levelStatistics,
       statisticsSeconds: statisticsSeconds,
+      totalSeconds: totalSeconds,
       allTimeStatistics: allTimeStatistics,
       allTimeLevelStatistics: allTimeLevelStatistics,
       allTimeIsRefused: allTimeIsRefused,

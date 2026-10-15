@@ -34,11 +34,13 @@ wählt, welche Sie gerade sehen; der Bildschirm öffnet stets mit **Aktuell**.
   das, was eine Sitzungsdatei enthält — samt ihrer **Statistikzeit**, der Lernzeit seit
   dem letzten Löschen.
 - **Allzeit** — die gesamte Vorgeschichte der Lern-Datei. Sie wächst nur: jede Antwort
-  wird ihr in dem Moment hinzugefügt, in dem Sie sie geben, und sonst ändert sie nichts.
-  Eine geladene Statistikdatei, eine hinzugefügte Lern-Datei oder das Löschen der
-  aktuellen Statistik lassen sie genau so, wie sie war. Sie bestimmt nichts — keinen
-  Übungspool, keine Meisterung, keine Position auf der Leiter — und erscheint während
-  einer Sitzung nie in den Anzeigen.
+  wird ihr samt ihrer Zeit in dem Moment hinzugefügt, in dem Sie sie geben, und sonst
+  ändert sie nichts. Eine geladene Statistikdatei, eine hinzugefügte Lern-Datei oder das
+  Löschen der aktuellen Statistik lassen sie genau so, wie sie war. Sie bestimmt nichts —
+  keinen Übungspool, keine Meisterung, keine Position auf der Leiter —, und während einer
+  Sitzung ist von ihr nur die Lernzeit zu sehen, die Anzeige **Allzeit**. Diese Zeit
+  zählt erst ab der Programmversion, die sie erfasst, und kann daher kleiner sein als die
+  tatsächliche Vorgeschichte.
 
 Die Allzeit-Statistik wird geführt, ob **Statistiken automatisch speichern**
 eingeschaltet ist oder nicht. Diese Option betrifft allein die Sitzungsdateien; die
@@ -64,8 +66,8 @@ heraus, und keines der beiden Löschen berührt das andere.
 
 - **Aktuelle Statistik löschen...** im Bereich **Aktuell** löscht nach Bestätigung jeden
   verzeichneten Versuch der Arbeitsstatistik und setzt ihre **Statistikzeit** auf null
-  zurück. Die Allzeit-Statistik bleibt davon
-  unberührt — der Dialog sagt es. Das ist der alltägliche Neuanfang: die Lern-Datei von
+  zurück. Die Allzeit-Statistik bleibt davon unberührt, samt ihrer Lernzeit
+  **Allzeit** — der Dialog sagt es. Das ist der alltägliche Neuanfang: die Lern-Datei von
   vorn beginnen, ohne ihre Vorgeschichte zu verlieren.
 - **Allzeit-Statistik löschen...** im Bereich **Allzeit** löscht den gesamten bisherigen
   Lernverlauf dieser Lern-Datei. Der Befehl liegt mit Absicht außer Sichtweite, denn er
@@ -85,7 +87,7 @@ heraus, und keines der beiden Löschen berührt das andere.
 **Das Löschen der Allzeit-Statistik lässt sich nicht rückgängig machen.** Es gibt keine
 Kopie, aus der sie zurückzuholen wäre: die Zahlen stehen in
 `<Name der Lern-Datei>_alltime.sta` neben der Lern-Datei, und das Bestätigen nullt genau
-diese Datei. Ihre aktuelle Statistik, Ihre Sitzungsdateien und die Lern-Datei selbst
+diese Datei, ihre Lernzeit **Allzeit** eingeschlossen. Ihre aktuelle Statistik, Ihre Sitzungsdateien und die Lern-Datei selbst
 bleiben unangetastet, und spätere Antworten bauen von null an eine neue Vorgeschichte
 auf. Wollen Sie die alten Zahlen behalten, kopieren Sie die Datei vorher woandershin.
 
@@ -103,7 +105,9 @@ als Nächstes abgefragt werden, weitere Antworten kommen in eine **neue** Sitzun
 und die Allzeit-Statistik selbst bleibt unverändert. Lehnen Sie ab, ändert sich gar
 nichts.
 
-Nehmen Sie an, wird der Übungspool aus diesen Zahlen neu aufgebaut. Das Programm bietet
+Nehmen Sie an, wird der Übungspool aus diesen Zahlen neu aufgebaut. Die Lernzeit
+**Allzeit** der Aufzeichnung kommt mit und wird zur **Statistikzeit** der aktuellen
+Statistik; die Allzeit-Statistik behält ihre eigene. Das Programm bietet
 nicht an, künftig automatisch in diese Datei zu speichern, und behandelt sie nie als die
 Datei, die **Statistik speichern** beschreibt — kein gewöhnliches Speichern kann sie
 also erreichen. Die Allzeit-Statistik sammelt derweil im Hintergrund genau so weiter,
@@ -138,6 +142,12 @@ Lernzeit der aktuellen Statistik, dieselbe Zahl wie die
 immer, ob ihre Anzeige für Sitzungen eingeschaltet ist oder nicht, und der Schalter
 **Richtung** ändert sie nicht, denn Lernzeit gehört zur ganzen Lern-Datei, nicht zu
 einer Richtung.
+
+Im Bereich **Allzeit** steht an derselben Stelle **Allzeit**: die Lernzeit der
+Allzeit-Statistik, dieselbe Zahl wie ihre
+[Anzeige in der Sitzung](06-learning-sessions.md#whrend-einer-sitzung), ebenso immer
+gezeigt und vom Schalter **Richtung** unberührt. Sie zählt erst ab der Programmversion,
+die sie erfasst.
 
 Unter **Noch nicht abgefragt** zählt die Tabelle nach einer kräftigeren Linie die
 [schwierigen](06-learning-sessions.md#eine-einheit-als-schwierig-kennzeichnen) Einheiten

@@ -32,6 +32,9 @@ Three rules follow from that and are not negotiable:
    realigning after an outside edit and clearing the current record all leave the
    lifetime totals exactly as they were. An attempt suppressed by the wrong-answer
    ceiling is skipped in both records; a "no count" rating is a no-op in both.
+   *(Amended by [ADR-0006](0006-learning-time-is-a-capped-deck-wide-total.md):
+   both still take a rated answer's learning time, so a "no count" moves no
+   counter but does add its time.)*
 2. **The record is kept regardless of the auto-save option.** That option governs
    session files. The lifetime record is written on every answer either way, and
    flushed on new, open, merge, close and exit.

@@ -1457,8 +1457,8 @@ void main() {
       expect(counted.statisticsSeconds, 142);
       expect(counted.allTime.perUnit.single.direction1.attempts, 1);
 
-      // No counter moved, so the lifetime record is left alone — but the
-      // time was still spent learning.
+      // No counter moved, so the lifetime counters are left alone — but the
+      // time was still spent learning, and both records keep it.
       final DesktopDocument noCount = counted.withAttempt(
         const RecordedAttempt(
           unitIndex: 1,
@@ -1468,6 +1468,80 @@ void main() {
       );
       expect(noCount.statisticsSeconds, 162);
       expect(noCount.allTime.perUnit.single.direction1.attempts, 1);
+      expect(noCount.allTime.learningSeconds, 62);
+    });
+
+    test('the total time is written to the lifetime file, read back on open, '
+        'and left alone by clearing the current statistics', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_total_time',
+      );
+      addTearDown(() => temp.delete(recursive: true));
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = p.join(temp.path, 'deck.vok');
+      final LearningDeck deck = LearningDeck(
+        mask: sampleMask(),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 1,
+            fields: <int, FieldValue>{0: FieldValue.plain('Q')},
+          ),
+        ],
+      );
+      await File(deckPath).writeAsString(encodeDeckJson(deck));
+      final DesktopDocument opened = await service.openDeck(
+        DesktopDocument.empty(sampleMask()),
+        deckPath,
+      );
+      expect(opened.allTime.origin, AllTimeOrigin.absent);
+
+      // A No count answer alone is enough to create the lifetime file.
+      final DesktopDocument answered = opened.withAttempt(
+        const RecordedAttempt(
+          unitIndex: 1,
+          direction: QueryDirection.direction1,
+          learningSeconds: 45,
+        ),
+      );
+      expect(
+        await service.writeAllTimeStatistics(answered),
+        AllTimeWriteOutcome.written,
+      );
+      final StatisticsFile written = decodeStatisticsJson(
+        File(service.allTimeStatisticsPath(deckPath)).readAsStringSync(),
+      );
+      expect(written.scope, StatisticsScope.allTime);
+      expect(written.learningSeconds, 45);
+      expect(written.perUnit.single.direction1, const DirectionStats());
+
+      final DesktopDocument reopened = await service.openDeck(
+        answered,
+        deckPath,
+      );
+      expect(reopened.allTime.learningSeconds, 45);
+      expect(reopened.statisticsSeconds, 0);
+
+      final DesktopDocument cleared = await service.clearCurrentStatistics(
+        reopened.withAttempt(
+          const RecordedAttempt(
+            unitIndex: 1,
+            direction: QueryDirection.direction1,
+            drill: AttemptDelta(attempts: 1),
+            learningSeconds: 15,
+          ),
+        ),
+      );
+      expect(cleared.statisticsSeconds, 0);
+      expect(cleared.allTime.learningSeconds, 60);
+
+      // Loading the lifetime file by hand as the current statistics takes its
+      // time along with its counters, and adds nothing to the lifetime record.
+      final DesktopDocument practised = (await service.loadStatistics(
+        cleared,
+        service.allTimeStatisticsPath(deckPath),
+      )).document;
+      expect(practised.statisticsSeconds, 45);
+      expect(practised.allTime.learningSeconds, 60);
     });
 
     test('realigns loaded statistics onto a deck edited outside the app', () async {

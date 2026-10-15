@@ -20,8 +20,13 @@
 /// the counters before and after — so whatever that record declined to count,
 /// this one declines too. That is how an attempt suppressed by the wrong-answer
 /// ceiling is skipped in both records, and how an [AttemptRating.noCount]
-/// rating stays a no-op in both. Re-deciding the ceiling against lifetime
+/// rating moves no counter in either. Re-deciding the ceiling against lifetime
 /// wrongs would silently freeze the record forever once a unit passed it.
+///
+/// The record also keeps the deck's **total time** (ADR-0006): each answer's
+/// capped learning seconds, added in the same step as its counters. A "no
+/// count" answer adds its time although it moves no counter, and only the
+/// learner-confirmed clear of this record ever takes the time back.
 ///
 /// **Writing is by authority, never blind.** The record a deck holds in memory
 /// travels as an [AllTimeRecord], which knows the file it was read from and so
@@ -137,10 +142,13 @@ final class RecordedAttempt {
   /// but is still time spent learning (ADR-0006).
   final int learningSeconds;
 
-  /// Whether the working record counted nothing, so neither should this one.
+  /// Whether this answer has nothing for either record: the working record
+  /// counted nothing AND it carries no time.
   ///
-  /// Counters only: [learningSeconds] does not make an attempt non-empty.
-  bool get isEmpty => drill.isEmpty && levelDelta.isEmpty;
+  /// A "no count" answer is therefore not empty — its counters do not move,
+  /// but its time still reaches both records.
+  bool get isEmpty =>
+      drill.isEmpty && levelDelta.isEmpty && learningSeconds == 0;
 }
 
 /// A deck's lifetime statistics, in the same two sections a `.sta` file has.
@@ -149,16 +157,18 @@ final class AllTimeStatistics {
   const AllTimeStatistics({
     this.perUnit = const <UnitStats>[],
     this.perLevel = const <LevelUnitStats>[],
+    this.learningSeconds = 0,
   });
 
   /// Reads the record out of a decoded `.sta`.
   ///
   /// The caller is responsible for having checked [StatisticsFile.scope]; this
-  /// only unpacks the two sections.
+  /// only unpacks the two sections and the total time.
   factory AllTimeStatistics.fromFile(StatisticsFile file) {
     return AllTimeStatistics(
       perUnit: file.perUnit,
       perLevel: file.levelLearning?.perUnit ?? const <LevelUnitStats>[],
+      learningSeconds: file.learningSeconds,
     );
   }
 
@@ -172,39 +182,54 @@ final class AllTimeStatistics {
   /// Lifetime Level-Learning counters, each carrying the last level reached.
   final List<LevelUnitStats> perLevel;
 
-  /// Whether nothing has ever been recorded.
-  bool get isEmpty => perUnit.isEmpty && perLevel.isEmpty;
+  /// The deck's total time in whole seconds: every rated unit's capped time
+  /// since the record began keeping it (ADR-0006).
+  ///
+  /// Deck-wide, so no re-indexing or realignment ever touches it. A lifetime
+  /// file written before the key existed reads as zero, which is why total
+  /// time counts only from the release that introduced it.
+  final int learningSeconds;
+
+  /// Whether nothing has ever been recorded, neither counters nor time.
+  bool get isEmpty =>
+      perUnit.isEmpty && perLevel.isEmpty && learningSeconds == 0;
 
   /// Returns this record with [attempt] added.
   ///
-  /// An attempt the working record did not count changes nothing here either
-  /// ([RecordedAttempt.isEmpty]).
+  /// An attempt the working record did not count changes no counter here
+  /// either, but its time is added all the same; only an attempt carrying
+  /// neither ([RecordedAttempt.isEmpty]) leaves the record untouched.
   AllTimeStatistics record(RecordedAttempt attempt) {
-    if (attempt.isEmpty || attempt.unitIndex < 1) {
+    if (attempt.isEmpty) {
       return this;
     }
+    final bool hasUnit = attempt.unitIndex >= 1;
     return AllTimeStatistics(
-      perUnit: attempt.drill.isEmpty ? perUnit : _recordDrill(attempt),
-      perLevel: attempt.level == null || attempt.levelDelta.isEmpty
+      perUnit: !hasUnit || attempt.drill.isEmpty
+          ? perUnit
+          : _recordDrill(attempt),
+      perLevel:
+          !hasUnit || attempt.level == null || attempt.levelDelta.isEmpty
           ? perLevel
           : _recordLevel(attempt),
+      learningSeconds: learningSeconds + attempt.learningSeconds,
     );
   }
 
   /// Returns this record re-indexed to a deck of [unitCount] units.
   AllTimeStatistics resized(int unitCount) {
-    return AllTimeStatistics(
-      perUnit: resizeUnitStats(perUnit, unitCount),
-      perLevel: resizeLevelStats(perLevel, unitCount),
+    return _reindexed(
+      resizeUnitStats(perUnit, unitCount),
+      resizeLevelStats(perLevel, unitCount),
     );
   }
 
   /// Returns this record shifted for a unit inserted at 1-based [position] in
   /// a deck that now holds [unitCount] units.
   AllTimeStatistics afterInsert(int position, int unitCount) {
-    return AllTimeStatistics(
-      perUnit: statsAfterInsert(perUnit, position, unitCount),
-      perLevel: levelStatsAfterInsert(perLevel, position),
+    return _reindexed(
+      statsAfterInsert(perUnit, position, unitCount),
+      levelStatsAfterInsert(perLevel, position),
     );
   }
 
@@ -214,9 +239,22 @@ final class AllTimeStatistics {
   /// The deleted unit's lifetime counters go with it: the record only ever
   /// describes units that exist, so the Unit list and the Overview agree.
   AllTimeStatistics afterDelete(int position, int unitCount) {
+    return _reindexed(
+      statsAfterDelete(perUnit, position, unitCount),
+      levelStatsAfterDelete(perLevel, position),
+    );
+  }
+
+  /// This record with its per-unit sections replaced. The total time is
+  /// deck-wide, so no re-indexing touches it.
+  AllTimeStatistics _reindexed(
+    List<UnitStats> perUnit,
+    List<LevelUnitStats> perLevel,
+  ) {
     return AllTimeStatistics(
-      perUnit: statsAfterDelete(perUnit, position, unitCount),
-      perLevel: levelStatsAfterDelete(perLevel, position),
+      perUnit: perUnit,
+      perLevel: perLevel,
+      learningSeconds: learningSeconds,
     );
   }
 
@@ -407,6 +445,9 @@ final class AllTimeRecord {
   /// Lifetime Level-Learning counters.
   List<LevelUnitStats> get perLevel => statistics.perLevel;
 
+  /// The deck's total time, in whole seconds.
+  int get learningSeconds => statistics.learningSeconds;
+
   /// Whether nothing has ever been recorded here.
   bool get isEmpty => statistics.isEmpty;
 
@@ -548,6 +589,7 @@ AllTimeStatistics realignAllTimeStatistics({
     return AllTimeStatistics(
       perUnit: withUnitHashes(deck, resizeUnitStats(allTime.perUnit, unitCount)),
       perLevel: resizeLevelStats(allTime.perLevel, unitCount),
+      learningSeconds: allTime.learningSeconds,
     );
   }
 
@@ -629,5 +671,7 @@ AllTimeStatistics realignAllTimeStatistics({
   return AllTimeStatistics(
     perUnit: List<UnitStats>.unmodifiable(perUnit),
     perLevel: List<LevelUnitStats>.unmodifiable(perLevel),
+    // Deck-wide: no unit moving, changing or leaving takes time with it.
+    learningSeconds: allTime.learningSeconds,
   );
 }

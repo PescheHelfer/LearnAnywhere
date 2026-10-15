@@ -90,7 +90,8 @@ void main() {
         learningSeconds: 20,
       );
       expect(attempt.learningSeconds, 20);
-      expect(attempt.isEmpty, isTrue);
+      // Its time still has to reach both records.
+      expect(attempt.isEmpty, isFalse);
     });
 
     test('carries no time unless given some', () {
