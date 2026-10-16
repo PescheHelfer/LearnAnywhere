@@ -28,6 +28,10 @@ check an answer; changing one mid-session takes effect immediately.
 | Wrong-answer ceiling | Off | See below |
 | Wrong-answer ceiling value | 10 | Value for the ceiling above |
 
+The four time options and **Time limit (seconds)** are grouped under **Time display**;
+resting the pointer on any of them says what it shows. Only **Unit time** is the real
+time on screen — the other three count each rated unit at most five minutes.
+
 The matching, near-miss and guardrail options are explained in full in
 [How answers are judged](08-answer-evaluation.md). Direction, mode, shuffle, mastery
 threshold, and whether answers must be typed at all are set on the

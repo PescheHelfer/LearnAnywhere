@@ -147,9 +147,21 @@ final class QueryOptionsPage extends StatelessWidget {
               );
             },
           ),
+          // The four time pills and the limit that acts on one of them, under
+          // their own heading: four similar names need the group and their
+          // tooltips to be told apart.
+          const SizedBox(height: LearnAnywhereTokens.gapLarge),
+          Text(
+            messages.message(LearnAnywhereMessage.queryOptionsTimeDisplay),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: LearnAnywhereTokens.gapSmall),
           _SwitchOption(
             title: messages.message(
               LearnAnywhereMessage.queryOptionShowUnitTime,
+            ),
+            tooltip: messages.message(
+              LearnAnywhereMessage.queryOptionShowUnitTimeTooltip,
             ),
             value: options.showUnitTime,
             onChanged: (bool value) {
@@ -160,6 +172,9 @@ final class QueryOptionsPage extends StatelessWidget {
             title: messages.message(
               LearnAnywhereMessage.queryOptionShowSittingTime,
             ),
+            tooltip: messages.message(
+              LearnAnywhereMessage.queryOptionShowSittingTimeTooltip,
+            ),
             value: options.showSittingTime,
             onChanged: (bool value) {
               onChanged(options.copyWith(showSittingTime: value));
@@ -168,6 +183,9 @@ final class QueryOptionsPage extends StatelessWidget {
           _SwitchOption(
             title: messages.message(
               LearnAnywhereMessage.queryOptionShowStatisticsTime,
+            ),
+            tooltip: messages.message(
+              LearnAnywhereMessage.queryOptionShowStatisticsTimeTooltip,
             ),
             value: options.showStatisticsTime,
             onChanged: (bool value) {
@@ -178,6 +196,9 @@ final class QueryOptionsPage extends StatelessWidget {
             title: messages.message(
               LearnAnywhereMessage.queryOptionShowTotalTime,
             ),
+            tooltip: messages.message(
+              LearnAnywhereMessage.queryOptionShowTotalTimeTooltip,
+            ),
             value: options.showTotalTime,
             onChanged: (bool value) {
               onChanged(options.copyWith(showTotalTime: value));
@@ -185,11 +206,15 @@ final class QueryOptionsPage extends StatelessWidget {
           ),
           _NumberOption(
             title: messages.message(LearnAnywhereMessage.queryOptionTimeLimit),
+            tooltip: messages.message(
+              LearnAnywhereMessage.queryOptionTimeLimitTooltip,
+            ),
             value: options.timeLimitSeconds,
             onChanged: (int value) {
               onChanged(options.copyWith(timeLimitSeconds: value));
             },
           ),
+          const SizedBox(height: LearnAnywhereTokens.gapLarge),
           _SwitchOption(
             title: messages.message(
               LearnAnywhereMessage.queryOptionMinimumAttemptsGuard,
@@ -437,20 +462,28 @@ final class _SwitchOption extends StatelessWidget {
     required this.title,
     required this.value,
     required this.onChanged,
+    this.tooltip,
   });
 
   final String title;
   final bool value;
   final ValueChanged<bool> onChanged;
 
+  /// What the option does, where its title alone cannot say.
+  final String? tooltip;
+
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
-      title: Text(title),
-      value: value,
-      onChanged: onChanged,
+    return _withTooltip(
+      tooltip,
+      SwitchListTile(title: Text(title), value: value, onChanged: onChanged),
     );
   }
+}
+
+/// [child] with [tooltip] on hover, or unchanged when there is none.
+Widget _withTooltip(String? tooltip, Widget child) {
+  return tooltip == null ? child : Tooltip(message: tooltip, child: child);
 }
 
 final class _NumberOption extends StatefulWidget {
@@ -460,6 +493,7 @@ final class _NumberOption extends StatefulWidget {
     required this.onChanged,
     this.minimum = 0,
     this.maximum,
+    this.tooltip,
   });
 
   final String title;
@@ -467,6 +501,9 @@ final class _NumberOption extends StatefulWidget {
   final int minimum;
   final int? maximum;
   final ValueChanged<int> onChanged;
+
+  /// What the option does, where its title alone cannot say.
+  final String? tooltip;
 
   @override
   State<_NumberOption> createState() => _NumberOptionState();
@@ -505,24 +542,27 @@ final class _NumberOptionState extends State<_NumberOption> {
       ),
       child: SizedBox(
         width: LearnAnywhereZoom.scaleBox(context, 320),
-        child: TextField(
-          controller: _controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.digitsOnly,
-          ],
-          decoration: InputDecoration(labelText: widget.title),
-          onChanged: (String value) {
-            var parsed = int.tryParse(value) ?? widget.minimum;
-            if (parsed < widget.minimum) {
-              parsed = widget.minimum;
-            }
-            final int? maximum = widget.maximum;
-            if (maximum != null && parsed > maximum) {
-              parsed = maximum;
-            }
-            widget.onChanged(parsed);
-          },
+        child: _withTooltip(
+          widget.tooltip,
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            decoration: InputDecoration(labelText: widget.title),
+            onChanged: (String value) {
+              var parsed = int.tryParse(value) ?? widget.minimum;
+              if (parsed < widget.minimum) {
+                parsed = widget.minimum;
+              }
+              final int? maximum = widget.maximum;
+              if (maximum != null && parsed > maximum) {
+                parsed = maximum;
+              }
+              widget.onChanged(parsed);
+            },
+          ),
         ),
       ),
     );

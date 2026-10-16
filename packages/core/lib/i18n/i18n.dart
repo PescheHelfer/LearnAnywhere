@@ -986,6 +986,24 @@ enum LearnAnywhereMessage {
   /// Time limit option.
   queryOptionTimeLimit,
 
+  /// Heading of the group holding the four time options and the time limit.
+  queryOptionsTimeDisplay,
+
+  /// Tooltip of the Unit time option.
+  queryOptionShowUnitTimeTooltip,
+
+  /// Tooltip of the Sitting time option.
+  queryOptionShowSittingTimeTooltip,
+
+  /// Tooltip of the Statistics time option.
+  queryOptionShowStatisticsTimeTooltip,
+
+  /// Tooltip of the Total time option.
+  queryOptionShowTotalTimeTooltip,
+
+  /// Tooltip of the Time limit option.
+  queryOptionTimeLimitTooltip,
+
   /// Require typed answers option.
   queryOptionWithAnswerInput,
 
@@ -2178,6 +2196,25 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.queryOptionShowStatisticsTime: 'Statistics time',
       LearnAnywhereMessage.queryOptionShowTotalTime: 'Total time',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Time limit (seconds)',
+      LearnAnywhereMessage.queryOptionsTimeDisplay: 'Time display',
+      LearnAnywhereMessage.queryOptionShowUnitTimeTooltip:
+          'Shows how long the current unit has been on screen: the real time, '
+          'with no cap. The time limit below applies to it.',
+      LearnAnywhereMessage.queryOptionShowSittingTimeTooltip:
+          "Shows this sitting's learning time: the time of every unit you "
+          'rate, each counted at most five minutes.',
+      LearnAnywhereMessage.queryOptionShowStatisticsTimeTooltip:
+          'Shows the learning time held by the current statistics since they '
+          'were last cleared: the time of every unit you rate, each counted at '
+          'most five minutes.',
+      LearnAnywhereMessage.queryOptionShowTotalTimeTooltip:
+          'Shows the learning time held by the all-time statistics: the time '
+          'of every unit you rate, each counted at most five minutes. It '
+          'counts only from the program version that began keeping it.',
+      LearnAnywhereMessage.queryOptionTimeLimitTooltip:
+          "When one unit's time reaches this many seconds, a tone sounds and "
+          'the Unit time pill is highlighted; the session goes on. 0 means no '
+          'limit. Needs Unit time on.',
       LearnAnywhereMessage.queryOptionWithAnswerInput: 'Require typed answers',
       LearnAnywhereMessage.queryOptionMinimumAttemptsGuard:
           'Minimum-attempts guard',
@@ -3029,6 +3066,26 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.queryOptionShowStatisticsTime: 'Statistikzeit',
       LearnAnywhereMessage.queryOptionShowTotalTime: 'Allzeit',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Zeitlimit (Sekunden)',
+      LearnAnywhereMessage.queryOptionsTimeDisplay: 'Zeitanzeige',
+      LearnAnywhereMessage.queryOptionShowUnitTimeTooltip:
+          'Zeigt, wie lange die aktuelle Einheit schon auf dem Bildschirm '
+          'steht: die tatsächliche Zeit, ohne Obergrenze. Das Zeitlimit unten '
+          'gilt für sie.',
+      LearnAnywhereMessage.queryOptionShowSittingTimeTooltip:
+          'Zeigt die Lernzeit dieser Sitzung: die Zeit jeder bewerteten '
+          'Einheit, jede höchstens fünf Minuten gezählt.',
+      LearnAnywhereMessage.queryOptionShowStatisticsTimeTooltip:
+          'Zeigt die Lernzeit der aktuellen Statistik seit dem letzten '
+          'Löschen: die Zeit jeder bewerteten Einheit, jede höchstens fünf '
+          'Minuten gezählt.',
+      LearnAnywhereMessage.queryOptionShowTotalTimeTooltip:
+          'Zeigt die Lernzeit der Allzeit-Statistik: die Zeit jeder bewerteten '
+          'Einheit, jede höchstens fünf Minuten gezählt. Sie zählt erst ab der '
+          'Programmversion, die sie erfasst.',
+      LearnAnywhereMessage.queryOptionTimeLimitTooltip:
+          'Erreicht die Zeit einer Einheit so viele Sekunden, ertönt ein '
+          'Signal und die Anzeige Einheitszeit wird hervorgehoben; die Sitzung '
+          'geht weiter. 0 bedeutet kein Limit. Setzt Einheitszeit voraus.',
       LearnAnywhereMessage.queryOptionWithAnswerInput:
           'Mit Eingabe der Antwort',
       LearnAnywhereMessage.queryOptionMinimumAttemptsGuard:

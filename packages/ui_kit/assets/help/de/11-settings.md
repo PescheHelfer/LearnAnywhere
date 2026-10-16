@@ -28,6 +28,11 @@ Antwortprüfung aus; eine Änderung mitten in einer Sitzung wirkt sofort.
 | Falsch-Antworten begrenzen | Aus | Siehe unten |
 | Grenze für falsche Antworten | 10 | Wert für die obige Begrenzung |
 
+Die vier Zeit-Optionen und **Zeitlimit (Sekunden)** stehen gemeinsam unter
+**Zeitanzeige**; wenn Sie den Mauszeiger auf eine davon halten, erklärt sie, was sie
+zeigt. Nur die **Einheitszeit** ist die tatsächliche Zeit auf dem Bildschirm — die
+anderen drei zählen jede bewertete Einheit höchstens fünf Minuten.
+
 Die Vergleichs-, Fast-Treffer- und Schutzoptionen werden vollständig in
 [Wie Antworten bewertet werden](08-answer-evaluation.md) erklärt. Abfragerichtung,
 Modus, Mischen, Beherrschungsschwelle und ob überhaupt getippt werden muss, werden
