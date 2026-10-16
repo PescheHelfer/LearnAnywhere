@@ -523,6 +523,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 1.0.0 (aboutVersion100 is 0.10.0).
   aboutVersion1000,
 
+  /// About page version history entry for 1.1.0.
+  aboutVersion1100,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1985,6 +1988,11 @@ final class LearnAnywhereCatalog {
           '1.0.0 – Difficult units per direction; Update deck from new '
           'version; the drill no longer repeats its last unit; Lexicon loads '
           'take the newest mask revision.',
+      LearnAnywhereMessage.aboutVersion1100:
+          '1.1.0 – Learning-time pills and Statistics/Total time; wake the '
+          'audio output before speaking (Windows); answers read aloud '
+          'automatically by default; Enter on the completion view extends '
+          'the session; regrouped learning options.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2842,6 +2850,11 @@ final class LearnAnywhereCatalog {
           'Version aktualisieren; das Training wiederholt seine letzte '
           'Einheit nicht mehr; Lexikon-Ladevorgänge nehmen die neueste '
           'Maskenrevision.',
+      LearnAnywhereMessage.aboutVersion1100:
+          '1.1.0 – Lernzeit-Anzeigen und Statistik-/Allzeit; Audioausgabe '
+          'vor dem Vorlesen wecken (Windows); Antworten standardmäßig '
+          'automatisch vorlesen; Enter in der Abschlussansicht erweitert die '
+          'Sitzung; neu gegliederte Lernoptionen.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

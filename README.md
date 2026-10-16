@@ -55,7 +55,9 @@ which wrote the code.
   overrule any verdict the program reaches.
 - **Statistics that mean something.** Per-unit, per-direction accuracy grouped into
   seven buckets, with a unit list you can filter and then save as a new deck of
-  exactly the items you keep getting wrong.
+  exactly the items you keep getting wrong. They also keep your learning time: time
+  pills in a session show the unit, the sitting, the current statistics and the deck's
+  all-time total, each one optional.
 - **Difficult units.** Mark a unit difficult per direction with F12 (in a session or in
   the unit editor) or in bulk from the unit list, or let the program detect them from
   your results. Practise **Difficult units only** from the setup page, filter the unit
@@ -63,8 +65,9 @@ which wrote the code.
   **Update deck from new version** carries your flags onto a deck you received again.
 - **Reads your cards aloud.** A mask says what language each field holds; in a session a
   speaker icon beside the field reads it out through the voices the operating system
-  already has. Local, free and offline — nothing is uploaded and nothing is downloaded.
-  Windows only for now; Linux ships mute.
+  already has, and the answer is read aloud on its own unless you switch that off.
+  Local, free and offline — nothing is uploaded and nothing is downloaded. Windows and
+  the Android companion; Linux ships mute.
 - **A lexicon.** Search the units in memory, or sweep a whole folder tree of decks on disk.
 - **Rich text in fields.** Bold, italic, underline, colour and highlight, stored portably.
 - **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, content centred in the window on a wide screen, and full keyboard operation including ALT menu mnemonics.
@@ -187,7 +190,7 @@ phones and for emulators. Open it with your file manager and allow the installat
 Android asks. Installing a newer APK over an older one keeps your library and statistics.
 
 The companion carries its own version number, independent of the desktop app's, so one
-release can pair desktop 1.0.0 with companion 0.8.0. The number in the APK's name is the
+release can pair desktop 1.1.0 with companion 0.9.0. The number in the APK's name is the
 companion's.
 
 Android refuses to install a build whose version is older than the installed one, and
@@ -246,7 +249,7 @@ One pub workspace, four packages:
 ## Status
 
 The two applications ship separately, on independent version tracks and with different
-feature sets. The desktop application is at 1.0.0; the Android companion is at 0.8.0 and
+feature sets. The desktop application is at 1.1.0; the Android companion is at 0.9.0 and
 is distributed as a sideloaded APK.
 
 ## Credits
