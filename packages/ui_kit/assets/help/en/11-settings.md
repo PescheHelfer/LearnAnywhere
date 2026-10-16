@@ -18,19 +18,22 @@ check an answer; changing one mid-session takes effect immediately.
 | Accent sensitive | On | Distinguishes accented characters when matching |
 | Accept near-misses as 'Almost' | Off | Enables the Almost outcome |
 | 'Almost' similarity threshold (%) | 80 | How close a near-miss must be to count as Almost |
+| Minimum-attempts guard | Off | See below |
+| Minimum attempts | 2 | Value for the guard above |
+| Wrong-answer ceiling | Off | See below |
+| Wrong-answer ceiling value | 10 | Value for the ceiling above |
 | Unit time | Off | Shows the **Unit time** pill: how long the current unit has been on screen |
 | Sitting time | Off | Shows the **Sitting time** pill: this sitting's learning time, each rated unit counted at most five minutes |
 | Statistics time | Off | Shows the **Statistics time** pill: the learning time the current statistics hold since they were last cleared, counted the same way |
 | Total time | Off | Shows the **Total time** pill: the learning time the all-time statistics hold, counted the same way; it counts only from the program version that began keeping it |
 | Time limit (seconds) | 0 (no limit) | When one unit's time reaches it, a tone sounds and the **Unit time** pill is highlighted; the session goes on. Needs **Unit time** on |
-| Minimum-attempts guard | Off | See below |
-| Minimum attempts | 2 | Value for the guard above |
-| Wrong-answer ceiling | Off | See below |
-| Wrong-answer ceiling value | 10 | Value for the ceiling above |
 
-The four time options and **Time limit (seconds)** are grouped under **Time display**;
-resting the pointer on any of them says what it shows. Only **Unit time** is the real
-time on screen — the other three count each rated unit at most five minutes.
+On the page the options stand in three groups, in the order of the table: **Answer
+matching**, **Guardrails** and **Time display**. A value whose switch is off — the
+similarity threshold, the two guardrail values, the time limit — is greyed out but keeps
+its number for when you switch it on again. Resting the pointer on a time option says
+what it shows. Only **Unit time** is the real time on screen; the other three count each
+rated unit at most five minutes.
 
 The matching, near-miss and guardrail options are explained in full in
 [How answers are judged](08-answer-evaluation.md). Direction, mode, shuffle, mastery

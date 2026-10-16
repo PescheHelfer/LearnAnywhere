@@ -79,200 +79,247 @@ final class QueryOptionsPage extends StatelessWidget {
   ) {
     return Material(
       color: Theme.of(context).colorScheme.surface,
-      child: ListView(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
-        children: <Widget>[
-          Text(
-            messages.message(LearnAnywhereMessage.queryOptionsTitle),
-            style: Theme.of(context).textTheme.headlineSmall,
+        // Capped and left-aligned, so a switch stays within reach of its label
+        // however wide the window is.
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: LearnAnywhereZoom.scaleBox(context, _maxWidth),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _children(context, messages),
+            ),
           ),
-          const SizedBox(height: LearnAnywhereTokens.gapMedium),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionWrongInputCorrectable,
-            ),
-            value: options.wrongInputCorrectable,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(wrongInputCorrectable: value));
-            },
-          ),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionCompleteInputRequired,
-            ),
-            value: options.completeInputRequired,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(completeInputRequired: value));
-            },
-          ),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionCaseSensitive,
-            ),
-            value: options.caseSensitive,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(caseSensitive: value));
-            },
-          ),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionAccentSensitive,
-            ),
-            value: options.accentSensitive,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(accentSensitive: value));
-            },
-          ),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionAlmostEnabled,
-            ),
-            value: options.almostEnabled,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(almostEnabled: value));
-            },
-          ),
-          _NumberOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionAlmostThreshold,
-            ),
-            value: (options.almostThreshold * 100).round(),
-            minimum: 1,
-            maximum: 100,
-            onChanged: (int value) {
-              onChanged(
-                options.copyWith(
-                  almostThreshold: value.clamp(1, 100) / 100,
-                ),
-              );
-            },
-          ),
-          // The four time pills and the limit that acts on one of them, under
-          // their own heading: four similar names need the group and their
-          // tooltips to be told apart.
-          const SizedBox(height: LearnAnywhereTokens.gapLarge),
-          Text(
-            messages.message(LearnAnywhereMessage.queryOptionsTimeDisplay),
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: LearnAnywhereTokens.gapSmall),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionShowUnitTime,
-            ),
-            tooltip: messages.message(
-              LearnAnywhereMessage.queryOptionShowUnitTimeTooltip,
-            ),
-            value: options.showUnitTime,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(showUnitTime: value));
-            },
-          ),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionShowSittingTime,
-            ),
-            tooltip: messages.message(
-              LearnAnywhereMessage.queryOptionShowSittingTimeTooltip,
-            ),
-            value: options.showSittingTime,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(showSittingTime: value));
-            },
-          ),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionShowStatisticsTime,
-            ),
-            tooltip: messages.message(
-              LearnAnywhereMessage.queryOptionShowStatisticsTimeTooltip,
-            ),
-            value: options.showStatisticsTime,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(showStatisticsTime: value));
-            },
-          ),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionShowTotalTime,
-            ),
-            tooltip: messages.message(
-              LearnAnywhereMessage.queryOptionShowTotalTimeTooltip,
-            ),
-            value: options.showTotalTime,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(showTotalTime: value));
-            },
-          ),
-          _NumberOption(
-            title: messages.message(LearnAnywhereMessage.queryOptionTimeLimit),
-            tooltip: messages.message(
-              LearnAnywhereMessage.queryOptionTimeLimitTooltip,
-            ),
-            value: options.timeLimitSeconds,
-            onChanged: (int value) {
-              onChanged(options.copyWith(timeLimitSeconds: value));
-            },
-          ),
-          const SizedBox(height: LearnAnywhereTokens.gapLarge),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionMinimumAttemptsGuard,
-            ),
-            value: options.minimumAttemptsGuardEnabled,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(minimumAttemptsGuardEnabled: value));
-            },
-          ),
-          _NumberOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionMinimumAttempts,
-            ),
-            value: options.minAttempts,
-            minimum: 1,
-            onChanged: (int value) {
-              onChanged(options.copyWith(minAttempts: value));
-            },
-          ),
-          _SwitchOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionWrongAnswerCeiling,
-            ),
-            value: options.wrongAnswerCeilingEnabled,
-            onChanged: (bool value) {
-              onChanged(options.copyWith(wrongAnswerCeilingEnabled: value));
-            },
-          ),
-          _NumberOption(
-            title: messages.message(
-              LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue,
-            ),
-            value: options.wrongAnswerCeiling,
-            minimum: 1,
-            onChanged: (int value) {
-              onChanged(options.copyWith(wrongAnswerCeiling: value));
-            },
-          ),
-          const SizedBox(height: LearnAnywhereTokens.gapLarge),
-          _LevelNamesPanel(
-            levelNamesEn: levelNamesEn,
-            levelNamesDe: levelNamesDe,
-            onChanged: onLevelNamesChanged,
-          ),
-          if (onClose != null) ...<Widget>[
-            const SizedBox(height: LearnAnywhereTokens.gapLarge),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton(
-                onPressed: onClose,
-                child: Text(
-                  messages.message(LearnAnywhereMessage.actionClose),
-                ),
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
+    );
+  }
+
+  /// The widest the options column grows: room for the two level-name
+  /// columns, and for the longest German label beside its switch.
+  static const double _maxWidth = 640;
+
+  List<Widget> _children(
+    BuildContext context,
+    LearnAnywhereLocalizations messages,
+  ) {
+    return <Widget>[
+      Text(
+        messages.message(LearnAnywhereMessage.queryOptionsTitle),
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
+      _GroupHeading(
+        messages.message(LearnAnywhereMessage.queryOptionsAnswerMatching),
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionWrongInputCorrectable,
+        ),
+        value: options.wrongInputCorrectable,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(wrongInputCorrectable: value));
+        },
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionCompleteInputRequired,
+        ),
+        value: options.completeInputRequired,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(completeInputRequired: value));
+        },
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionCaseSensitive,
+        ),
+        value: options.caseSensitive,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(caseSensitive: value));
+        },
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionAccentSensitive,
+        ),
+        value: options.accentSensitive,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(accentSensitive: value));
+        },
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionAlmostEnabled,
+        ),
+        value: options.almostEnabled,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(almostEnabled: value));
+        },
+      ),
+      _NumberOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionAlmostThreshold,
+        ),
+        value: (options.almostThreshold * 100).round(),
+        minimum: 1,
+        maximum: 100,
+        enabled: options.almostEnabled,
+        onChanged: (int value) {
+          onChanged(
+            options.copyWith(
+              almostThreshold: value.clamp(1, 100) / 100,
+            ),
+          );
+        },
+      ),
+      _GroupHeading(
+        messages.message(LearnAnywhereMessage.queryOptionsGuardrails),
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionMinimumAttemptsGuard,
+        ),
+        value: options.minimumAttemptsGuardEnabled,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(minimumAttemptsGuardEnabled: value));
+        },
+      ),
+      _NumberOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionMinimumAttempts,
+        ),
+        value: options.minAttempts,
+        minimum: 1,
+        enabled: options.minimumAttemptsGuardEnabled,
+        onChanged: (int value) {
+          onChanged(options.copyWith(minAttempts: value));
+        },
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionWrongAnswerCeiling,
+        ),
+        value: options.wrongAnswerCeilingEnabled,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(wrongAnswerCeilingEnabled: value));
+        },
+      ),
+      _NumberOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionWrongAnswerCeilingValue,
+        ),
+        value: options.wrongAnswerCeiling,
+        minimum: 1,
+        enabled: options.wrongAnswerCeilingEnabled,
+        onChanged: (int value) {
+          onChanged(options.copyWith(wrongAnswerCeiling: value));
+        },
+      ),
+      // The four time pills and the limit that acts on one of them: four
+      // similar names need the group and their tooltips to be told apart.
+      _GroupHeading(
+        messages.message(LearnAnywhereMessage.queryOptionsTimeDisplay),
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionShowUnitTime,
+        ),
+        tooltip: messages.message(
+          LearnAnywhereMessage.queryOptionShowUnitTimeTooltip,
+        ),
+        value: options.showUnitTime,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(showUnitTime: value));
+        },
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionShowSittingTime,
+        ),
+        tooltip: messages.message(
+          LearnAnywhereMessage.queryOptionShowSittingTimeTooltip,
+        ),
+        value: options.showSittingTime,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(showSittingTime: value));
+        },
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionShowStatisticsTime,
+        ),
+        tooltip: messages.message(
+          LearnAnywhereMessage.queryOptionShowStatisticsTimeTooltip,
+        ),
+        value: options.showStatisticsTime,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(showStatisticsTime: value));
+        },
+      ),
+      _SwitchOption(
+        title: messages.message(
+          LearnAnywhereMessage.queryOptionShowTotalTime,
+        ),
+        tooltip: messages.message(
+          LearnAnywhereMessage.queryOptionShowTotalTimeTooltip,
+        ),
+        value: options.showTotalTime,
+        onChanged: (bool value) {
+          onChanged(options.copyWith(showTotalTime: value));
+        },
+      ),
+      _NumberOption(
+        title: messages.message(LearnAnywhereMessage.queryOptionTimeLimit),
+        tooltip: messages.message(
+          LearnAnywhereMessage.queryOptionTimeLimitTooltip,
+        ),
+        value: options.timeLimitSeconds,
+        enabled: options.showUnitTime,
+        onChanged: (int value) {
+          onChanged(options.copyWith(timeLimitSeconds: value));
+        },
+      ),
+      const SizedBox(height: LearnAnywhereTokens.gapLarge),
+      _LevelNamesPanel(
+        levelNamesEn: levelNamesEn,
+        levelNamesDe: levelNamesDe,
+        onChanged: onLevelNamesChanged,
+      ),
+      if (onClose != null) ...<Widget>[
+        const SizedBox(height: LearnAnywhereTokens.gapLarge),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton(
+            onPressed: onClose,
+            child: Text(
+              messages.message(LearnAnywhereMessage.actionClose),
+            ),
+          ),
+        ),
+      ],
+    ];
+  }
+}
+
+/// A group's title. Every option sits under one, so no row reads as part of a
+/// group it does not belong to.
+final class _GroupHeading extends StatelessWidget {
+  const _GroupHeading(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: LearnAnywhereTokens.gapLarge,
+        bottom: LearnAnywhereTokens.gapSmall,
+      ),
+      child: Text(text, style: Theme.of(context).textTheme.titleMedium),
     );
   }
 }
@@ -494,6 +541,7 @@ final class _NumberOption extends StatefulWidget {
     this.minimum = 0,
     this.maximum,
     this.tooltip,
+    this.enabled = true,
   });
 
   final String title;
@@ -501,6 +549,10 @@ final class _NumberOption extends StatefulWidget {
   final int minimum;
   final int? maximum;
   final ValueChanged<int> onChanged;
+
+  /// False while the switch this value belongs to is off: the value is kept
+  /// and shown, but greyed out, because it has no effect.
+  final bool enabled;
 
   /// What the option does, where its title alone cannot say.
   final String? tooltip;
@@ -546,6 +598,7 @@ final class _NumberOptionState extends State<_NumberOption> {
           widget.tooltip,
           TextField(
             controller: _controller,
+            enabled: widget.enabled,
             keyboardType: TextInputType.number,
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.digitsOnly,

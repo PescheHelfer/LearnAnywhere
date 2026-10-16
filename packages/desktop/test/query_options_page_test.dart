@@ -12,6 +12,7 @@ void main() {
     WidgetTester tester, {
     Locale locale = const Locale('en'),
     int zoomPercent = LearnAnywhereZoom.normal,
+    DesktopQueryOptions options = const DesktopQueryOptions(),
   }) async {
     tester.view.physicalSize = const Size(1280, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -26,7 +27,7 @@ void main() {
         supportedLocales: LearnAnywhereLocalizations.supportedLocales,
         home: Scaffold(
           body: QueryOptionsPage(
-            options: const DesktopQueryOptions(),
+            options: options,
             onChanged: changes.add,
           ),
         ),
@@ -36,16 +37,23 @@ void main() {
     return changes;
   }
 
-  testWidgets('the time options and the time limit sit under one Time display '
-      'heading, in order', (WidgetTester tester) async {
+  testWidgets('every option sits under a group heading: answer matching, '
+      'guardrails, then the time display', (WidgetTester tester) async {
     await open(tester);
     final List<String> labels = <String>[
+      'Answer matching',
+      'Wrong input correctable',
+      "'Almost' similarity threshold (%)",
+      'Guardrails',
+      'Minimum-attempts guard',
+      'Wrong-answer ceiling value',
       'Time display',
       'Unit time',
       'Sitting time',
       'Statistics time',
       'Total time',
       'Time limit (seconds)',
+      'Level names',
     ];
     final List<double> tops = <double>[
       for (final String label in labels)
@@ -54,10 +62,53 @@ void main() {
     for (var i = 1; i < tops.length; i += 1) {
       expect(tops[i], greaterThan(tops[i - 1]), reason: labels[i]);
     }
+    // The headings line up with each other, so none reads as nested.
+    final double headingLeft = tester.getTopLeft(find.text('Guardrails')).dx;
+    for (final String heading in <String>['Answer matching', 'Time display']) {
+      expect(tester.getTopLeft(find.text(heading)).dx, headingLeft);
+    }
+  });
+
+  testWidgets('a wide window keeps each switch near its label and the number '
+      'fields narrow', (WidgetTester tester) async {
+    await open(tester);
+    final double right = tester.getTopRight(find.byType(Switch).first).dx;
+    expect(right, lessThan(LearnAnywhereTokens.gapLarge + 640 + 1));
     expect(
-      tester.getTopLeft(find.text('Minimum-attempts guard')).dy,
-      greaterThan(tops.last),
+      tester.getSize(find.byType(TextField).first).width,
+      lessThanOrEqualTo(320),
     );
+  });
+
+  testWidgets('a value is greyed out while its switch is off, and keeps its '
+      'number', (WidgetTester tester) async {
+    bool enabled(String label) => tester
+        .widget<TextField>(
+          find.ancestor(of: find.text(label), matching: find.byType(TextField)),
+        )
+        .enabled!;
+
+    await open(tester);
+    // The defaults: every switch a value hangs on is off.
+    expect(enabled("'Almost' similarity threshold (%)"), isFalse);
+    expect(enabled('Minimum attempts'), isFalse);
+    expect(enabled('Wrong-answer ceiling value'), isFalse);
+    expect(enabled('Time limit (seconds)'), isFalse);
+    expect(find.text('2'), findsOneWidget);
+
+    await open(
+      tester,
+      options: const DesktopQueryOptions(
+        almostEnabled: true,
+        minimumAttemptsGuardEnabled: true,
+        wrongAnswerCeilingEnabled: true,
+        showUnitTime: true,
+      ),
+    );
+    expect(enabled("'Almost' similarity threshold (%)"), isTrue);
+    expect(enabled('Minimum attempts'), isTrue);
+    expect(enabled('Wrong-answer ceiling value'), isTrue);
+    expect(enabled('Time limit (seconds)'), isTrue);
   });
 
   testWidgets('each time option says what it shows, and only Unit time is '

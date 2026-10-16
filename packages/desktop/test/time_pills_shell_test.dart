@@ -119,6 +119,9 @@ void main() {
   /// page, then leaves it with Esc (its Close button is below the fold).
   Future<void> toggleOption(WidgetTester tester, String label) async {
     await pickMenuItem(tester, 'Options', 'Advanced Learning Options');
+    // The time group sits below the fold of the test window.
+    await tester.ensureVisible(find.text(label));
+    await settle(tester);
     await tester.tap(find.text(label));
     await settle(tester);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);

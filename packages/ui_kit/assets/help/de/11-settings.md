@@ -18,20 +18,23 @@ Antwortprüfung aus; eine Änderung mitten in einer Sitzung wirkt sofort.
 | Akzente beachten | An | Unterscheidet Akzente beim Vergleich |
 | Beinahe-Treffer als „Fast“ akzeptieren | Aus | Schaltet das Ergebnis "Fast" frei |
 | Ähnlichkeitsschwelle für „Fast“ (%) | 80 | Wie nah ein Beinahe-Treffer sein muss, um als "Fast" zu zählen |
+| Mindestabfragen beachten | Aus | Siehe unten |
+| Mindestabfragen | 2 | Wert für den obigen Schutz |
+| Falsch-Antworten begrenzen | Aus | Siehe unten |
+| Grenze für falsche Antworten | 10 | Wert für die obige Begrenzung |
 | Einheitszeit | Aus | Zeigt die Anzeige **Einheitszeit**: wie lange die aktuelle Einheit schon auf dem Bildschirm steht |
 | Sitzungszeit | Aus | Zeigt die Anzeige **Sitzungszeit**: die Lernzeit dieser Sitzung, jede bewertete Einheit höchstens fünf Minuten gezählt |
 | Statistikzeit | Aus | Zeigt die Anzeige **Statistikzeit**: die Lernzeit der aktuellen Statistik seit dem letzten Löschen, ebenso gezählt |
 | Allzeit | Aus | Zeigt die Anzeige **Allzeit**: die Lernzeit der Allzeit-Statistik, ebenso gezählt; sie zählt erst ab der Programmversion, die sie erfasst |
 | Zeitlimit (Sekunden) | 0 (kein Limit) | Erreicht die Zeit einer Einheit diesen Wert, ertönt ein Signal und die Anzeige **Einheitszeit** wird hervorgehoben; die Sitzung geht weiter. Setzt **Einheitszeit** voraus |
-| Mindestabfragen beachten | Aus | Siehe unten |
-| Mindestabfragen | 2 | Wert für den obigen Schutz |
-| Falsch-Antworten begrenzen | Aus | Siehe unten |
-| Grenze für falsche Antworten | 10 | Wert für die obige Begrenzung |
 
-Die vier Zeit-Optionen und **Zeitlimit (Sekunden)** stehen gemeinsam unter
-**Zeitanzeige**; wenn Sie den Mauszeiger auf eine davon halten, erklärt sie, was sie
-zeigt. Nur die **Einheitszeit** ist die tatsächliche Zeit auf dem Bildschirm — die
-anderen drei zählen jede bewertete Einheit höchstens fünf Minuten.
+Auf der Seite stehen die Optionen in drei Gruppen, in der Reihenfolge der Tabelle:
+**Antwortvergleich**, **Schutzmechanismen** und **Zeitanzeige**. Ein Wert, dessen
+Schalter aus ist — die Ähnlichkeitsschwelle, die beiden Werte der Schutzmechanismen, das
+Zeitlimit —, ist ausgegraut, behält aber seine Zahl für das nächste Einschalten. Halten
+Sie den Mauszeiger auf eine Zeit-Option, erklärt sie, was sie zeigt. Nur die
+**Einheitszeit** ist die tatsächliche Zeit auf dem Bildschirm; die anderen drei zählen
+jede bewertete Einheit höchstens fünf Minuten.
 
 Die Vergleichs-, Fast-Treffer- und Schutzoptionen werden vollständig in
 [Wie Antworten bewertet werden](08-answer-evaluation.md) erklärt. Abfragerichtung,

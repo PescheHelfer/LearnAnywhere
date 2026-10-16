@@ -989,6 +989,13 @@ enum LearnAnywhereMessage {
   /// Heading of the group holding the four time options and the time limit.
   queryOptionsTimeDisplay,
 
+  /// Heading of the group of options deciding how an answer is matched.
+  queryOptionsAnswerMatching,
+
+  /// Heading of the group holding the minimum-attempts guard and the
+  /// wrong-answer ceiling.
+  queryOptionsGuardrails,
+
   /// Tooltip of the Unit time option.
   queryOptionShowUnitTimeTooltip,
 
@@ -2197,6 +2204,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.queryOptionShowTotalTime: 'Total time',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Time limit (seconds)',
       LearnAnywhereMessage.queryOptionsTimeDisplay: 'Time display',
+      LearnAnywhereMessage.queryOptionsAnswerMatching: 'Answer matching',
+      LearnAnywhereMessage.queryOptionsGuardrails: 'Guardrails',
       LearnAnywhereMessage.queryOptionShowUnitTimeTooltip:
           'Shows how long the current unit has been on screen: the real time, '
           'with no cap. The time limit below applies to it.',
@@ -3067,6 +3076,8 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.queryOptionShowTotalTime: 'Allzeit',
       LearnAnywhereMessage.queryOptionTimeLimit: 'Zeitlimit (Sekunden)',
       LearnAnywhereMessage.queryOptionsTimeDisplay: 'Zeitanzeige',
+      LearnAnywhereMessage.queryOptionsAnswerMatching: 'Antwortvergleich',
+      LearnAnywhereMessage.queryOptionsGuardrails: 'Schutzmechanismen',
       LearnAnywhereMessage.queryOptionShowUnitTimeTooltip:
           'Zeigt, wie lange die aktuelle Einheit schon auf dem Bildschirm '
           'steht: die tatsächliche Zeit, ohne Obergrenze. Das Zeitlimit unten '
