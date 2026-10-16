@@ -2471,8 +2471,9 @@ final class _SessionView extends StatelessWidget {
         ),
       ]);
     }
+    final List<Widget> timePills = <Widget>[];
     if (options.showUnitTime) {
-      pills.add(
+      timePills.add(
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveUnitTime),
           value: formatElapsedTime(Duration(seconds: unitSeconds)),
@@ -2484,7 +2485,7 @@ final class _SessionView extends StatelessWidget {
       );
     }
     if (options.showSittingTime) {
-      pills.add(
+      timePills.add(
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveSittingTime),
           value: formatElapsedTime(Duration(seconds: sittingSeconds)),
@@ -2495,7 +2496,7 @@ final class _SessionView extends StatelessWidget {
       );
     }
     if (options.showStatisticsTime) {
-      pills.add(
+      timePills.add(
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveStatisticsTime),
           value: formatElapsedTime(Duration(seconds: statisticsSeconds)),
@@ -2506,13 +2507,27 @@ final class _SessionView extends StatelessWidget {
       );
     }
     if (options.showTotalTime) {
-      pills.add(
+      timePills.add(
         _StatPill(
           label: messages.message(LearnAnywhereMessage.learnLiveTotalTime),
           value: formatElapsedTime(Duration(seconds: totalSeconds)),
           tooltip: messages.message(
             LearnAnywhereMessage.learnLiveTotalTimeTooltip,
           ),
+        ),
+      );
+    }
+    // The clocks travel as one child of the header's Wrap: an inner Wrap is
+    // only as wide as its pills, so the group follows the counters while it
+    // fits beside them and otherwise takes a line of its own, rather than
+    // splitting across two. Wider than a whole line, it wraps within itself.
+    if (timePills.isNotEmpty) {
+      pills.add(
+        Wrap(
+          key: const Key('learnTimePills'),
+          spacing: LearnAnywhereTokens.gapSmall,
+          runSpacing: LearnAnywhereTokens.gapSmall,
+          children: timePills,
         ),
       );
     }

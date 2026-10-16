@@ -29,8 +29,9 @@ void main() {
     SessionParameters parameters = _thinkOnly,
     int statisticsSeconds = 0,
     int totalSeconds = 0,
+    Size size = const Size(1400, 1000),
   }) async {
-    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -365,6 +366,47 @@ void main() {
       // Unlike the sitting, the statistics time outlives the sitting.
       await start(tester);
       expect(find.text('Statistics time: 2:00'), findsOneWidget);
+    });
+  });
+
+  group('the time pills break as one group', () {
+    const DesktopQueryOptions allClocks = DesktopQueryOptions(
+      showUnitTime: true,
+      showSittingTime: true,
+      showStatisticsTime: true,
+      showTotalTime: true,
+    );
+    const List<String> timeLabels = <String>[
+      'Unit time',
+      'Sitting time',
+      'Statistics time',
+      'Total time',
+    ];
+
+    double top(WidgetTester tester, String label) =>
+        tester.getTopLeft(find.textContaining('$label: ')).dy;
+
+    testWidgets('they stay beside the counters when everything fits', (
+      WidgetTester tester,
+    ) async {
+      await open(tester, options: allClocks, size: const Size(2400, 1000));
+      await start(tester);
+      for (final String label in timeLabels) {
+        expect(top(tester, label), top(tester, 'Attempts'), reason: label);
+      }
+    });
+
+    testWidgets('they move to a line of their own together rather than split '
+        'across two', (WidgetTester tester) async {
+      // Wide enough for the four clocks on one line, not beside the counters.
+      await open(tester, options: allClocks, size: const Size(1500, 1000));
+      await start(tester);
+      final double line = top(tester, 'Unit time');
+      expect(line, greaterThan(top(tester, 'Attempts')));
+      for (final String label in timeLabels) {
+        expect(top(tester, label), line, reason: label);
+      }
+      expect(tester.takeException(), isNull);
     });
   });
 
