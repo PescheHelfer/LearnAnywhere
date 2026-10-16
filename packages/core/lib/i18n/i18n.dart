@@ -342,6 +342,17 @@ enum LearnAnywhereMessage {
   /// where there is no `F4` to mention.
   speechAutomaticHintMobile,
 
+  /// Label of the checkbox that plays a short silence before speaking, so an
+  /// audio output that dozed off is awake when the word starts.
+  speechWakeAudioLabel,
+
+  /// Explanation under the wake-audio checkbox on the desktop.
+  speechWakeAudioHint,
+
+  /// Explanation under the wake-audio switch on the mobile companion, where
+  /// the symptom is a fade-in and the risk is an engine without SSML.
+  speechWakeAudioHintMobile,
+
   /// Label of the speech-rate control.
   speechRateLabel,
 
@@ -1815,6 +1826,18 @@ final class LearnAnywhereCatalog {
       LearnAnywhereMessage.speechAutomaticHintMobile:
           'The answer is read out the moment it is revealed, right or wrong. '
           'Tap a field\'s speaker icon to hear it again at any time.',
+      LearnAnywhereMessage.speechWakeAudioLabel:
+          'Wake the audio output before speaking',
+      LearnAnywhereMessage.speechWakeAudioHint:
+          'A moment of silence goes before the program starts speaking, so '
+          'headphones that dozed off while you typed do not swallow the first '
+          'syllable. '
+          'Switch it off if you only use speakers and would rather not wait.',
+      LearnAnywhereMessage.speechWakeAudioHintMobile:
+          'A moment of silence goes before the phone starts speaking, so '
+          'speech does not fade in over the first syllable. Switch it off if the phone ever reads '
+          'out words like "speak" or "break" — its speech engine cannot do '
+          'this.',
       LearnAnywhereMessage.speechRateLabel: 'Speech rate',
       LearnAnywhereMessage.speechRateValue: '{percent}% of normal speed',
       LearnAnywhereMessage.speechRateHint:
@@ -2626,6 +2649,20 @@ final class LearnAnywhereCatalog {
           'Die Antwort wird vorgelesen, sobald sie aufgedeckt ist — richtig '
           'oder falsch. Tippen Sie auf das Lautsprechersymbol eines Feldes, '
           'um es erneut zu hören.',
+      LearnAnywhereMessage.speechWakeAudioLabel:
+          'Audioausgabe vor dem Vorlesen wecken',
+      LearnAnywhereMessage.speechWakeAudioHint:
+          'Bevor das Programm zu sprechen beginnt, kommt ein Moment Stille, '
+          'damit Kopfhörer, die beim Tippen eingeschlafen sind, nicht die '
+          'erste Silbe verschlucken. Schalten Sie es aus, wenn Sie nur Lautsprecher '
+          'verwenden und nicht warten möchten.',
+      LearnAnywhereMessage.speechWakeAudioHintMobile:
+          'Bevor das Telefon zu sprechen beginnt, kommt ein Moment Stille, '
+          'damit die Sprachausgabe nicht über die erste Silbe hinweg '
+          'einblendet. Schalten Sie es '
+          'aus, falls das Telefon Wörter wie „speak“ oder '
+          '„break“ vorliest — dann kann seine Sprachausgabe das '
+          'nicht.',
       LearnAnywhereMessage.speechRateLabel: 'Sprechtempo',
       LearnAnywhereMessage.speechRateValue: '{percent}% der normalen '
           'Geschwindigkeit',

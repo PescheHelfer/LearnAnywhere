@@ -170,8 +170,24 @@ Vorlesen eingeschaltet hat, und Sie könnten die beiden Fälle nicht unterscheid
 
 **Optionen ▸ Sprachausgabe...** sagt dasselbe schon vor der Sitzung, und zwar für alle
 Sprachen auf einmal: Eine Zeile mit **"Dieser Computer hat keine Stimme für it-IT"** ist
-diese Sprache, die Ihnen vorab mitteilt, dass sie stumm bleiben wird. Der nächste
-Abschnitt sagt, wie Sie das ändern.
+diese Sprache, die Ihnen vorab mitteilt, dass sie stumm bleiben wird.
+[Eine Stimme unter Windows installieren](#eine-stimme-unter-windows-installieren) sagt,
+wie Sie das ändern.
+
+## Wenn die erste Silbe fehlt
+
+Manche Kopfhörer — vor allem einfache kabelgebundene an der Kopfhörerbuchse — schlafen
+ein, während Sie tippen. Das nächste Wort weckt sie, und dabei geht seine erste Silbe
+verloren: Das erste Wort, das nach dem Bestätigen einer Antwort vorgelesen wird, beginnt
+mittendrin, während es mit `F4` gleich danach vollständig zu hören ist. Die eingebauten
+Lautsprecher und andere Programme sind nicht betroffen.
+
+**Audioausgabe vor dem Vorlesen wecken** unter [Eine Stimme aussuchen](#eine-stimme-aussuchen)
+ist die Abhilfe und von Anfang an eingeschaltet: Vor jedem Vorlesen spielt das Programm
+eine Zehntelsekunde Stille ab, die die Ausgabe weckt, bevor das Wort beginnt. Nur das erste
+Feld einer Antwort bekommt sie; die folgenden kommen zu dicht danach, als dass die Ausgabe
+wieder einschlafen könnte. Hören Sie nur über Lautsprecher, können Sie es ausschalten und
+sparen die kurze Verzögerung.
 
 ## Eine Stimme unter Windows installieren
 
@@ -211,6 +227,10 @@ vorgelesen wird.
 **Antwort automatisch vorlesen** steht zuoberst auf dem Bildschirm. Es ist eingeschaltet, bis Sie
 es ausschalten, es wird über Sitzungen hinweg gemerkt, und was es tut, steht unter
 [Die Antwort automatisch vorlesen](#die-antwort-automatisch-vorlesen).
+
+**Audioausgabe vor dem Vorlesen wecken** steht gleich darunter und ist ebenfalls von
+Anfang an eingeschaltet. Es spielt vor jedem Vorlesen einen Moment Stille ab, damit der
+Wortanfang nicht verloren geht — siehe [Wenn die erste Silbe fehlt](#wenn-die-erste-silbe-fehlt).
 
 Der Bildschirm zeigt eine Zeile je Sprache: jede Sprache, die die Maske der geöffneten
 Lern-Datei verwendet, sowie jede, für die Sie bereits eine Stimme gewählt haben — eine

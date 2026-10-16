@@ -140,6 +140,11 @@ start — untick it if you would rather click for each word — and
 [Reading the answer automatically](15-speech.md#reading-the-answer-automatically) covers
 what it plays and when.
 
+**Wake the audio output before speaking** plays a moment of silence before each read, so
+headphones that dozed off while you typed do not lose the first syllable. It is on from the
+start, and [When the first syllable is missing](15-speech.md#when-the-first-syllable-is-missing)
+explains when you would switch it off.
+
 **Speech rate** applies to every single thing the program says — the sample phrases on this
 screen included — and is the setting worth reaching for first in a language you barely know.
 

@@ -631,4 +631,111 @@ void main() {
       expect(engine.stop(), completes);
     });
   });
+
+  group('the lead-in that wakes the audio output', () {
+    /// A second answer field in direction 1, also spoken German.
+    const FieldDefinition germanPlural = FieldDefinition(
+      id: 2,
+      name: 'Plural',
+      length: 40,
+      equalGroup: 1,
+      role1: FieldRole.answer,
+      role2: FieldRole.remark,
+      language: 'de-DE',
+      speak: true,
+    );
+
+    /// An answer field in a language the host has no voice for.
+    const FieldDefinition italianAnswer = FieldDefinition(
+      id: 3,
+      name: 'Italian',
+      length: 40,
+      equalGroup: 2,
+      role1: FieldRole.answer,
+      role2: FieldRole.remark,
+      language: 'it-IT',
+      speak: true,
+    );
+
+    SpeechPlan revealed(
+      List<FieldDefinition> fields, {
+      SpeechSettings settings = const SpeechSettings(),
+    }) {
+      final LearningDeck deck = deckOf(fields, <int, FieldValue>{
+        0: const FieldValue.plain('anniversaire'),
+        1: const FieldValue.plain('Geburtstag'),
+        2: const FieldValue.plain('Geburtstage'),
+        3: const FieldValue.plain('compleanno'),
+      });
+      return buildSpeechPlan(
+        deck: deck,
+        unit: deck.units.single,
+        direction: QueryDirection.direction1,
+        afterCheck: true,
+        voices: const <SpeechVoice>[french, german],
+        settings: settings,
+      );
+    }
+
+    test('is on by default, and a read plays it before its first field '
+        'only', () {
+      final SpeechPlan plan = revealed(<FieldDefinition>[
+        frenchQuestion,
+        germanAnswer,
+        germanPlural,
+      ]);
+      // The first word wakes the output; a lead-in before every later field
+      // would only lengthen the pause between them.
+      expect(
+        plan.answerUtterances.map((SpeechUtterance u) => u.leadIn),
+        <bool>[true, false],
+      );
+    });
+
+    test('goes to the first field that can actually be spoken', () {
+      final SpeechPlan plan = revealed(<FieldDefinition>[
+        frenchQuestion,
+        italianAnswer,
+        germanAnswer,
+      ]);
+      // The Italian field has no voice and is skipped when the answer is
+      // read, so the German one is the first word the learner hears.
+      expect(
+        plan.answerUtterances.map((SpeechUtterance u) => u.fieldId),
+        <int>[3, 1],
+      );
+      expect(
+        plan.answerUtterances.map((SpeechUtterance u) => u.leadIn),
+        <bool>[false, true],
+      );
+    });
+
+    test('comes with every single field an icon plays', () {
+      final SpeechPlan plan = revealed(<FieldDefinition>[
+        frenchQuestion,
+        germanAnswer,
+        germanPlural,
+      ]);
+      // A click on an icon is a read of one word, after any pause at all.
+      expect(plan.utteranceFor(0)!.leadIn, isTrue);
+      expect(plan.utteranceFor(1)!.leadIn, isTrue);
+      expect(plan.utteranceFor(2)!.leadIn, isTrue);
+    });
+
+    test('is never planned when the switch is off', () {
+      final SpeechPlan plan = revealed(<FieldDefinition>[
+        frenchQuestion,
+        germanAnswer,
+        germanPlural,
+      ], settings: const SpeechSettings(wakeAudio: false));
+      expect(
+        plan.utterances.map((SpeechUtterance u) => u.leadIn),
+        everyElement(isFalse),
+      );
+      expect(
+        plan.answerUtterances.map((SpeechUtterance u) => u.leadIn),
+        everyElement(isFalse),
+      );
+    });
+  });
 }

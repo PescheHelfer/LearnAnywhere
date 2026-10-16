@@ -151,6 +151,12 @@ an eingeschaltet — entfernen Sie das Häkchen, wenn Sie lieber jedes Wort selb
 [Die Antwort automatisch vorlesen](15-speech.md#die-antwort-automatisch-vorlesen)
 beschreibt, was wann vorgelesen wird.
 
+**Audioausgabe vor dem Vorlesen wecken** spielt vor jedem Vorlesen einen Moment Stille ab,
+damit Kopfhörer, die beim Tippen eingeschlafen sind, die erste Silbe nicht verschlucken. Es
+ist von Anfang an eingeschaltet, und
+[Wenn die erste Silbe fehlt](15-speech.md#wenn-die-erste-silbe-fehlt) erklärt, wann Sie es
+ausschalten.
+
 **Sprechtempo** gilt für alles, was das Programm sagt — auch für die Beispielsätze auf
 diesem Bildschirm — und ist in einer kaum vertrauten Sprache die Einstellung, nach der man
 zuerst greift.

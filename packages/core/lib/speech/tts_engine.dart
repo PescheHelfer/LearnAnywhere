@@ -65,6 +65,7 @@ final class SpeechUtterance {
     required this.language,
     this.voice,
     this.rate = kDefaultSpeechRate,
+    this.leadIn = false,
   });
 
   /// The field this text came from, as its mask field id numbers it.
@@ -86,8 +87,26 @@ final class SpeechUtterance {
   /// state of its own between two utterances.
   final double rate;
 
+  /// Whether a short silence goes before the text, to wake an audio output
+  /// that dozed off since the last word.
+  ///
+  /// The plan says THAT there is one; how it is made and how long it lasts is
+  /// the engine's, because hosts wake differently. Carried here, like [rate],
+  /// so the engine never has to remember whether it spoke recently.
+  final bool leadIn;
+
   /// Whether a voice was found, so this can actually be spoken.
   bool get canBeSpoken => voice != null;
+
+  /// This utterance with [leadIn] set to [value].
+  SpeechUtterance withLeadIn(bool value) => SpeechUtterance(
+    fieldId: fieldId,
+    text: text,
+    language: language,
+    voice: voice,
+    rate: rate,
+    leadIn: value,
+  );
 }
 
 /// What the shells need of a host's speech.
