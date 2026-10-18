@@ -29,6 +29,11 @@ with several steps. Learn Anywhere was made for this kind of material.
 - **Your data stays with you.** There is no account to create, and the program never
   goes online. Your decks are plain UTF-8 JSON files on your own disk. You can open
   them in any text editor and back them up however you like.
+- **An AI can make your decks.** The file format is plain and
+  [documented](docs/file-formats.md), so a language model can read and write it.
+  Take a photo of the vocabulary in a schoolbook and give it to an LLM together with
+  the format and your preferences. You get a ready `.vok` file back, which saves a lot
+  of typing. The same works for extending or cleaning up a deck you already have.
 - **It reads your cards aloud, offline.** Speech uses the voices your operating system
   already has, so nothing is uploaded and nothing costs extra. This works on Windows
   and Android. Linux has no speech yet.
