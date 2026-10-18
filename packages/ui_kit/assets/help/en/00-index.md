@@ -1,7 +1,7 @@
 # Learn Anywhere user guide
 
 Learn Anywhere drills anything you can write down as a set of connected facts —
-vocabulary, formulas, dates, chemical symbols, legal paragraphs, anatomy terms. The
+vocabulary, dates, legal paragraphs, anatomy terms. The
 program itself knows nothing about any subject. **You** describe what one card looks
 like, and Learn Anywhere handles the asking, the grading and the bookkeeping.
 

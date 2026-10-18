@@ -1,8 +1,7 @@
 # Learn Anywhere Benutzerhandbuch
 
 Learn Anywhere übt alles ab, was sich als Satz zusammengehöriger Fakten aufschreiben
-lässt — Vokabeln, Formeln, Jahreszahlen, chemische Symbole, Gesetzesparagraphen,
-anatomische Begriffe. Das Programm selbst weiß über kein Fachgebiet etwas. **Sie**
+lässt — Vokabeln, Jahreszahlen, Gesetzesparagraphen, anatomische Begriffe. Das Programm selbst weiß über kein Fachgebiet etwas. **Sie**
 beschreiben, wie eine Karte aussieht, und Learn Anywhere übernimmt das Abfragen, das
 Bewerten und die Buchführung.
 

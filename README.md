@@ -1,42 +1,41 @@
 # Learn Anywhere
 
-A cross-platform drilling program for anything you can write down as a set of
-connected facts — vocabulary, formulas, dates, chemical symbols, legal paragraphs,
-anatomy terms.
+A drilling program for anything you can write down as a set of connected facts:
+vocabulary, dates, legal paragraphs, anatomy terms.
 
-Learn Anywhere is a modern rebuild of the DOS-era German program *Lern PC plus*
-(© 1990/92 Ulrich Veigel Softwareservice), written in Flutter for **Windows** and
-**Linux**, with a read-only Android companion app.
+Learn Anywhere is a modern rebuild of the German DOS program *Lern PC plus*
+(© 1990/92 Ulrich Veigel Softwareservice). It runs on **Windows** and **Linux**, and a
+read-only companion app lets you practise on **Android**.
 
-Nothing about any subject is built in. You describe what one card looks like — its
-fields, their roles, and which way round they can be asked — and the program handles
-the asking, the grading and the bookkeeping. Your material stays in plain, readable
-JSON files that you own.
+Nothing about any subject is built in. You describe what a card looks like: its
+fields, their roles, and which way round they can be asked. After that, the program
+asks the questions and keeps track of how you do.
 
-## AI-Assisted Development
+## Why give it a try
 
-All code, documentation and configuration in this project was written by AI. The
-first version was built with OpenAI's Codex via the
-[ChatGPT extension for VS Code](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt),
-working from a build specification drafted by me and refined by ChatGPT. Development
-since then has been done with Claude (Anthropic): feature ideas and implementation
-approaches worked out in conversation in the Claude app, then turned into prompts for
-[Claude Code for VS Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code),
-which wrote the code.
+Most flashcard apps think in front and back. That is fine for word pairs. It stops
+working as soon as one fact has more parts, like a verb with six forms or a process
+with several steps. Learn Anywhere was made for this kind of material.
 
-### My Role
-
-- **Feature documentation of the original** — Going through *Lern PC plus* screen
-  by screen to write down how it behaved, what its data rules were and which keys
-  did what, none of which existed in written form
-- **Feature proposals** — Deciding which of the original's features to keep, which
-  to drop, and what to add that it never had
-- **Specification review** — Reading the generated build specification closely and
-  correcting it before any code was written
-- **Design decisions** — Working through feature ideas and implementation options
-  with Claude, and deciding which approach to build
-- **Testing** — Running the app, finding bugs, verifying features
-- **Orchestration** — Managing the AI workflow effectively
+- **Cards can have real structure.** A deck can hold up to 20 kinds of cards, and each
+  kind has its own fields. A simple word pair can sit next to a full conjugation table
+  in the same deck, and each one is asked in its own shape.
+- **One deck works in both directions.** Set up German → French once and you get
+  French → German with it. Every field knows its role in each direction, so you never
+  need a second deck for the way back.
+- **It shows you what you don't know yet.** Statistics are kept for every card and
+  every direction. The program can mark the cards you keep getting wrong as difficult,
+  and then you practise only those. You can also save your weak cards as a new deck.
+- **Your data stays with you.** There is no account to create, and the program never
+  goes online. Your decks are plain UTF-8 JSON files on your own disk. You can open
+  them in any text editor and back them up however you like.
+- **It reads your cards aloud, offline.** Speech uses the voices your operating system
+  already has, so nothing is uploaded and nothing costs extra. This works on Windows
+  and Android. Linux has no speech yet.
+- **Practise on your phone without sync trouble.** The Android companion imports your
+  decks and asks each card with two taps. It never changes a deck, so there is nothing
+  to sync back. Your desktop files stay the master copy.
+- **Free and open source.** No subscription and no ads. The code is GPL-3.0.
 
 ## Features
 
@@ -66,8 +65,8 @@ which wrote the code.
 - **Reads your cards aloud.** A mask says what language each field holds; in a session a
   speaker icon beside the field reads it out through the voices the operating system
   already has, and the answer is read aloud on its own unless you switch that off.
-  Local, free and offline — nothing is uploaded and nothing is downloaded. Windows and
-  the Android companion; Linux ships mute.
+  It all stays local and offline: nothing is uploaded and nothing is downloaded.
+  Windows and the Android companion; Linux ships mute.
 - **A lexicon.** Search the units in memory, or sweep a whole folder tree of decks on disk.
 - **Rich text in fields.** Bold, italic, underline, colour and highlight, stored portably.
 - **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, content centred in the window on a wide screen, and full keyboard operation including ALT menu mnemonics.
@@ -251,6 +250,31 @@ One pub workspace, four packages:
 The two applications ship separately, on independent version tracks and with different
 feature sets. The desktop application is at 1.1.0; the Android companion is at 0.9.0 and
 is distributed as a sideloaded APK.
+
+## AI-Assisted Development
+
+All code, documentation and configuration in this project was written by AI. The
+first version was built with OpenAI's Codex via the
+[ChatGPT extension for VS Code](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt),
+working from a build specification drafted by me and refined by ChatGPT. Development
+since then has been done with Claude (Anthropic): feature ideas and implementation
+approaches worked out in conversation in the Claude app, then turned into prompts for
+[Claude Code for VS Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code),
+which wrote the code.
+
+### My Role
+
+- **Feature documentation of the original** — Going through *Lern PC plus* screen
+  by screen to write down how it behaved, what its data rules were and which keys
+  did what, none of which existed in written form
+- **Feature proposals** — Deciding which of the original's features to keep, which
+  to drop, and what to add that it never had
+- **Specification review** — Reading the generated build specification closely and
+  correcting it before any code was written
+- **Design decisions** — Working through feature ideas and implementation options
+  with Claude, and deciding which approach to build
+- **Testing** — Running the app, finding bugs, verifying features
+- **Orchestration** — Managing the AI workflow effectively
 
 ## Credits
 
