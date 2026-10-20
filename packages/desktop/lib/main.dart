@@ -1357,7 +1357,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   }
 
   /// Ensures a session started with no `.sta` loaded gets a fresh timestamped
-  /// auto-save target created in the deck's folder (§3.7). A no-op when
+  /// auto-save target created in the deck's statistics folder. A no-op when
   /// auto-saving is off, a target already exists (loaded/adopted/created), or
   /// the deck is unsaved (no folder to derive from).
   void _ensureAutoSaveTargetForSession() {

@@ -34,8 +34,8 @@ and ends it. A thing that happens, bounded in time. Where a message needs the le
 own word for it, the English catalogue says *sitting*.
 
 **Session file** — a `.sta` file holding a snapshot of the **current statistics**,
-written beside the deck and named after it and the moment the run began. A thing on
-disk. It is a snapshot, not a log: it records the state of the working record, not what
+written in the deck's **statistics folder** and named after the deck and the moment the
+run began. A thing on disk. It is a snapshot, not a log: it records the state of the working record, not what
 happened during one learning session. Several session files may therefore describe
 overlapping history, and they are not a partition of the deck's past.
 
@@ -76,6 +76,12 @@ learned to keep time, so it can fall short of the deck's true history. In German
 **Deck** — a `.vok` file and the units in it. The learner-facing word in English; in
 German the catalogue says **Lern-Datei**. Never "vocabulary file" in English prose.
 
+**Statistics folder** — the subfolder named `statistics` beside a deck, holding its
+session files and its all-time statistics, and the only place they are looked for. The
+name is fixed: lower case, never translated, the same on every platform. Android's
+private library is the exception: there a deck's single statistics file sits beside it
+and no statistics folder exists.
+
 **Unit** — one entry in a deck: the fields that make a question and an answer, in either
 direction. Statistics are recorded per unit and per direction.
 
@@ -114,8 +120,8 @@ again from the lifetime record, so losing one is not losing data.
 or a unit added or removed. Changing a flag is not an edit, and neither is a change to
 the deck's mask.
 
-**Last learned** — when a deck was last practised, taken from its statistics files. It is
-never stored as a date of its own.
+**Last learned** — when a deck was last practised, taken from the files in its
+statistics folder. It is never stored as a date of its own.
 
 **New version** (of a deck) — the same deck's content revised elsewhere, typically by
 whoever shared it: on the same mask, with typos fixed or units added or removed. Taking

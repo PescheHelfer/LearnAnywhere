@@ -48,7 +48,9 @@ void main() {
         path: deckPath,
       )).document;
       expect(await File(deckPath).exists(), isTrue);
-      // Stats went to the timestamped target, not a derived sidecar.
+      // Stats went to the timestamped target, not a derived sidecar, inside the
+      // statistics folder the write created.
+      expect(p.dirname(targetPath), p.join(temp.path, 'statistics'));
       expect(await File(targetPath).exists(), isTrue);
 
       // Opening clears stats and adopts no target: the app layer drives the
@@ -62,35 +64,47 @@ void main() {
       await temp.delete(recursive: true);
     });
 
-    test('builds timestamped statistics names in the deck folder', () {
+    test('builds timestamped statistics names in the statistics folder', () {
       final DesktopFileService service = const DesktopFileService();
-      final String sep = Platform.pathSeparator;
       final String path = service.timestampedStatisticsPath(
-        '${Directory.current.path}${sep}french.vok',
+        p.join(Directory.current.path, 'french.vok'),
         DateTime(2026, 1, 9, 8, 5, 3),
       );
       expect(
         path,
-        '${Directory.current.path}${sep}french_20260109_080503.sta',
+        p.join(
+          Directory.current.path,
+          'statistics',
+          'french_20260109_080503.sta',
+        ),
       );
     });
 
-    test('finds timestamped statistics newest-first, ignoring other files',
-        () async {
+    test('finds timestamped statistics newest-first in the statistics folder, '
+        'ignoring other files', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
         'learn_anywhere_stats_glob',
       );
       final DesktopFileService service = const DesktopFileService();
-      final String sep = Platform.pathSeparator;
-      final String deckPath = '${temp.path}${sep}french.vok';
+      final String deckPath = p.join(temp.path, 'french.vok');
+      final String statistics = p.join(temp.path, 'statistics');
 
-      final String older = '${temp.path}${sep}french_20260101_090000.sta';
-      final String newer = '${temp.path}${sep}french_20260721_143000.sta';
-      // A plain sidecar and a different deck's session file must be ignored.
-      final String sidecar = '${temp.path}${sep}french.sta';
-      final String otherDeck = '${temp.path}${sep}german_20260721_143000.sta';
-      for (final String p in <String>[older, newer, sidecar, otherDeck]) {
-        await File(p).writeAsString('{}');
+      final String older = p.join(statistics, 'french_20260101_090000.sta');
+      final String newer = p.join(statistics, 'french_20260721_143000.sta');
+      // A plain sidecar and a different deck's session file must be ignored,
+      // and so must a session file left beside the deck: only the statistics
+      // folder is read.
+      final String sidecar = p.join(statistics, 'french.sta');
+      final String otherDeck = p.join(statistics, 'german_20260721_143000.sta');
+      final String besideDeck = p.join(temp.path, 'french_20260801_090000.sta');
+      for (final String path in <String>[
+        older,
+        newer,
+        sidecar,
+        otherDeck,
+        besideDeck,
+      ]) {
+        await fixtureFile(path).writeAsString('{}');
       }
 
       final List<TimestampedStatistics> found =
@@ -104,24 +118,27 @@ void main() {
       await temp.delete(recursive: true);
     });
 
-    test('prunes timestamped statistics beyond the keep count, oldest first',
-        () async {
+    test('prunes timestamped statistics beyond the keep count, oldest first, '
+        'only in the statistics folder', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
         'learn_anywhere_stats_prune',
       );
       final DesktopFileService service = const DesktopFileService();
-      final String sep = Platform.pathSeparator;
-      final String deckPath = '${temp.path}${sep}french.vok';
+      final String deckPath = p.join(temp.path, 'french.vok');
+      final String statistics = p.join(temp.path, 'statistics');
 
       final List<String> paths = <String>[
-        '${temp.path}${sep}french_20260101_090000.sta',
-        '${temp.path}${sep}french_20260102_090000.sta',
-        '${temp.path}${sep}french_20260103_090000.sta',
-        '${temp.path}${sep}french_20260104_090000.sta',
+        p.join(statistics, 'french_20260101_090000.sta'),
+        p.join(statistics, 'french_20260102_090000.sta'),
+        p.join(statistics, 'french_20260103_090000.sta'),
+        p.join(statistics, 'french_20260104_090000.sta'),
       ];
-      for (final String p in paths) {
-        await File(p).writeAsString('{}');
+      for (final String path in paths) {
+        await fixtureFile(path).writeAsString('{}');
       }
+      // The oldest of all, but beside the deck: never seen, so never pruned.
+      final String besideDeck = p.join(temp.path, 'french_20250101_090000.sta');
+      await File(besideDeck).writeAsString('{}');
 
       await service.pruneTimestampedStatistics(deckPath, keep: 2);
 
@@ -131,6 +148,7 @@ void main() {
         remaining.map((TimestampedStatistics e) => e.path).toSet(),
         <String>{paths[3], paths[2]},
       );
+      expect(await File(besideDeck).exists(), isTrue);
       await temp.delete(recursive: true);
     });
 
@@ -143,11 +161,11 @@ void main() {
       final String deckPath = '${temp.path}${sep}french.vok';
 
       final List<String> paths = <String>[
-        '${temp.path}${sep}french_20260101_090000.sta',
-        '${temp.path}${sep}french_20260102_090000.sta',
+        service.timestampedStatisticsPath(deckPath, DateTime(2026, 1, 1, 9)),
+        service.timestampedStatisticsPath(deckPath, DateTime(2026, 1, 2, 9)),
       ];
       for (final String p in paths) {
-        await File(p).writeAsString('{}');
+        await fixtureFile(p).writeAsString('{}');
       }
 
       await service.pruneTimestampedStatistics(deckPath, keep: 0);
@@ -169,10 +187,16 @@ void main() {
 
       // The active target is the OLDEST file — without protection it would
       // be the first one pruned by a keep:1 run.
-      final String activeButOld = '${temp.path}${sep}french_20260101_090000.sta';
-      final String newer = '${temp.path}${sep}french_20260102_090000.sta';
+      final String activeButOld = service.timestampedStatisticsPath(
+        deckPath,
+        DateTime(2026, 1, 1, 9),
+      );
+      final String newer = service.timestampedStatisticsPath(
+        deckPath,
+        DateTime(2026, 1, 2, 9),
+      );
       for (final String p in <String>[activeButOld, newer]) {
-        await File(p).writeAsString('{}');
+        await fixtureFile(p).writeAsString('{}');
       }
 
       await service.pruneTimestampedStatistics(
@@ -382,7 +406,7 @@ void main() {
       );
       // A file left over from an earlier sitting, with auto-saving since
       // switched off: clearing must not touch it.
-      await File(targetPath).writeAsString('earlier sitting');
+      await fixtureFile(targetPath).writeAsString('earlier sitting');
       final DesktopDocument document = DesktopDocument(
         deck: singleUnitDeck(),
         statistics: const <UnitStats>[
@@ -400,7 +424,7 @@ void main() {
       );
 
       expect(await File(targetPath).readAsString(), 'earlier sitting');
-      expect(temp.listSync(), hasLength(1));
+      expect(Directory(p.dirname(targetPath)).listSync(), hasLength(1));
       expect(cleared.statistics.single.direction1.attempts, 0);
 
       await temp.delete(recursive: true);
@@ -449,8 +473,8 @@ void main() {
       await temp.delete(recursive: true);
     });
 
-    test('writes the lifetime record beside the deck under the all-time '
-        'marker, with auto-saving OFF as well as on', () async {
+    test('writes the lifetime record into the statistics folder under the '
+        'all-time marker, with auto-saving OFF as well as on', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
         'learn_anywhere_alltime_write',
       );
@@ -481,7 +505,10 @@ void main() {
       );
 
       final String allTimePath = service.allTimeStatisticsPath(deckPath);
-      expect(allTimePath, '${temp.path}${Platform.pathSeparator}french_alltime.sta');
+      expect(
+        allTimePath,
+        p.join(temp.path, 'statistics', 'french_alltime.sta'),
+      );
       final StatisticsFile onDisk = decodeStatisticsJson(
         await File(allTimePath).readAsString(),
       );
@@ -571,6 +598,124 @@ void main() {
         deckPath,
       );
       expect(opened.allTime.isEmpty, isTrue);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('opening a deck and reading its dates and session files creates no '
+        'statistics folder', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_open_no_folder',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = p.join(temp.path, 'french.vok');
+      await service.saveDeckSnapshot(multiUnitDeck(<String>['un']), deckPath);
+
+      await service.openDeck(DesktopDocument.empty(sampleMask()), deckPath);
+      expect(await service.findTimestampedStatistics(deckPath), isEmpty);
+      expect((await service.deckDates(deckPath)).lastLearned, isNull);
+
+      expect(Directory(p.join(temp.path, 'statistics')).existsSync(), isFalse);
+      expect(temp.listSync(), hasLength(1));
+
+      await temp.delete(recursive: true);
+    });
+
+    test('a lifetime file left beside the deck is not found: the deck opens '
+        'with no record, and the next write goes to the statistics folder',
+        () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_alltime_beside',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = p.join(temp.path, 'french.vok');
+      final LearningDeck deck = multiUnitDeck(<String>['un']);
+      await service.saveDeckSnapshot(deck, deckPath);
+      final File beside = File(p.join(temp.path, 'french_alltime.sta'));
+      final String besideBytes = encodeStatisticsJson(
+        StatisticsFile(
+          deckRef: 'french.vok',
+          scope: StatisticsScope.allTime,
+          perUnit: withUnitHashes(deck, const <UnitStats>[
+            UnitStats(
+              index: 1,
+              direction1: DirectionStats(attempts: 9, correct: 9),
+            ),
+          ]),
+        ),
+      );
+      await beside.writeAsString(besideBytes);
+
+      final DesktopDocument opened = await service.openDeck(
+        DesktopDocument.empty(sampleMask()),
+        deckPath,
+      );
+      expect(opened.allTime.isEmpty, isTrue);
+
+      final DesktopDocument answered = opened.copyWith(
+        allTime: opened.allTime.record(
+          const RecordedAttempt(
+            unitIndex: 1,
+            direction: QueryDirection.direction1,
+            drill: AttemptDelta(attempts: 1, correct: 1),
+          ),
+        ),
+      );
+      expect(
+        await service.writeAllTimeStatistics(answered),
+        AllTimeWriteOutcome.written,
+      );
+      final StatisticsFile written = decodeStatisticsJson(
+        await File(
+          p.join(temp.path, 'statistics', 'french_alltime.sta'),
+        ).readAsString(),
+      );
+      expect(written.perUnit.single.direction1.attempts, 1);
+      expect(await beside.readAsString(), besideBytes);
+
+      await temp.delete(recursive: true);
+    });
+
+    test('save-as into another folder writes the lifetime record into that '
+        'folder\'s statistics folder', () async {
+      final Directory temp = await Directory.systemTemp.createTemp(
+        'learn_anywhere_alltime_saveas_folder',
+      );
+      final DesktopFileService service = const DesktopFileService();
+      final String deckPath = p.join(temp.path, 'french', 'french.vok');
+      final String copyPath = p.join(temp.path, 'copies', 'french2.vok');
+      Directory(p.dirname(deckPath)).createSync();
+      Directory(p.dirname(copyPath)).createSync();
+      final DesktopDocument document = DesktopDocument(
+        deck: singleUnitDeck(),
+        statistics: const <UnitStats>[UnitStats(index: 1)],
+        allTime: AllTimeRecord.loaded(
+          const AllTimeStatistics(
+            perUnit: <UnitStats>[
+              UnitStats(
+                index: 1,
+                direction1: DirectionStats(attempts: 4, correct: 3),
+              ),
+            ],
+          ),
+          deckPath,
+        ),
+        deckPath: deckPath,
+      );
+
+      final DeckSaveResult result = await service.saveDeck(
+        document,
+        path: copyPath,
+      );
+
+      expect(result.allTime, AllTimeWriteOutcome.written);
+      final StatisticsFile onDisk = decodeStatisticsJson(
+        await File(
+          p.join(temp.path, 'copies', 'statistics', 'french2_alltime.sta'),
+        ).readAsString(),
+      );
+      expect(onDisk.deckRef, 'french2.vok');
+      expect(onDisk.perUnit.single.direction1.attempts, 4);
 
       await temp.delete(recursive: true);
     });
@@ -676,13 +821,15 @@ void main() {
       final String sep = Platform.pathSeparator;
       final String deckPath = '${temp.path}${sep}french.vok';
       final String allTimePath = service.allTimeStatisticsPath(deckPath);
-      await File(allTimePath).writeAsString('lifetime');
+      await fixtureFile(allTimePath).writeAsString('lifetime');
       for (final String stamp in <String>[
         '20260101_090000',
         '20260201_090000',
         '20260301_090000',
       ]) {
-        await File('${temp.path}${sep}french_$stamp.sta').writeAsString('s');
+        await File(
+          p.join(temp.path, 'statistics', 'french_$stamp.sta'),
+        ).writeAsString('s');
       }
 
       final List<TimestampedStatistics> found = await service
@@ -791,7 +938,7 @@ void main() {
       // open for a second: the read fails, and what it holds is unknown.
       final String allTimePath = service.allTimeStatisticsPath(deckPath);
       const String onDisk = 'a lifetime of counters this app cannot parse';
-      await File(allTimePath).writeAsString(onDisk);
+      await fixtureFile(allTimePath).writeAsString(onDisk);
 
       final DesktopDocument opened = await service.openDeck(
         DesktopDocument.empty(sampleMask()),
@@ -840,7 +987,7 @@ void main() {
       );
       final String allTimePath = service.allTimeStatisticsPath(deckPath);
       const String onDisk = 'unparseable, and none of this app\'s business';
-      await File(allTimePath).writeAsString(onDisk);
+      await fixtureFile(allTimePath).writeAsString(onDisk);
 
       final DesktopDocument opened = await service.openDeck(
         DesktopDocument.empty(sampleMask()),
@@ -1072,7 +1219,7 @@ void main() {
       final LearningDeck deck = multiUnitDeck(<String>['un']);
 
       // This deck's OWN lifetime file is there but cannot be decoded...
-      await File(
+      await fixtureFile(
         service.allTimeStatisticsPath(ownPath),
       ).writeAsString('not json');
       // ...and the other deck has a perfectly good record of its own.
@@ -1137,7 +1284,7 @@ void main() {
       final String deckPath = '${temp.path}${Platform.pathSeparator}french.vok';
       final LearningDeck deck = multiUnitDeck(<String>['un']);
       final String allTimePath = service.allTimeStatisticsPath(deckPath);
-      await File(allTimePath).writeAsString('unreadable');
+      await fixtureFile(allTimePath).writeAsString('unreadable');
 
       final DesktopDocument document = DesktopDocument(
         deck: deck,
@@ -1608,7 +1755,8 @@ void main() {
       await temp.delete(recursive: true);
     });
 
-    test('recursively loads .vok decks under a folder', () async {
+    test('recursively loads .vok decks under a folder, never a statistics '
+        'file', () async {
       final Directory temp = await Directory.systemTemp.createTemp(
         'learn_anywhere_folder_search',
       );
@@ -1631,12 +1779,19 @@ void main() {
       await File(topPath).writeAsString(encodeDeckJson(deck));
       await File(nestedPath).writeAsString(encodeDeckJson(deck));
       await File(ignoredPath).writeAsString('ignored');
+      // A deck that has been learned has a statistics folder beside it, which
+      // the recursive search walks into and must find nothing in.
+      await service.writeStatistics(
+        DesktopDocument(deck: deck, statistics: const <UnitStats>[]),
+        service.timestampedStatisticsPath(topPath, DateTime(2026, 10, 19)),
+      );
 
       final Map<String, LearningDeck> loaded = await service.loadDecksInFolder(
         temp.path,
       );
 
-      // Both the top-level and the nested .vok are found; the .txt is skipped.
+      // Both the top-level and the nested .vok are found; the .txt and the
+      // session file are skipped.
       expect(loaded.keys, contains(topPath));
       expect(loaded.keys, contains(nestedPath));
       expect(loaded.keys, isNot(contains(ignoredPath)));
@@ -2146,6 +2301,14 @@ LearningDeck singleUnitDeck() {
       ),
     ],
   );
+}
+
+/// [path] as a [File] whose folder exists, for a fixture placed where the
+/// service looks: a statistics folder is otherwise only made by a write.
+File fixtureFile(String path) {
+  final File file = File(path);
+  file.parent.createSync(recursive: true);
+  return file;
 }
 
 LearningMask sampleMask({String name = 'Sample'}) {

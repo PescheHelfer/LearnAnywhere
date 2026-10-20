@@ -81,26 +81,28 @@ void main() {
     await settleAfterIo(tester);
   }
 
-  /// Writes [deck] to [deckPath] and, beside it, a lifetime record holding
-  /// [direction1] for each unit in turn.
+  /// Writes [deck] to [deckPath] and, in its statistics folder, a lifetime
+  /// record holding [direction1] for each unit in turn.
   void writeDeckWithHistory(
     String deckPath,
     LearningDeck deck,
     List<DirectionStats> direction1,
   ) {
     File(deckPath).writeAsStringSync(encodeDeckJson(deck));
-    File(DeckPaths.allTimeStatistics(deckPath)).writeAsStringSync(
-      encodeStatisticsJson(
-        StatisticsFile(
-          deckRef: p.basename(deckPath),
-          scope: StatisticsScope.allTime,
-          perUnit: withUnitHashes(deck, <UnitStats>[
-            for (var i = 0; i < direction1.length; i += 1)
-              UnitStats(index: i + 1, direction1: direction1[i]),
-          ]),
+    File(DeckPaths.allTimeStatistics(deckPath))
+      ..parent.createSync(recursive: true)
+      ..writeAsStringSync(
+        encodeStatisticsJson(
+          StatisticsFile(
+            deckRef: p.basename(deckPath),
+            scope: StatisticsScope.allTime,
+            perUnit: withUnitHashes(deck, <UnitStats>[
+              for (var i = 0; i < direction1.length; i += 1)
+                UnitStats(index: i + 1, direction1: direction1[i]),
+            ]),
+          ),
         ),
-      ),
-    );
+      );
   }
 
   /// Starts the app with no deck open, answering open dialogs through
@@ -321,7 +323,9 @@ void main() {
       ),
     );
     // There, but not readable as a lifetime record.
-    File(DeckPaths.allTimeStatistics(deckPath)).writeAsStringSync('{broken');
+    File(DeckPaths.allTimeStatistics(deckPath))
+      ..parent.createSync(recursive: true)
+      ..writeAsStringSync('{broken');
     final String before = File(deckPath).readAsStringSync();
 
     await tester.runAsync(() async {

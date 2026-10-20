@@ -60,9 +60,11 @@ Kopie, die Sie *bearbeiten*; Änderungen daran lassen sich anschließend in die
 Lern-Dateien übernehmen, die diese Maske verwenden. [Grundbegriffe](02-concepts.md)
 erklärt den Zusammenhang vollständig.
 
-Die Statistik liegt neben der Lern-Datei statt in ihr. So können Sie dieselbe Lern-Datei
-unter mehreren Namen üben, einen misslungenen Durchgang löschen oder eine Sitzung
-archivieren, ohne Ihr Material anzufassen.
+Die Statistik liegt in einem Ordner namens `statistics` neben der Lern-Datei statt in
+ihr. So können Sie dieselbe Lern-Datei unter mehreren Namen üben, einen misslungenen
+Durchgang löschen oder eine Sitzung archivieren, ohne Ihr Material anzufassen. Das
+Programm legt diesen Ordner an, sobald es zum ersten Mal eine Statistik der Lern-Datei
+dorthin schreibt.
 
 ## Eine Lern-Datei öffnen
 
@@ -97,8 +99,8 @@ Unter jedem Eintrag stehen zwei Daten. So erkennen Sie, welche Lern-Datei Sie eb
   Dateidatum stammt von dieser Markierung, nicht von einer Bearbeitung, daher zeigt sie
   **nicht erfasst**, bis Sie sie das nächste Mal bearbeiten und speichern.
 - **Zuletzt gelernt** — wann Sie die Datei zuletzt geübt haben, abgelesen an den
-  Statistik-Dateien daneben. Eine Datei, die Sie noch nie geübt haben, zeigt
-  **noch nicht gelernt**.
+  Statistik-Dateien im Ordner `statistics` daneben. Eine Datei, die Sie noch nie geübt
+  haben, zeigt **noch nicht gelernt**.
 
 Verschieben oder löschen Sie eine Lern-Datei, bleibt sie in der Liste stehen — grau
 dargestellt, statt stillschweigend zu verschwinden. So sehen Sie einen ganzen
@@ -106,8 +108,9 @@ verschobenen Ordner, statt ihn unbemerkt zu verlieren. Ein solcher Eintrag öffn
 nichts mehr; ein Klick darauf meldet **Datei nicht gefunden** samt dem gesuchten Pfad.
 
 Wenn Sie zu der Datei eine Statistik führen, schalten Sie **Optionen ▸ Statistiken ▸
-Statistiken automatisch laden** ein; dann wird die passende `.sta`-Datei beim Öffnen
-automatisch mitgeladen. Siehe [Arbeiten mit Dateien](03-managing-files.md).
+Statistiken automatisch laden** ein; dann wird die passende `.sta`-Datei aus dem Ordner
+`statistics` der Lern-Datei beim Öffnen automatisch mitgeladen. Siehe
+[Arbeiten mit Dateien](03-managing-files.md).
 
 ## Die erste Sitzung
 

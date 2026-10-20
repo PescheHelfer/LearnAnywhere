@@ -29,6 +29,13 @@ void main() {
 
   String inTemp(String name) => p.join(temp.path, name);
 
+  /// [name] in the statistics folder beside the decks, which is created.
+  String inStatistics(String name) {
+    final Directory folder = Directory(p.join(temp.path, 'statistics'))
+      ..createSync(recursive: true);
+    return p.join(folder.path, name);
+  }
+
   /// Writes [deck] to [name] in the temp folder and opens it, as File ▸ Load
   /// deck would.
   Future<DesktopDocument> openWritten(String name, LearningDeck deck) async {
@@ -287,7 +294,7 @@ void main() {
 
   group('deckDates', () {
     test('reads last edited from the deck and last learned from the newest '
-        'of its statistics files', () async {
+        'of its files in the statistics folder', () async {
       final String deck = inTemp('Foo.vok');
       File(deck).writeAsStringSync(
         encodeDeckJson(_deck(<String>['one']).copyWith(lastEdited: earlier)),
@@ -295,19 +302,24 @@ void main() {
       final DateTime sidecar = DateTime(2026, 3, 1, 10);
       final DateTime session = DateTime(2026, 5, 1, 10);
       final DateTime allTime = DateTime(2026, 4, 1, 10);
-      File(inTemp('Foo.sta'))
+      File(inStatistics('Foo.sta'))
         ..writeAsStringSync('{}')
         ..setLastModifiedSync(sidecar);
-      File(inTemp('Foo_20260501_100000.sta'))
+      File(inStatistics('Foo_20260501_100000.sta'))
         ..writeAsStringSync('{}')
         ..setLastModifiedSync(session);
-      File(inTemp('Foo_alltime.sta'))
+      File(inStatistics('Foo_alltime.sta'))
         ..writeAsStringSync('{}')
         ..setLastModifiedSync(allTime);
       // A neighbouring deck's newer file must not count for this one.
-      File(inTemp('Foo2.sta'))
+      File(inStatistics('Foo2.sta'))
         ..writeAsStringSync('{}')
         ..setLastModifiedSync(DateTime(2026, 9, 1, 10));
+      // Nor does this deck's own file left beside it: only the statistics
+      // folder is read.
+      File(inTemp('Foo_20260801_100000.sta'))
+        ..writeAsStringSync('{}')
+        ..setLastModifiedSync(DateTime(2026, 8, 1, 10));
 
       final DeckDates dates = await service.deckDates(deck);
       expect(dates.lastEdited, earlier);
@@ -328,7 +340,7 @@ void main() {
       final String deck = inTemp('Foo.vok');
       File(deck).writeAsStringSync('not json');
       final DateTime learned = DateTime(2026, 3, 1, 10);
-      File(inTemp('Foo.sta'))
+      File(inStatistics('Foo_alltime.sta'))
         ..writeAsStringSync('{}')
         ..setLastModifiedSync(learned);
 

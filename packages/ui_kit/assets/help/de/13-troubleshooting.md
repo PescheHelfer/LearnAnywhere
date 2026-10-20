@@ -60,6 +60,17 @@ ungespeicherte, nur im Speicher vorhandene Lern-Datei hat keinen Ordner, in dem 
 Statistikdatei angelegt werden könnte. Siehe
 [Arbeiten mit Dateien](03-managing-files.md#automatisch-laden-und-automatisch-speichern).
 
+## Meine Statistik ist nach dem Aktualisieren verschwunden
+
+Seit Version 1.2.0 liegen Statistikdateien in einem Ordner namens `statistics` neben
+jeder Lern-Datei, und nur dieser Ordner wird gelesen. Dateien, die eine ältere Version
+direkt neben die Lern-Datei geschrieben hat, sind noch da und unverändert, aber das
+Programm findet sie nicht mehr; die Lern-Datei erscheint deshalb als **noch nicht
+gelernt**, und ihre Allzeit-Statistik wirkt leer. Verschieben Sie die `.sta`-Dateien
+jeder Lern-Datei mit unveränderten Namen in den Ordner `statistics` daneben und öffnen
+Sie die Lern-Datei erneut. Siehe
+[Arbeiten mit Dateien](03-managing-files.md#statistik).
+
 ## Ich habe im Lerneinheiten- oder Mask Editor etwas durcheinandergebracht und möchte neu anfangen
 
 Drücken Sie `Esc`. Haben Sie seit dem Öffnen des Editors etwas geändert, werden Sie

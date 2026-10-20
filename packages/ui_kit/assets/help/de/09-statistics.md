@@ -45,16 +45,16 @@ wählt, welche Sie gerade sehen; der Bildschirm öffnet stets mit **Aktuell**.
 Die Allzeit-Statistik wird geführt, ob **Statistiken automatisch speichern**
 eingeschaltet ist oder nicht. Diese Option betrifft allein die Sitzungsdateien; die
 Allzeit-Statistik wird unabhängig davon bei jeder Antwort geschrieben, in eine eigene
-Datei, benannt nach der Lern-Datei — `meinedatei_alltime.sta` neben `meinedatei.vok` —,
-die bei der ersten beantworteten Frage entsteht.
+Datei, benannt nach der Lern-Datei — `meinedatei_alltime.sta` im Ordner `statistics`
+neben `meinedatei.vok` —, die bei der ersten beantworteten Frage entsteht.
 
 Im Bereich **Allzeit** ist die Stufenspalte des Reiters **Stufenlernen** als **letzte**
 erreichte Stufe zu lesen, nicht als aktuelle: die Allzeit-Statistik hat keine aktuelle
 Position auf der Leiter.
 
 Gelegentlich zeigt der Bildschirm im Bereich **Allzeit** einen stehenden Warnhinweis:
-**Diese Allzeit-Statistik wird nicht mehr gespeichert: Die Datei neben der Lern-Datei
-gehört zu einer anderen Lern-Datei oder konnte nicht gelesen werden.** Das Programm
+**Diese Allzeit-Statistik wird nicht mehr gespeichert: Die Datei im Ordner statistics
+der Lern-Datei gehört zu einer anderen Lern-Datei oder konnte nicht gelesen werden.** Das Programm
 überschreibt eine Allzeit-Datei nie, die es nicht lesen konnte; von da an wird diese
 Sitzung nur noch auf dem Bildschirm mitgezählt. Die Lern-Datei an ihrem jetzigen Ort
 erneut zu öffnen stellt die Aufzeichnung wieder her.
@@ -86,7 +86,8 @@ heraus, und keines der beiden Löschen berührt das andere.
 
 **Das Löschen der Allzeit-Statistik lässt sich nicht rückgängig machen.** Es gibt keine
 Kopie, aus der sie zurückzuholen wäre: die Zahlen stehen in
-`<Name der Lern-Datei>_alltime.sta` neben der Lern-Datei, und das Bestätigen nullt genau
+`<Name der Lern-Datei>_alltime.sta` im Ordner `statistics` der Lern-Datei, und das
+Bestätigen nullt genau
 diese Datei, ihre Lernzeit **Allzeit** eingeschlossen. Ihre aktuelle Statistik, Ihre Sitzungsdateien und die Lern-Datei selbst
 bleiben unangetastet, und spätere Antworten bauen von null an eine neue Vorgeschichte
 auf. Wollen Sie die alten Zahlen behalten, kopieren Sie die Datei vorher woandershin.
@@ -98,7 +99,8 @@ bewusst der Arbeitsstatistik übergeben, wenn ein Durchgang sich nach den Einhei
 richten soll, die Sie über die ganze Lebensdauer der Lern-Datei am häufigsten falsch
 hatten.
 
-Wählen Sie **Statistik laden...** und die Datei `_alltime.sta` der Lern-Datei. Weil das
+Wählen Sie **Statistik laden...** und die Datei `_alltime.sta` der Lern-Datei aus dem
+Ordner `statistics` daneben. Weil das
 keine gewöhnliche Sitzungsdatei ist, warnt das Programm vorher und benennt, was
 geschieht: die Zahlen ersetzen die aktuelle Statistik und bestimmen, welche Einheiten
 als Nächstes abgefragt werden, weitere Antworten kommen in eine **neue** Sitzungsdatei,

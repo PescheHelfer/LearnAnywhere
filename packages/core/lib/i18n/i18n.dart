@@ -116,7 +116,8 @@ enum LearnAnywhereMessage {
   /// Recent-decks entry: the deck file carries no last-edited date.
   homeRecentDeckNotRecorded,
 
-  /// Recent-decks entry: the deck has no statistics files beside it.
+  /// Recent-decks entry: the deck has no statistics files in its statistics
+  /// folder.
   homeRecentDeckNotLearned,
 
   /// Home screen: last loaded mask path label.
@@ -2309,10 +2310,10 @@ final class LearnAnywhereCatalog {
           'Leave the unit editor first: F10 keeps your changes, Esc discards '
           'them.',
       LearnAnywhereMessage.statisticsAllTimeNotRecorded:
-          'These all-time statistics are no longer being saved: the file '
-          'beside the deck belongs to another deck, or could not be read. '
-          'Everything answered since then is counted here only, until you open '
-          'the deck again from where it is now.',
+          'These all-time statistics are no longer being saved: the file in '
+          "the deck's statistics folder belongs to another deck, or could not "
+          'be read. Everything answered since then is counted here only, '
+          'until you open the deck again from where it is now.',
       LearnAnywhereMessage.statisticsLoaded: 'Statistics loaded.',
       LearnAnywhereMessage.statisticsUnitsReset:
           'Statistics for {count} units were reset '
@@ -3192,9 +3193,10 @@ final class LearnAnywhereCatalog {
           'Verlassen Sie zuerst die Eingabe-Maske: F10 behält Ihre '
           'Änderungen, Esc verwirft sie.',
       LearnAnywhereMessage.statisticsAllTimeNotRecorded:
-          'Diese Allzeit-Statistik wird nicht mehr gespeichert: Die Datei '
-          'neben der Lern-Datei gehört zu einer anderen Lern-Datei oder konnte '
-          'nicht gelesen werden. Alles seither Beantwortete wird nur hier '
+          'Diese Allzeit-Statistik wird nicht mehr gespeichert: Die Datei im '
+          'Ordner statistics der Lern-Datei gehört zu einer anderen Lern-Datei '
+          'oder konnte nicht gelesen werden. Alles seither Beantwortete wird '
+          'nur hier '
           'gezählt, bis Sie die Lern-Datei an ihrem jetzigen Ort erneut '
           'öffnen.',
       LearnAnywhereMessage.statisticsLoaded: 'Statistik geladen.',

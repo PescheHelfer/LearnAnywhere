@@ -40,15 +40,16 @@ looking at; the screen always opens on **Current**.
 The all-time record is kept whether or not **Auto-save statistics** is switched on. That
 option governs session files only; the lifetime record is written on every answer
 regardless of it, into a file of its own named after the deck — `mydeck_alltime.sta`
-beside `mydeck.vok` — which is created the first time you answer a question.
+in the `statistics` folder beside `mydeck.vok` — which is created the first time you
+answer a question.
 
 In the **All-time** scope, the **Level Learning** tab's level column reads as the
 **last** level reached rather than a current one, because the lifetime record has no
 current position on the ladder.
 
 Occasionally the screen shows a standing warning in the all-time scope: **These all-time
-statistics are no longer being saved: the file beside the deck belongs to another deck,
-or could not be read.** The program never overwrites a lifetime file it did not manage
+statistics are no longer being saved: the file in the deck's statistics folder belongs
+to another deck, or could not be read.** The program never overwrites a lifetime file it did not manage
 to read, so from that point on this sitting is counted on screen only. Opening the deck
 again from where it now sits is what restores the recording.
 
@@ -76,7 +77,8 @@ other.
   than confirming it; only clicking **Clear** goes through with it.
 
 **Clearing the all-time record cannot be undone.** There is no copy to restore it from:
-the numbers live in `<deck name>_alltime.sta` beside the deck, and confirming zeroes
+the numbers live in `<deck name>_alltime.sta` in the deck's `statistics` folder, and
+confirming zeroes
 that file, its **Total time** included. Your current statistics, your session files and the deck itself are
 untouched, and answers given afterwards start accumulating a new history from zero. If
 you want the old figures kept, copy that file somewhere else before you clear.
@@ -87,7 +89,8 @@ The all-time record cannot decide what is practised — but you can hand it over
 working record deliberately, when you want a run driven by the units you have got wrong
 most across the deck's whole life.
 
-Choose **Load stats...** and pick the deck's `_alltime.sta` file. Because that file is
+Choose **Load stats...** and pick the deck's `_alltime.sta` file from the `statistics`
+folder beside it. Because that file is
 not an ordinary session file, the program warns you first, spelling out what happens:
 the numbers replace the current statistics and decide which units are asked next,
 further answers go to a **new** session file, and the all-time statistics themselves

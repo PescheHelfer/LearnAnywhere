@@ -107,8 +107,8 @@ final class DesktopFileService {
   /// incoming file is only read.
   ///
   /// The written deck is dated as the new version is, or now when it carries
-  /// no date — its content did change. The statistics files beside the deck
-  /// are not touched: they realign onto the new units the next time they are
+  /// no date — its content did change. The deck's statistics files are not
+  /// touched: they realign onto the new units the next time they are
   /// read. [current] is not updated; the caller reopens the deck from disk.
   ///
   /// Returns how many flags were carried over and dropped. Refused, with
@@ -253,7 +253,8 @@ final class DesktopFileService {
   /// workspace's recent-decks list.
   ///
   /// Last edited is the date stored in the deck file. Last learned is core's
-  /// [lastLearned] over the files beside the deck, stat-ed here. Neither
+  /// [lastLearned] over the files in the deck's statistics folder, stat-ed
+  /// here; a `.sta` beside the deck does not count. Neither
   /// failing is an error: a deck that is gone, cannot be read or will not
   /// decode simply has no last-edited date, and a statistics file that cannot
   /// be stat-ed is left out, so the list can always be drawn.
@@ -266,7 +267,7 @@ final class DesktopFileService {
     } on Object {
       lastEdited = null;
     }
-    final String folder = p.dirname(deckPath);
+    final String folder = DeckPaths.statisticsFolder(deckPath);
     final List<String> fileNames = <String>[];
     try {
       await for (final FileSystemEntity entity in Directory(folder).list()) {
@@ -275,7 +276,8 @@ final class DesktopFileService {
         }
       }
     } on Object {
-      // A folder that cannot be listed has no statistics to offer.
+      // A folder that is missing or cannot be listed has no statistics to
+      // offer.
     }
     return DeckDates(
       lastEdited: lastEdited,
@@ -699,9 +701,10 @@ final class DesktopFileService {
   /// Writes [document]'s statistics to [path] without changing the document.
   ///
   /// The low-level write shared by [saveStatistics], [autoSaveStatistics], and
-  /// the per-answer session auto-save.
+  /// the per-answer session auto-save. Creates the file's folder when missing,
+  /// which is how a deck's statistics folder comes into being.
   Future<void> writeStatistics(DesktopDocument document, String path) async {
-    await File(path).writeAsString(
+    await (await _withFolder(path)).writeAsString(
       encodeStatisticsJson(
         StatisticsFile(
           deckRef: document.deckPath == null
@@ -755,7 +758,8 @@ final class DesktopFileService {
     );
   }
 
-  /// Returns the lifetime statistics path `<deck>_alltime.sta` for [deckPath].
+  /// Returns the lifetime statistics path `<deck>_alltime.sta` in
+  /// [deckPath]'s statistics folder.
   ///
   /// Deliberately neither the bare `<deck>.sta` sidecar (which is the Android
   /// companion's live statistics file) nor anything
@@ -765,7 +769,9 @@ final class DesktopFileService {
     return DeckPaths.allTimeStatistics(deckPath);
   }
 
-  /// Reads the lifetime record beside [deckPath] and realigns it onto [deck].
+  /// Reads [deckPath]'s lifetime record from its statistics folder and
+  /// realigns it onto [deck]. A file left beside the deck is not looked for: a
+  /// deck whose record is only there opens as one with no record yet.
   ///
   /// Silent by design and total: a missing, unreadable or malformed file all
   /// open as an empty record, and nothing interrupts the open. What the
@@ -800,8 +806,12 @@ final class DesktopFileService {
     }
   }
 
-  /// Writes [document]'s lifetime record to `<deck>_alltime.sta`, unless the
-  /// record is not entitled to replace what is already there.
+  /// Writes [document]'s lifetime record to `<deck>_alltime.sta` in the
+  /// deck's statistics folder, creating it when missing, unless the record is
+  /// not entitled to replace what is already there.
+  ///
+  /// The entitlement compares deck paths, and the file it protects is derived
+  /// from the same deck path, so where that file lives has no bearing on it.
   ///
   /// The authority rule is [AllTimeRecord.speaksFor]: a record may create a
   /// lifetime file anywhere, but may replace one only at the deck path it was
@@ -845,7 +855,7 @@ final class DesktopFileService {
         await File(allTimeStatisticsPath(deckPath)).exists()) {
       return AllTimeWriteOutcome.refused;
     }
-    await File(allTimeStatisticsPath(deckPath)).writeAsString(
+    await (await _withFolder(allTimeStatisticsPath(deckPath))).writeAsString(
       encodeStatisticsJson(
         StatisticsFile(
           deckRef: DeckPaths.fileName(deckPath),
@@ -876,6 +886,17 @@ final class DesktopFileService {
       return;
     }
     await writeStatistics(document, target);
+  }
+
+  /// [path] as a [File] whose folder exists, created recursively if need be.
+  ///
+  /// Only statistics WRITES come through here: reading never creates a
+  /// statistics folder, so opening or browsing a deck leaves its folder as it
+  /// was.
+  Future<File> _withFolder(String path) async {
+    final File file = File(path);
+    await file.parent.create(recursive: true);
+    return file;
   }
 
   /// Wraps [levelStatistics] in a [LevelLearningStats] section, or null when
@@ -913,23 +934,26 @@ final class DesktopFileService {
   }
 
   /// Builds the timestamped session `.sta` path for [deckPath] at [when],
-  /// named `<deckname>_YYYYMMDD_HHMMSS.sta` in the deck's own folder (§3.7).
+  /// named `<deckname>_YYYYMMDD_HHMMSS.sta` in the deck's statistics folder.
+  /// Nothing is created: the first write makes the folder.
   String timestampedStatisticsPath(String deckPath, DateTime when) {
     return DeckPaths.timestampedStatistics(deckPath, when);
   }
 
-  /// Finds every `<deckname>_YYYYMMDD_HHMMSS.sta` beside [deckPath], parses
-  /// each embedded timestamp, and returns them newest-first.
+  /// Finds every `<deckname>_YYYYMMDD_HHMMSS.sta` in [deckPath]'s statistics
+  /// folder, parses each embedded timestamp, and returns them newest-first.
   ///
   /// Files whose name does not match the timestamped convention (including a
   /// plain `<deckname>.sta`) are ignored, so only session files this app wrote
-  /// are considered for auto-loading.
+  /// are considered for auto-loading. So is anything beside the deck itself:
+  /// the statistics folder is the only place looked in (ADR-0007), and a deck
+  /// without one simply has no session files.
   Future<List<TimestampedStatistics>> findTimestampedStatistics(
     String deckPath,
   ) async {
-    // `DeckPaths.directory` yields '.' for a bare file name, which `Directory`
-    // already resolves to the working directory.
-    final Directory directory = Directory(DeckPaths.directory(deckPath));
+    final Directory directory = Directory(
+      DeckPaths.statisticsFolder(deckPath),
+    );
     if (!await directory.exists()) {
       return const <TimestampedStatistics>[];
     }
@@ -966,9 +990,9 @@ final class DesktopFileService {
     return found;
   }
 
-  /// Deletes the oldest timestamped session `.sta` files beside [deckPath]
-  /// beyond the newest [keep], so a long-running deck's folder doesn't fill
-  /// up with one file per session.
+  /// Deletes the oldest timestamped session `.sta` files in [deckPath]'s
+  /// statistics folder beyond the newest [keep], so a long-running deck's
+  /// folder doesn't fill up with one file per session.
   ///
   /// [protectPath] (typically the active auto-save target) is never deleted,
   /// even if it would otherwise fall outside the newest [keep]. `keep == 0`
@@ -1149,7 +1173,8 @@ final class StatisticsLoadResult {
   final int resetUnits;
 }
 
-/// A timestamped session `.sta` discovered beside a deck, with its parsed time.
+/// A timestamped session `.sta` discovered in a deck's statistics folder, with
+/// its parsed time.
 final class TimestampedStatistics {
   /// Creates a discovered timestamped statistics record.
   const TimestampedStatistics({required this.path, required this.timestamp});

@@ -3,9 +3,10 @@
 /// Every deck quietly keeps two records. The **working** record is the one the
 /// engine reads — it decides the super-query pool, mastery and the
 /// Level-Learning ladder, and it is what "Clear current statistics" resets. The
-/// **all-time** record, held here and written beside the deck as
-/// `<deck>_alltime.sta` (`DeckPaths.allTimeStatistics`), accumulates everything
-/// the learner has ever answered and is never consulted by the engine at all.
+/// **all-time** record, held here and written in the deck's statistics folder
+/// as `<deck>_alltime.sta` (`DeckPaths.allTimeStatistics`), accumulates
+/// everything the learner has ever answered and is never consulted by the
+/// engine at all.
 /// It exists to be looked at, which is what makes it safe: it can be
 /// arbitrarily large and it changes nothing about what is asked.
 ///
@@ -335,19 +336,19 @@ enum AllTimeOrigin {
   /// Lexicon file search, or a record built in memory. It speaks for no path.
   unread,
 
-  /// There was no lifetime file beside the deck when it was opened, which
+  /// There was no lifetime file for the deck when it was opened, which
   /// simply means the deck has no history yet. The record speaks for that
   /// path: writing there creates the file rather than replacing one.
   ///
   /// The observation is made once, when the deck opens, and holds for the
-  /// sitting. A lifetime file appearing beside an already-open deck — a second
+  /// sitting. A lifetime file appearing for an already-open deck — a second
   /// instance of the app, a sync client restoring one — is therefore written
   /// over rather than noticed. Catching that would mean re-reading before every
   /// answer, or tracking each write back into the record, and the file this
   /// deck is writing is by then the one it created itself.
   absent,
 
-  /// Read and decoded from the lifetime file beside the deck. The record
+  /// Read and decoded from the deck's lifetime file. The record
   /// speaks for that path.
   loaded,
 
@@ -399,7 +400,7 @@ final class AllTimeRecord {
     this.refusedPath,
   });
 
-  /// A record read from the lifetime file beside [deckPath].
+  /// A record read from [deckPath]'s lifetime file.
   const AllTimeRecord.loaded(AllTimeStatistics statistics, String deckPath)
     : this(
         statistics: statistics,
@@ -407,12 +408,12 @@ final class AllTimeRecord {
         deckPath: deckPath,
       );
 
-  /// The empty record of a deck that has no lifetime file beside [deckPath].
+  /// The empty record of a deck that has no lifetime file for [deckPath].
   const AllTimeRecord.absent(String deckPath)
     : this(origin: AllTimeOrigin.absent, deckPath: deckPath);
 
-  /// The empty record standing in for a lifetime file beside [deckPath] that
-  /// could not be read.
+  /// The empty record standing in for [deckPath]'s lifetime file, which could
+  /// not be read.
   const AllTimeRecord.unreadable(String deckPath)
     : this(origin: AllTimeOrigin.unreadable, deckPath: deckPath);
 
@@ -451,8 +452,8 @@ final class AllTimeRecord {
   /// Whether nothing has ever been recorded here.
   bool get isEmpty => statistics.isEmpty;
 
-  /// Whether THIS record's own lifetime file — the one beside [path] — was
-  /// there and could not be read.
+  /// Whether THIS record's own lifetime file — the one belonging to [path] —
+  /// was there and could not be read.
   ///
   /// Both halves of the question matter, and asking only about [origin] is the
   /// mix-up this exists to prevent. A record whose own file was unreadable at
@@ -475,7 +476,7 @@ final class AllTimeRecord {
   /// saves, the current statistics still save, and the lifetime record alone
   /// has quietly stopped. Reopening the deck where it now lives is what ends
   /// it — that read hands the deck a record which legitimately speaks for the
-  /// file beside it.
+  /// file belonging to it.
   bool get isRefused => refusedPath != null;
 
   /// Whether this record may replace an existing lifetime file for [path].

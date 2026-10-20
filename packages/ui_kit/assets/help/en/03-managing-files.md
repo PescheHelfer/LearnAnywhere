@@ -44,8 +44,21 @@ embedded copy, so future edits have somewhere to be saved.
 
 These four are duplicated on the [Statistics](09-statistics.md) screen itself, so you
 never have to leave it to save your results. They all act on the working record; the
-deck's lifetime record is a second file kept automatically beside it, described under
+deck's lifetime record is a second file kept automatically, described under
 [The two records](09-statistics.md#the-two-records).
+
+Both kinds of statistics file live in a folder named `statistics` beside the deck: for
+`French/mydeck.vok` that is `French/statistics/`. The name is always the same — lower
+case, never translated — so a deck folder shared between Windows and Linux, or between
+an English and a German learner, means the same folder to everyone. The program creates
+it the first time it writes a statistics file there; opening or browsing a deck never
+does.
+
+**Only the `statistics` folder is read.** A `.sta` file lying directly beside the deck,
+where versions before 1.2.0 wrote them, is not found: auto-load does not offer it, the
+deck shows as **not learned yet**, and the lifetime record starts again from zero in the
+`statistics` folder. To keep such files, move them into the `statistics` folder beside
+their deck before you next practise it.
 
 ## When the deck was edited elsewhere
 
@@ -72,16 +85,17 @@ for 3 units were reset — those units changed.** A `.sta` written before finger
 existed has none, and loads by position exactly as it always did.
 
 Renaming or moving the **deck file** outside the program is a different matter. Every
-statistics file is found by the deck's own name — `mydeck_alltime.sta` and
-`mydeck_20250114_183000.sta` belong to `mydeck.vok` and to nothing else. Rename the deck
-in a file manager, or move it and leave them behind, and they are orphaned: the program
-finds none of them, so there is nothing to auto-load, and the lifetime record starts
-again from zero. Nothing is deleted, and nothing is lost for good — rename the
-statistics files to match the deck's new name, and keep them in its folder, and the link
-is restored. Saving the deck under a new name from inside the program is not the same
-thing: the lifetime record follows the deck to its new location, unless a lifetime
-record already sits there — that one belongs to another deck and is never overwritten,
-and the status line says so.
+statistics file is found by the deck's own name, in the `statistics` folder beside it —
+`mydeck_alltime.sta` and `mydeck_20250114_183000.sta` belong to `mydeck.vok` and to
+nothing else. Rename the deck in a file manager, or move it and leave them behind, and
+they are orphaned: the program finds none of them, so there is nothing to auto-load, and
+the lifetime record starts again from zero. Nothing is deleted, and nothing is lost for
+good — rename the statistics files to match the deck's new name, and keep them in the
+`statistics` folder beside it, and the link is restored. Saving the deck under a new
+name from inside the program is not the same thing: the lifetime record follows the deck
+into the `statistics` folder at its new location, unless a lifetime record already sits
+there — that one belongs to another deck and is never overwritten, and the status line
+says so.
 
 ## Sharing a deck
 
@@ -121,19 +135,21 @@ deck that has never been saved has no file to update: save it first.
 Two independent toggles under **Options ▸ Statistics** save you the trip to the File
 menu:
 
-- **Auto-load statistics** — when you open a deck, the program looks beside it for a
-  matching timestamped session file and, if it finds one, asks whether to load it.
+- **Auto-load statistics** — when you open a deck, the program looks in its
+  `statistics` folder for a matching timestamped session file and, if it finds one, asks
+  whether to load it.
   Nothing is loaded silently; you always see how old the file is and how much of the
   deck it covers before deciding.
 - **Auto-save statistics** — when a learning session starts, if no statistics file is
   already associated with the deck, one is created automatically, named after the deck
-  and the moment the session began, in the deck's own folder. From then on your
-  progress is written to it as you go, without any further prompting.
+  and the moment the session began, in the deck's `statistics` folder, which is created
+  if it does not exist yet. From then on your progress is written to it as you go,
+  without any further prompting.
 
 **Keep last N session files...** (also under **Options ▸ Statistics**) bounds how many
 of these auto-saved files pile up per deck: once you have more than the configured
-count, the oldest are deleted after each new one is written. Set it to 0 to keep every
-file.
+count, the oldest in the deck's `statistics` folder are deleted after each new one is
+written. Set it to 0 to keep every file.
 
 ## Exit
 

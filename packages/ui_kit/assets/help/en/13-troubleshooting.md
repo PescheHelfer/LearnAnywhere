@@ -52,6 +52,15 @@ statistics**. It also needs the deck to have been saved to a real path at least 
 an unsaved, in-memory-only deck has no folder to create a statistics file in. See
 [Working with files](03-managing-files.md#auto-load-and-auto-save).
 
+## My statistics are gone after updating
+
+Since version 1.2.0 statistics files are kept in a folder named `statistics` beside each
+deck, and only that folder is read. Files an older version wrote directly beside the
+deck are still there, untouched, but the program no longer finds them, so the deck shows
+as **not learned yet** and its lifetime record looks empty. Move each deck's `.sta` files
+into the `statistics` folder beside it, keeping their names, and reopen the deck. See
+[Working with files](03-managing-files.md#statistics).
+
 ## I made a mess in the unit editor or mask editor and want to start over
 
 Press `Esc`. If you changed anything since opening the editor, you are asked to confirm

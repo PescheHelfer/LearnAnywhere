@@ -237,7 +237,9 @@ void main() {
     File(settingsPath).writeAsStringSync(
       encodeSettingsJson(const LearnAnywhereSettings(showTotalTime: true)),
     );
-    final File lifetimeFile = File(p.join(temp.path, 'deck_alltime.sta'));
+    final File lifetimeFile = File(
+      p.join(temp.path, 'statistics', 'deck_alltime.sta'),
+    );
 
     await tester.runAsync(() async {
       await openDeck(tester);
@@ -303,7 +305,7 @@ void main() {
         final RegExp pattern = DeckPaths.timestampedStatisticsPattern(
           deckPath,
         );
-        return temp
+        return Directory(p.join(temp.path, 'statistics'))
             .listSync()
             .whereType<File>()
             .singleWhere((File file) => pattern.hasMatch(p.basename(file.path)));

@@ -1,12 +1,13 @@
-/// Pure Dart derivation of the file paths that sit beside a deck.
+/// Pure Dart derivation of the file paths that belong to a deck.
 ///
 /// A deck (`.vok`) implies the location of its statistics (`.sta`) and its
-/// linked mask (`.inf`): they live in the deck's own folder and are named after
-/// it. That derivation used to be done with ad-hoc `lastIndexOf` string surgery
-/// against `Platform.pathSeparator`, which quietly assumed one separator per
-/// host. It now goes through `package:path`, so a Windows path is parsed with
-/// Windows rules and a POSIX path with POSIX rules — including the fact that on
-/// Linux a backslash is an ORDINARY FILE NAME CHARACTER, not a separator.
+/// linked mask (`.inf`): both are named after it, the mask beside it and the
+/// desktop's statistics in the `statistics` folder beside it. That derivation
+/// used to be done with ad-hoc `lastIndexOf` string surgery against
+/// `Platform.pathSeparator`, which quietly assumed one separator per host. It
+/// now goes through `package:path`, so a Windows path is parsed with Windows
+/// rules and a POSIX path with POSIX rules — including the fact that on Linux a
+/// backslash is an ORDINARY FILE NAME CHARACTER, not a separator.
 ///
 /// Every function takes an optional [p.Context], defaulting to the host's. Pass
 /// [p.windows] or [p.posix] explicitly to get deterministic results — that is
@@ -31,7 +32,15 @@ const String statisticsExtension = 'sta';
 /// otherwise have one file meaning two different things.
 const String allTimeStatisticsSuffix = 'alltime';
 
-/// Separator-safe derivation of the paths that live beside a deck.
+/// Name of the subfolder beside a deck that holds its session files and its
+/// all-time statistics.
+///
+/// Fixed, lower case and never translated, so a deck folder shared between
+/// Windows and Linux, or between an English and a German learner, means the
+/// same folder to all of them.
+const String statisticsFolderName = 'statistics';
+
+/// Separator-safe derivation of the paths that belong to a deck.
 final class DeckPaths {
   const DeckPaths._();
 
@@ -53,7 +62,23 @@ final class DeckPaths {
     return '$suffixed.$extension';
   }
 
+  /// Returns the folder holding [deckPath]'s session files and all-time
+  /// statistics: the [statisticsFolderName] subfolder beside the deck.
+  ///
+  /// The only place the desktop shell looks for them (ADR-0007). A bare deck
+  /// name yields a bare `statistics`, relative like the deck itself.
+  static String statisticsFolder(String deckPath, {p.Context? context}) {
+    final p.Context ctx = context ?? p.context;
+    final String deckFolder = ctx.dirname(deckPath);
+    return deckFolder == '.'
+        ? statisticsFolderName
+        : ctx.join(deckFolder, statisticsFolderName);
+  }
+
   /// Returns the plain `<deck>.sta` sidecar path for [deckPath].
+  ///
+  /// Beside the deck, NOT in [statisticsFolder]: this is the Android
+  /// companion's live file, kept next to the deck in its private library.
   static String statisticsSidecar(String deckPath, {p.Context? context}) {
     return withExtension(deckPath, statisticsExtension, context: context);
   }
@@ -70,28 +95,45 @@ final class DeckPaths {
   }
 
   /// Returns the timestamped session statistics path for [deckPath] at [when],
-  /// named `<deckname>_YYYYMMDD_HHMMSS.sta` in the deck's own folder (§3.7).
+  /// named `<deckname>_YYYYMMDD_HHMMSS.sta` in the deck's [statisticsFolder].
   static String timestampedStatistics(
     String deckPath,
     DateTime when, {
     p.Context? context,
   }) {
-    final p.Context ctx = context ?? p.context;
-    return '${ctx.withoutExtension(deckPath)}_${formatStamp(when)}'
-        '.$statisticsExtension';
+    return _inStatisticsFolder(
+      deckPath,
+      '_${formatStamp(when)}',
+      context: context,
+    );
   }
 
   /// Returns the all-time statistics path for [deckPath], named
-  /// `<deckname>_alltime.sta` in the deck's own folder.
+  /// `<deckname>_alltime.sta` in the deck's [statisticsFolder].
   ///
   /// The lifetime record of a deck: written on every answer, never consulted by
   /// the learning engine. Its name cannot match
   /// [timestampedStatisticsPattern] (which requires digits after the
   /// underscore), so it is never picked up as a session file to auto-load.
   static String allTimeStatistics(String deckPath, {p.Context? context}) {
+    return _inStatisticsFolder(
+      deckPath,
+      '_$allTimeStatisticsSuffix',
+      context: context,
+    );
+  }
+
+  /// `<statistics folder>/<deckname><suffix>.sta` for [deckPath].
+  static String _inStatisticsFolder(
+    String deckPath,
+    String suffix, {
+    p.Context? context,
+  }) {
     final p.Context ctx = context ?? p.context;
-    return '${ctx.withoutExtension(deckPath)}_$allTimeStatisticsSuffix'
-        '.$statisticsExtension';
+    return ctx.join(
+      statisticsFolder(deckPath, context: ctx),
+      '${baseName(deckPath, context: ctx)}$suffix.$statisticsExtension',
+    );
   }
 
   /// Formats [when] as the `YYYYMMDD_HHMMSS` stamp used in session file names.
@@ -147,12 +189,6 @@ final class DeckPaths {
       return path;
     }
     return '...${ctx.separator}$folder${ctx.separator}${ctx.basename(path)}';
-  }
-
-  /// Returns the directory containing [path], or `.` when [path] has no
-  /// directory part (which `Directory` resolves to the working directory).
-  static String directory(String path, {p.Context? context}) {
-    return (context ?? p.context).dirname(path);
   }
 
   /// Returns [path]'s last segment without its extension.

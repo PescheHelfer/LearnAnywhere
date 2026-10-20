@@ -54,8 +54,22 @@ irgendwo gespeichert werden können.
 Diese vier Befehle finden sich auch auf dem Bildschirm [Statistik](09-statistics.md)
 selbst wieder, sodass Sie ihn zum Sichern Ihrer Ergebnisse nie verlassen müssen. Sie
 alle wirken auf die Arbeitsstatistik; die Allzeit-Statistik der Lern-Datei ist eine
-zweite Datei, die automatisch daneben geführt wird — siehe
+zweite Datei, die automatisch geführt wird — siehe
 [Die zwei Statistiken](09-statistics.md#die-zwei-statistiken).
+
+Beide Arten von Statistikdatei liegen in einem Ordner namens `statistics` neben der
+Lern-Datei: für `Franz/meinedatei.vok` ist das `Franz/statistics/`. Der Name ist immer
+derselbe — klein geschrieben, nie übersetzt —, damit ein Ordner, den sich Windows und
+Linux oder eine deutsch- und eine englischsprachige Person teilen, für alle derselbe
+ist. Das Programm legt ihn an, sobald es zum ersten Mal eine Statistikdatei dorthin
+schreibt; das Öffnen oder Durchsuchen einer Lern-Datei legt ihn nie an.
+
+**Gelesen wird nur der Ordner `statistics`.** Eine `.sta`-Datei, die direkt neben der
+Lern-Datei liegt, wo Versionen vor 1.2.0 sie geschrieben haben, wird nicht gefunden:
+Das automatische Laden bietet sie nicht an, die Lern-Datei erscheint als **noch nicht
+gelernt**, und die Allzeit-Statistik beginnt im Ordner `statistics` wieder bei null.
+Wollen Sie solche Dateien behalten, verschieben Sie sie in den Ordner `statistics` neben
+ihrer Lern-Datei, bevor Sie sie das nächste Mal üben.
 
 ## Wenn die Lern-Datei anderswo bearbeitet wurde
 
@@ -85,17 +99,18 @@ Eine `.sta`, die vor Einführung der Fingerabdrücke geschrieben wurde, hat kein
 wie eh und je nach Position geladen.
 
 Die **Lern-Datei selbst** außerhalb des Programms umzubenennen oder zu verschieben, ist
-eine andere Sache. Jede Statistikdatei wird über den Namen der Lern-Datei gefunden —
-`meinedatei_alltime.sta` und `meinedatei_20250114_183000.sta` gehören zu
-`meinedatei.vok` und zu nichts sonst. Benennen Sie die Lern-Datei im Dateimanager um
-oder verschieben Sie sie und lassen die Statistikdateien zurück, sind diese verwaist:
-Das Programm findet keine davon, es gibt also nichts automatisch zu laden, und die
-Allzeit-Statistik beginnt wieder bei null. Gelöscht wird nichts, und endgültig verloren
-ist auch nichts — benennen Sie die Statistikdateien passend zum neuen Namen der
-Lern-Datei um und lassen Sie sie in deren Ordner, ist die Verbindung wiederhergestellt.
-Die Lern-Datei aus dem Programm heraus unter neuem Namen zu speichern ist nicht
-dasselbe: Die Allzeit-Statistik folgt der Lern-Datei an ihren neuen Ort — es sei denn,
-dort liegt bereits eine. Diese gehört zu einer anderen Lern-Datei und wird nie
+eine andere Sache. Jede Statistikdatei wird über den Namen der Lern-Datei gefunden, im
+Ordner `statistics` daneben — `meinedatei_alltime.sta` und
+`meinedatei_20250114_183000.sta` gehören zu `meinedatei.vok` und zu nichts sonst.
+Benennen Sie die Lern-Datei im Dateimanager um oder verschieben Sie sie und lassen die
+Statistikdateien zurück, sind diese verwaist: Das Programm findet keine davon, es gibt
+also nichts automatisch zu laden, und die Allzeit-Statistik beginnt wieder bei null.
+Gelöscht wird nichts, und endgültig verloren ist auch nichts — benennen Sie die
+Statistikdateien passend zum neuen Namen der Lern-Datei um und lassen Sie sie im Ordner
+`statistics` daneben, ist die Verbindung wiederhergestellt. Die Lern-Datei aus dem
+Programm heraus unter neuem Namen zu speichern ist nicht dasselbe: Die
+Allzeit-Statistik folgt der Lern-Datei in den Ordner `statistics` an ihrem neuen Ort —
+es sei denn, dort liegt bereits eine. Diese gehört zu einer anderen Lern-Datei und wird nie
 überschrieben; die Statuszeile sagt es.
 
 ## Eine Lern-Datei teilen
@@ -145,20 +160,23 @@ Zwei unabhängige Schalter unter **Optionen ▸ Statistiken** ersparen Ihnen den
 das Menü Datei:
 
 - **Statistiken automatisch laden** — beim Öffnen einer Lern-Datei sucht das Programm
-  daneben nach einer passenden Sitzungsdatei mit Zeitstempel und fragt, falls es eine
+  in ihrem Ordner `statistics` nach einer passenden Sitzungsdatei mit Zeitstempel und
+  fragt, falls es eine
   findet, ob sie geladen werden soll. Nichts wird stillschweigend geladen; Sie sehen
   vor der Entscheidung immer, wie alt die Datei ist und wie viel der Lern-Datei sie
   abdeckt.
 - **Statistiken automatisch speichern** — startet eine Lernsitzung und ist der
   Lern-Datei noch keine Statistikdatei zugeordnet, wird automatisch eine angelegt,
-  benannt nach der Lern-Datei und dem Moment des Sitzungsbeginns, im selben Ordner wie
-  die Lern-Datei. Von da an wird Ihr Fortschritt fortlaufend hineingeschrieben, ohne
-  weitere Rückfrage.
+  benannt nach der Lern-Datei und dem Moment des Sitzungsbeginns, im Ordner
+  `statistics` der Lern-Datei, der dabei angelegt wird, falls es ihn noch nicht gibt.
+  Von da an wird Ihr Fortschritt fortlaufend hineingeschrieben, ohne weitere
+  Rückfrage.
 
 **Nur die letzten N Sitzungsdateien behalten...** (ebenfalls unter
 **Optionen ▸ Statistiken**) begrenzt, wie viele dieser automatisch gespeicherten
 Dateien sich pro Lern-Datei ansammeln: sobald mehr als die eingestellte Anzahl
-vorhanden sind, werden nach jeder neu geschriebenen die ältesten gelöscht. Auf 0
+vorhanden sind, werden nach jeder neu geschriebenen die ältesten im Ordner
+`statistics` der Lern-Datei gelöscht. Auf 0
 gesetzt, werden alle Dateien behalten.
 
 ## Beenden

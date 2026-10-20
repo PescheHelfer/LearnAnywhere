@@ -78,26 +78,28 @@ void main() {
     await settleAfterIo(tester);
   }
 
-  /// Writes [deck] to [deckPath] and, beside it, a lifetime record holding
-  /// [direction1] for each unit in turn.
+  /// Writes [deck] to [deckPath] and, in its statistics folder, a lifetime
+  /// record holding [direction1] for each unit in turn.
   void writeDeckWithHistory(
     String deckPath,
     LearningDeck deck,
     List<DirectionStats> direction1,
   ) {
     File(deckPath).writeAsStringSync(encodeDeckJson(deck));
-    File(DeckPaths.allTimeStatistics(deckPath)).writeAsStringSync(
-      encodeStatisticsJson(
-        StatisticsFile(
-          deckRef: p.basename(deckPath),
-          scope: StatisticsScope.allTime,
-          perUnit: withUnitHashes(deck, <UnitStats>[
-            for (var i = 0; i < direction1.length; i += 1)
-              UnitStats(index: i + 1, direction1: direction1[i]),
-          ]),
+    File(DeckPaths.allTimeStatistics(deckPath))
+      ..parent.createSync(recursive: true)
+      ..writeAsStringSync(
+        encodeStatisticsJson(
+          StatisticsFile(
+            deckRef: p.basename(deckPath),
+            scope: StatisticsScope.allTime,
+            perUnit: withUnitHashes(deck, <UnitStats>[
+              for (var i = 0; i < direction1.length; i += 1)
+                UnitStats(index: i + 1, direction1: direction1[i]),
+            ]),
+          ),
         ),
-      ),
-    );
+      );
   }
 
   /// Opens the app on [deckPath] and starts a session; returns the picker,

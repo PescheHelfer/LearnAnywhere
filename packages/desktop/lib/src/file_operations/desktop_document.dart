@@ -40,7 +40,8 @@ final class DesktopDocument {
   /// the answer it belongs to, and needs no save of its own.
   final int statisticsSeconds;
 
-  /// The deck's lifetime record, written beside it as `<deck>_alltime.sta`.
+  /// The deck's lifetime record, written to its statistics folder as
+  /// `<deck>_alltime.sta`.
   ///
   /// Kept alongside [statistics] rather than derived from it: it accumulates
   /// every answer for the life of the deck, survives "Clear current

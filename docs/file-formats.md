@@ -106,8 +106,9 @@ when they re-save. The Converter omits it: a legacy file says nothing about when
 its units were edited.
 
 "Last learned" is deliberately **not** stored: it is the newest modification
-time among the deck's statistics files (the plain sidecar, the timestamped
-session files, the all-time file), worked out when needed.
+time among the deck's statistics files in its statistics folder (the plain
+sidecar, the timestamped session files, the all-time file), worked out when
+needed.
 
 A unit may additionally carry, right after its `categoryId`, up to four
 **difficulty flags** — two kinds, each per query direction (ADR-0005 and its
@@ -197,13 +198,19 @@ build predating the marker still loads a lifetime file — as a working record,
 which is the safe reading. Do **not** bump the version to `3` for it; that would
 only make shipped builds reject the file.
 
-The two names, both derived in `DeckPaths`
-(`packages/core/lib/paths/deck_paths.dart`), never the shell:
+The names, all derived in `DeckPaths`
+(`packages/core/lib/paths/deck_paths.dart`), never the shell. The desktop's two
+files live
+in the deck's **statistics folder**: the subfolder named `statistics` beside
+the deck, lower case and never translated (ADR-0007). It is the only place the
+desktop looks for them; a `.sta` left beside the deck is not found, and the
+folder is created by the first write, never by a read.
 
-| File | Name for `mydeck.vok` | Written by |
+| File | Path for `French/mydeck.vok` | Written by |
 |---|---|---|
-| Session file | `mydeck_YYYYMMDD_HHMMSS.sta` | auto-save, save-as |
-| Lifetime record | `mydeck_alltime.sta` | every answer, always |
+| Session file | `French/statistics/mydeck_YYYYMMDD_HHMMSS.sta` | auto-save, save-as |
+| Lifetime record | `French/statistics/mydeck_alltime.sta` | every answer, always |
+| Android sidecar | `mydeck.sta` beside the deck, in the app's private library | the Android companion only |
 
 Three constraints hold the naming together, and the Converter must respect all
 three:

@@ -56,9 +56,10 @@ even if the `.inf` file is missing. The `.inf` file is the copy you *edit*; chan
 there can then be pushed into the decks that use it. [Concepts](02-concepts.md)
 explains the relationship in full.
 
-Statistics live beside the deck rather than inside it, so you can practise the same
-deck under several names, delete a run of bad results, or archive a session without
-touching your material.
+Statistics live in a folder named `statistics` beside the deck rather than inside it,
+so you can practise the same deck under several names, delete a run of bad results, or
+archive a session without touching your material. The program creates that folder the
+first time it writes statistics for a deck there.
 
 ## Opening a deck
 
@@ -90,7 +91,8 @@ have been neglecting:
   file time reflects that marking, not an edit, so it shows **not recorded** until you
   next edit and save it.
 - **Last learned** — when you last practised the deck, read from the statistics files
-  beside it. A deck you have never practised shows **not learned yet**.
+  in the `statistics` folder beside it. A deck you have never practised shows **not
+  learned yet**.
 
 If you move or delete a deck it stays
 in the list, greyed out, rather than quietly disappearing — that way a whole folder you
@@ -98,8 +100,9 @@ have moved is visible instead of silently gone. Such an entry no longer opens an
 clicking it reports **File not found** with the path it looked in.
 
 If you keep statistics for the deck, turn on **Options ▸ Statistics ▸ Auto-load
-statistics** and the matching `.sta` file is picked up automatically whenever you open
-a deck. See [Working with files](03-managing-files.md).
+statistics** and the matching `.sta` file in the deck's `statistics` folder is picked
+up automatically whenever you open a deck. See
+[Working with files](03-managing-files.md).
 
 ## Your first session
 

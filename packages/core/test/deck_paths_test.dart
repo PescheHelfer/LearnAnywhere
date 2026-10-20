@@ -73,6 +73,18 @@ void main() {
       );
     });
 
+    test('stays beside the deck, never in the statistics folder: it is '
+        'Android\'s live file', () {
+      expect(
+        DeckPaths.statisticsSidecar(r'C:\decks\french.vok', context: p.windows),
+        r'C:\decks\french.sta',
+      );
+      expect(
+        DeckPaths.statisticsSidecar('/decks/french.vok', context: p.posix),
+        '/decks/french.sta',
+      );
+    });
+
     test('a backslash is a NAME character under POSIX but a separator on '
         'Windows', () {
       // The single most likely Linux-only defect in the old code: it treated
@@ -88,18 +100,50 @@ void main() {
     });
   });
 
+  group('DeckPaths.statisticsFolder', () {
+    test('is the lower-case statistics subfolder beside the deck', () {
+      expect(
+        DeckPaths.statisticsFolder(r'C:\decks\french.vok', context: p.windows),
+        r'C:\decks\statistics',
+      );
+      expect(
+        DeckPaths.statisticsFolder(
+          '/home/pesche/decks/french.vok',
+          context: p.posix,
+        ),
+        '/home/pesche/decks/statistics',
+      );
+    });
+
+    test('a bare deck name gets a relative statistics folder', () {
+      for (final p.Context ctx in <p.Context>[p.windows, p.posix]) {
+        expect(
+          DeckPaths.statisticsFolder('french.vok', context: ctx),
+          'statistics',
+        );
+      }
+    });
+
+    test('a POSIX backslash stays part of the folder name', () {
+      expect(
+        DeckPaths.statisticsFolder(r'/de\cks/french.vok', context: p.posix),
+        r'/de\cks/statistics',
+      );
+    });
+  });
+
   group('DeckPaths.timestampedStatistics', () {
     final DateTime when = DateTime(2026, 7, 26, 9, 5, 3);
 
-    test('names the session file <deck>_YYYYMMDD_HHMMSS.sta beside the '
-        'deck', () {
+    test('names the session file <deck>_YYYYMMDD_HHMMSS.sta in the '
+        'statistics folder', () {
       expect(
         DeckPaths.timestampedStatistics(
           r'C:\decks\french.vok',
           when,
           context: p.windows,
         ),
-        r'C:\decks\french_20260726_090503.sta',
+        r'C:\decks\statistics\french_20260726_090503.sta',
       );
       expect(
         DeckPaths.timestampedStatistics(
@@ -107,17 +151,38 @@ void main() {
           when,
           context: p.posix,
         ),
-        '/home/pesche/decks/french_20260726_090503.sta',
+        '/home/pesche/decks/statistics/french_20260726_090503.sta',
       );
     });
 
-    test('keeps a bare deck name in the working directory', () {
-      for (final p.Context ctx in <p.Context>[p.windows, p.posix]) {
-        expect(
-          DeckPaths.timestampedStatistics('french.vok', when, context: ctx),
-          'french_20260726_090503.sta',
-        );
-      }
+    test('a bare deck name gets a relative statistics folder', () {
+      expect(
+        DeckPaths.timestampedStatistics('french.vok', when, context: p.windows),
+        r'statistics\french_20260726_090503.sta',
+      );
+      expect(
+        DeckPaths.timestampedStatistics('french.vok', when, context: p.posix),
+        'statistics/french_20260726_090503.sta',
+      );
+    });
+
+    test('a deck name with pattern metacharacters is kept literally', () {
+      expect(
+        DeckPaths.timestampedStatistics(
+          r'C:\decks\a+b (1).vok',
+          when,
+          context: p.windows,
+        ),
+        r'C:\decks\statistics\a+b (1)_20260726_090503.sta',
+      );
+      expect(
+        DeckPaths.timestampedStatistics(
+          '/decks/a+b (1).vok',
+          when,
+          context: p.posix,
+        ),
+        '/decks/statistics/a+b (1)_20260726_090503.sta',
+      );
     });
 
     test('zero-pads every stamp component', () {
@@ -129,27 +194,41 @@ void main() {
   });
 
   group('DeckPaths.allTimeStatistics', () {
-    test('names the lifetime file <deck>_alltime.sta beside the deck', () {
+    test('names the lifetime file <deck>_alltime.sta in the statistics '
+        'folder', () {
       expect(
         DeckPaths.allTimeStatistics(r'C:\decks\french.vok', context: p.windows),
-        r'C:\decks\french_alltime.sta',
+        r'C:\decks\statistics\french_alltime.sta',
       );
       expect(
         DeckPaths.allTimeStatistics(
           '/home/pesche/decks/french.vok',
           context: p.posix,
         ),
-        '/home/pesche/decks/french_alltime.sta',
+        '/home/pesche/decks/statistics/french_alltime.sta',
       );
     });
 
-    test('keeps a bare deck name in the working directory', () {
-      for (final p.Context ctx in <p.Context>[p.windows, p.posix]) {
-        expect(
-          DeckPaths.allTimeStatistics('french.vok', context: ctx),
-          'french_alltime.sta',
-        );
-      }
+    test('a bare deck name gets a relative statistics folder', () {
+      expect(
+        DeckPaths.allTimeStatistics('french.vok', context: p.windows),
+        r'statistics\french_alltime.sta',
+      );
+      expect(
+        DeckPaths.allTimeStatistics('french.vok', context: p.posix),
+        'statistics/french_alltime.sta',
+      );
+    });
+
+    test('a deck name with pattern metacharacters is kept literally', () {
+      expect(
+        DeckPaths.allTimeStatistics(r'C:\decks\a+b (1).vok', context: p.windows),
+        r'C:\decks\statistics\a+b (1)_alltime.sta',
+      );
+      expect(
+        DeckPaths.allTimeStatistics('/decks/a+b (1).vok', context: p.posix),
+        '/decks/statistics/a+b (1)_alltime.sta',
+      );
     });
 
     test('is distinct from the bare sidecar name', () {
@@ -187,7 +266,7 @@ void main() {
         'file, never the same path twice', () {
       expect(
         DeckPaths.allTimeStatistics('french_alltime.vok', context: p.posix),
-        'french_alltime_alltime.sta',
+        'statistics/french_alltime_alltime.sta',
       );
     });
   });
@@ -280,15 +359,11 @@ void main() {
     });
   });
 
-  group('DeckPaths.fileName / directory / baseName', () {
+  group('DeckPaths.fileName / baseName', () {
     test('split a path into its parts under either style', () {
       expect(
         DeckPaths.fileName(r'C:\decks\french.vok', context: p.windows),
         'french.vok',
-      );
-      expect(
-        DeckPaths.directory(r'C:\decks\french.vok', context: p.windows),
-        r'C:\decks',
       );
       expect(
         DeckPaths.baseName(r'C:\decks\french.vok', context: p.windows),
@@ -300,31 +375,15 @@ void main() {
         'french.vok',
       );
       expect(
-        DeckPaths.directory('/decks/french.vok', context: p.posix),
-        '/decks',
-      );
-      expect(
         DeckPaths.baseName('/decks/french.vok', context: p.posix),
         'french',
       );
-    });
-
-    test('report "." as the directory of a bare file name', () {
-      // `Directory('.')` is the working directory, which is what the desktop
-      // service relies on when a deck path has no folder part.
-      for (final p.Context ctx in <p.Context>[p.windows, p.posix]) {
-        expect(DeckPaths.directory('french.vok', context: ctx), '.');
-      }
     });
 
     test('POSIX keeps a backslash inside the file name', () {
       expect(
         DeckPaths.fileName(r'/decks/back\slash.vok', context: p.posix),
         r'back\slash.vok',
-      );
-      expect(
-        DeckPaths.directory(r'/decks/back\slash.vok', context: p.posix),
-        '/decks',
       );
       expect(
         DeckPaths.baseName(r'/decks/back\slash.vok', context: p.posix),
@@ -336,10 +395,6 @@ void main() {
       expect(
         DeckPaths.fileName('C:/decks/french.vok', context: p.windows),
         'french.vok',
-      );
-      expect(
-        DeckPaths.directory('C:/decks/french.vok', context: p.windows),
-        'C:/decks',
       );
     });
   });

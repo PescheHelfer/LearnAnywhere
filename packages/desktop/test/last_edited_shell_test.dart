@@ -67,7 +67,8 @@ void main() {
     File(beta).writeAsStringSync(
       encodeDeckJson(_deck('uno').copyWith(lastEdited: betaEdited)),
     );
-    File(p.join(temp.path, 'beta.sta'))
+    File(p.join(temp.path, 'statistics', 'beta.sta'))
+      ..parent.createSync()
       ..writeAsStringSync(
         encodeStatisticsJson(
           const StatisticsFile(
