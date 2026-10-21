@@ -2872,21 +2872,35 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     return _maskFrameWidth!;
   }
 
+  /// The recent-deck list both the Workspace and File operations show, built
+  /// from one set of inputs so the two can never drift apart; null when there
+  /// is no other deck to offer, so neither screen leaves a gap for it.
+  Widget? _recentDecksList() {
+    final List<String> paths = recentDecksExcluding(
+      _settings.recentDeckPaths,
+      _document.deckPath,
+    );
+    if (paths.isEmpty) {
+      return null;
+    }
+    return RecentDecksList(
+      paths: paths,
+      onOpen: _openDeckPath,
+      datesOf: _fileService.deckDates,
+    );
+  }
+
   Widget _contentForRoute() {
     return switch (_route) {
       _DesktopRoute.home => _HomeScreen(
         document: _document,
-        recentDeckPaths: recentDecksExcluding(
-          _settings.recentDeckPaths,
-          _document.deckPath,
-        ),
+        recentDecks: _recentDecksList(),
         lastMaskPath: _lastMaskPath ?? _settings.lastMaskPath,
-        onOpenRecentDeck: _openDeckPath,
-        recentDeckDates: _fileService.deckDates,
       ),
       _DesktopRoute.fileOperations => _FileOperationsStatus(
         document: _document,
         status: _lastFileStatus,
+        recentDecks: _recentDecksList(),
       ),
       _DesktopRoute.editor => UnitEditorPage(
         deck: _document.deck,
@@ -4704,24 +4718,16 @@ LearningMask _defaultMask(String localeCode) {
 final class _HomeScreen extends StatelessWidget {
   const _HomeScreen({
     required this.document,
-    required this.onOpenRecentDeck,
-    required this.recentDeckDates,
-    this.recentDeckPaths = const <String>[],
+    this.recentDecks,
     this.lastMaskPath,
   });
 
   final DesktopDocument document;
 
-  /// Decks to offer as one-click links, newest first and already stripped of
-  /// the deck currently open.
-  final List<String> recentDeckPaths;
+  /// The shell's [RecentDecksList], already stripped of the deck currently
+  /// open, or null when there is no other deck to offer.
+  final Widget? recentDecks;
   final String? lastMaskPath;
-
-  /// Loads the given deck path directly (no file dialog).
-  final Future<void> Function(String path) onOpenRecentDeck;
-
-  /// Looks up a recent deck's last-edited and last-learned dates.
-  final DeckDatesLookup recentDeckDates;
 
   @override
   Widget build(BuildContext context) {
@@ -4747,13 +4753,9 @@ final class _HomeScreen extends StatelessWidget {
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
             if (!hasContent) ...<Widget>[
               Text(messages.message(LearnAnywhereMessage.homeNoFileLoaded)),
-              if (recentDeckPaths.isNotEmpty) ...<Widget>[
+              if (recentDecks != null) ...<Widget>[
                 const SizedBox(height: LearnAnywhereTokens.gapSmall),
-                RecentDecksList(
-                  paths: recentDeckPaths,
-                  onOpen: onOpenRecentDeck,
-                  datesOf: recentDeckDates,
-                ),
+                recentDecks!,
               ],
               if (lastMaskPath != null)
                 _StatusLine(
@@ -4781,13 +4783,9 @@ final class _HomeScreen extends StatelessWidget {
               // Deliberately shown while a deck is loaded: switching decks is
               // the situation the list exists for, and the open deck is
               // already filtered out, so it only offers somewhere else to go.
-              if (recentDeckPaths.isNotEmpty) ...<Widget>[
+              if (recentDecks != null) ...<Widget>[
                 const SizedBox(height: LearnAnywhereTokens.gapMedium),
-                RecentDecksList(
-                  paths: recentDeckPaths,
-                  onOpen: onOpenRecentDeck,
-                  datesOf: recentDeckDates,
-                ),
+                recentDecks!,
               ],
             ],
           ],
@@ -4861,10 +4859,18 @@ final class _MenuSeparator extends StatelessWidget {
 }
 
 final class _FileOperationsStatus extends StatelessWidget {
-  const _FileOperationsStatus({required this.document, required this.status});
+  const _FileOperationsStatus({
+    required this.document,
+    required this.status,
+    this.recentDecks,
+  });
 
   final DesktopDocument document;
   final String? status;
+
+  /// The same [RecentDecksList] the Workspace shows, or null when there is no
+  /// other deck to offer.
+  final Widget? recentDecks;
 
   @override
   Widget build(BuildContext context) {
@@ -4874,7 +4880,9 @@ final class _FileOperationsStatus extends StatelessWidget {
     final String unsaved = messages.message(
       LearnAnywhereMessage.fileStatusUnsaved,
     );
-    return Padding(
+    // Scrolls for the same reason the Workspace does: up to three recent decks
+    // with their dates, at a high zoom, outgrow a small window.
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(LearnAnywhereTokens.gapLarge),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4899,6 +4907,10 @@ final class _FileOperationsStatus extends StatelessWidget {
           if (status != null) ...<Widget>[
             const SizedBox(height: LearnAnywhereTokens.gapMedium),
             Text(status!),
+          ],
+          if (recentDecks != null) ...<Widget>[
+            const SizedBox(height: LearnAnywhereTokens.gapMedium),
+            recentDecks!,
           ],
         ],
       ),

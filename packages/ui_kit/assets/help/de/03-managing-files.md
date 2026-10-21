@@ -5,6 +5,11 @@ nach jeden Befehl darin durch, dazu die beiden automatischen Abläufe — Statis
 automatisch laden und automatisch speichern —, die einen Teil davon leise für Sie
 erledigen.
 
+Jeder Befehl meldet sein Ergebnis auf dem Bildschirm **Dateioperationen** und zeigt
+unter der Meldung die Liste **Zuletzt verwendete Lern-Dateien** — dieselbe Liste mit
+Ein-Klick-Einträgen wie im Arbeitsbereich (siehe
+[Erste Schritte](01-getting-started.md#eine-lern-datei-ffnen)).
+
 ## Lerneinheiten
 
 - **Lerneinheiten laden...** öffnet eine `.vok`-Datei und ersetzt dabei alles, was

@@ -63,11 +63,16 @@ first time it writes statistics for a deck there.
 
 ## Opening a deck
 
-Choose **File ▸ Load deck...** and pick a `.vok` file. The Workspace screen fills in
-with the deck's details.
+Choose **File ▸ Load deck...** and pick a `.vok` file. You land on the **File
+operations** screen, which names the deck and its statistics file, counts the units,
+and reports **Deck loaded.** If you have opened other decks before, they are listed
+below that message under **Recent decks**, so a deck opened by mistake is one click
+away from the one you meant.
 
 The Workspace screen keeps the three decks you opened most recently under **Recent
-decks**, newest first. Each one is a clickable line, and one click opens it without
+decks**, newest first, and the File operations screen shows the same list after every
+file command — loading, merging, saving, clearing units from memory, a mask loaded or
+saved, or an error. Each entry is a clickable line, and one click opens it without
 going through the file dialog. The list is there on the next start of the program, and
 also while a deck is loaded — that is when switching to another language is most
 useful. The deck you already have open is left out, so the list only ever offers

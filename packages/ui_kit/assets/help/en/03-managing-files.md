@@ -4,6 +4,10 @@ Everything file-related lives on the **File** menu (`Alt+F`). This chapter walks
 through every command on it, in order, plus the two automatic behaviours — auto-load
 and auto-save statistics — that quietly do some of this for you.
 
+Each command reports its result on the **File operations** screen, and below the
+message lists your **Recent decks**, the same one-click list the Workspace shows
+(see [Getting started](01-getting-started.md#opening-a-deck)).
+
 ## Decks
 
 - **Load deck...** opens a `.vok` file, replacing whatever is currently in memory.

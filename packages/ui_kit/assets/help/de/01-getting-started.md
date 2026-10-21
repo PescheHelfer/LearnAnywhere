@@ -68,11 +68,18 @@ dorthin schreibt.
 
 ## Eine Lern-Datei öffnen
 
-Wählen Sie **Datei ▸ Lerneinheiten laden...** und wählen Sie eine `.vok`-Datei aus. Der
-Arbeitsbereich füllt sich mit den Angaben zur Datei.
+Wählen Sie **Datei ▸ Lerneinheiten laden...** und wählen Sie eine `.vok`-Datei aus. Sie
+landen auf dem Bildschirm **Dateioperationen**: Er nennt die Lern-Datei und ihre
+Statistikdatei, zählt die Lerneinheiten und meldet **Lern-Datei geladen.** Haben Sie
+schon andere Lern-Dateien geöffnet, stehen sie unter dieser Meldung in der Liste
+**Zuletzt verwendete Lern-Dateien** — eine versehentlich geöffnete Datei ist so nur
+einen Klick von der gemeinten entfernt.
 
 Der Arbeitsbereich merkt sich die drei zuletzt geöffneten Lern-Dateien unter **Zuletzt
-verwendete Lern-Dateien**, die neueste zuoberst. Jeder Eintrag ist eine anklickbare
+verwendete Lern-Dateien**, die neueste zuoberst, und der Bildschirm Dateioperationen
+zeigt dieselbe Liste nach jedem Dateibefehl — Laden, Hinzuladen, Speichern, Löschen der
+Lerneinheiten im Speicher, eine Maske geladen oder gespeichert, oder ein Fehler. Jeder
+Eintrag ist eine anklickbare
 Zeile; ein Klick öffnet die Datei, ohne Umweg über den Dateidialog. Die Liste steht
 beim nächsten Programmstart bereit — und auch dann, wenn bereits eine Lern-Datei
 geladen ist, denn genau dann ist der Wechsel zu einer anderen Sprache am nützlichsten.
