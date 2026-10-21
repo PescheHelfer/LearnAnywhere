@@ -54,6 +54,12 @@ an English and a German learner, means the same folder to everyone. The program 
 it the first time it writes a statistics file there; opening or browsing a deck never
 does.
 
+**Load stats...** and **Save stats as...** open in that folder whenever the open deck
+already has one, so a file you save by hand lands where auto-load looks for it. With no
+deck open, or before the folder exists, they start where every other dialog does — the
+[start folder](11-settings.md#start-folder) if one is set, otherwise the folder you last
+used for a statistics file. The suggested file name does not change.
+
 **Only the `statistics` folder is read.** A `.sta` file lying directly beside the deck,
 where versions before 1.2.0 wrote them, is not found: auto-load does not offer it, the
 deck shows as **not learned yet**, and the lifetime record starts again from zero in the

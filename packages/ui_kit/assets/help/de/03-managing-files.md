@@ -64,6 +64,14 @@ Linux oder eine deutsch- und eine englischsprachige Person teilen, für alle der
 ist. Das Programm legt ihn an, sobald es zum ersten Mal eine Statistikdatei dorthin
 schreibt; das Öffnen oder Durchsuchen einer Lern-Datei legt ihn nie an.
 
+**Statistik laden...** und **Statistik speichern unter...** öffnen sich in diesem
+Ordner, sobald die geöffnete Lern-Datei ihn schon hat; so landet eine von Hand
+gespeicherte Datei dort, wo das automatische Laden sucht. Ohne geöffnete Lern-Datei oder
+solange der Ordner noch fehlt, starten sie wie jeder andere Dialog — im
+[Startordner](11-settings.md#startordner), falls einer gesetzt ist, sonst im Ordner, den
+Sie zuletzt für eine Statistikdatei verwendet haben. Der vorgeschlagene Dateiname bleibt
+unverändert.
+
 **Gelesen wird nur der Ordner `statistics`.** Eine `.sta`-Datei, die direkt neben der
 Lern-Datei liegt, wo Versionen vor 1.2.0 sie geschrieben haben, wird nicht gefunden:
 Das automatische Laden bietet sie nicht an, die Lern-Datei erscheint als **noch nicht

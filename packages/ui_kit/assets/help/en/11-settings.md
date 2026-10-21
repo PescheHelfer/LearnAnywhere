@@ -218,9 +218,12 @@ the dialog still opens, at the remembered folder instead. A folder that has vani
 never blocks a dialog. The setting itself is kept, and the prompt says the folder cannot
 be reached, so a drive that comes back puts it in force again with nothing to redo.
 
-One dialog deliberately ignores the setting: **Edit ▸ Update other copies of this
+Two dialogs deliberately ignore the setting. **Edit ▸ Update other copies of this
 mask...** keeps starting at the open deck's own folder, which is a better place to scan
-for copies of that deck's mask than any fixed folder.
+for copies of that deck's mask than any fixed folder. **Load stats...** and **Save stats
+as...** start in the open deck's `statistics` folder once it exists, so a file saved by
+hand lands where auto-load finds it; with no deck open, or before that folder exists,
+they follow the start folder like every other dialog.
 
 ## Where settings live
 

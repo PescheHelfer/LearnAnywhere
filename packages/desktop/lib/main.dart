@@ -4487,13 +4487,32 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     return _filePicker.directoryExists(folder) ? folder : null;
   }
 
+  /// The loaded deck's statistics folder, or null with no deck or while the
+  /// folder does not exist yet (it is created by the first auto-save).
+  String? get _deckStatisticsFolder {
+    final String? deckPath = _document.deckPath;
+    if (deckPath == null) {
+      return null;
+    }
+    final String folder = DeckPaths.statisticsFolder(deckPath);
+    return _filePicker.directoryExists(folder) ? folder : null;
+  }
+
   /// Returns the initial directory for a dialog of the given [extension] type.
   ///
-  /// The start folder wins outright when one is set — that predictability is
+  /// A `.sta` dialog opens in the loaded deck's statistics folder when that
+  /// exists, so a file saved by hand lands where auto-load finds it. Otherwise
+  /// the start folder wins outright when one is set — that predictability is
   /// the point of the setting. Without one, the last directory saved for that
   /// type is used, falling back to the user's Documents folder (or home on
   /// Linux) on first run.
   String? _initialDirectoryFor(String extension) {
+    if (extension == 'sta') {
+      final String? statisticsFolder = _deckStatisticsFolder;
+      if (statisticsFolder != null) {
+        return statisticsFolder;
+      }
+    }
     final String? startFolder = _usableStartFolder;
     if (startFolder != null) {
       return startFolder;

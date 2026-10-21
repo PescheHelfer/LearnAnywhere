@@ -243,9 +243,13 @@ Ein verschwundener Ordner blockiert nie einen Dialog. Die Einstellung selbst ble
 erhalten, und der Dialog weist darauf hin, dass der Ordner nicht erreichbar ist; ein
 wieder verbundenes Laufwerk setzt sie also ohne Zutun erneut in Kraft.
 
-Ein Dialog übergeht die Einstellung absichtlich: **Edit ▸ Andere Kopien dieser Maske
+Zwei Dialoge übergehen die Einstellung absichtlich. **Edit ▸ Andere Kopien dieser Maske
 aktualisieren...** startet weiterhin im Ordner der geöffneten Lern-Datei, der zum
-Suchen nach Kopien dieser Maske besser geeignet ist als jeder feste Ordner.
+Suchen nach Kopien dieser Maske besser geeignet ist als jeder feste Ordner. **Statistik
+laden...** und **Statistik speichern unter...** starten im Ordner `statistics` der
+geöffneten Lern-Datei, sobald es ihn gibt; so landet eine von Hand gespeicherte Datei
+dort, wo das automatische Laden sucht. Ohne geöffnete Lern-Datei oder solange der Ordner
+fehlt, folgen sie dem Startordner wie jeder andere Dialog.
 
 ## Wo Einstellungen liegen
 
