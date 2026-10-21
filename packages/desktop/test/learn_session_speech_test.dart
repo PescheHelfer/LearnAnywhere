@@ -319,6 +319,83 @@ void main() {
       expect(engine.events, <String>['stop', 'speak:Geburtstag']);
     });
 
+    testWidgets('reads a swapped equal group in the order Correction shows it, '
+        'and Solution in the stored order', (WidgetTester tester) async {
+      FieldDefinition germanRow(int id) => FieldDefinition(
+        id: id,
+        name: 'German $id',
+        length: 20,
+        equalGroup: 1,
+        role1: FieldRole.answer,
+        role2: FieldRole.question,
+        language: 'de-DE',
+        speak: true,
+      );
+      final LearningDeck groupDeck = LearningDeck(
+        mask: LearningMask(
+          maskId: mask.maskId,
+          name: mask.name,
+          direction1Label: mask.direction1Label,
+          direction2Label: mask.direction2Label,
+          categories: <CategoryDefinition>[
+            CategoryDefinition(
+              id: 0,
+              name: 'Cat',
+              fields: <FieldDefinition>[
+                mask.categories.single.fields[0],
+                germanRow(1),
+                germanRow(3),
+              ],
+            ),
+          ],
+        ),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{
+              0: FieldValue.plain('anniversaire'),
+              1: FieldValue.plain('Geburtstag'),
+              3: FieldValue.plain('Wiegenfest'),
+            },
+          ),
+        ],
+      );
+      final _RecordingTtsEngine engine = _RecordingTtsEngine(
+        const <SpeechVoice>[frenchVoice, germanVoice],
+      );
+      await startSession(
+        tester,
+        engine,
+        speechSettings: automatic,
+        sessionDeck: groupDeck,
+        withInput: true,
+      );
+
+      await tester.enterText(find.byType(TextField).at(0), 'Wiegenfest');
+      await tester.enterText(find.byType(TextField).at(1), 'Geburtstag');
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+
+      // A swap opens on Correction, in the typed order, and is read so.
+      expect(find.text('Correction'), findsOneWidget);
+      expect(engine.spoken.map((SpeechUtterance u) => u.text), <String>[
+        'Wiegenfest',
+        'Geburtstag',
+      ]);
+
+      engine.spoken.clear();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f9);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f4);
+      await tester.pumpAndSettle();
+      expect(find.text('Solution'), findsOneWidget);
+      expect(engine.spoken.map((SpeechUtterance u) => u.text), <String>[
+        'Geburtstag',
+        'Wiegenfest',
+      ]);
+    });
+
     testWidgets('starts the reveal and every F4 with the lead-in that wakes '
         'the audio output', (WidgetTester tester) async {
       final _RecordingTtsEngine engine = _RecordingTtsEngine(

@@ -108,6 +108,12 @@ final class SpeechPlan {
 /// with a null [SpeechUtterance.voice]: an icon that explains why it is silent
 /// beats no icon, which the learner could not tell from a field the author
 /// never enabled.
+///
+/// [pairedFieldIdFor] is passed while the answer rows show an equal group in
+/// the typed order (the Correction view): it maps each answer row to the field
+/// whose stored value that row shows, as [AnswerEvaluation.pairedFieldIdFor]
+/// does. The row then says that value, as that field would say it, in the
+/// row's own place, so speech follows the rows on screen.
 SpeechPlan buildSpeechPlan({
   required LearningDeck deck,
   required LearningUnit unit,
@@ -117,12 +123,21 @@ SpeechPlan buildSpeechPlan({
   bool answerShown = false,
   SpeechSettings settings = const SpeechSettings(),
   String engineId = kSystemSpeechEngineId,
+  int Function(int answerFieldId)? pairedFieldIdFor,
 }) {
   final CategoryDefinition category = deck.categoryForUnit(unit);
   final List<SpeechUtterance> utterances = <SpeechUtterance>[];
   final Set<int> answerFieldIds = <int>{};
   for (final FieldDefinition field in category.fields) {
-    if (!field.speak || field.language == noSpokenLanguage) {
+    final bool isAnswer = field.roleFor(direction) == FieldRole.answer;
+    // The field whose stored value this row shows: itself, unless an equal
+    // group paired the row with another.
+    final FieldDefinition shown =
+        (isAnswer && pairedFieldIdFor != null
+            ? category.fieldById(pairedFieldIdFor(field.id))
+            : null) ??
+        field;
+    if (!shown.speak || shown.language == noSpokenLanguage) {
       continue;
     }
     if (!isFieldValueVisible(
@@ -133,12 +148,12 @@ SpeechPlan buildSpeechPlan({
     )) {
       continue;
     }
-    final FieldValue value = unit.valueForFieldId(field.id);
+    final FieldValue value = unit.valueForFieldId(shown.id);
     // An icon over an empty field would be an icon that does nothing.
     if (value.isBlank) {
       continue;
     }
-    if (field.roleFor(direction) == FieldRole.answer) {
+    if (isAnswer) {
       answerFieldIds.add(field.id);
     }
     utterances.add(
@@ -147,9 +162,9 @@ SpeechPlan buildSpeechPlan({
         // Verbatim, struck-through runs included: the author wrote it, and
         // the program does not edit what it was told to say.
         text: value.plainText,
-        language: field.language,
+        language: shown.language,
         voice: resolveSpeechVoice(
-          field.language,
+          shown.language,
           voices,
           settings: settings,
           engineId: engineId,

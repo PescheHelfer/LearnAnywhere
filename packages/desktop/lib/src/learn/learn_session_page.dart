@@ -548,24 +548,33 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   /// Built from the same call the view renders icons from, so an icon, `F4`
   /// and automatic speech can never disagree about what this unit offers. A
   /// host that cannot speak gets the silent plan.
+  ///
+  /// Only **Solution** shows an equal group in the stored order. Correction
+  /// and Your answer keep the learner's typed order, so there each row speaks
+  /// the stored value its entry was paired with.
   SpeechPlan _speechPlan() {
     final SessionItem? item = _currentItem;
     if (item == null || !widget.speechEngine.isAvailable) {
       return SpeechPlan.silent;
     }
+    final AnswerEvaluation? evaluation = _evaluation;
     return buildSpeechPlan(
       deck: widget.deck,
       unit: widget.deck.units[item.unitIndex - 1],
       direction: item.direction,
-      afterCheck: _evaluation != null,
+      afterCheck: evaluation != null,
       answerShown: _answerShownAsSupport,
       voices: _voices,
       settings: widget.speechSettings,
+      pairedFieldIdFor:
+          evaluation != null && _viewMode != _AnswerViewMode.solution
+          ? evaluation.pairedFieldIdFor
+          : null,
     );
   }
 
   /// Reads the answer aloud: every Speak-enabled field holding the answer
-  /// role in this direction, in mask field order.
+  /// role in this direction, row by row as the answer view shows them.
   ///
   /// The one set automatic speech plays at the reveal and `F4` plays on
   /// demand. It always stops first, so moving to a new unit cuts the previous

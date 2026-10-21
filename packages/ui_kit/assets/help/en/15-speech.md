@@ -107,6 +107,12 @@ them. The question is not read out — you have been looking at it all along —
 is a remark field, which is a remark in both directions. Remarks keep their own icon, so
 an example sentence is still one click away when you want it.
 
+Speech follows the rows you see. If you typed an
+[equal group](02-concepts.md#equal-group) in a different order, **Correction** and
+**Your answer** show it in your order, so it is read in your order: each row reads the
+solution value it shows. **Solution** shows the deck's order, and `F4` there reads that
+order.
+
 It is read whether you got it right, got it wrong, or were told it was *Almost*. A
 mistake is precisely the moment hearing the word said properly is worth most, so nothing
 is held back as a penalty. It works the same way at every

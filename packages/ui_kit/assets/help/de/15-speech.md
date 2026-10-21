@@ -116,6 +116,12 @@ Frage wird nicht vorgelesen — Sie sehen sie die ganze Zeit — und ein Bemerku
 ebenso wenig, denn es ist in beiden Richtungen eine Bemerkung. Bemerkungen behalten ihr
 eigenes Symbol, ein Beispielsatz ist also weiterhin einen Klick entfernt.
 
+Vorgelesen wird, was Sie sehen. Haben Sie eine
+[Gleichheitsgruppe](02-concepts.md#gleichheitsgruppe) in einer anderen Reihenfolge
+getippt, zeigen **Korrektur** und **Ihre Antwort** sie in Ihrer Reihenfolge, und so wird
+sie auch vorgelesen: Jede Zeile liest den Lösungswert, den sie zeigt. Die **Lösung**
+zeigt die Reihenfolge der Lern-Datei, und `F4` liest dort diese Reihenfolge.
+
 Vorgelesen wird, ob Sie richtig lagen, falsch lagen oder ein *Fast* bekommen haben.
 Gerade ein Fehler ist der Moment, in dem es am meisten bringt, das Wort richtig
 ausgesprochen zu hören; nichts wird als Strafe zurückgehalten. Es funktioniert auf jeder

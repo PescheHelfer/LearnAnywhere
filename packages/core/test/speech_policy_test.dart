@@ -453,6 +453,65 @@ void main() {
       );
     });
 
+    test('follows an equal group in the typed order when the rows show '
+        'their paired values', () {
+      FieldDefinition germanRow(int id) => FieldDefinition(
+        id: id,
+        name: 'German $id',
+        length: 40,
+        equalGroup: 1,
+        role1: FieldRole.answer,
+        role2: FieldRole.question,
+        language: 'de-DE',
+        speak: true,
+      );
+      final LearningDeck deck = deckOf(
+        <FieldDefinition>[frenchQuestion, germanRow(1), germanRow(3)],
+        <int, FieldValue>{
+          0: const FieldValue.plain('anniversaire'),
+          1: const FieldValue.plain('Geburtstag'),
+          3: const FieldValue.plain('Wiegenfest'),
+        },
+      );
+      final AnswerEvaluation swapped = evaluateAnswer(
+        deck: deck,
+        unit: deck.units.single,
+        direction: QueryDirection.direction1,
+        enteredValues: const <int, FieldValue>{
+          1: FieldValue.plain('Wiegenfest'),
+          3: FieldValue.plain('Geburtstag'),
+        },
+      );
+
+      final SpeechPlan paired = buildSpeechPlan(
+        deck: deck,
+        unit: deck.units.single,
+        direction: QueryDirection.direction1,
+        afterCheck: true,
+        voices: const <SpeechVoice>[french, german],
+        pairedFieldIdFor: swapped.pairedFieldIdFor,
+      );
+      expect(
+        paired.answerUtterances.map((SpeechUtterance u) => u.text),
+        <String>['Wiegenfest', 'Geburtstag'],
+      );
+      // Each row's icon says what that row shows.
+      expect(paired.utteranceFor(1)?.text, 'Wiegenfest');
+      expect(paired.utteranceFor(3)?.text, 'Geburtstag');
+
+      // Without the pairing, the stored order.
+      expect(
+        buildSpeechPlan(
+          deck: deck,
+          unit: deck.units.single,
+          direction: QueryDirection.direction1,
+          afterCheck: true,
+          voices: const <SpeechVoice>[french, german],
+        ).answerUtterances.map((SpeechUtterance u) => u.text),
+        <String>['Geburtstag', 'Wiegenfest'],
+      );
+    });
+
     test('is empty when no answer field may be spoken', () {
       const FieldDefinition mutedAnswer = FieldDefinition(
         id: 1,
