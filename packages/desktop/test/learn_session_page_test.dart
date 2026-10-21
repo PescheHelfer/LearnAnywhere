@@ -230,6 +230,121 @@ void main() {
   );
 
   testWidgets(
+    'Correction of a wrong answer marks a case difference in one row and a '
+    'typo in another',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      FieldDefinition field(int id, FieldRole role) => FieldDefinition(
+        id: id,
+        name: 'Field $id',
+        length: 40,
+        equalGroup: 0,
+        role1: role,
+        role2: role,
+      );
+      final LearningDeck caseDeck = LearningDeck(
+        mask: LearningMask(
+          maskId: 'm_new_correction-case',
+          name: 'Fixture',
+          direction1Label: 'A',
+          direction2Label: 'B',
+          categories: <CategoryDefinition>[
+            CategoryDefinition(
+              id: 0,
+              name: 'Cat',
+              fields: <FieldDefinition>[
+                field(0, FieldRole.question),
+                field(1, FieldRole.answer),
+                field(2, FieldRole.answer),
+              ],
+            ),
+          ],
+        ),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{
+              0: FieldValue.plain('Haus'),
+              1: FieldValue.plain('Maison'),
+              2: FieldValue.plain('chien'),
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: LearnSessionPage(
+              startSessionOnOpen: true,
+              deck: caseDeck,
+              statistics: const <UnitStats>[],
+              options: const DesktopQueryOptions(),
+              parameters: const SessionParameters(
+                mode: SessionMode.onceThrough,
+                directionSelection: DirectionSelection.direction1,
+                shuffle: false,
+              ),
+              onParametersChanged: (SessionParameters _) {},
+              onStatisticsChanged: (List<UnitStats> _) {},
+              onOpenEditor: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // "maison" only differs by case, which judging ignores by default;
+      // "chen" is missing its "i" and makes the answer Wrong.
+      await tester.enterText(find.byType(TextField).at(0), 'maison');
+      await tester.enterText(find.byType(TextField).at(1), 'chen');
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+
+      final Color correction = LearnAnywhereFormatColours.of(
+        Theme.of(tester.element(find.byType(LearnSessionPage))),
+      ).correction;
+
+      String markedText(InlineSpan root) {
+        final StringBuffer marked = StringBuffer();
+        root.visitChildren((InlineSpan span) {
+          if (span is TextSpan && span.style?.color == correction) {
+            marked.write(span.text ?? '');
+          }
+          return true;
+        });
+        return marked.toString();
+      }
+
+      // Each displayed answer value in row order, with the characters drawn
+      // in the correction colour.
+      List<(String, String)> markedRows() {
+        return <(String, String)>[
+          for (final RichText text in tester.widgetList<RichText>(
+            find.byType(RichText),
+          ))
+            if (const <String>{
+              'Maison',
+              'chien',
+            }.contains(text.text.toPlainText()))
+              (text.text.toPlainText(), markedText(text.text)),
+        ];
+      }
+
+      expect(find.text('Correction'), findsOneWidget);
+      expect(markedRows(), <(String, String)>[('Maison', 'M'), ('chien', 'i')]);
+    },
+  );
+
+  testWidgets(
     'Correction shows a swapped equal group in the typed order, marking only '
     'the typo, while Solution keeps the stored order',
     (WidgetTester tester) async {

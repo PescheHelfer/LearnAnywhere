@@ -350,21 +350,19 @@ List<RichTextRun> reconcileRuns({
 /// - **extra** characters the student typed are shown in place, at the position
 ///   they were typed, marked and struck through.
 ///
-/// Alignment runs on [normalizeForDiff] of both texts (the same case/accent
-/// folding used for scoring), so a difference the evaluator ignores — a case or
-/// accent mismatch when the corresponding option is off — aligns as a match and
-/// is never painted. A fully correct answer yields the expected runs unchanged.
+/// Alignment compares the exact stored text with the trimmed entry, so every
+/// character that differs is marked — including a case or accent difference
+/// the evaluator ignored — while the entry's leading and trailing spaces, which
+/// judging always trims, never are. A verbatim answer yields the expected runs
+/// unchanged.
 List<RichTextRun> buildDiffRuns({
   required List<RichTextRun> expectedRuns,
   required String enteredPlain,
-  TextMatchOptions options = const TextMatchOptions(),
 }) {
   final String expected = runsText(expectedRuns);
+  final String entered = enteredPlain.trim();
   final List<RunFormat> expectedFormats = formatsFromRuns(expectedRuns);
-  final List<DiffOp> ops = alignTexts(
-    normalizeForDiff(expected, options),
-    normalizeForDiff(enteredPlain, options),
-  );
+  final List<DiffOp> ops = alignTexts(expected, entered);
 
   final List<RichTextRun> result = <RichTextRun>[];
   for (final DiffOp op in ops) {
@@ -394,7 +392,7 @@ List<RichTextRun> buildDiffRuns({
         // the mistake is. Adjacent extras merge in [normalizeRuns].
         result.add(
           RichTextRun(
-            text: enteredPlain[op.enteredIndex],
+            text: entered[op.enteredIndex],
             correctionMark: true,
             strikethrough: true,
           ),
@@ -406,22 +404,19 @@ List<RichTextRun> buildDiffRuns({
 
 /// The runs the **Correction** view shows for one answer field.
 ///
-/// When [enteredPlain] has at least one mistake against [expectedRuns] under
-/// [options], the unit's own colour, highlight, underline and strikethrough are
-/// removed before the marks of [buildDiffRuns] are painted, so no stored
-/// formatting can hide a mark or pass for one (a custom underline looks exactly
-/// like a missing character). Bold and italic are kept. A field with nothing to
-/// correct — including a difference [options] ignore — returns [expectedRuns]
-/// unchanged.
+/// When [buildDiffRuns] marks at least one character of [enteredPlain] against
+/// [expectedRuns] — a case-only mark on a correct answer included — the unit's
+/// own colour, highlight, underline and strikethrough are removed before the
+/// marks are painted, so no stored formatting can hide a mark or pass for one
+/// (a custom underline looks exactly like a missing character). Bold and italic
+/// are kept. A field with no marks returns [expectedRuns] unchanged.
 List<RichTextRun> buildCorrectionRuns({
   required List<RichTextRun> expectedRuns,
   required String enteredPlain,
-  TextMatchOptions options = const TextMatchOptions(),
 }) {
   final List<RichTextRun> marked = buildDiffRuns(
     expectedRuns: expectedRuns,
     enteredPlain: enteredPlain,
-    options: options,
   );
   if (!marked.any((RichTextRun run) => run.correctionMark)) {
     return expectedRuns;
@@ -432,6 +427,5 @@ List<RichTextRun> buildCorrectionRuns({
         RichTextRun(text: run.text, bold: run.bold, italic: run.italic),
     ],
     enteredPlain: enteredPlain,
-    options: options,
   );
 }

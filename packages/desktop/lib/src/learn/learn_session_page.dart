@@ -2619,10 +2619,10 @@ final class _SessionView extends StatelessWidget {
                   Theme.of(ctx).brightness,
                 );
                 final FieldValue expectedValue = unit.valueForFieldId(field.id);
-                // On the correction view, an answer field shows the student's
-                // mistakes marked on the solution; a field with a mistake
-                // hides its own conflicting formatting, a correct one keeps
-                // it. The row keeps its label but shows the stored value its
+                // On the correction view, an answer field shows every
+                // difference from the solution marked on it, case and accents
+                // included; a field with a mark hides its own conflicting
+                // formatting, one without keeps it. The row keeps its label but shows the stored value its
                 // entry was paired with, so an equal group reads in the typed
                 // order. The plain solution view always shows the field's own
                 // value, in the stored order, with no diff marks.
@@ -2639,7 +2639,6 @@ final class _SessionView extends StatelessWidget {
                             ),
                           ),
                           enteredPlain: enteredAnswers[field.id] ?? '',
-                          options: options.evaluationOptions,
                         ),
                       )
                     : expectedValue;

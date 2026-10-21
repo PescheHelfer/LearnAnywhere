@@ -2372,22 +2372,30 @@ void main() {
       expect(formats[extra].correctionMark, isTrue);
     });
 
-    test(
-      'buildDiffRuns paints nothing for normalization-ignored differences',
-      () {
-        // Case- and accent-only differences with both options off must not be
-        // painted: the diff must equal the untouched expected runs.
-        const List<RichTextRun> expected = <RichTextRun>[
-          RichTextRun(text: 'Café', bold: true),
-        ];
-        final List<RichTextRun> runs = buildDiffRuns(
-          expectedRuns: expected,
-          enteredPlain: 'cafe',
-        );
-        expect(runs, expected);
-        expect(runs.every((RichTextRun r) => !r.correctionMark), isTrue);
-      },
-    );
+    test('buildDiffRuns marks case and accent differences', () {
+      // Judging ignores both with the options off, but Correction shows every
+      // difference from the stored text: the 'C' and the 'é' are marked.
+      final List<RichTextRun> runs = buildDiffRuns(
+        expectedRuns: <RichTextRun>[const RichTextRun(text: 'Café', bold: true)],
+        enteredPlain: 'cafe',
+      );
+      expect(runsText(runs), 'Café');
+      final List<RunFormat> formats = formatsFromRuns(runs);
+      expect(<bool>[
+        for (final RunFormat f in formats) f.correctionMark,
+      ], <bool>[true, false, false, true]);
+      expect(formats.every((RunFormat f) => f.bold), isTrue);
+    });
+
+    test('buildDiffRuns never marks leading or trailing spaces in the entry', () {
+      const List<RichTextRun> expected = <RichTextRun>[
+        RichTextRun(text: 'le lapin'),
+      ];
+      expect(
+        buildDiffRuns(expectedRuns: expected, enteredPlain: '  le lapin \t'),
+        expected,
+      );
+    });
 
     test('a fully correct answer diffs to the unchanged solution', () {
       const List<RichTextRun> expected = <RichTextRun>[
@@ -2468,30 +2476,36 @@ void main() {
       );
     });
 
-    test('buildCorrectionRuns keeps formatting when the only difference is '
-        'one the match options ignore', () {
-      const List<RichTextRun> expected = <RichTextRun>[
-        RichTextRun(
-          text: 'Café',
-          strikethrough: true,
-          highlight: HighlightToken.highlight1,
-        ),
-      ];
-      expect(
-        buildCorrectionRuns(expectedRuns: expected, enteredPlain: 'cafe'),
-        expected,
+    test('buildCorrectionRuns drops conflicting formatting in a field whose '
+        'only difference is case', () {
+      final List<RichTextRun> runs = buildCorrectionRuns(
+        expectedRuns: <RichTextRun>[
+          const RichTextRun(
+            text: 'le ',
+            bold: true,
+            color: TextColourToken.text1,
+            strikethrough: true,
+          ),
+          const RichTextRun(
+            text: 'lapin',
+            italic: true,
+            underline: true,
+            highlight: HighlightToken.highlight1,
+          ),
+        ],
+        enteredPlain: 'Le lapin',
       );
-      // The same entry is a mistake once case and accents count.
-      final List<RichTextRun> strict = buildCorrectionRuns(
-        expectedRuns: expected,
-        enteredPlain: 'cafe',
-        options: const TextMatchOptions(
-          caseSensitive: true,
-          accentSensitive: true,
-        ),
-      );
-      expect(strict.every((RichTextRun r) => r.highlight == null), isTrue);
-      expect(strict.any((RichTextRun r) => r.correctionMark), isTrue);
+      expect(runsText(runs), 'le lapin');
+      final List<RunFormat> formats = formatsFromRuns(runs);
+      expect(<bool>[
+        for (final RunFormat f in formats) f.correctionMark,
+      ], <bool>[true, false, false, false, false, false, false, false]);
+      expect(formats.every((RunFormat f) => f.color == null), isTrue);
+      expect(formats.every((RunFormat f) => f.highlight == null), isTrue);
+      expect(formats.every((RunFormat f) => !f.underline), isTrue);
+      expect(formats.every((RunFormat f) => !f.strikethrough), isTrue);
+      expect(formats[0].bold, isTrue);
+      expect(formats[3].italic, isTrue);
     });
   });
 

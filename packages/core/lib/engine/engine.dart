@@ -546,9 +546,8 @@ final class DiffOp {
 /// Aligns [expected] to [entered] via Levenshtein backtrace, in text order.
 ///
 /// [DiffOpKind.delete] marks a character present in [expected] but missing from
-/// [entered]; [DiffOpKind.insert] marks an extra character in [entered]. Pass
-/// the same normalization used for scoring (see [normalizeForDiff]) so that
-/// differences the evaluator ignores align as matches.
+/// [entered]; [DiffOpKind.insert] marks an extra character in [entered].
+/// Characters compare exactly, so a case or accent difference is a mismatch.
 List<DiffOp> alignTexts(String expected, String entered) {
   final int m = expected.length;
   final int n = entered.length;
@@ -594,34 +593,6 @@ List<DiffOp> alignTexts(String expected, String entered) {
     }
   }
   return List<DiffOp>.unmodifiable(ops.reversed);
-}
-
-/// Position-preserving normalization for diff alignment.
-///
-/// Applies the same case/accent folding as [normalizeText] but per code unit
-/// and never changing the string's length, so an index into the result maps
-/// back to the same index in [value] (used to split the original runs). A fold
-/// that would change a character's length (a rare expansion such as `ß`→`ss`)
-/// is skipped for that character, keeping the 1:1 mapping intact.
-String normalizeForDiff(String value, TextMatchOptions options) {
-  final StringBuffer buffer = StringBuffer();
-  for (var i = 0; i < value.length; i += 1) {
-    var ch = value[i];
-    if (!options.caseSensitive) {
-      final String lower = ch.toLowerCase();
-      if (lower.length == 1) {
-        ch = lower;
-      }
-    }
-    if (!options.accentSensitive) {
-      final String stripped = removeDiacritics(ch);
-      if (stripped.length == 1) {
-        ch = stripped;
-      }
-    }
-    buffer.write(ch);
-  }
-  return buffer.toString();
 }
 
 /// Applies a final attempt rating to direction statistics.

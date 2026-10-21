@@ -52,12 +52,18 @@ Unterschieden zeigen (**Korrektur**), die reine **Lösung**, oder **Ihre Antwort
 unmarkiert — mit `F9` während einer Sitzung durchschalten; siehe
 [Lernsitzungen](06-learning-sessions.md#whrend-einer-sitzung).
 
-In der **Korrektur** verliert ein Antwortfeld mit mindestens einem Fehler die eigene
-**Textfarbe**, **Markierung**, **Unterstrichen** und Durchstreichung der Einheit, damit
-sie kein hervorgehobenes Zeichen verdecken und nicht mit den Zeichen für einen
-fehlenden oder überzähligen Buchstaben verwechselt werden. **Fett** und **Kursiv**
-bleiben. Ein Feld ohne Fehler, die Frage- und Bemerkungsfelder sowie die Ansicht
-**Lösung** behalten ihre gesamte Formatierung.
+Die **Korrektur** hebt jedes Zeichen hervor, in dem Ihre Antwort von der gespeicherten
+Lösung abweicht, auch Groß-/Kleinschreibung und Akzente, die sie nicht falsch gemacht
+haben, weil **Groß-/Kleinschreibung beachten** oder **Akzente beachten** ausgeschaltet
+ist: „Le lapin“ gegen „le lapin“ hebt das L hervor. Führende und abschließende
+Leerzeichen werden nie hervorgehoben.
+
+In der **Korrektur** verliert ein Antwortfeld mit mindestens einem hervorgehobenen
+Zeichen die eigene **Textfarbe**, **Markierung**, **Unterstrichen** und
+Durchstreichung der Einheit, damit sie kein hervorgehobenes Zeichen verdecken und nicht
+mit den Zeichen für einen fehlenden oder überzähligen Buchstaben verwechselt werden.
+**Fett** und **Kursiv** bleiben. Ein Feld ohne hervorgehobene Zeichen, die Frage- und
+Bemerkungsfelder sowie die Ansicht **Lösung** behalten ihre gesamte Formatierung.
 
 ## Den Versuch bewerten
 

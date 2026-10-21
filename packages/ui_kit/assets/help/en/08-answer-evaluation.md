@@ -46,11 +46,16 @@ highlighted (**Correction**), the plain **Solution**, or **Your answer** unmarke
 between them with `F9` during a session; see
 [Learning sessions](06-learning-sessions.md#during-a-session).
 
-In **Correction**, an answer field with at least one mistake drops the unit's own
+**Correction** marks every character in which your answer differs from the stored
+solution, including case and accents that did not make it wrong because **Case
+sensitive** or **Accent sensitive** is off: "Le lapin" against "le lapin" marks the L.
+Leading and trailing spaces are never marked.
+
+In **Correction**, an answer field with at least one mark drops the unit's own
 **Text color**, **Highlight**, **Underline** and strikethrough, so they can't hide a
 marked character or be mistaken for the marks of a missing or extra one. **Bold** and
-**Italic** stay. A field with nothing to correct, the question and remark fields, and
-the **Solution** view keep all their formatting.
+**Italic** stay. A field with no marks, the question and remark fields, and the
+**Solution** view keep all their formatting.
 
 ## Rating the attempt
 
