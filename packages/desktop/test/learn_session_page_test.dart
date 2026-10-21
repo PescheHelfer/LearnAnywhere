@@ -230,6 +230,126 @@ void main() {
   );
 
   testWidgets(
+    'Correction shows a swapped equal group in the typed order, marking only '
+    'the typo, while Solution keeps the stored order',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      FieldDefinition field(int id, FieldRole role, int equalGroup) =>
+          FieldDefinition(
+            id: id,
+            name: 'Field $id',
+            length: 40,
+            equalGroup: equalGroup,
+            role1: role,
+            role2: role,
+          );
+      final LearningDeck groupDeck = LearningDeck(
+        mask: LearningMask(
+          maskId: 'm_new_equal-group-correction',
+          name: 'Fixture',
+          direction1Label: 'A',
+          direction2Label: 'B',
+          categories: <CategoryDefinition>[
+            CategoryDefinition(
+              id: 0,
+              name: 'Cat',
+              fields: <FieldDefinition>[
+                field(0, FieldRole.question, 0),
+                field(1, FieldRole.answer, 1),
+                field(2, FieldRole.answer, 1),
+              ],
+            ),
+          ],
+        ),
+        units: const <LearningUnit>[
+          LearningUnit(
+            categoryId: 0,
+            fields: <int, FieldValue>{
+              0: FieldValue.plain('Haus'),
+              1: FieldValue.plain('maison'),
+              2: FieldValue.plain('domicile'),
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: LearnSessionPage(
+              startSessionOnOpen: true,
+              deck: groupDeck,
+              statistics: const <UnitStats>[],
+              options: const DesktopQueryOptions(),
+              parameters: const SessionParameters(
+                mode: SessionMode.onceThrough,
+                directionSelection: DirectionSelection.direction1,
+                shuffle: false,
+              ),
+              onParametersChanged: (SessionParameters _) {},
+              onStatisticsChanged: (List<UnitStats> _) {},
+              onOpenEditor: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Swapped, with the "o" of "maison" left out.
+      await tester.enterText(find.byType(TextField).at(0), 'domicile');
+      await tester.enterText(find.byType(TextField).at(1), 'maisn');
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+
+      final Color correction = LearnAnywhereFormatColours.of(
+        Theme.of(tester.element(find.byType(LearnSessionPage))),
+      ).correction;
+
+      // Each displayed answer value in row order, and whether it carries a
+      // correction mark.
+      List<(String, bool)> answerRows() {
+        return <(String, bool)>[
+          for (final RichText text in tester.widgetList<RichText>(
+            find.byType(RichText),
+          ))
+            if (const <String>{
+              'maison',
+              'domicile',
+            }.contains(text.text.toPlainText()))
+              (
+                text.text.toPlainText(),
+                _anySpan(
+                  text.text,
+                  (TextStyle style) => style.color == correction,
+                ),
+              ),
+        ];
+      }
+
+      expect(find.text('Correction'), findsOneWidget);
+      expect(answerRows(), <(String, bool)>[
+        ('domicile', false),
+        ('maison', true),
+      ]);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f9);
+      await tester.pumpAndSettle();
+      expect(answerRows(), <(String, bool)>[
+        ('maison', false),
+        ('domicile', false),
+      ]);
+    },
+  );
+
+  testWidgets(
     'setup screen shows the deck size, expands a cleared range field to its '
     'own end, and pins the range with "Use all units"',
     (WidgetTester tester) async {

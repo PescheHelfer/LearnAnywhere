@@ -10,17 +10,23 @@ import '../models/models.dart';
 /// Field-level answer evaluation result.
 final class FieldEvaluation {
   /// Creates a field-level evaluation result.
+  ///
+  /// [pairedFieldId] defaults to [fieldId]: a field is judged against its own
+  /// stored value unless an equal group paired it with another.
   const FieldEvaluation({
     required this.fieldName,
     required this.expected,
     required this.entered,
     required this.correct,
-  });
+    this.fieldId,
+    int? pairedFieldId,
+    this.verbatim = false,
+  }) : pairedFieldId = pairedFieldId ?? fieldId;
 
   /// Field name evaluated.
   final String fieldName;
 
-  /// Expected normalized value.
+  /// Expected normalized value: the paired solution field's stored value.
   final String expected;
 
   /// Entered normalized value.
@@ -28,6 +34,17 @@ final class FieldEvaluation {
 
   /// Whether this field or pooled group member matched.
   final bool correct;
+
+  /// Id of the answer field this entry was typed into.
+  final int? fieldId;
+
+  /// Id of the **paired solution field**, whose stored value [expected] was
+  /// taken from. Differs from [fieldId] only inside an equal group.
+  final int? pairedFieldId;
+
+  /// Whether the trimmed entry equals the paired stored value's trimmed text
+  /// character for character, case and accents included.
+  final bool verbatim;
 }
 
 /// Answer evaluation result for one unit.
@@ -40,6 +57,26 @@ final class AnswerEvaluation {
 
   /// Field-level results for UI feedback.
   final List<FieldEvaluation> fields;
+
+  /// Whether the answer is the stored solution character for character, in
+  /// the stored order: every field [FieldEvaluation.verbatim] and paired with
+  /// itself. Only leading and trailing spaces are ignored.
+  bool get verbatim => fields.every(
+    (FieldEvaluation field) =>
+        field.verbatim && field.pairedFieldId == field.fieldId,
+  );
+
+  /// The id of the solution field whose stored value the entry typed into
+  /// answer field [fieldId] was judged against; [fieldId] itself when it was
+  /// not evaluated.
+  int pairedFieldIdFor(int fieldId) {
+    for (final FieldEvaluation field in fields) {
+      if (field.fieldId == fieldId) {
+        return field.pairedFieldId ?? fieldId;
+      }
+    }
+    return fieldId;
+  }
 }
 
 /// Rating choices after a revealed answer.
@@ -426,7 +463,8 @@ double normalizedSimilarity(String a, String b) {
 ///
 /// The already-normalized per-field expected and entered values are joined (so
 /// a single-field answer is compared directly) and run through
-/// [normalizedSimilarity].
+/// [normalizedSimilarity]. An equal-group row's expected value is its paired
+/// solution field's, so swapped rows never lower the similarity.
 double answerSimilarity(AnswerEvaluation evaluation) {
   final String expected = evaluation.fields
       .map((FieldEvaluation f) => f.expected)
@@ -1619,14 +1657,12 @@ FieldEvaluation _evaluatePositionalField(
   Map<int, FieldValue> enteredValues,
   AnswerEvaluationOptions options,
 ) {
-  final String expected = normalizeText(
-    unit.valueForFieldId(field.id).plainText,
-    options,
-  );
-  final String entered = normalizeText(
-    (enteredValues[field.id] ?? FieldValue.empty).plainText,
-    options,
-  );
+  final String storedText = unit.valueForFieldId(field.id).plainText.trim();
+  final String enteredText = (enteredValues[field.id] ?? FieldValue.empty)
+      .plainText
+      .trim();
+  final String expected = normalizeText(storedText, options);
+  final String entered = normalizeText(enteredText, options);
   final bool checked = options.completeInputRequired || entered.isNotEmpty;
   final bool correct = checked ? expected == entered : true;
   return FieldEvaluation(
@@ -1634,6 +1670,8 @@ FieldEvaluation _evaluatePositionalField(
     expected: expected,
     entered: entered,
     correct: correct,
+    fieldId: field.id,
+    verbatim: enteredText == storedText,
   );
 }
 
@@ -1643,48 +1681,136 @@ List<FieldEvaluation> _evaluateEqualGroup(
   Map<int, FieldValue> enteredValues,
   AnswerEvaluationOptions options,
 ) {
-  final List<_GroupedAnswer> expectedAnswers = <_GroupedAnswer>[];
-  final List<_GroupedAnswer> enteredAnswers = <_GroupedAnswer>[];
-  for (final FieldDefinition field in fields) {
-    final String expected = normalizeText(
-      unit.valueForFieldId(field.id).plainText,
-      options,
-    );
-    final String entered = normalizeText(
-      (enteredValues[field.id] ?? FieldValue.empty).plainText,
-      options,
-    );
-    if (expected.isNotEmpty) {
-      expectedAnswers.add(_GroupedAnswer(expected));
-    }
-    if (options.completeInputRequired || entered.isNotEmpty) {
-      if (entered.isNotEmpty) {
-        enteredAnswers.add(_GroupedAnswer(entered));
-      }
-    }
-  }
+  final List<String> storedTexts = <String>[
+    for (final FieldDefinition field in fields)
+      unit.valueForFieldId(field.id).plainText.trim(),
+  ];
+  final List<String> enteredTexts = <String>[
+    for (final FieldDefinition field in fields)
+      (enteredValues[field.id] ?? FieldValue.empty).plainText.trim(),
+  ];
+  final List<String> expected = <String>[
+    for (final String text in storedTexts) normalizeText(text, options),
+  ];
+  final List<String> entered = <String>[
+    for (final String text in enteredTexts) normalizeText(text, options),
+  ];
 
+  final List<_GroupedAnswer> expectedAnswers = <_GroupedAnswer>[
+    for (final String value in expected)
+      if (value.isNotEmpty) _GroupedAnswer(value),
+  ];
+  final List<_GroupedAnswer> enteredAnswers = <_GroupedAnswer>[
+    for (final String value in entered)
+      if (value.isNotEmpty) _GroupedAnswer(value),
+  ];
   final Map<String, int> expectedCounts = _valueCounts(expectedAnswers);
   final Map<String, int> enteredCounts = _valueCounts(enteredAnswers);
   final bool groupCorrect = options.completeInputRequired
       ? _sameCounts(expectedCounts, enteredCounts)
       : _containsCounts(expectedCounts, enteredCounts);
-  return fields
-      .map(
-        (FieldDefinition field) => FieldEvaluation(
-          fieldName: field.name,
-          expected: normalizeText(
-            unit.valueForFieldId(field.id).plainText,
-            options,
-          ),
-          entered: normalizeText(
-            (enteredValues[field.id] ?? FieldValue.empty).plainText,
-            options,
-          ),
-          correct: groupCorrect,
-        ),
-      )
-      .toList(growable: false);
+
+  final List<int> pairing = _pairEqualGroup(
+    storedTexts: storedTexts,
+    enteredTexts: enteredTexts,
+    expected: expected,
+    entered: entered,
+  );
+  return <FieldEvaluation>[
+    for (var row = 0; row < fields.length; row += 1)
+      FieldEvaluation(
+        fieldName: fields[row].name,
+        expected: expected[pairing[row]],
+        entered: entered[row],
+        correct: groupCorrect,
+        fieldId: fields[row].id,
+        pairedFieldId: fields[pairing[row]].id,
+        verbatim: enteredTexts[row] == storedTexts[pairing[row]],
+      ),
+  ];
+}
+
+/// Assigns each row of an equal group one solution field, one to one.
+///
+/// All lists are indexed by the group's field order; [storedTexts] and
+/// [enteredTexts] are trimmed, [expected] and [entered] also normalized.
+/// Returns, per row, the index of its paired solution field. In order of
+/// preference:
+/// 1. a row keeps its own field when its entry matches it exactly;
+/// 2. otherwise it takes a field whose stored text it matches exactly;
+/// 3. then one it matches after normalization, its own field first;
+/// 4. the remaining non-empty rows take the remaining fields by smallest
+///    edit distance of the normalized texts, ties broken by stored order;
+/// 5. empty rows take what is left, preferring their own field.
+///
+/// Groups are a handful of fields, so stage 4 is a plain greedy scan.
+List<int> _pairEqualGroup({
+  required List<String> storedTexts,
+  required List<String> enteredTexts,
+  required List<String> expected,
+  required List<String> entered,
+}) {
+  final int count = storedTexts.length;
+  final List<int?> pairing = List<int?>.filled(count, null);
+  final List<bool> taken = List<bool>.filled(count, false);
+  void pair(int row, int field) {
+    pairing[row] = field;
+    taken[field] = true;
+  }
+
+  for (var row = 0; row < count; row += 1) {
+    if (enteredTexts[row] == storedTexts[row]) {
+      pair(row, row);
+    }
+  }
+
+  bool pending(int row) => pairing[row] == null && entered[row].isNotEmpty;
+  // Its own field first, so a row matching duplicates never crosses needlessly.
+  void pairEqualTexts(List<String> rowTexts, List<String> fieldTexts) {
+    for (var row = 0; row < count; row += 1) {
+      if (!pending(row)) continue;
+      for (final int field in <int>[row, for (var f = 0; f < count; f++) f]) {
+        if (!taken[field] && rowTexts[row] == fieldTexts[field]) {
+          pair(row, field);
+          break;
+        }
+      }
+    }
+  }
+
+  pairEqualTexts(enteredTexts, storedTexts);
+  pairEqualTexts(entered, expected);
+
+  while (true) {
+    int? bestRow;
+    int? bestField;
+    var bestDistance = 0;
+    for (var field = 0; field < count; field += 1) {
+      if (taken[field]) continue;
+      for (var row = 0; row < count; row += 1) {
+        if (!pending(row)) continue;
+        final int distance = levenshteinDistance(entered[row], expected[field]);
+        if (bestRow == null || distance < bestDistance) {
+          bestRow = row;
+          bestField = field;
+          bestDistance = distance;
+        }
+      }
+    }
+    if (bestRow == null) break;
+    pair(bestRow, bestField!);
+  }
+
+  for (var row = 0; row < count; row += 1) {
+    if (pairing[row] == null && !taken[row]) {
+      pair(row, row);
+    }
+  }
+  for (var row = 0; row < count; row += 1) {
+    if (pairing[row] != null) continue;
+    pair(row, taken.indexOf(false));
+  }
+  return <int>[for (final int? field in pairing) field!];
 }
 
 Map<String, int> _valueCounts(List<_GroupedAnswer> answers) {

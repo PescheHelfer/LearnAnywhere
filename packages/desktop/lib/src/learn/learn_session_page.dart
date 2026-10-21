@@ -2622,8 +2622,10 @@ final class _SessionView extends StatelessWidget {
                 // On the correction view, an answer field shows the student's
                 // mistakes marked on the solution; a field with a mistake
                 // hides its own conflicting formatting, a correct one keeps
-                // it. The plain solution view always shows the expected value
-                // with no diff marks.
+                // it. The row keeps its label but shows the stored value its
+                // entry was paired with, so an equal group reads in the typed
+                // order. The plain solution view always shows the field's own
+                // value, in the stored order, with no diff marks.
                 displayValue =
                     (viewMode == _AnswerViewMode.correction &&
                         role == FieldRole.answer &&
@@ -2631,7 +2633,11 @@ final class _SessionView extends StatelessWidget {
                         parameters.withInput)
                     ? FieldValue.rich(
                         buildCorrectionRuns(
-                          expectedRuns: _runsOf(expectedValue),
+                          expectedRuns: _runsOf(
+                            unit.valueForFieldId(
+                              evaluation!.pairedFieldIdFor(field.id),
+                            ),
+                          ),
                           enteredPlain: enteredAnswers[field.id] ?? '',
                           options: options.evaluationOptions,
                         ),

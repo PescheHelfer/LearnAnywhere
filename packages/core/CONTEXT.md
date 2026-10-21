@@ -85,6 +85,11 @@ and no statistics folder exists.
 **Unit** — one entry in a deck: the fields that make a question and an answer, in either
 direction. Statistics are recorded per unit and per direction.
 
+**Equal group** — answer fields whose values may be given in any order, each given value
+judged against the stored value it best matches. The stored value a given value was
+judged against is its **paired** value. An equal group changes how an answer is judged,
+never how the deck stores it: the solution keeps its own order.
+
 **Attempt** — one rated answer to one unit in one direction. Attempts are what move a
 record's counters; nothing else does.
 

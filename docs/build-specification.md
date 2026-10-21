@@ -282,6 +282,17 @@ For a unit + active direction:
    - Answer fields sharing the **same non-zero** `equalGroup` form a pool; the **multiset** of
      entered values across that pool must equal the **multiset** of expected values. Order does
      not matter — the user may place either valid answer on either line. **Do not randomize.**
+   - Within a pool, each entered row is also **paired** one to one with the solution field it
+     best matches, deterministically: a row keeps its own field when it matches it exactly;
+     otherwise it takes a field it matches exactly, then one it matches after normalization
+     (its own field first);
+     the remaining non-empty rows take the remaining fields by smallest edit distance of the
+     normalized texts (ties by stored order); empty rows take what is left, their own field
+     first. Pairing never changes correctness. It decides what each row is shown against in
+     Correction and what the Almost similarity compares, so a swap never lowers it.
+   - Each field's result records its paired solution field and whether its trimmed entry is
+     **verbatim** — character for character the paired stored text, trimmed. An answer is
+     verbatim when every field is, each paired with itself.
 4. **Complete-input-required** option. The requirement is keyed to the **solution**, not to the
    raw field count — an answer field that is **empty in the deck's solution must also be left
    empty** by the user (entering content there is wrong), and an answer field that is **non-empty

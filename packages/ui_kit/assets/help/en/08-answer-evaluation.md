@@ -23,8 +23,15 @@ you and those characters count as typed, so a scaffolded field never arrives emp
 whichever way this option is set.
 
 Fields sharing a non-zero [equal group](02-concepts.md#equal-group) are checked
-together: any field in the group matching the corresponding solution field is accepted
-as an answer for it.
+together, so you may type their values in any order. Each value you type is compared
+with the solution value it matches best, and that is also the value the **Almost**
+similarity compares it with: swapping two rows never turns a near miss into a wrong
+answer.
+
+In **Correction**, an equal group appears in the order you typed it. Every row keeps its
+own label and shows the solution value its entry was matched with, so after a swap with
+one typo only the typo is marked. The **Solution** view always shows the deck's own
+order.
 
 ## The three outcomes
 

@@ -27,9 +27,16 @@ Sie aus, und diese Zeichen gelten als getippt — ein Gerüstfeld kommt also nie
 unabhängig davon, wie diese Option eingestellt ist.
 
 Felder mit derselben von Null verschiedenen
-[Gleichheitsgruppe](02-concepts.md#gleichheitsgruppe) werden zusammen geprüft: jedes
-Feld der Gruppe, das dem entsprechenden Lösungsfeld entspricht, wird als Antwort dafür
-akzeptiert.
+[Gleichheitsgruppe](02-concepts.md#gleichheitsgruppe) werden zusammen geprüft, Sie
+dürfen ihre Werte also in beliebiger Reihenfolge tippen. Jeder getippte Wert wird mit
+dem Lösungswert verglichen, dem er am besten entspricht, und mit genau diesem Wert
+vergleicht ihn auch die Ähnlichkeit für **Fast**: Das Vertauschen zweier Zeilen macht
+aus einem Beinahe-Treffer nie eine falsche Antwort.
+
+In der **Korrektur** erscheint eine Gleichheitsgruppe in der Reihenfolge, in der Sie sie
+getippt haben. Jede Zeile behält ihre Beschriftung und zeigt den Lösungswert, dem ihre
+Eingabe zugeordnet wurde — nach einem Vertauschen mit einem Tippfehler ist also nur der
+Tippfehler hervorgehoben. Die Ansicht **Lösung** zeigt immer die Reihenfolge der Lern-Datei.
 
 ## Die drei Ergebnisse
 

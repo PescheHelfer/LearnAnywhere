@@ -886,6 +886,183 @@ void main() {
     });
   });
 
+  group('equal-group pairing', () {
+    // FR1 (id 1) and FR2 (id 2) share equal group 1. Unit 1 stores
+    // FR1 "le lapin" and FR2 "un lapin".
+    AnswerEvaluation evaluate(
+      Map<int, String> entered, {
+      LearningUnit? unit,
+      AnswerEvaluationOptions options = const AnswerEvaluationOptions(),
+    }) {
+      final LearningDeck deck = sampleDeck();
+      return evaluateAnswer(
+        deck: deck,
+        unit: unit ?? deck.units.first,
+        direction: QueryDirection.direction1,
+        enteredValues: <int, FieldValue>{
+          for (final MapEntry<int, String> entry in entered.entries)
+            entry.key: FieldValue.plain(entry.value),
+        },
+        options: options,
+      );
+    }
+
+    FieldEvaluation row(AnswerEvaluation evaluation, int fieldId) {
+      return evaluation.fields.singleWhere(
+        (FieldEvaluation field) => field.fieldId == fieldId,
+      );
+    }
+
+    test('an exact answer pairs with itself and is verbatim', () {
+      final AnswerEvaluation result = evaluate(<int, String>{
+        1: 'le lapin',
+        2: ' un lapin ',
+      });
+
+      expect(result.correct, isTrue);
+      expect(result.pairedFieldIdFor(1), 1);
+      expect(result.pairedFieldIdFor(2), 2);
+      expect(row(result, 2).verbatim, isTrue);
+      expect(result.verbatim, isTrue);
+    });
+
+    test('a swapped answer is correct, crosses its pairing and is not '
+        'verbatim', () {
+      final AnswerEvaluation result = evaluate(<int, String>{
+        1: 'un lapin',
+        2: 'le lapin',
+      });
+
+      expect(result.correct, isTrue);
+      expect(result.pairedFieldIdFor(1), 2);
+      expect(result.pairedFieldIdFor(2), 1);
+      // Each row is character for character its paired value; only the
+      // order differs from the stored one.
+      expect(row(result, 1).verbatim, isTrue);
+      expect(row(result, 2).verbatim, isTrue);
+      expect(result.verbatim, isFalse);
+    });
+
+    test('a case-only answer is correct, pairs with itself and is not '
+        'verbatim', () {
+      final AnswerEvaluation result = evaluate(<int, String>{
+        1: 'Le lapin',
+        2: 'un lapin',
+      });
+
+      expect(result.correct, isTrue);
+      expect(result.pairedFieldIdFor(1), 1);
+      expect(row(result, 1).verbatim, isFalse);
+      expect(result.verbatim, isFalse);
+    });
+
+    test('swapped with one typo, the typo row pairs with its nearest '
+        'value', () {
+      final AnswerEvaluation result = evaluate(<int, String>{
+        1: 'un lapin',
+        2: 'le lapn',
+      });
+
+      expect(result.correct, isFalse);
+      expect(result.pairedFieldIdFor(1), 2);
+      expect(result.pairedFieldIdFor(2), 1);
+      expect(row(result, 2).expected, 'le lapin');
+      expect(row(result, 2).verbatim, isFalse);
+    });
+
+    test('swapped with a typo in each row, each row pairs with its nearest '
+        'value', () {
+      final AnswerEvaluation result = evaluate(<int, String>{
+        1: 'un lapn',
+        2: 'le lapi',
+      });
+
+      expect(result.pairedFieldIdFor(1), 2);
+      expect(result.pairedFieldIdFor(2), 1);
+    });
+
+    test('duplicate values pair one to one', () {
+      const LearningUnit twice = LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('Kaninchen'),
+          1: FieldValue.plain('lapin'),
+          2: FieldValue.plain('lapin'),
+        },
+      );
+      // Neither row matches exactly, both match either value after
+      // normalization: each takes its own stored copy.
+      final AnswerEvaluation result = evaluate(<int, String>{
+        1: 'LAPIN',
+        2: 'Lapin',
+      }, unit: twice);
+
+      expect(result.correct, isTrue);
+      expect(result.pairedFieldIdFor(1), 1);
+      expect(result.pairedFieldIdFor(2), 2);
+    });
+
+    test('a row matching several values after normalization keeps its own '
+        'field', () {
+      const LearningUnit twice = LearningUnit(
+        categoryId: 1,
+        fields: <int, FieldValue>{
+          0: FieldValue.plain('Kaninchen'),
+          1: FieldValue.plain('lapin'),
+          2: FieldValue.plain('Lapin'),
+        },
+      );
+      final AnswerEvaluation result = evaluate(<int, String>{
+        1: 'lapn',
+        2: 'LAPIN',
+      }, unit: twice);
+
+      expect(result.pairedFieldIdFor(2), 2);
+      expect(result.pairedFieldIdFor(1), 1);
+    });
+
+    test('an empty row with Complete input required off takes the leftover '
+        'value', () {
+      final AnswerEvaluation result = evaluate(
+        <int, String>{1: '', 2: 'le lapin'},
+        options: const AnswerEvaluationOptions(completeInputRequired: false),
+      );
+
+      expect(result.correct, isTrue);
+      expect(result.pairedFieldIdFor(2), 1);
+      expect(result.pairedFieldIdFor(1), 2);
+      expect(row(result, 1).expected, 'un lapin');
+      expect(result.verbatim, isFalse);
+    });
+
+    test('a swapped near miss is classified Almost', () {
+      final AnswerEvaluation result = evaluate(<int, String>{
+        1: 'un lapin',
+        2: 'le lapn',
+      });
+
+      expect(
+        classifyOutcome(result, similarityEnabled: true),
+        AnswerOutcome.almost,
+      );
+    });
+
+    test('an ungrouped field pairs with itself', () {
+      final LearningDeck deck = sampleDeck();
+      final AnswerEvaluation result = evaluateAnswer(
+        deck: deck,
+        unit: deck.units.first,
+        direction: QueryDirection.direction2,
+        enteredValues: const <int, FieldValue>{
+          0: FieldValue.plain('ein Kaninchen'),
+        },
+      );
+
+      expect(result.pairedFieldIdFor(0), 0);
+      expect(result.verbatim, isTrue);
+    });
+  });
+
   group('rating and super-query', () {
     test('records correct, wrong, no-count, and wrong ceiling rules', () {
       expect(
