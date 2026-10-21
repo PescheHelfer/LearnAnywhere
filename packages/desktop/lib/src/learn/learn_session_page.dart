@@ -184,7 +184,7 @@ enum _AnswerViewMode {
 
 /// The mode the toggle button switches to next (and therefore the label it
 /// shows). Cycles correction -> solution -> yourAnswer -> correction, except
-/// that a fully correct answer has nothing to correct, so [skipCorrection]
+/// that a verbatim correct answer has nothing to correct, so [skipCorrection]
 /// makes yourAnswer wrap back to solution instead.
 _AnswerViewMode _nextAnswerViewMode(
   _AnswerViewMode current, {
@@ -406,9 +406,8 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   bool _enterAwaitingRelease = false;
 
   // Which post-check toggle panel is shown. Always reset when a unit is
-  // evaluated (see _reveal): starts at correction unless the answer was
-  // fully correct, in which case there is nothing to correct and it starts
-  // at solution instead.
+  // evaluated (see _reveal): starts at correction unless [_skipCorrection],
+  // in which case it starts at solution instead.
   _AnswerViewMode _viewMode = _AnswerViewMode.correction;
 
   late SessionParameters _draftParameters;
@@ -776,7 +775,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
                   setState(
                     () => _viewMode = _nextAnswerViewMode(
                       _viewMode,
-                      skipCorrection: _evaluation?.correct ?? false,
+                      skipCorrection: _skipCorrection,
                     ),
                   );
                   _rootFocusNode.requestFocus();
@@ -947,7 +946,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         setState(
           () => _viewMode = _nextAnswerViewMode(
             _viewMode,
-            skipCorrection: _evaluation?.correct ?? false,
+            skipCorrection: _skipCorrection,
           ),
         );
         _rootFocusNode.requestFocus();
@@ -1207,6 +1206,16 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       unitStats.statsFor(item.direction),
       entryLevelCap: widget.entryLevelCap,
     );
+  }
+
+  /// Whether the revealed answer is correct and typed exactly as stored, in
+  /// the stored order, so Correction has nothing to show: the reveal opens on
+  /// Solution and F9 skips Correction. Any other answer opens on Correction,
+  /// a correct one with swapped equal-group rows or a case or accent
+  /// difference included.
+  bool get _skipCorrection {
+    final AnswerEvaluation? evaluation = _evaluation;
+    return evaluation != null && evaluation.correct && evaluation.verbatim;
   }
 
   /// The active support level (`0..3`) for the current Level-Learning unit.
@@ -1525,7 +1534,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
       _selectedRating = defaultRating;
       // Always restart the toggle cycle for the newly revealed unit; skip the
       // correction state when there's nothing to correct.
-      _viewMode = _evaluation!.correct
+      _viewMode = _skipCorrection
           ? _AnswerViewMode.solution
           : _AnswerViewMode.correction;
     });

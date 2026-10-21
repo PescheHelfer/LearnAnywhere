@@ -67,7 +67,10 @@ group, then **Difficult**. A group never splits across lines.
 
 `F10` **Reveals** the card without you answering, if you would rather see it than guess.
 `F9` cycles what the answer area shows: **Correction** (your answer with differences
-highlighted against the solution) → **Solution** → **Your answer**.
+highlighted against the solution) → **Solution** → **Your answer** → **Correction**. A
+correct answer typed exactly as stored opens on **Solution** instead, and its cycle
+leaves **Correction** out: **Solution** → **Your answer** → **Solution**. See
+[How answers are judged](08-answer-evaluation.md#the-three-outcomes).
 
 A small speaker icon beside a field reads that field aloud. It appears wherever the mask
 allows the field to be spoken and its value is on screen — so the prompt can be heard

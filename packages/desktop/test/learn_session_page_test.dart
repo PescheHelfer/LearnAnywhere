@@ -229,6 +229,207 @@ void main() {
     },
   );
 
+  group('a correct answer opens on Solution only when it is verbatim', () {
+    // One unit whose two answer fields share an equal group.
+    final LearningDeck groupDeck = LearningDeck(
+      mask: LearningMask(
+        maskId: 'm_new_verbatim-opens-solution',
+        name: 'Fixture',
+        direction1Label: 'A',
+        direction2Label: 'B',
+        categories: <CategoryDefinition>[
+          CategoryDefinition(
+            id: 0,
+            name: 'Cat',
+            fields: <FieldDefinition>[
+              for (final (int id, FieldRole role, int group)
+                  in const <(int, FieldRole, int)>[
+                    (0, FieldRole.question, 0),
+                    (1, FieldRole.answer, 1),
+                    (2, FieldRole.answer, 1),
+                  ])
+                FieldDefinition(
+                  id: id,
+                  name: 'Field $id',
+                  length: 40,
+                  equalGroup: group,
+                  role1: role,
+                  role2: role,
+                ),
+            ],
+          ),
+        ],
+      ),
+      units: const <LearningUnit>[
+        LearningUnit(
+          categoryId: 0,
+          fields: <int, FieldValue>{
+            0: FieldValue.plain('Haus'),
+            1: FieldValue.plain('maison'),
+            2: FieldValue.plain('domicile'),
+          },
+        ),
+      ],
+    );
+
+    /// Types [first] and [second] into the two answer fields and reveals.
+    Future<void> reveal(
+      WidgetTester tester,
+      String first,
+      String second,
+    ) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates:
+              LearnAnywhereLocalizations.localizationsDelegates,
+          supportedLocales: LearnAnywhereLocalizations.supportedLocales,
+          home: Scaffold(
+            body: LearnSessionPage(
+              startSessionOnOpen: true,
+              deck: groupDeck,
+              statistics: const <UnitStats>[],
+              options: const DesktopQueryOptions(),
+              parameters: const SessionParameters(
+                mode: SessionMode.onceThrough,
+                directionSelection: DirectionSelection.direction1,
+                shuffle: false,
+              ),
+              onParametersChanged: (SessionParameters _) {},
+              onStatisticsChanged: (List<UnitStats> _) {},
+              onOpenEditor: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(0), first);
+      await tester.enterText(find.byType(TextField).at(1), second);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.f10);
+      await tester.pumpAndSettle();
+    }
+
+    /// Each displayed answer value in row order, with the characters drawn in
+    /// the correction colour.
+    List<(String, String)> answerRows(WidgetTester tester) {
+      final Color correction = LearnAnywhereFormatColours.of(
+        Theme.of(tester.element(find.byType(LearnSessionPage))),
+      ).correction;
+      String marked(InlineSpan root) {
+        final StringBuffer buffer = StringBuffer();
+        root.visitChildren((InlineSpan span) {
+          if (span is TextSpan && span.style?.color == correction) {
+            buffer.write(span.text ?? '');
+          }
+          return true;
+        });
+        return buffer.toString();
+      }
+
+      return <(String, String)>[
+        for (final RichText text in tester.widgetList<RichText>(
+          find.byType(RichText),
+        ))
+          if (const <String>{
+            'maison',
+            'domicile',
+          }.contains(text.text.toPlainText()))
+            (text.text.toPlainText(), marked(text.text)),
+      ];
+    }
+
+    /// Presses F9 [times] times, collecting the view each press lands on.
+    Future<List<String>> pressF9(WidgetTester tester, int times) async {
+      final List<String> views = <String>[];
+      for (var press = 0; press < times; press++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.f9);
+        await tester.pumpAndSettle();
+        views.add(
+          const <String>[
+            'Correction',
+            'Solution',
+            'Your answer',
+          ].singleWhere((String label) => tester.any(find.text(label))),
+        );
+      }
+      return views;
+    }
+
+    testWidgets(
+      'a swap-only answer opens on Correction in the typed order, unmarked, '
+      'and F9 shows Solution in the stored order',
+      (WidgetTester tester) async {
+        await reveal(tester, 'domicile', 'maison');
+
+        // Judged correct: the outcome banner's emoji.
+        expect(find.text('\u{1F60A}'), findsOneWidget);
+        expect(find.text('Correction'), findsOneWidget);
+        expect(answerRows(tester), <(String, String)>[
+          ('domicile', ''),
+          ('maison', ''),
+        ]);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.f9);
+        await tester.pumpAndSettle();
+        expect(find.text('Solution'), findsOneWidget);
+        expect(answerRows(tester), <(String, String)>[
+          ('maison', ''),
+          ('domicile', ''),
+        ]);
+      },
+    );
+
+    testWidgets(
+      'a case-only answer opens on Correction with the case marked',
+      (WidgetTester tester) async {
+        await reveal(tester, 'Maison', 'domicile');
+
+        expect(find.text('\u{1F60A}'), findsOneWidget);
+        expect(find.text('Correction'), findsOneWidget);
+        expect(answerRows(tester), <(String, String)>[
+          ('maison', 'm'),
+          ('domicile', ''),
+        ]);
+      },
+    );
+
+    testWidgets(
+      'an exact answer with stray spaces opens on Solution, and F9 skips '
+      'Correction',
+      (WidgetTester tester) async {
+        await reveal(tester, ' maison', 'domicile  ');
+
+        expect(find.text('Solution'), findsOneWidget);
+        expect(answerRows(tester), <(String, String)>[
+          ('maison', ''),
+          ('domicile', ''),
+        ]);
+
+        expect(await pressF9(tester, 3), <String>[
+          'Your answer',
+          'Solution',
+          'Your answer',
+        ]);
+      },
+    );
+
+    testWidgets('F9 cycles through Correction for a swap-only answer', (
+      WidgetTester tester,
+    ) async {
+      await reveal(tester, 'domicile', 'maison');
+
+      expect(await pressF9(tester, 3), <String>[
+        'Solution',
+        'Your answer',
+        'Correction',
+      ]);
+    });
+  });
+
   testWidgets(
     'Correction of a wrong answer marks a case difference in one row and a '
     'typo in another',

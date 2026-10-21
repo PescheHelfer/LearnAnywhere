@@ -52,6 +52,17 @@ Unterschieden zeigen (**Korrektur**), die reine **Lösung**, oder **Ihre Antwort
 unmarkiert — mit `F9` während einer Sitzung durchschalten; siehe
 [Lernsitzungen](06-learning-sessions.md#whrend-einer-sitzung).
 
+Eine richtige Antwort, die Zeichen für Zeichen und in der gespeicherten Reihenfolge so
+getippt ist, wie die Lern-Datei sie speichert (führende und abschließende Leerzeichen
+ausgenommen), öffnet auf **Lösung**, und `F9` lässt die **Korrektur** aus: Es gibt
+nichts hervorzuheben. Jede andere Antwort öffnet auf **Korrektur**. Neben jeder
+Antwort mit dem Ergebnis **Falsch** oder **Fast** gehört dazu eine richtige Antwort,
+deren Zeilen einer Gleichheitsgruppe Sie vertauscht haben — in Ihrer Reihenfolge und
+ohne Hervorhebung —, und eine, die sich nur in Groß-/Kleinschreibung oder Akzenten
+unterscheidet, mit diesen Zeichen hervorgehoben. Die **Lösung** behält die Reihenfolge
+der Lern-Datei, nach einem Vertauschen zeigt Ihnen `F9` also, wie die Lern-Datei sie
+speichert.
+
 Die **Korrektur** hebt jedes Zeichen hervor, in dem Ihre Antwort von der gespeicherten
 Lösung abweicht, auch Groß-/Kleinschreibung und Akzente, die sie nicht falsch gemacht
 haben, weil **Groß-/Kleinschreibung beachten** oder **Akzente beachten** ausgeschaltet

@@ -46,6 +46,14 @@ highlighted (**Correction**), the plain **Solution**, or **Your answer** unmarke
 between them with `F9` during a session; see
 [Learning sessions](06-learning-sessions.md#during-a-session).
 
+A correct answer typed exactly as the deck stores it, character for character and in
+the stored order (leading and trailing spaces aside), opens on **Solution**, and `F9`
+leaves **Correction** out: there is nothing to mark. Every other answer opens on
+**Correction**. Besides every **Wrong** and **Almost** answer, that includes a correct
+answer whose equal-group rows you swapped, shown in your order with no marks, and one
+that differs only in case or accents, with those characters marked. **Solution** keeps
+the deck's order, so after a swap `F9` shows you how the deck stores it.
+
 **Correction** marks every character in which your answer differs from the stored
 solution, including case and accents that did not make it wrong because **Case
 sensitive** or **Accent sensitive** is off: "Le lapin" against "le lapin" marks the L.

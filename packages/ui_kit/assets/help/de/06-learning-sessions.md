@@ -72,7 +72,11 @@ Gruppe, dann **Schwierig**. Eine Gruppe wird nie auf zwei Zeilen verteilt.
 
 `F10` **zeigt** die Karte, ohne dass Sie antworten, falls Sie lieber nachsehen als raten
 wollen. `F9` wechselt durch, was der Antwortbereich zeigt: **Korrektur** (Ihre Antwort
-mit gegen die Lösung hervorgehobenen Unterschieden) → **Lösung** → **Ihre Antwort**.
+mit gegen die Lösung hervorgehobenen Unterschieden) → **Lösung** → **Ihre Antwort** →
+**Korrektur**. Eine richtige Antwort, die genau so getippt ist, wie sie gespeichert ist,
+öffnet stattdessen auf **Lösung**, und ihr Durchschalten lässt die **Korrektur** aus:
+**Lösung** → **Ihre Antwort** → **Lösung**. Siehe
+[Wie Antworten bewertet werden](08-answer-evaluation.md#die-drei-ergebnisse).
 
 Ein kleines Lautsprecher-Symbol neben einem Feld liest dieses Feld vor. Es erscheint
 überall dort, wo die Maske das Vorlesen des Feldes erlaubt und dessen Wert auf dem
