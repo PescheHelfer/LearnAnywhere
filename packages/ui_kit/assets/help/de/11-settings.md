@@ -257,8 +257,10 @@ Zwei getrennte Speicherorte, beide vollständig lokal — nichts hiervon wird je
 irgendwohin gesendet:
 
 - Ihre **Lernoptionen**, Stufennamen, Sprachausgabe-Einstellungen, die Erkennung
-  schwieriger Einheiten, die Anzahl aufbewahrter Sitzungsdateien und die zuletzt
-  verwendeten Lern-Datei-/Maskenpfade werden in `learn_anywhere.settings.json` geschrieben, in einem Ordner `LearnAnywhere`
+  schwieriger Einheiten, die Anzahl aufbewahrter Sitzungsdateien, die zuletzt
+  verwendeten Lern-Datei-/Maskenpfade sowie **Erste Einheit** und **Letzte Einheit** jeder
+  Lern-Datei in der Liste **Zuletzt verwendete Lern-Dateien** werden in
+  `learn_anywhere.settings.json` geschrieben, in einem Ordner `LearnAnywhere`
   am üblichen Speicherort für benutzerbezogene Konfiguration Ihres Betriebssystems
   (`%APPDATA%` unter Windows; `$XDG_CONFIG_HOME` oder `~/.config` unter Linux).
 - **Darstellung, Sprache, die Zoomstufe, der Inhaltsrahmen, der Startordner, zuletzt

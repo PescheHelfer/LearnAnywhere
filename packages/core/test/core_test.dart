@@ -2861,6 +2861,40 @@ void main() {
       expect(resetUnitRange(0).endUnit, 1);
     });
 
+    test('restores a remembered range, clamped to the deck', () {
+      // Nothing remembered: the whole deck.
+      expect(restoreUnitRange(null, 12), resetUnitRange(12));
+      // A range that still fits comes back as it was.
+      const UnitRangeSelection threeToFive = UnitRangeSelection(
+        startUnit: 3,
+        endUnit: 5,
+        endManuallySet: true,
+      );
+      expect(restoreUnitRange(threeToFive, 12), threeToFive);
+      // A deck that shrank under a hand-set end clamps the end.
+      expect(
+        restoreUnitRange(
+          const UnitRangeSelection(
+            startUnit: 3,
+            endUnit: 20,
+            endManuallySet: true,
+          ),
+          12,
+        ),
+        const UnitRangeSelection(startUnit: 3, endUnit: 12, endManuallySet: true),
+      );
+      // A start past the last unit gives the whole deck.
+      expect(restoreUnitRange(threeToFive, 2), resetUnitRange(2));
+      // An end nobody set by hand follows the deck, as it does within a run.
+      expect(
+        restoreUnitRange(
+          const UnitRangeSelection(startUnit: 3, endUnit: 10),
+          15,
+        ),
+        const UnitRangeSelection(startUnit: 3, endUnit: 15),
+      );
+    });
+
     test('auto-expands the end unit only without a manual override', () {
       const UnitRangeSelection full = UnitRangeSelection(
         startUnit: 1,
@@ -2991,6 +3025,176 @@ void main() {
           context: p.windows,
         ),
         <String>[r'C:\Decks\Latin.vok'],
+      );
+    });
+
+    test('round-trips each recent deck\'s unit range, end-set-by-hand '
+        'included', () {
+      const LearnAnywhereSettings settings = LearnAnywhereSettings(
+        recentDeckPaths: <String>['/decks/c.vok', '/decks/b.vok'],
+        unitRanges: <String, UnitRangeSelection>{
+          '/decks/c.vok': UnitRangeSelection(
+            startUnit: 3,
+            endUnit: 5,
+            endManuallySet: true,
+          ),
+          '/decks/b.vok': UnitRangeSelection(startUnit: 120, endUnit: 150),
+        },
+      );
+
+      final LearnAnywhereSettings restored = decodeSettingsJson(
+        encodeSettingsJson(settings),
+      );
+      expect(restored, settings);
+      expect(
+        restored.unitRangeFor('/decks/c.vok'),
+        const UnitRangeSelection(startUnit: 3, endUnit: 5, endManuallySet: true),
+      );
+      expect(restored.unitRangeFor('/decks/b.vok')?.endManuallySet, isFalse);
+      expect(restored.unitRangeFor('/decks/a.vok'), isNull);
+    });
+
+    test('a settings file without ranges remembers none', () {
+      final LearnAnywhereSettings older = decodeSettings(<String, Object?>{
+        'recentDeckPaths': <Object?>['/decks/a.vok'],
+      });
+      expect(older.unitRanges, isEmpty);
+      expect(older.unitRangeFor('/decks/a.vok'), isNull);
+    });
+
+    test('a corrupt range entry is ignored, its neighbours kept', () {
+      final LearnAnywhereSettings decoded = decodeSettings(<String, Object?>{
+        'recentDeckPaths': <Object?>[
+          '/decks/a.vok',
+          '/decks/b.vok',
+          '/decks/c.vok',
+        ],
+        'unitRanges': <String, Object?>{
+          '/decks/a.vok': <String, Object?>{
+            'startUnit': 2,
+            'endUnit': 4,
+            'endManuallySet': true,
+          },
+          '/decks/b.vok': 'three to five',
+          '/decks/c.vok': <String, Object?>{'startUnit': 0, 'endUnit': 4},
+        },
+      });
+      expect(
+        decoded.unitRanges,
+        <String, UnitRangeSelection>{
+          '/decks/a.vok': const UnitRangeSelection(
+            startUnit: 2,
+            endUnit: 4,
+            endManuallySet: true,
+          ),
+        },
+      );
+      expect(
+        decodeSettings(<String, Object?>{'unitRanges': 7}).unitRanges,
+        isEmpty,
+      );
+    });
+
+    test('a range is written only for a deck on the recent list', () {
+      const LearnAnywhereSettings settings = LearnAnywhereSettings(
+        recentDeckPaths: <String>['/decks/b.vok'],
+        unitRanges: <String, UnitRangeSelection>{
+          '/decks/a.vok': UnitRangeSelection(startUnit: 3, endUnit: 5),
+          '/decks/b.vok': UnitRangeSelection(startUnit: 7, endUnit: 9),
+        },
+      );
+      final LearnAnywhereSettings restored = decodeSettingsJson(
+        encodeSettingsJson(settings),
+      );
+      expect(restored.unitRanges.keys, <String>['/decks/b.vok']);
+    });
+
+    test('ranges are kept for the recent decks only, keyed as the list '
+        'keys them', () {
+      const Map<String, UnitRangeSelection> ranges =
+          <String, UnitRangeSelection>{
+            r'C:\Decks\French.vok': UnitRangeSelection(startUnit: 3, endUnit: 5),
+            r'C:\Decks\Latin.vok': UnitRangeSelection(startUnit: 7, endUnit: 9),
+          };
+      expect(
+        unitRangesForRecentDecks(
+          ranges,
+          const <String>[r'c:\decks\french.vok'],
+          context: p.windows,
+        ),
+        <String, UnitRangeSelection>{
+          r'c:\decks\french.vok': const UnitRangeSelection(
+            startUnit: 3,
+            endUnit: 5,
+          ),
+        },
+      );
+      // On POSIX the differently cased name is another deck, with no range.
+      expect(
+        unitRangesForRecentDecks(
+          const <String, UnitRangeSelection>{
+            '/decks/French.vok': UnitRangeSelection(startUnit: 3, endUnit: 5),
+          },
+          const <String>['/decks/french.vok'],
+          context: p.posix,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('a deck\'s range replaces its earlier one, however it is spelled',
+        () {
+      final Map<String, UnitRangeSelection> next = withUnitRange(
+        const <String, UnitRangeSelection>{
+          r'C:\Decks\French.vok': UnitRangeSelection(startUnit: 3, endUnit: 5),
+        },
+        r'c:\decks\french.vok',
+        const UnitRangeSelection(startUnit: 4, endUnit: 6),
+        context: p.windows,
+      );
+      expect(next, <String, UnitRangeSelection>{
+        r'c:\decks\french.vok': const UnitRangeSelection(
+          startUnit: 4,
+          endUnit: 6,
+        ),
+      });
+      // On POSIX the two names are two decks, each with its own range.
+      expect(
+        withUnitRange(
+          const <String, UnitRangeSelection>{
+            '/decks/French.vok': UnitRangeSelection(startUnit: 3, endUnit: 5),
+          },
+          '/decks/french.vok',
+          const UnitRangeSelection(startUnit: 4, endUnit: 6),
+          context: p.posix,
+        ).keys,
+        <String>['/decks/French.vok', '/decks/french.vok'],
+      );
+    });
+
+    test('a deck\'s range is found under its path as the host compares '
+        'paths', () {
+      const LearnAnywhereSettings windows = LearnAnywhereSettings(
+        unitRanges: <String, UnitRangeSelection>{
+          r'C:\Decks\French.vok': UnitRangeSelection(startUnit: 3, endUnit: 5),
+        },
+      );
+      expect(
+        windows.unitRangeFor(r'c:\decks\FRENCH.vok', context: p.windows),
+        const UnitRangeSelection(startUnit: 3, endUnit: 5),
+      );
+      const LearnAnywhereSettings posix = LearnAnywhereSettings(
+        unitRanges: <String, UnitRangeSelection>{
+          '/decks/French.vok': UnitRangeSelection(startUnit: 3, endUnit: 5),
+        },
+      );
+      expect(
+        posix.unitRangeFor('/decks/french.vok', context: p.posix),
+        isNull,
+      );
+      expect(
+        posix.unitRangeFor('/decks/French.vok', context: p.posix),
+        const UnitRangeSelection(startUnit: 3, endUnit: 5),
       );
     });
 

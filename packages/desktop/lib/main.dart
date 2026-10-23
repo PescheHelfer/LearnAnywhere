@@ -424,8 +424,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   // back to its practice setup.
   int _learnResetSignal = 0;
   // Set for one frame by Learn ▸ "Learn with last settings"; makes the learn
-  // page start a session immediately with the settings already persisted,
-  // whether it is already open or is being created by that command.
+  // page start a session immediately with the settings on hand - the saved
+  // practice choices and the open deck's own unit range - whether it is
+  // already open or is being created by that command.
   bool _learnStartRequested = false;
   // Whether a learn session is currently running, which relabels that entry to
   // "Continue". Pushed up by the learn page; cleared when its route is left
@@ -844,13 +845,14 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       queryOptions: _queryOptions,
       learnParameters: _learnParameters,
       deckPath: _document.deckPath,
+      unitRange: _range,
       maskPath: _lastMaskPath,
     );
     _settings = next;
     await writeSettingsFile(_settingsPath, next);
   }
 
-  // --- Per-file unit range --------------------------------------------------
+  // --- Per-deck unit range --------------------------------------------------
 
   UnitRangeSelection _clampRange(UnitRangeSelection range, int unitCount) {
     final int maximum = unitCount < 1 ? 1 : unitCount;
@@ -860,13 +862,41 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     );
   }
 
-  /// Resets Start/End to the full range when a new or different file is loaded.
+  /// Resets Start/End to the full range, with an end that follows the deck:
+  /// for a deck with no range of its own (a new deck, a new mask, a deck
+  /// assembled in the Lexicon) and for **Use all units**.
   void _resetRangeForDeck() {
-    _range = resetUnitRange(_document.deck.units.length);
+    _setRangeForDeck(resetUnitRange(_document.deck.units.length));
+  }
+
+  /// Starts the deck just read from disk at the range it was last left at,
+  /// clamped to its units ([restoreUnitRange]); a deck with none remembered
+  /// starts at the full range.
+  void _restoreRangeForDeck() {
+    final String? path = _document.deckPath;
+    _setRangeForDeck(
+      restoreUnitRange(
+        path == null ? null : _settings.unitRangeFor(path),
+        _document.deck.units.length,
+      ),
+    );
+  }
+
+  void _setRangeForDeck(UnitRangeSelection range) {
+    _range = range;
     _learnParameters = _learnParameters.copyWith(
       startIndex: _range.startUnit,
       endIndex: _range.endUnit,
     );
+  }
+
+  /// Saves the settings when the range is no longer [before], so a range an
+  /// edit or a merge moved is remembered as well as one typed on the setup
+  /// screen.
+  void _saveIfRangeChanged(UnitRangeSelection before) {
+    if (_range != before) {
+      unawaited(_saveSettings());
+    }
   }
 
   // --- Auto-load / auto-save statistics toggles (C11) -----------------------
@@ -2022,8 +2052,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
 
   /// Learn ▸ "Learn with last settings" / "Continue".
   ///
-  /// With no session running this starts one straight away from the persisted
-  /// settings (or the defaults, when nothing has been saved yet); with one
+  /// With no session running this starts one straight away from the saved
+  /// practice choices (or the defaults, when nothing has been saved yet) over
+  /// the unit range the open deck was opened at or since set to; with one
   /// running it just returns to it.
   void _continueLearn() {
     if (!_learnSessionActive) {
@@ -2108,6 +2139,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       if (!discard) {
         return;
       }
+      final UnitRangeSelection rangeBefore = _range;
       setState(() {
         _document = snapshot;
         _range = _clampRange(_range, _document.deck.units.length);
@@ -2116,6 +2148,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           endIndex: _range.endUnit,
         );
       });
+      _saveIfRangeChanged(rangeBefore);
     }
     _editorSnapshot = null;
     if (mounted) {
@@ -2964,6 +2997,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
               startIndex: _range.startUnit,
             );
           });
+          // Remembered for this deck, so the next run opens it here.
+          unawaited(_saveSettings());
         },
         onEndUnitChanged: (int value) {
           setState(() {
@@ -2975,6 +3010,11 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
               endIndex: _range.endUnit,
             );
           });
+          unawaited(_saveSettings());
+        },
+        onUseAllUnits: () {
+          setState(_resetRangeForDeck);
+          unawaited(_saveSettings());
         },
         onStatisticsChanged: (List<UnitStats> value) {
           setState(() => _document = _document.copyWith(statistics: value));
@@ -3110,6 +3150,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       // cost a term its history, which is also what realignment does on load.
       allTime = _document.allTime;
     }
+    final UnitRangeSelection rangeBefore = _range;
     setState(() {
       _document = _document.copyWith(
         deck: deck,
@@ -3131,6 +3172,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         endIndex: _range.endUnit,
       );
     });
+    _saveIfRangeChanged(rangeBefore);
   }
 
   /// Toggles the difficulty of the unit at the one-based [unitIndex] in
@@ -3648,7 +3690,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
   Future<LearnAnywhereMessage?> _readDeckIntoMemory(String path) async {
     _document = await _fileService.openDeck(_document, path);
     final LearnAnywhereMessage? maskStatus = await _reconcileLinkedMask();
-    _resetRangeForDeck();
+    _restoreRangeForDeck();
     _selectRoute(_DesktopRoute.fileOperations);
     return maskStatus;
   }
@@ -3914,6 +3956,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       return;
     }
     final int previousCount = _document.deck.units.length;
+    final UnitRangeSelection rangeBefore = _range;
     await _guardedFileOperation(() async {
       _document = await _fileService.mergeDeck(_document, path);
       final int newCount = _document.deck.units.length;
@@ -3932,6 +3975,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       _selectRoute(_DesktopRoute.fileOperations);
       _setFileStatus(LearnAnywhereMessage.fileMergeDeckDone);
       _setLastDir('vok', path);
+      _saveIfRangeChanged(rangeBefore);
     });
   }
 

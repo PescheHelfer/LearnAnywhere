@@ -16,10 +16,30 @@ dann `E`).
 | **Nur schwierige Einheiten ({count})** | Nur die schwierigen Einheiten fragen, jede nur in der Abfragerichtung, in der sie schwierig ist, in jedem Modus; die Zahl zeigt, wie viele es sind — siehe [Nur schwierige Einheiten abfragen](#nur-schwierige-einheiten-abfragen) |
 | **Beherrschungsschwelle (%)** | Nur Drill-Modus — eine Einheit gilt als gemeistert, sobald ihre Trefferquote diesen Wert erreicht |
 | **Mit Eingabe der Antwort** | Ausgeschaltet warten Karten darauf, dass Sie sich selbst bewerten, statt zu tippen; beim Stufenlernen ausgeblendet, da dort immer getippt wird |
-| **Erste Einheit** / **Letzte Einheit** | Begrenzt die Sitzung auf einen Bereich der Lern-Datei; ein geleertes Feld erweitert ihn bis zur ersten bzw. letzten Einheit. **Alle Einheiten verwenden ({count})** setzt beide auf einmal zurück |
+| **Erste Einheit** / **Letzte Einheit** | Begrenzt die Sitzung auf einen Bereich der Lern-Datei; ein geleertes Feld erweitert ihn bis zur ersten bzw. letzten Einheit. **Alle Einheiten verwenden ({count})** setzt beide auf einmal zurück. Der Bereich wird für jede Lern-Datei gemerkt — siehe unten |
 
 **Sitzung starten** beginnt die Sitzung. Läuft bereits eine Sitzung, heißt diese
 Schaltfläche stattdessen **Fortsetzen** und führt direkt zurück hinein.
+
+**Lern ▸ Mit letzten Einstellungen lernen** überspringt diesen Bildschirm und startet
+sofort eine Sitzung mit den Einstellungen, die Sie hier zuletzt gewählt haben.
+
+Jede Lern-Datei in der Liste **Zuletzt verwendete Lern-Dateien** merkt sich ihre eigene
+**Erste Einheit** und **Letzte Einheit**, auch über das Schließen des Programms hinaus.
+Öffnen Sie die Lern-Datei wieder — mit **Lerneinheiten laden...**, aus **Zuletzt
+verwendete Lern-Dateien** oder beim Übernehmen einer neuen Version mit **Neue Version
+der Lerneinheiten übernehmen...** —, ist ihr Bereich wieder da, auf diesem Bildschirm wie
+für **Mit letzten Einstellungen lernen**. Hat die Lern-Datei inzwischen weniger
+Einheiten, wird der Bereich passend gekürzt; gibt es nicht einmal mehr die erste
+Einheit, öffnet sie mit allen Einheiten. **Lerneinheiten speichern unter...** nimmt den
+Bereich in die neue Datei mit. **Lerneinheiten im Speicher löschen...** und **Neue
+Masken-Datei laden...** beginnen immer mit dem ganzen Bereich, und **Alle Einheiten
+verwenden ({count})** wird nicht gemerkt. Fällt eine Lern-Datei aus der Liste **Zuletzt
+verwendete Lern-Dateien**, vergisst sie ihren Bereich.
+
+Ist jede Einheit im gemerkten Bereich schon gemeistert, führt **Mit letzten
+Einstellungen lernen** direkt zum [Ende der Sitzung](#abschluss), wo **Sitzung
+erweitern** Sie hierher zurückbringt, um den Bereich zu erweitern.
 
 ## Die vier Modi
 

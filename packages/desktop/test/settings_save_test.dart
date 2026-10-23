@@ -18,6 +18,7 @@ void main() {
       queryOptions: const DesktopQueryOptions(),
       learnParameters: const SessionParameters(),
       deckPath: previous.lastDeckPath,
+      unitRange: resetUnitRange(1),
       maskPath: previous.lastMaskPath,
     );
 
@@ -36,6 +37,7 @@ void main() {
       queryOptions: const DesktopQueryOptions(),
       learnParameters: const SessionParameters(),
       deckPath: previous.lastDeckPath,
+      unitRange: resetUnitRange(1),
       maskPath: previous.lastMaskPath,
     );
 
@@ -58,6 +60,7 @@ void main() {
             queryOptions: options,
             learnParameters: const SessionParameters(),
             deckPath: null,
+            unitRange: resetUnitRange(1),
             maskPath: null,
           ),
         ),
@@ -96,6 +99,7 @@ void main() {
         ),
         learnParameters: const SessionParameters(),
         deckPath: null,
+        unitRange: resetUnitRange(1),
         maskPath: null,
       ),
     );
@@ -141,6 +145,85 @@ void main() {
     ]);
   });
 
+  test('a save cycle keeps the open deck\'s range under its path', () {
+    const UnitRangeSelection threeToFive = UnitRangeSelection(
+      startUnit: 3,
+      endUnit: 5,
+      endManuallySet: true,
+    );
+
+    final LearnAnywhereSettings next = _save(
+      const LearnAnywhereSettings(),
+      deckPath: '/decks/french.vok',
+      unitRange: threeToFive,
+    );
+
+    expect(next.unitRangeFor('/decks/french.vok'), threeToFive);
+    // And it reaches the file the next run reads.
+    expect(
+      decodeSettingsJson(
+        encodeSettingsJson(next),
+      ).unitRangeFor('/decks/french.vok'),
+      threeToFive,
+    );
+  });
+
+  test('a save as carries the range to the new path and keeps the old '
+      'deck\'s own', () {
+    const LearnAnywhereSettings previous = LearnAnywhereSettings(
+      recentDeckPaths: <String>['/decks/french.vok'],
+      unitRanges: <String, UnitRangeSelection>{
+        '/decks/french.vok': UnitRangeSelection(startUnit: 3, endUnit: 5),
+      },
+    );
+
+    final LearnAnywhereSettings next = _save(
+      previous,
+      deckPath: '/decks/french-copy.vok',
+      unitRange: const UnitRangeSelection(startUnit: 3, endUnit: 5),
+    );
+
+    expect(
+      next.unitRangeFor('/decks/french-copy.vok'),
+      const UnitRangeSelection(startUnit: 3, endUnit: 5),
+    );
+    expect(
+      next.unitRangeFor('/decks/french.vok'),
+      const UnitRangeSelection(startUnit: 3, endUnit: 5),
+    );
+  });
+
+  test('a deck that drops off the recent list drops its range', () {
+    const LearnAnywhereSettings previous = LearnAnywhereSettings(
+      recentDeckPaths: <String>['/decks/c.vok', '/decks/b.vok', '/decks/a.vok'],
+      unitRanges: <String, UnitRangeSelection>{
+        '/decks/a.vok': UnitRangeSelection(startUnit: 2, endUnit: 4),
+        '/decks/b.vok': UnitRangeSelection(startUnit: 5, endUnit: 6),
+      },
+    );
+
+    final LearnAnywhereSettings next = _save(
+      previous,
+      deckPath: '/decks/d.vok',
+    );
+
+    expect(next.unitRangeFor('/decks/a.vok'), isNull);
+    expect(
+      next.unitRangeFor('/decks/b.vok'),
+      const UnitRangeSelection(startUnit: 5, endUnit: 6),
+    );
+  });
+
+  test('a save with no deck loaded remembers no range', () {
+    final LearnAnywhereSettings next = _save(
+      const LearnAnywhereSettings(recentDeckPaths: <String>['/decks/a.vok']),
+      deckPath: null,
+      unitRange: const UnitRangeSelection(startUnit: 3, endUnit: 5),
+    );
+
+    expect(next.unitRanges, isEmpty);
+  });
+
   test('a save with no deck loaded leaves the recent list alone', () {
     const LearnAnywhereSettings previous = LearnAnywhereSettings(
       recentDeckPaths: <String>['/decks/latin.vok'],
@@ -152,16 +235,19 @@ void main() {
   });
 }
 
-/// Runs one auto-save cycle over [previous] with nothing but the deck changed.
+/// Runs one auto-save cycle over [previous] with nothing but the deck and its
+/// range changed.
 LearnAnywhereSettings _save(
   LearnAnywhereSettings previous, {
   required String? deckPath,
+  UnitRangeSelection? unitRange,
 }) {
   return nextSettingsForSave(
     previous: previous,
     queryOptions: const DesktopQueryOptions(),
     learnParameters: const SessionParameters(),
     deckPath: deckPath,
+    unitRange: unitRange ?? resetUnitRange(1),
     maskPath: previous.lastMaskPath,
   );
 }

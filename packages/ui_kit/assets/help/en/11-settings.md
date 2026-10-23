@@ -230,7 +230,8 @@ they follow the start folder like every other dialog.
 Two separate stores, both entirely local — nothing here is ever sent anywhere:
 
 - Your **learning options**, level names, speech choices, difficult-unit detection, the
-  session-file retention count, and last-used deck/mask paths are written to
+  session-file retention count, last-used deck/mask paths, and the **Start unit** and
+  **End unit** of each deck on the **Recent decks** list are written to
   `learn_anywhere.settings.json` in a `LearnAnywhere` folder under your operating
   system's standard per-user configuration location (`%APPDATA%` on Windows;
   `$XDG_CONFIG_HOME` or `~/.config` on Linux).

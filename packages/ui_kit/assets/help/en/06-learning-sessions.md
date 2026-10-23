@@ -15,10 +15,27 @@ setup** screen (**Learn ▸ Practice setup**, `Alt+L` then `P`).
 | **Difficult units only ({count})** | Ask only the units that are difficult, each only in the direction it is difficult in, in every mode; the count shows how many there are — see [Asking difficult units only](#asking-difficult-units-only) |
 | **Mastery threshold (%)** | Drill mode only — a unit counts as mastered once its correct rate reaches this |
 | **Require typed answers** | Off, cards wait for you to judge yourself instead of typing; hidden for Level learning, which always requires typing |
-| **Start unit** / **End unit** | Restrict the session to a range of the deck; clearing either field expands it to the first/last unit. **Use all units ({count})** resets both at once |
+| **Start unit** / **End unit** | Restrict the session to a range of the deck; clearing either field expands it to the first/last unit. **Use all units ({count})** resets both at once. The range is remembered for each deck — see below |
 
 Press **Start session** to begin. If you already have a session running, this button
 reads **Continue** instead, and takes you straight back into it.
+
+**Learn ▸ Learn with last settings** skips this screen and starts a session straight
+away, with the choices you last made here.
+
+Each deck on your **Recent decks** list remembers its own **Start unit** and **End
+unit**, even after you close the program. Opening the deck again — with **Load
+deck...**, from **Recent decks**, or by taking a new version with **Update deck from new
+version...** — brings its range back, both on this screen and for **Learn with last
+settings**. A deck that has fewer units than before has its range cut back to fit; if
+even the start unit no longer exists, the deck opens with all its units. **Save deck
+as...** takes the range along to the new file. **Clear units from memory...** and **Load
+mask...** always start at the full range, and **Use all units ({count})** is not
+remembered. A deck that drops off the **Recent decks** list forgets its range.
+
+If every unit in the remembered range is already mastered, **Learn with last settings**
+goes straight to the [end of the session](#finishing), where **Extend session** brings
+you back here to widen the range.
 
 ## The four modes
 

@@ -71,6 +71,62 @@ List<String> recentDecksExcluding(
   );
 }
 
+/// Returns [ranges] with [range] stored for the deck at [path].
+///
+/// Any earlier entry for the same deck is dropped first, so a deck spelled two
+/// ways on Windows still holds one range. Paths are compared with [context],
+/// as in [withRecentDeckPath].
+Map<String, UnitRangeSelection> withUnitRange(
+  Map<String, UnitRangeSelection> ranges,
+  String path,
+  UnitRangeSelection range, {
+  p.Context? context,
+}) {
+  final p.Context ctx = context ?? p.context;
+  return Map<String, UnitRangeSelection>.unmodifiable(
+    <String, UnitRangeSelection>{
+      for (final MapEntry<String, UnitRangeSelection> entry in ranges.entries)
+        if (!ctx.equals(entry.key, path)) entry.key: entry.value,
+      path: range,
+    },
+  );
+}
+
+/// Returns the entries of [ranges] that belong to a deck on [recent], keyed
+/// by the list's own spelling of its path.
+///
+/// This is what keeps the remembered ranges bounded: a deck that drops off
+/// the recent list drops its range with it. Paths are compared with
+/// [context], as in [withRecentDeckPath].
+Map<String, UnitRangeSelection> unitRangesForRecentDecks(
+  Map<String, UnitRangeSelection> ranges,
+  List<String> recent, {
+  p.Context? context,
+}) {
+  final p.Context ctx = context ?? p.context;
+  final Map<String, UnitRangeSelection> kept = <String, UnitRangeSelection>{};
+  for (final String path in recent) {
+    final UnitRangeSelection? range = _unitRangeAt(ranges, path, ctx);
+    if (range != null) {
+      kept[path] = range;
+    }
+  }
+  return Map<String, UnitRangeSelection>.unmodifiable(kept);
+}
+
+UnitRangeSelection? _unitRangeAt(
+  Map<String, UnitRangeSelection> ranges,
+  String path,
+  p.Context context,
+) {
+  for (final MapEntry<String, UnitRangeSelection> entry in ranges.entries) {
+    if (context.equals(entry.key, path)) {
+      return entry.value;
+    }
+  }
+  return null;
+}
+
 /// Default English Level-Learning level names, ordered engine level 3 → 0.
 const List<String> kDefaultLevelNamesEn = <String>[
   'Beginner',
@@ -120,9 +176,9 @@ String levelNameFor(List<String> names, int level) {
 /// Persisted, framework-independent user settings.
 ///
 /// Holds the advanced practice options, the practice-setup choices, the
-/// recently opened decks, and the last loaded mask path. Start unit and end
-/// unit are intentionally not part of this model: they are per-file and reset
-/// when a deck is loaded (see [resetUnitRange] and [autoExpandEndUnit]).
+/// recently opened decks with each one's unit range, and the last loaded mask
+/// path. The unit range is per deck: opening a deck restores its own (see
+/// [unitRangeFor] and [restoreUnitRange]).
 final class LearnAnywhereSettings {
   /// Creates user settings.
   const LearnAnywhereSettings({
@@ -155,6 +211,7 @@ final class LearnAnywhereSettings {
     this.detectionThresholds = DetectionThresholds.defaults,
     this.speech = const SpeechSettings(),
     this.recentDeckPaths = const <String>[],
+    this.unitRanges = const <String, UnitRangeSelection>{},
     this.lastMaskPath,
   });
 
@@ -273,6 +330,18 @@ final class LearnAnywhereSettings {
   String? get lastDeckPath =>
       recentDeckPaths.isEmpty ? null : recentDeckPaths.first;
 
+  /// The unit range each deck was last left at, keyed by its path.
+  ///
+  /// Only decks on [recentDeckPaths] are written to disk (see
+  /// [unitRangesForRecentDecks]); maintained with [withUnitRange] and read
+  /// with [unitRangeFor].
+  final Map<String, UnitRangeSelection> unitRanges;
+
+  /// The remembered unit range of the deck at [path], or null when there is
+  /// none. Paths are compared with [context], as in [withRecentDeckPath].
+  UnitRangeSelection? unitRangeFor(String path, {p.Context? context}) =>
+      _unitRangeAt(unitRanges, path, context ?? p.context);
+
   /// Last loaded `.inf` mask path, if any.
   final String? lastMaskPath;
 
@@ -307,6 +376,7 @@ final class LearnAnywhereSettings {
     DetectionThresholds? detectionThresholds,
     SpeechSettings? speech,
     List<String>? recentDeckPaths,
+    Map<String, UnitRangeSelection>? unitRanges,
     String? lastMaskPath,
     bool clearLastMaskPath = false,
   }) {
@@ -345,6 +415,7 @@ final class LearnAnywhereSettings {
       detectionThresholds: detectionThresholds ?? this.detectionThresholds,
       speech: speech ?? this.speech,
       recentDeckPaths: recentDeckPaths ?? this.recentDeckPaths,
+      unitRanges: unitRanges ?? this.unitRanges,
       lastMaskPath: clearLastMaskPath ? null : lastMaskPath ?? this.lastMaskPath,
     );
   }
@@ -381,6 +452,7 @@ final class LearnAnywhereSettings {
         other.detectionThresholds == detectionThresholds &&
         other.speech == speech &&
         _stringListEquals(other.recentDeckPaths, recentDeckPaths) &&
+        _unitRangesEqual(other.unitRanges, unitRanges) &&
         other.lastMaskPath == lastMaskPath;
   }
 
@@ -415,6 +487,12 @@ final class LearnAnywhereSettings {
     detectionThresholds,
     speech,
     Object.hashAll(recentDeckPaths),
+    Object.hashAllUnordered(
+      unitRanges.entries.map(
+        (MapEntry<String, UnitRangeSelection> entry) =>
+            Object.hash(entry.key, entry.value),
+      ),
+    ),
     lastMaskPath,
   ]);
 }
@@ -434,7 +512,29 @@ bool _stringListEquals(List<String> a, List<String> b) {
   return true;
 }
 
+bool _unitRangesEqual(
+  Map<String, UnitRangeSelection> a,
+  Map<String, UnitRangeSelection> b,
+) {
+  if (identical(a, b)) {
+    return true;
+  }
+  if (a.length != b.length) {
+    return false;
+  }
+  for (final MapEntry<String, UnitRangeSelection> entry in a.entries) {
+    if (b[entry.key] != entry.value) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /// Encodes [settings] as a settings JSON object.
+///
+/// Unit ranges are written only for the decks on the recent list (see
+/// [unitRangesForRecentDecks]), so the file never fills up with decks the
+/// learner has moved on from.
 Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
   return <String, Object?>{
     'format': settingsFormat,
@@ -477,6 +577,18 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
     // predates the list — the Android companion until it catches up — reads
     // only this key, and would otherwise forget the deck on its next save.
     if (settings.lastDeckPath != null) 'lastDeckPath': settings.lastDeckPath,
+    'unitRanges': <String, Object?>{
+      for (final MapEntry<String, UnitRangeSelection> entry
+          in unitRangesForRecentDecks(
+            settings.unitRanges,
+            settings.recentDeckPaths,
+          ).entries)
+        entry.key: <String, Object?>{
+          'startUnit': entry.value.startUnit,
+          'endUnit': entry.value.endUnit,
+          'endManuallySet': entry.value.endManuallySet,
+        },
+    },
     if (settings.lastMaskPath != null) 'lastMaskPath': settings.lastMaskPath,
   };
 }
@@ -567,6 +679,7 @@ LearnAnywhereSettings decodeSettings(Object? value) {
       json['recentDeckPaths'],
       _nullableString(json['lastDeckPath']),
     ),
+    unitRanges: _unitRanges(json['unitRanges']),
     lastMaskPath: _nullableString(json['lastMaskPath']),
   );
 }
@@ -650,13 +763,38 @@ final class UnitRangeSelection {
   int get hashCode => Object.hash(startUnit, endUnit, endManuallySet);
 }
 
-/// Returns a fresh range for a newly loaded file with [unitCount] units.
+/// Returns the full range of a deck with [unitCount] units: for a deck with
+/// no remembered range (see [restoreUnitRange]), or one the learner widened
+/// to every unit.
 ///
 /// Start is reset to 1, end to the unit count, and the manual-override flag is
 /// cleared so a subsequent unit addition can auto-expand the range.
 UnitRangeSelection resetUnitRange(int unitCount) {
   final int count = unitCount < 1 ? 1 : unitCount;
   return UnitRangeSelection(startUnit: 1, endUnit: count);
+}
+
+/// Returns the range to start a just-opened deck of [unitCount] units at,
+/// from the range it was [remembered] at, if any.
+///
+/// Nothing remembered, or a start past the last unit, gives the whole deck
+/// ([resetUnitRange]). Otherwise an end set by hand is clamped to the deck,
+/// and an end nobody set follows the deck to its last unit, just as
+/// [autoExpandEndUnit] grows it within a run.
+UnitRangeSelection restoreUnitRange(
+  UnitRangeSelection? remembered,
+  int unitCount,
+) {
+  final UnitRangeSelection full = resetUnitRange(unitCount);
+  if (remembered == null || remembered.startUnit > full.endUnit) {
+    return full;
+  }
+  return remembered.copyWith(
+    startUnit: remembered.startUnit < 1 ? 1 : remembered.startUnit,
+    endUnit: remembered.endManuallySet
+        ? remembered.endUnit.clamp(1, full.endUnit).toInt()
+        : full.endUnit,
+  );
 }
 
 /// Grows the end unit after units are added, unless the user overrode it.
@@ -774,6 +912,31 @@ List<String> _recentDeckPaths(Object? value, String? lastDeckPath) {
     recent = withRecentDeckPath(recent, lastDeckPath);
   }
   return List<String>.unmodifiable(recent);
+}
+
+/// Decodes the per-deck unit ranges, each entry on its own: one that is not a
+/// path mapped to a whole-number start and end of at least 1 is dropped, so
+/// one bad entry never costs another deck its range.
+Map<String, UnitRangeSelection> _unitRanges(Object? value) {
+  final Map<String, UnitRangeSelection> ranges = <String, UnitRangeSelection>{};
+  for (final MapEntry<Object?, Object?> entry in _map(value).entries) {
+    final Object? path = entry.key;
+    final Map<Object?, Object?> json = _map(entry.value);
+    final Object? start = json['startUnit'];
+    final Object? end = json['endUnit'];
+    if (path is! String || start is! int || end is! int) {
+      continue;
+    }
+    if (start < 1 || end < 1) {
+      continue;
+    }
+    ranges[path] = UnitRangeSelection(
+      startUnit: start,
+      endUnit: end,
+      endManuallySet: _bool(json['endManuallySet'], false),
+    );
+  }
+  return Map<String, UnitRangeSelection>.unmodifiable(ranges);
 }
 
 T _enumByName<T extends Enum>(List<T> values, Object? value, T fallback) {

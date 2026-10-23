@@ -36,6 +36,7 @@ final class LearnSessionPage extends StatefulWidget {
     this.onEntryLevelCapChanged,
     this.onStartUnitChanged,
     this.onEndUnitChanged,
+    this.onUseAllUnits,
     this.onExit,
     this.onToggleDifficult,
     this.speechEngine = const UnavailableTtsEngine(),
@@ -134,6 +135,10 @@ final class LearnSessionPage extends StatefulWidget {
 
   /// Called when the user manually changes the end unit on the setup screen.
   final ValueChanged<int>? onEndUnitChanged;
+
+  /// Called when **Use all units** pins the range to the whole deck — not a
+  /// hand-set end, so the shell lets that end follow the deck as it grows.
+  final VoidCallback? onUseAllUnits;
 
   /// Called when the user exits the learn session back to the home screen.
   final VoidCallback? onExit;
@@ -845,8 +850,7 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
             _endIndex = widget.deck.units.length;
           });
           if (value) {
-            widget.onStartUnitChanged?.call(_startIndex);
-            widget.onEndUnitChanged?.call(_endIndex);
+            widget.onUseAllUnits?.call();
           }
         },
         onDirectionChanged: (DirectionSelection value) {
