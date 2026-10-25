@@ -186,7 +186,7 @@ final class LearnAnywhereSettings {
     this.completeInputRequired = true,
     this.caseSensitive = true,
     this.accentSensitive = true,
-    this.almostEnabled = false,
+    this.almostEnabled = true,
     this.almostThreshold = kDefaultAlmostThreshold,
     this.showUnitTime = false,
     this.showSittingTime = false,

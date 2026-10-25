@@ -170,7 +170,7 @@ keine Datei, die sich aktualisieren ließe: Speichern Sie sie zuerst.
 ## Automatisch laden und automatisch speichern
 
 Zwei unabhängige Schalter unter **Optionen ▸ Statistiken** ersparen Ihnen den Weg über
-das Menü Datei:
+das Menü Datei. Beide sind von Anfang an eingeschaltet:
 
 - **Statistiken automatisch laden** — beim Öffnen einer Lern-Datei sucht das Programm
   in ihrem Ordner `statistics` nach einer passenden Sitzungsdatei mit Zeitstempel und

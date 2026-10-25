@@ -74,7 +74,7 @@ with several steps. Learn Anywhere was made for this kind of material.
   Windows and the Android companion; Linux ships mute.
 - **A lexicon.** Search the units in memory, or sweep a whole folder tree of decks on disk.
 - **Rich text in fields.** Bold, italic, underline, colour and highlight, stored portably.
-- **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, content centred in the window on a wide screen, and full keyboard operation including ALT menu mnemonics.
+- **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, optional centring of the content on a wide screen, and full keyboard operation including ALT menu mnemonics.
 - **Finds your decks.** Up to three recently opened decks are one click away from the
   welcome screen and the File operations screen, each showing when you last edited its
   units and when you last learned it, and each remembering the unit range you last

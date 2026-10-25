@@ -47,8 +47,8 @@ option here that discards anything, and it says so before you confirm it.
 
 ## My statistics are not being saved automatically
 
-Auto-save is off by default — turn it on at **Options ▸ Statistics ▸ Auto-save
-statistics**. It also needs the deck to have been saved to a real path at least once:
+Auto-save is on from the start — check that it has not been switched off at **Options ▸
+Statistics ▸ Auto-save statistics**. It also needs the deck to have been saved to a real path at least once:
 an unsaved, in-memory-only deck has no folder to create a statistics file in. See
 [Working with files](03-managing-files.md#auto-load-and-auto-save).
 

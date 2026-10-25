@@ -2852,6 +2852,16 @@ void main() {
       expect(broken.minAttempts, defaults.minAttempts);
     });
 
+    test('near misses count as Almost unless a settings file says no', () {
+      expect(const LearnAnywhereSettings().almostEnabled, isTrue);
+      expect(decodeSettings(<String, Object?>{}).almostEnabled, isTrue);
+      // A file written earlier stores its own choice, and keeps it.
+      expect(
+        decodeSettings(<String, Object?>{'almostEnabled': false}).almostEnabled,
+        isFalse,
+      );
+    });
+
     test('resets the unit range when a file is loaded', () {
       final UnitRangeSelection range = resetUnitRange(12);
       expect(range.startUnit, 1);

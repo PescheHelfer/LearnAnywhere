@@ -143,7 +143,7 @@ deck that has never been saved has no file to update: save it first.
 ## Auto-load and auto-save
 
 Two independent toggles under **Options ▸ Statistics** save you the trip to the File
-menu:
+menu. Both are on from the start:
 
 - **Auto-load statistics** — when you open a deck, the program looks in its
   `statistics` folder for a matching timestamped session file and, if it finds one, asks

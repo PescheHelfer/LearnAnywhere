@@ -2001,7 +2001,8 @@ final class LearnAnywhereCatalog {
           '1.2.0 – Statistics files live in the deck\'s statistics folder; '
           'Recent decks on File operations; Correction follows the typed '
           'order and marks case and accents; each recent deck remembers its '
-          'unit range.',
+          'unit range; new defaults: \'Almost\' and statistics auto-load and '
+          'auto-save on, centred content frame off.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2869,7 +2870,9 @@ final class LearnAnywhereCatalog {
           'Lern-Datei; Zuletzt verwendete Lern-Dateien unter '
           'Dateioperationen; Korrektur folgt der Eingabereihenfolge und '
           'markiert Groß-/Kleinschreibung und Akzente; jede zuletzt '
-          'verwendete Lern-Datei merkt sich ihren Einheitenbereich.',
+          'verwendete Lern-Datei merkt sich ihren Einheitenbereich; neue '
+          'Standardwerte: „Fast“ sowie Statistiken automatisch laden und '
+          'speichern an, zentrierter Inhaltsrahmen aus.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

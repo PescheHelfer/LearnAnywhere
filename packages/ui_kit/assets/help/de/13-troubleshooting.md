@@ -53,8 +53,9 @@ Option hier, die etwas verwirft, und das wird vor der Bestätigung angezeigt.
 
 ## Meine Statistik wird nicht automatisch gespeichert
 
-Automatisches Speichern ist standardmäßig ausgeschaltet — schalten Sie es ein unter
-**Optionen ▸ Statistiken ▸ Statistiken automatisch speichern**. Außerdem muss die
+Automatisches Speichern ist von Anfang an eingeschaltet — prüfen Sie, ob es unter
+**Optionen ▸ Statistiken ▸ Statistiken automatisch speichern** ausgeschaltet wurde.
+Außerdem muss die
 Lern-Datei mindestens einmal unter einem echten Pfad gespeichert worden sein: eine
 ungespeicherte, nur im Speicher vorhandene Lern-Datei hat keinen Ordner, in dem eine
 Statistikdatei angelegt werden könnte. Siehe

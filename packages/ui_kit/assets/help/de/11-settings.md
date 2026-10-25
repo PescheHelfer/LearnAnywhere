@@ -16,7 +16,7 @@ Antwortprüfung aus; eine Änderung mitten in einer Sitzung wirkt sofort.
 | Vollständige Eingabe erforderlich | An | Jedes nicht leere Lösungsfeld muss für einen Treffer beantwortet werden |
 | Groß-/Kleinschreibung beachten | An | Unterscheidet Groß-/Kleinschreibung beim Vergleich |
 | Akzente beachten | An | Unterscheidet Akzente beim Vergleich |
-| Beinahe-Treffer als „Fast“ akzeptieren | Aus | Schaltet das Ergebnis "Fast" frei |
+| Beinahe-Treffer als „Fast“ akzeptieren | An | Schaltet das Ergebnis "Fast" frei |
 | Ähnlichkeitsschwelle für „Fast“ (%) | 80 | Wie nah ein Beinahe-Treffer sein muss, um als "Fast" zu zählen |
 | Mindestabfragen beachten | Aus | Siehe unten |
 | Mindestabfragen | 2 | Wert für den obigen Schutz |
@@ -99,8 +99,8 @@ kleinere Oberfläche.
 *Inhaltsrahmen* — ein eigenes Kästchen in der Mitte des Fensters — statt ihn in die linke
 obere Ecke zu heften. Bei einem maximierten Fenster auf einem großen Bildschirm ist das der
 Unterschied zwischen dem Lesen aus der Bildschirmmitte und dem Starren in eine Ecke über
-eine ganze Sitzung hinweg. Die Einstellung ist von Anfang an aktiv; nehmen Sie den Haken
-weg, erhalten Sie die alte Darstellung über die volle Breite zurück.
+eine ganze Sitzung hinweg. Die Einstellung ist anfangs ausgeschaltet; der Inhalt nutzt die
+volle Breite, bis Sie den Haken setzen.
 
 Zentriert wird nur seitlich. Der Inhalt beginnt weiterhin oben am Fenster, und das mit
 Absicht: Die Zeile, die Ihnen sagt, ob eine Antwort richtig war, erscheint und verschwindet

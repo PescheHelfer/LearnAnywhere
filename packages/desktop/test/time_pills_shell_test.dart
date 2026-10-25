@@ -43,6 +43,11 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     prefs = DesktopPrefs(await SharedPreferences.getInstance());
+    // These tests are about the lifetime record, which is written whatever
+    // the toggles say; with them on, a reopen would stop at the auto-load
+    // prompt. The one test about the session file switches auto-save on.
+    prefs.setAutoLoadStats(false);
+    prefs.setAutoSaveStats(false);
     temp = Directory.systemTemp.createTempSync('la_time_pills_');
     settingsPath = p.join(temp.path, 'settings.json');
     deckPath = p.join(temp.path, 'deck.vok');

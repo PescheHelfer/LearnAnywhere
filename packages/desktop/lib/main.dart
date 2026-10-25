@@ -714,7 +714,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     _lastFileSearchDir = widget.prefs.lastDirFileSearch;
     _startFolder = widget.prefs.startFolder;
     // Re-seed the default deck's mask in the active UI language, and apply the
-    // persisted auto-load/auto-save statistics toggles (C11; both default OFF).
+    // persisted auto-load/auto-save statistics toggles (C11; both default on).
     _document =
         DesktopDocument.empty(
           _defaultMask(widget.locale.languageCode),

@@ -114,9 +114,9 @@ dargestellt, statt stillschweigend zu verschwinden. So sehen Sie einen ganzen
 verschobenen Ordner, statt ihn unbemerkt zu verlieren. Ein solcher Eintrag öffnet
 nichts mehr; ein Klick darauf meldet **Datei nicht gefunden** samt dem gesuchten Pfad.
 
-Wenn Sie zu der Datei eine Statistik führen, schalten Sie **Optionen ▸ Statistiken ▸
-Statistiken automatisch laden** ein; dann wird die passende `.sta`-Datei aus dem Ordner
-`statistics` der Lern-Datei beim Öffnen automatisch mitgeladen. Siehe
+Wenn Sie zu der Datei eine Statistik führen, bietet **Optionen ▸ Statistiken ▸
+Statistiken automatisch laden**, von Anfang an eingeschaltet, beim Öffnen die passende
+`.sta`-Datei aus dem Ordner `statistics` der Lern-Datei zum Laden an. Siehe
 [Arbeiten mit Dateien](03-managing-files.md).
 
 ## Die erste Sitzung

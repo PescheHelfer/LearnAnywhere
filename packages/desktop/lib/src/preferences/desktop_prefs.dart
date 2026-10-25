@@ -67,10 +67,9 @@ final class DesktopPrefs {
 
   /// Whether each screen's content is centred in a width-limited frame.
   ///
-  /// On unless the learner has turned it off: the benefit of not staring into
-  /// one corner of a wide screen should reach her without her having to find a
-  /// setting first.
-  bool get contentFrameEnabled => _prefs.getBool(_keyContentFrame) ?? true;
+  /// Off unless the learner has turned it on: the full-width layout is the
+  /// default.
+  bool get contentFrameEnabled => _prefs.getBool(_keyContentFrame) ?? false;
 
   /// Persists whether the content frame is in force.
   void setContentFrameEnabled(bool value) =>
@@ -128,15 +127,15 @@ final class DesktopPrefs {
 
   // --- Auto-load / auto-save statistics toggles (C11) ------------------------
 
-  /// Whether opening a `.vok` auto-loads a sidecar `.sta`. Defaults to off.
-  bool get autoLoadStats => _prefs.getBool(_keyAutoLoadStats) ?? false;
+  /// Whether opening a `.vok` offers its newest session `.sta`. Defaults to on.
+  bool get autoLoadStats => _prefs.getBool(_keyAutoLoadStats) ?? true;
 
   /// Persists the auto-load statistics toggle state.
   void setAutoLoadStats(bool value) =>
       unawaited(_prefs.setBool(_keyAutoLoadStats, value));
 
-  /// Whether leaving a deck auto-saves statistics. Defaults to off.
-  bool get autoSaveStats => _prefs.getBool(_keyAutoSaveStats) ?? false;
+  /// Whether statistics are auto-saved to a session file. Defaults to on.
+  bool get autoSaveStats => _prefs.getBool(_keyAutoSaveStats) ?? true;
 
   /// Persists the auto-save statistics toggle state.
   void setAutoSaveStats(bool value) =>

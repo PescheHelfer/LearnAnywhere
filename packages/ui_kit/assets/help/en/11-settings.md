@@ -16,7 +16,7 @@ check an answer; changing one mid-session takes effect immediately.
 | Complete input required | On | Every non-empty solution field must be answered for a match |
 | Case sensitive | On | Distinguishes upper/lower case when matching |
 | Accent sensitive | On | Distinguishes accented characters when matching |
-| Accept near-misses as 'Almost' | Off | Enables the Almost outcome |
+| Accept near-misses as 'Almost' | On | Enables the Almost outcome |
 | 'Almost' similarity threshold (%) | 80 | How close a near-miss must be to count as Almost |
 | Minimum-attempts guard | Off | See below |
 | Minimum attempts | 2 | Value for the guard above |
@@ -92,8 +92,8 @@ interface smaller.
 **Options ▸ Centred content frame** puts each screen's content into a *content frame* — a
 box of its own, sitting in the middle of the window — instead of pinning it to the top-left
 corner. On a maximised window on a large monitor that is the difference between reading from
-the middle of the screen and holding your gaze on one corner for a whole sitting. It is on
-from the start, and unticking it gives you the old full-width layout back.
+the middle of the screen and holding your gaze on one corner for a whole sitting. It is off
+from the start, so content spans the full width until you tick it.
 
 Centring is sideways only. The content still starts at the top of the window, deliberately:
 the line telling you whether an answer was right appears and disappears as you work, and a

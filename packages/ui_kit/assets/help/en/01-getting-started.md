@@ -104,9 +104,9 @@ in the list, greyed out, rather than quietly disappearing — that way a whole f
 have moved is visible instead of silently gone. Such an entry no longer opens anything:
 clicking it reports **File not found** with the path it looked in.
 
-If you keep statistics for the deck, turn on **Options ▸ Statistics ▸ Auto-load
-statistics** and the matching `.sta` file in the deck's `statistics` folder is picked
-up automatically whenever you open a deck. See
+If you keep statistics for the deck, **Options ▸ Statistics ▸ Auto-load statistics**,
+on from the start, offers the matching `.sta` file in the deck's `statistics` folder
+whenever you open a deck. See
 [Working with files](03-managing-files.md).
 
 ## Your first session

@@ -773,7 +773,7 @@ void main() {
     expect(find.byType(ContentFrame), findsNothing);
   });
 
-  testWidgets('centring is on by default, can be turned off, and stays off', (
+  testWidgets('centring is off by default, can be turned on, and stays on', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(2400, 1500);
@@ -784,23 +784,22 @@ void main() {
     await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
     await openEditorWithOneUnit(tester);
-    // On without anyone asking: the benefit has to reach the learner without
-    // her finding a setting first.
-    expect(tester.getRect(find.byType(FieldRowGrid)).left, greaterThan(0));
+    // Off without anyone asking: the full-width layout, flush to the left.
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
 
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
     await toggleContentFrame(tester);
     await openEditorWithOneUnit(tester);
-    // Off: the old full-width layout, flush to the left.
-    expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
+    // On: centred, with a margin to the left.
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, greaterThan(0));
 
     // Relaunch against the same preference store.
     await tester.pumpWidget(Container());
     await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
     await openEditorWithOneUnit(tester);
-    expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, greaterThan(0));
   });
 
   testWidgets('the centring checkbox keeps following the setting, both ways', (
@@ -819,12 +818,12 @@ void main() {
 
     await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
-    expect(await contentFrameChecked(tester), isTrue);
+    expect(await contentFrameChecked(tester), isFalse);
 
     await toggleContentFrame(tester);
-    expect(await contentFrameChecked(tester), isFalse);
+    expect(await contentFrameChecked(tester), isTrue);
     await openEditorWithOneUnit(tester);
-    expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, greaterThan(0));
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
@@ -836,13 +835,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Dark').last);
     await tester.pumpAndSettle();
-    expect(await contentFrameChecked(tester), isFalse);
-
-    // And back on again - the click that used to do nothing.
-    await toggleContentFrame(tester);
     expect(await contentFrameChecked(tester), isTrue);
+
+    // And back off again - the click that used to do nothing.
+    await toggleContentFrame(tester);
+    expect(await contentFrameChecked(tester), isFalse);
     await openEditorWithOneUnit(tester);
-    expect(tester.getRect(find.byType(FieldRowGrid)).left, greaterThan(0));
+    expect(tester.getRect(find.byType(FieldRowGrid)).left, lessThan(30));
   });
 
   testWidgets('a window narrower than the frame keeps today\'s layout', (
@@ -854,6 +853,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    prefs.setContentFrameEnabled(true);
 
     await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
     await tester.pumpAndSettle();
@@ -872,6 +872,7 @@ void main() {
     for (final int level in LearnAnywhereZoom.levels) {
       SharedPreferences.setMockInitialValues(<String, Object>{
         'zoom_percent': level,
+        'content_frame': true,
       });
       final DesktopPrefs zoomed = DesktopPrefs(
         await SharedPreferences.getInstance(),
