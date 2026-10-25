@@ -854,14 +854,6 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
 
   // --- Per-deck unit range --------------------------------------------------
 
-  UnitRangeSelection _clampRange(UnitRangeSelection range, int unitCount) {
-    final int maximum = unitCount < 1 ? 1 : unitCount;
-    return range.copyWith(
-      startUnit: range.startUnit.clamp(1, maximum).toInt(),
-      endUnit: range.endUnit.clamp(1, maximum).toInt(),
-    );
-  }
-
   /// Resets Start/End to the full range, with an end that follows the deck:
   /// for a deck with no range of its own (a new deck, a new mask, a deck
   /// assembled in the Lexicon) and for **Use all units**.
@@ -2142,7 +2134,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
       final UnitRangeSelection rangeBefore = _range;
       setState(() {
         _document = snapshot;
-        _range = _clampRange(_range, _document.deck.units.length);
+        _range = fitUnitRange(_range, _document.deck.units.length);
         _learnParameters = _learnParameters.copyWith(
           startIndex: _range.startUnit,
           endIndex: _range.endUnit,
@@ -2989,7 +2981,7 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         },
         onStartUnitChanged: (int value) {
           setState(() {
-            _range = _clampRange(
+            _range = fitUnitRange(
               _range.copyWith(startUnit: value),
               _document.deck.units.length,
             );
@@ -3002,8 +2994,8 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         },
         onEndUnitChanged: (int value) {
           setState(() {
-            _range = _clampRange(
-              _range.copyWith(endUnit: value, endManuallySet: true),
+            _range = fitUnitRange(
+              _range.copyWith(endUnit: value),
               _document.deck.units.length,
             );
             _learnParameters = _learnParameters.copyWith(
@@ -3159,13 +3151,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         levelStatistics: levelStatistics,
         allTime: allTime,
       );
-      _range = _clampRange(
-        autoExpandEndUnit(
-          _range,
-          previousCount: previousCount,
-          newCount: newCount,
-        ),
-        newCount,
+      _range = autoExpandEndUnit(
+        _range,
+        previousCount: previousCount,
+        newCount: newCount,
       );
       _learnParameters = _learnParameters.copyWith(
         startIndex: _range.startUnit,
@@ -3960,13 +3949,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
     await _guardedFileOperation(() async {
       _document = await _fileService.mergeDeck(_document, path);
       final int newCount = _document.deck.units.length;
-      _range = _clampRange(
-        autoExpandEndUnit(
-          _range,
-          previousCount: previousCount,
-          newCount: newCount,
-        ),
-        newCount,
+      _range = autoExpandEndUnit(
+        _range,
+        previousCount: previousCount,
+        newCount: newCount,
       );
       _learnParameters = _learnParameters.copyWith(
         startIndex: _range.startUnit,

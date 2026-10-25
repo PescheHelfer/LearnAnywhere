@@ -15,7 +15,7 @@ setup** screen (**Learn ▸ Practice setup**, `Alt+L` then `P`).
 | **Difficult units only ({count})** | Ask only the units that are difficult, each only in the direction it is difficult in, in every mode; the count shows how many there are — see [Asking difficult units only](#asking-difficult-units-only) |
 | **Mastery threshold (%)** | Drill mode only — a unit counts as mastered once its correct rate reaches this |
 | **Require typed answers** | Off, cards wait for you to judge yourself instead of typing; hidden for Level learning, which always requires typing |
-| **Start unit** / **End unit** | Restrict the session to a range of the deck; clearing either field expands it to the first/last unit. **Use all units ({count})** resets both at once. The range is remembered for each deck — see below |
+| **Start unit** / **End unit** | Restrict the session to a range of the deck; clearing either field expands it to the first/last unit. The **Use all units ({count})** button above them sets both to the whole deck in one click. The range is remembered for each deck — see below |
 
 Press **Start session** to begin. If you already have a session running, this button
 reads **Continue** instead, and takes you straight back into it.
@@ -30,8 +30,14 @@ version...** — brings its range back, both on this screen and for **Learn with
 settings**. A deck that has fewer units than before has its range cut back to fit; if
 even the start unit no longer exists, the deck opens with all its units. **Save deck
 as...** takes the range along to the new file. **Clear units from memory...** and **Load
-mask...** always start at the full range, and **Use all units ({count})** is not
-remembered. A deck that drops off the **Recent decks** list forgets its range.
+mask...** always start at the full range. A deck that drops off the **Recent decks** list
+forgets its range.
+
+When **End unit** is the deck's last unit, it stays the last unit as the deck grows:
+units added in the unit editor, with **Add/merge deck...** or by **Update deck from new
+version...** are taken into the range, also after a restart. That holds whether you typed
+the number or it was already there. An **End unit** before the last unit stays where you
+put it.
 
 If every unit in the remembered range is already mastered, **Learn with last settings**
 goes straight to the [end of the session](#finishing), where **Extend session** brings
@@ -282,7 +288,7 @@ trouble, in the same deck.
   **End unit** it waits until you leave the field or press `Enter`, so the 5 on the way
   to 50 is not judged on its own.
 - The option shows how big the session will be, in units: **(3)** when the range holds
-  every unit that is difficult in the chosen direction (always so with **Use all units
+  every unit that is difficult in the chosen direction (always so after **Use all units
   ({count})**), **(1/3)** when the range leaves some out — one of the deck's three. With
   **Both** a unit difficult either way counts once. The count follows **Start unit**,
   **End unit** and the direction as you change them, and its tooltip spells it out.

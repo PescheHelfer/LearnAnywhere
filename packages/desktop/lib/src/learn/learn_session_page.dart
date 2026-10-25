@@ -136,8 +136,8 @@ final class LearnSessionPage extends StatefulWidget {
   /// Called when the user manually changes the end unit on the setup screen.
   final ValueChanged<int>? onEndUnitChanged;
 
-  /// Called when **Use all units** pins the range to the whole deck — not a
-  /// hand-set end, so the shell lets that end follow the deck as it grows.
+  /// Called when **Use all units** sets the range to the whole deck, so the
+  /// shell can take the deck's full range in one step.
   final VoidCallback? onUseAllUnits;
 
   /// Called when the user exits the learn session back to the home screen.
@@ -419,11 +419,6 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
   late int _startIndex;
   late int _endIndex;
   late int _thresholdPercent;
-
-  // Pins the unit range to the whole deck and disables both range fields.
-  // Opt-in only: a range that happens to span the deck does not switch this on
-  // by itself, so opening the setup screen never starts with dead fields.
-  bool _useAllUnits = false;
 
   // Whether Start unit or End unit has been typed in and not yet left. Until
   // then an empty Difficult-only range is not reported: "5" on the way to
@@ -837,21 +832,14 @@ final class _LearnSessionPageState extends State<LearnSessionPage> {
         thresholdPercent: _thresholdPercent,
         levelNames: widget.levelNames,
         entryLevelCap: widget.entryLevelCap,
-        useAllUnits: _useAllUnits,
-        onUseAllUnitsChanged: (bool value) {
+        onUseAllUnits: () {
           setState(() {
-            _useAllUnits = value;
-            if (!value) {
-              return;
-            }
-            // Pinning the range spans the whole deck; unpinning leaves the
-            // last values in place so the previous range is still there.
             _startIndex = 1;
             _endIndex = widget.deck.units.length;
+            // The range is settled, even if a field still has the focus.
+            _rangeEditPending = false;
           });
-          if (value) {
-            widget.onUseAllUnits?.call();
-          }
+          widget.onUseAllUnits?.call();
         },
         onDirectionChanged: (DirectionSelection value) {
           _applyDraft(_parametersWith(direction: value));
@@ -1927,7 +1915,6 @@ final class _SetupView extends StatelessWidget {
     required this.thresholdPercent,
     required this.levelNames,
     required this.entryLevelCap,
-    required this.useAllUnits,
     required this.onDirectionChanged,
     required this.onModeChanged,
     required this.onEntryLevelCapChanged,
@@ -1936,7 +1923,7 @@ final class _SetupView extends StatelessWidget {
     required this.difficultCount,
     required this.onDifficultOnlyChanged,
     required this.onWithInputChanged,
-    required this.onUseAllUnitsChanged,
+    required this.onUseAllUnits,
     required this.onStartChanged,
     required this.onEndChanged,
     required this.onRangeEditingDone,
@@ -1952,10 +1939,6 @@ final class _SetupView extends StatelessWidget {
   final int thresholdPercent;
   final List<String> levelNames;
   final int entryLevelCap;
-
-  /// Whether the range is pinned to the whole deck, disabling both fields.
-  final bool useAllUnits;
-
   final ValueChanged<DirectionSelection> onDirectionChanged;
   final ValueChanged<SessionMode> onModeChanged;
   final ValueChanged<int> onEntryLevelCapChanged;
@@ -1971,7 +1954,8 @@ final class _SetupView extends StatelessWidget {
   final DifficultUnitCount difficultCount;
   final ValueChanged<bool> onDifficultOnlyChanged;
   final ValueChanged<bool> onWithInputChanged;
-  final ValueChanged<bool> onUseAllUnitsChanged;
+  /// Called by **Use all units**, which sets the range to the whole deck.
+  final VoidCallback onUseAllUnits;
   final ValueChanged<int> onStartChanged;
   final ValueChanged<int> onEndChanged;
 
@@ -2114,12 +2098,19 @@ final class _SetupView extends StatelessWidget {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
-        _ToggleRow(
-          label: messages
-              .message(LearnAnywhereMessage.learnUseAllUnits)
-              .replaceAll('{count}', deck.units.length.toString()),
-          value: useAllUnits,
-          onChanged: onUseAllUnitsChanged,
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: OutlinedButton(
+            // Nothing to widen while the range already spans the deck.
+            onPressed: startIndex == 1 && endIndex == deck.units.length
+                ? null
+                : onUseAllUnits,
+            child: Text(
+              messages
+                  .message(LearnAnywhereMessage.learnUseAllUnits)
+                  .replaceAll('{count}', deck.units.length.toString()),
+            ),
+          ),
         ),
         const SizedBox(height: LearnAnywhereTokens.gapSmall),
         Row(
@@ -2134,7 +2125,6 @@ final class _SetupView extends StatelessWidget {
                 value: startIndex,
                 minimum: 1,
                 maximum: deck.units.length,
-                enabled: !useAllUnits,
                 onChanged: onStartChanged,
                 onEditingDone: onRangeEditingDone,
               ),
@@ -2151,7 +2141,6 @@ final class _SetupView extends StatelessWidget {
                 maximum: deck.units.length,
                 // Clearing "End unit" means "up to the last unit", not 1.
                 emptyFallback: deck.units.length,
-                enabled: !useAllUnits,
                 onChanged: onEndChanged,
                 onEditingDone: onRangeEditingDone,
               ),
@@ -3730,8 +3719,8 @@ final class _StatPill extends StatelessWidget {
 }
 
 /// A toggle row with a fixed-width label column so consecutive toggles (e.g.
-/// "Shuffle units" and "Use all units") line their switches up regardless of
-/// label length.
+/// "Shuffle units" and "Difficult units only") line their switches up
+/// regardless of label length.
 final class _ToggleRow extends StatelessWidget {
   const _ToggleRow({
     required this.label,
@@ -3843,7 +3832,6 @@ final class _NumberRow extends StatefulWidget {
     required this.onChanged,
     this.maximum,
     this.emptyFallback,
-    this.enabled = true,
     this.tooltip,
     this.onEditingDone,
   });
@@ -3867,9 +3855,6 @@ final class _NumberRow extends StatefulWidget {
   /// of both collapsing to 1: clearing "Start unit" means the first unit,
   /// clearing "End unit" means the last one.
   final int? emptyFallback;
-
-  /// Whether the field accepts input. A disabled field still shows [value].
-  final bool enabled;
 
   @override
   State<_NumberRow> createState() => _NumberRowState();
@@ -3918,7 +3903,6 @@ final class _NumberRowState extends State<_NumberRow> {
       child: TextField(
         controller: _controller,
         focusNode: _focusNode,
-        enabled: widget.enabled,
         keyboardType: TextInputType.number,
         onSubmitted: (String _) => _focusNode.unfocus(),
         inputFormatters: <TextInputFormatter>[

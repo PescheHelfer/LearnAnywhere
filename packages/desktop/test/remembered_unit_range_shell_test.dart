@@ -180,7 +180,7 @@ void main() {
       await typeRange(tester, 3, 5);
       expect(
         rangeOnDisk(deckPath),
-        const UnitRangeSelection(startUnit: 3, endUnit: 5, endManuallySet: true),
+        const UnitRangeSelection(startUnit: 3, endUnit: 5),
       );
 
       // The restart: the old instance goes, and a new one reads the same
@@ -217,7 +217,7 @@ void main() {
           deckPath: const UnitRangeSelection(
             startUnit: 7,
             endUnit: 8,
-            endManuallySet: true,
+            endFollowsDeck: true,
           ),
         },
       ),
@@ -254,16 +254,8 @@ void main() {
       LearnAnywhereSettings(
         recentDeckPaths: <String>[shrunk, short],
         unitRanges: <String, UnitRangeSelection>{
-          shrunk: const UnitRangeSelection(
-            startUnit: 3,
-            endUnit: 20,
-            endManuallySet: true,
-          ),
-          short: const UnitRangeSelection(
-            startUnit: 10,
-            endUnit: 12,
-            endManuallySet: true,
-          ),
+          shrunk: const UnitRangeSelection(startUnit: 3, endUnit: 20),
+          short: const UnitRangeSelection(startUnit: 10, endUnit: 12),
         },
       ),
     );
@@ -311,8 +303,8 @@ void main() {
     });
   });
 
-  testWidgets('a range pinned with Use all units grows with the deck '
-      'instead of being remembered as set by hand', (
+  testWidgets('Use all units widens the range to the whole deck in one '
+      'click, and that end grows with the deck', (
     WidgetTester tester,
   ) async {
     final String deckPath = p.join(temp.path, 'words.vok');
@@ -326,7 +318,9 @@ void main() {
       await loadDeck(tester, picker, deckPath);
       await pickMenuItem(tester, 'Learn', 'Practice setup');
       await typeRange(tester, 3, 5);
-      await tester.tap(find.text('Use all units (8)'));
+      await tester.tap(
+        find.widgetWithText(OutlinedButton, 'Use all units (8)'),
+      );
       await settleAfterIo(tester);
       expect(shownRange(tester), ('1', '8'));
       expect(rangeOnDisk(deckPath), resetUnitRange(8));
@@ -335,6 +329,55 @@ void main() {
       await pickMenuItem(tester, 'File', 'Update deck from new version...');
       await pickMenuItem(tester, 'Learn', 'Practice setup');
       expect(shownRange(tester), ('1', '10'));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('an End unit typed as the last unit moves to the new last unit '
+      'when the deck grows', (WidgetTester tester) async {
+    final String deckPath = p.join(temp.path, 'words.vok');
+    final String incomingPath = p.join(temp.path, 'words-new.vok');
+    File(deckPath).writeAsStringSync(encodeDeckJson(_deck(8)));
+    File(incomingPath).writeAsStringSync(encodeDeckJson(_deck(10)));
+
+    await tester.runAsync(() async {
+      final _ScriptedFilePicker picker = _ScriptedFilePicker();
+      await startApp(tester, picker);
+      await loadDeck(tester, picker, deckPath);
+      await pickMenuItem(tester, 'Learn', 'Practice setup');
+      await typeRange(tester, 3, 8);
+
+      picker.nextOpenPath = incomingPath;
+      await pickMenuItem(tester, 'File', 'Update deck from new version...');
+      await pickMenuItem(tester, 'Learn', 'Practice setup');
+      expect(shownRange(tester), ('3', '10'));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('units merged into an emptied deck are all in range', (
+    WidgetTester tester,
+  ) async {
+    final String deckPath = p.join(temp.path, 'words.vok');
+    final String maskPath = p.join(temp.path, 'words.inf');
+    File(deckPath).writeAsStringSync(encodeDeckJson(_deck(8)));
+    File(maskPath).writeAsStringSync(encodeMaskJson(_deck(0).mask));
+
+    await tester.runAsync(() async {
+      final _ScriptedFilePicker picker = _ScriptedFilePicker();
+      await startApp(tester, picker);
+
+      await pickMenuItem(tester, 'File', 'Clear units from memory...');
+      await tester.tap(find.text('Continue'));
+      await settle(tester);
+      picker.nextOpenPath = maskPath;
+      await tester.tap(find.text('Load existing mask...'));
+      await settleAfterIo(tester);
+
+      picker.nextOpenPath = deckPath;
+      await pickMenuItem(tester, 'File', 'Add/merge deck...');
+      await pickMenuItem(tester, 'Learn', 'Practice setup');
+      expect(shownRange(tester), ('1', '8'));
       expect(tester.takeException(), isNull);
     });
   });
@@ -377,7 +420,7 @@ void main() {
       expect(shownRange(tester), ('1', '2'));
       expect(
         rangeOnDisk(deckPath),
-        const UnitRangeSelection(startUnit: 3, endUnit: 5, endManuallySet: true),
+        const UnitRangeSelection(startUnit: 3, endUnit: 5),
       );
       expect(tester.takeException(), isNull);
     });

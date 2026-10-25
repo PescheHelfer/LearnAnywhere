@@ -149,7 +149,6 @@ void main() {
     const UnitRangeSelection threeToFive = UnitRangeSelection(
       startUnit: 3,
       endUnit: 5,
-      endManuallySet: true,
     );
 
     final LearnAnywhereSettings next = _save(

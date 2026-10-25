@@ -586,7 +586,7 @@ Map<String, Object?> encodeSettings(LearnAnywhereSettings settings) {
         entry.key: <String, Object?>{
           'startUnit': entry.value.startUnit,
           'endUnit': entry.value.endUnit,
-          'endManuallySet': entry.value.endManuallySet,
+          'endFollowsDeck': entry.value.endFollowsDeck,
         },
     },
     if (settings.lastMaskPath != null) 'lastMaskPath': settings.lastMaskPath,
@@ -718,13 +718,13 @@ Future<void> writeSettingsFile(String path, LearnAnywhereSettings settings) asyn
   await file.writeAsString(encodeSettingsJson(settings));
 }
 
-/// Per-file unit range selection with manual-override tracking.
+/// Per-deck unit range selection.
 final class UnitRangeSelection {
   /// Creates a unit range selection.
   const UnitRangeSelection({
     required this.startUnit,
     required this.endUnit,
-    this.endManuallySet = false,
+    this.endFollowsDeck = false,
   });
 
   /// One-based first unit.
@@ -733,21 +733,23 @@ final class UnitRangeSelection {
   /// One-based last unit.
   final int endUnit;
 
-  /// Whether the user manually restricted the end unit.
+  /// Whether [endUnit] is the deck's last unit, and so moves on to the new
+  /// last unit when units are added.
   ///
-  /// When `false`, [autoExpandEndUnit] may grow [endUnit] as units are added.
-  final bool endManuallySet;
+  /// Always derived from where the end stands ([fitUnitRange]), whether the
+  /// learner typed it or not. It is kept on the range so that a deck that
+  /// grew while it was closed reopens with its end at its new last unit
+  /// ([restoreUnitRange]).
+  final bool endFollowsDeck;
 
   /// Returns a copy with selected fields changed.
-  UnitRangeSelection copyWith({
-    int? startUnit,
-    int? endUnit,
-    bool? endManuallySet,
-  }) {
+  ///
+  /// [endFollowsDeck] is left as it was: [fitUnitRange] derives it.
+  UnitRangeSelection copyWith({int? startUnit, int? endUnit}) {
     return UnitRangeSelection(
       startUnit: startUnit ?? this.startUnit,
       endUnit: endUnit ?? this.endUnit,
-      endManuallySet: endManuallySet ?? this.endManuallySet,
+      endFollowsDeck: endFollowsDeck,
     );
   }
 
@@ -756,31 +758,46 @@ final class UnitRangeSelection {
     return other is UnitRangeSelection &&
         other.startUnit == startUnit &&
         other.endUnit == endUnit &&
-        other.endManuallySet == endManuallySet;
+        other.endFollowsDeck == endFollowsDeck;
   }
 
   @override
-  int get hashCode => Object.hash(startUnit, endUnit, endManuallySet);
+  int get hashCode => Object.hash(startUnit, endUnit, endFollowsDeck);
 }
 
 /// Returns the full range of a deck with [unitCount] units: for a deck with
 /// no remembered range (see [restoreUnitRange]), or one the learner widened
 /// to every unit.
 ///
-/// Start is reset to 1, end to the unit count, and the manual-override flag is
-/// cleared so a subsequent unit addition can auto-expand the range.
+/// Start is 1 and end the unit count, which follows the deck. An empty deck
+/// still gets a usable 1..1.
 UnitRangeSelection resetUnitRange(int unitCount) {
-  final int count = unitCount < 1 ? 1 : unitCount;
-  return UnitRangeSelection(startUnit: 1, endUnit: count);
+  return fitUnitRange(
+    UnitRangeSelection(startUnit: 1, endUnit: unitCount),
+    unitCount,
+  );
+}
+
+/// Returns [range] with its start and end clamped into a deck of [unitCount]
+/// units, and [UnitRangeSelection.endFollowsDeck] set to whether the end is
+/// now the deck's last unit.
+UnitRangeSelection fitUnitRange(UnitRangeSelection range, int unitCount) {
+  final int maximum = unitCount < 1 ? 1 : unitCount;
+  final int end = range.endUnit.clamp(1, maximum).toInt();
+  return UnitRangeSelection(
+    startUnit: range.startUnit.clamp(1, maximum).toInt(),
+    endUnit: end,
+    endFollowsDeck: end >= unitCount,
+  );
 }
 
 /// Returns the range to start a just-opened deck of [unitCount] units at,
 /// from the range it was [remembered] at, if any.
 ///
 /// Nothing remembered, or a start past the last unit, gives the whole deck
-/// ([resetUnitRange]). Otherwise an end set by hand is clamped to the deck,
-/// and an end nobody set follows the deck to its last unit, just as
-/// [autoExpandEndUnit] grows it within a run.
+/// ([resetUnitRange]). An end that was the deck's last unit moves to its last
+/// unit now, as [autoExpandEndUnit] moves it within a run; any other end is
+/// clamped to the deck.
 UnitRangeSelection restoreUnitRange(
   UnitRangeSelection? remembered,
   int unitCount,
@@ -789,30 +806,33 @@ UnitRangeSelection restoreUnitRange(
   if (remembered == null || remembered.startUnit > full.endUnit) {
     return full;
   }
-  return remembered.copyWith(
-    startUnit: remembered.startUnit < 1 ? 1 : remembered.startUnit,
-    endUnit: remembered.endManuallySet
-        ? remembered.endUnit.clamp(1, full.endUnit).toInt()
-        : full.endUnit,
+  return fitUnitRange(
+    remembered.endFollowsDeck
+        ? remembered.copyWith(endUnit: full.endUnit)
+        : remembered,
+    unitCount,
   );
 }
 
-/// Grows the end unit after units are added, unless the user overrode it.
+/// Returns [current] fitted to a deck that went from [previousCount] to
+/// [newCount] units ([fitUnitRange]), first moving the end on to the new
+/// last unit when units were added and it was the last unit before, whether
+/// typed or not.
 ///
-/// Auto-expansion happens only when [UnitRangeSelection.endManuallySet] is
-/// `false` and the previous end unit equalled [previousCount] (the user had not
-/// restricted the range). Otherwise the range is returned unchanged.
+/// An end before the last unit stays where the learner put it; deleted units
+/// only clamp the range. An empty deck's 1..1 counts as reaching its last
+/// unit, so the first units merged into it are all in range.
 UnitRangeSelection autoExpandEndUnit(
   UnitRangeSelection current, {
   required int previousCount,
   required int newCount,
 }) {
-  if (!current.endManuallySet &&
-      current.endUnit == previousCount &&
-      newCount > previousCount) {
-    return current.copyWith(endUnit: newCount);
-  }
-  return current;
+  final bool grows =
+      current.endUnit >= previousCount && newCount > previousCount;
+  return fitUnitRange(
+    grows ? current.copyWith(endUnit: newCount) : current,
+    newCount,
+  );
 }
 
 bool _bool(Object? value, bool fallback) => value is bool ? value : fallback;
@@ -933,7 +953,7 @@ Map<String, UnitRangeSelection> _unitRanges(Object? value) {
     ranges[path] = UnitRangeSelection(
       startUnit: start,
       endUnit: end,
-      endManuallySet: _bool(json['endManuallySet'], false),
+      endFollowsDeck: _bool(json['endFollowsDeck'], false),
     );
   }
   return Map<String, UnitRangeSelection>.unmodifiable(ranges);

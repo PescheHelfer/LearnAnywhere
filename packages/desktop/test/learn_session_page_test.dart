@@ -667,7 +667,7 @@ void main() {
 
   testWidgets(
     'setup screen shows the deck size, expands a cleared range field to its '
-    'own end, and pins the range with "Use all units"',
+    'own end, and widens the range with the "Use all units" button',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1.0;
@@ -677,7 +677,7 @@ void main() {
       await tester.pumpWidget(buildPage(onExit: () {}));
       await tester.pumpAndSettle();
 
-      // The deck size is stated in the "Use all units" toggle label.
+      // The deck size is stated on the "Use all units" button.
       expect(find.text('Use all units (2)'), findsOneWidget);
 
       final Finder startField = find.ancestor(
@@ -701,25 +701,29 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.widget<TextField>(startField).controller!.text, '1');
 
-      // Narrow the range, then pin it: both fields go read-only and snap back
-      // to the full deck.
+      // The button has nothing to do while the range spans the deck.
+      final Finder useAll = find.widgetWithText(
+        OutlinedButton,
+        'Use all units (2)',
+      );
+      expect(tester.widget<OutlinedButton>(useAll).onPressed, isNull);
+
+      // Narrow the range, then one click widens it to the whole deck; the
+      // fields stay editable.
+      await tester.enterText(startField, '2');
+      await tester.pumpAndSettle();
+      expect(tester.widget<OutlinedButton>(useAll).onPressed, isNotNull);
+
+      await tester.tap(useAll);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(startField).controller!.text, '1');
+      expect(tester.widget<TextField>(endField).controller!.text, '2');
+      expect(tester.widget<OutlinedButton>(useAll).onPressed, isNull);
+
+      // Nothing is pinned: the fields take a new range straight away.
       await tester.enterText(endField, '1');
       await tester.pumpAndSettle();
       expect(tester.widget<TextField>(endField).controller!.text, '1');
-      expect(tester.widget<TextField>(startField).enabled, isTrue);
-
-      await tester.tap(find.text('Use all units (2)'));
-      await tester.pumpAndSettle();
-      expect(tester.widget<TextField>(startField).enabled, isFalse);
-      expect(tester.widget<TextField>(endField).enabled, isFalse);
-      expect(tester.widget<TextField>(startField).controller!.text, '1');
-      expect(tester.widget<TextField>(endField).controller!.text, '2');
-
-      // Unpinning re-enables them and leaves the full range in place.
-      await tester.tap(find.text('Use all units (2)'));
-      await tester.pumpAndSettle();
-      expect(tester.widget<TextField>(startField).enabled, isTrue);
-      expect(tester.widget<TextField>(endField).controller!.text, '2');
     },
   );
 

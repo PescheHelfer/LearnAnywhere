@@ -2856,9 +2856,48 @@ void main() {
       final UnitRangeSelection range = resetUnitRange(12);
       expect(range.startUnit, 1);
       expect(range.endUnit, 12);
-      expect(range.endManuallySet, isFalse);
-      // Empty decks still produce a usable 1..1 range.
+      expect(range.endFollowsDeck, isTrue);
+      // Empty decks still produce a usable 1..1 range, which follows the deck.
       expect(resetUnitRange(0).endUnit, 1);
+      expect(resetUnitRange(0).endFollowsDeck, isTrue);
+    });
+
+    test('fits a range into the deck, the end following it only at the last '
+        'unit', () {
+      expect(
+        fitUnitRange(const UnitRangeSelection(startUnit: 3, endUnit: 5), 12),
+        const UnitRangeSelection(startUnit: 3, endUnit: 5),
+      );
+      // An end at the last unit follows the deck, however it got there.
+      expect(
+        fitUnitRange(const UnitRangeSelection(startUnit: 3, endUnit: 12), 12),
+        const UnitRangeSelection(
+          startUnit: 3,
+          endUnit: 12,
+          endFollowsDeck: true,
+        ),
+      );
+      // A range past the end is clamped, and its end is then the last unit.
+      expect(
+        fitUnitRange(const UnitRangeSelection(startUnit: 20, endUnit: 30), 12),
+        const UnitRangeSelection(
+          startUnit: 12,
+          endUnit: 12,
+          endFollowsDeck: true,
+        ),
+      );
+      // An end pulled back from the last unit stops following.
+      expect(
+        fitUnitRange(
+          const UnitRangeSelection(
+            startUnit: 1,
+            endUnit: 6,
+            endFollowsDeck: true,
+          ),
+          12,
+        ),
+        const UnitRangeSelection(startUnit: 1, endUnit: 6),
+      );
     });
 
     test('restores a remembered range, clamped to the deck', () {
@@ -2868,62 +2907,118 @@ void main() {
       const UnitRangeSelection threeToFive = UnitRangeSelection(
         startUnit: 3,
         endUnit: 5,
-        endManuallySet: true,
       );
       expect(restoreUnitRange(threeToFive, 12), threeToFive);
-      // A deck that shrank under a hand-set end clamps the end.
+      // A deck that shrank under the end clamps it to the new last unit.
+      expect(
+        restoreUnitRange(
+          const UnitRangeSelection(startUnit: 3, endUnit: 20),
+          12,
+        ),
+        const UnitRangeSelection(
+          startUnit: 3,
+          endUnit: 12,
+          endFollowsDeck: true,
+        ),
+      );
+      // A start past the last unit gives the whole deck.
+      expect(restoreUnitRange(threeToFive, 2), resetUnitRange(2));
+      // An end left at the last unit follows a deck that grew since.
       expect(
         restoreUnitRange(
           const UnitRangeSelection(
             startUnit: 3,
-            endUnit: 20,
-            endManuallySet: true,
+            endUnit: 10,
+            endFollowsDeck: true,
           ),
-          12,
-        ),
-        const UnitRangeSelection(startUnit: 3, endUnit: 12, endManuallySet: true),
-      );
-      // A start past the last unit gives the whole deck.
-      expect(restoreUnitRange(threeToFive, 2), resetUnitRange(2));
-      // An end nobody set by hand follows the deck, as it does within a run.
-      expect(
-        restoreUnitRange(
-          const UnitRangeSelection(startUnit: 3, endUnit: 10),
           15,
         ),
-        const UnitRangeSelection(startUnit: 3, endUnit: 15),
+        const UnitRangeSelection(
+          startUnit: 3,
+          endUnit: 15,
+          endFollowsDeck: true,
+        ),
       );
     });
 
-    test('auto-expands the end unit only without a manual override', () {
-      const UnitRangeSelection full = UnitRangeSelection(
-        startUnit: 1,
+    test('an end at the last unit grows with added units, typed or not', () {
+      const UnitRangeSelection atLast = UnitRangeSelection(
+        startUnit: 3,
         endUnit: 10,
       );
       expect(
-        autoExpandEndUnit(full, previousCount: 10, newCount: 15).endUnit,
-        15,
+        autoExpandEndUnit(atLast, previousCount: 10, newCount: 15),
+        const UnitRangeSelection(
+          startUnit: 3,
+          endUnit: 15,
+          endFollowsDeck: true,
+        ),
       );
 
+      // An end before the last unit stays where the learner put it.
       const UnitRangeSelection restricted = UnitRangeSelection(
         startUnit: 1,
         endUnit: 6,
-        endManuallySet: true,
       );
       expect(
-        autoExpandEndUnit(restricted, previousCount: 10, newCount: 15).endUnit,
-        6,
+        autoExpandEndUnit(restricted, previousCount: 10, newCount: 15),
+        restricted,
       );
 
-      // A user who left the range full but typed the same value is respected.
-      const UnitRangeSelection manualFull = UnitRangeSelection(
-        startUnit: 1,
-        endUnit: 10,
-        endManuallySet: true,
-      );
+      // An empty deck's 1..1 grows with the first units merged into it.
       expect(
-        autoExpandEndUnit(manualFull, previousCount: 10, newCount: 15).endUnit,
-        10,
+        autoExpandEndUnit(resetUnitRange(0), previousCount: 0, newCount: 8),
+        resetUnitRange(8),
+      );
+    });
+
+    test('deleting units keeps the range inside the deck', () {
+      // The editor's step for every edit, deletions included.
+      UnitRangeSelection afterEdit(
+        UnitRangeSelection range,
+        int previousCount,
+        int newCount,
+      ) => autoExpandEndUnit(
+        range,
+        previousCount: previousCount,
+        newCount: newCount,
+      );
+
+      // Deleting the last unit pulls an end at it back to the new last unit.
+      expect(
+        afterEdit(
+          const UnitRangeSelection(
+            startUnit: 3,
+            endUnit: 8,
+            endFollowsDeck: true,
+          ),
+          8,
+          7,
+        ),
+        const UnitRangeSelection(
+          startUnit: 3,
+          endUnit: 7,
+          endFollowsDeck: true,
+        ),
+      );
+      // Deleting below an end before the last unit leaves it alone.
+      expect(
+        afterEdit(const UnitRangeSelection(startUnit: 3, endUnit: 5), 8, 7),
+        const UnitRangeSelection(startUnit: 3, endUnit: 5),
+      );
+      // Deleting down to fewer units than the start clamps both ends.
+      expect(
+        afterEdit(const UnitRangeSelection(startUnit: 6, endUnit: 7), 8, 4),
+        const UnitRangeSelection(
+          startUnit: 4,
+          endUnit: 4,
+          endFollowsDeck: true,
+        ),
+      );
+      // Deleting every unit still leaves a usable 1..1.
+      expect(
+        afterEdit(const UnitRangeSelection(startUnit: 2, endUnit: 3), 3, 0),
+        resetUnitRange(0),
       );
     });
 
@@ -3028,17 +3123,17 @@ void main() {
       );
     });
 
-    test('round-trips each recent deck\'s unit range, end-set-by-hand '
-        'included', () {
+    test('round-trips each recent deck\'s unit range, whether its end '
+        'follows the deck included', () {
       const LearnAnywhereSettings settings = LearnAnywhereSettings(
         recentDeckPaths: <String>['/decks/c.vok', '/decks/b.vok'],
         unitRanges: <String, UnitRangeSelection>{
-          '/decks/c.vok': UnitRangeSelection(
-            startUnit: 3,
-            endUnit: 5,
-            endManuallySet: true,
+          '/decks/c.vok': UnitRangeSelection(startUnit: 3, endUnit: 5),
+          '/decks/b.vok': UnitRangeSelection(
+            startUnit: 120,
+            endUnit: 150,
+            endFollowsDeck: true,
           ),
-          '/decks/b.vok': UnitRangeSelection(startUnit: 120, endUnit: 150),
         },
       );
 
@@ -3048,9 +3143,9 @@ void main() {
       expect(restored, settings);
       expect(
         restored.unitRangeFor('/decks/c.vok'),
-        const UnitRangeSelection(startUnit: 3, endUnit: 5, endManuallySet: true),
+        const UnitRangeSelection(startUnit: 3, endUnit: 5),
       );
-      expect(restored.unitRangeFor('/decks/b.vok')?.endManuallySet, isFalse);
+      expect(restored.unitRangeFor('/decks/b.vok')?.endFollowsDeck, isTrue);
       expect(restored.unitRangeFor('/decks/a.vok'), isNull);
     });
 
@@ -3073,7 +3168,7 @@ void main() {
           '/decks/a.vok': <String, Object?>{
             'startUnit': 2,
             'endUnit': 4,
-            'endManuallySet': true,
+            'endFollowsDeck': true,
           },
           '/decks/b.vok': 'three to five',
           '/decks/c.vok': <String, Object?>{'startUnit': 0, 'endUnit': 4},
@@ -3085,7 +3180,7 @@ void main() {
           '/decks/a.vok': const UnitRangeSelection(
             startUnit: 2,
             endUnit: 4,
-            endManuallySet: true,
+            endFollowsDeck: true,
           ),
         },
       );
