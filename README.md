@@ -76,9 +76,9 @@ with several steps. Learn Anywhere was made for this kind of material.
 - **Rich text in fields.** Bold, italic, underline, colour and highlight, stored portably.
 - **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, content centred in the window on a wide screen, and full keyboard operation including ALT menu mnemonics.
 - **Finds your decks.** Up to three recently opened decks are one click away from the
-  welcome screen, each showing when you last edited its units and when you last
-  learned it, and a start folder can be set so every file dialog opens where your
-  decks live.
+  welcome screen and the File operations screen, each showing when you last edited its
+  units and when you last learned it, and each remembering the unit range you last
+  learned. A start folder can be set so every file dialog opens where your decks live.
 - **An Android companion.** Import your decks onto a phone and keep practising them
   away from the computer: think-only, two taps per card, with its own statistics. Units
   you flagged as difficult on the desktop carry their badge there too, and can be
@@ -163,7 +163,7 @@ with several steps. Learn Anywhere was made for this kind of material.
 |---|---|
 | `.vok` | A **deck**: ordered learning units, plus a read-only copy of the mask that shapes them |
 | `.inf` | A **mask**: the editable definition of categories, fields, roles and directions |
-| `.sta` | **Statistics**: attempts and correct answers per unit and direction |
+| `.sta` | **Statistics**: attempts and correct answers per unit and direction, kept on the desktop in a `statistics` folder beside the deck |
 
 A deck is self-contained and opens correctly even if its `.inf` is missing. The
 on-disk contract is documented in [`docs/file-formats.md`](docs/file-formats.md).
@@ -194,7 +194,7 @@ phones and for emulators. Open it with your file manager and allow the installat
 Android asks. Installing a newer APK over an older one keeps your library and statistics.
 
 The companion carries its own version number, independent of the desktop app's, so one
-release can pair desktop 1.1.0 with companion 0.9.0. The number in the APK's name is the
+release can pair desktop 1.2.0 with companion 0.9.0. The number in the APK's name is the
 companion's.
 
 Android refuses to install a build whose version is older than the installed one, and
@@ -253,7 +253,7 @@ One pub workspace, four packages:
 ## Status
 
 The two applications ship separately, on independent version tracks and with different
-feature sets. The desktop application is at 1.1.0; the Android companion is at 0.9.0 and
+feature sets. The desktop application is at 1.2.0; the Android companion is at 0.9.0 and
 is distributed as a sideloaded APK.
 
 ## AI-Assisted Development

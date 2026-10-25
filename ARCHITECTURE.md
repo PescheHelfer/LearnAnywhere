@@ -45,7 +45,7 @@ Supported formats:
 
 - `.inf`: mask files with `format: "learn-anywhere/mask"` and `version: 1`.
 - `.vok`: learning decks with `format: "learn-anywhere/lessons"`, `version: 1`, an embedded full mask, and ordered units.
-- `.sta`: statistics sidecars with `format: "learn-anywhere/statistics"`, `version: 1`, a deck reference, and per-unit counters.
+- `.sta`: statistics sidecars with `format: "learn-anywhere/statistics"`, `version: 2` (1 still loads), a deck reference, and per-unit counters. The desktop keeps them only in the deck's `statistics/` folder (session files and the `_alltime` lifetime record, named by `DeckPaths`); see [`docs/file-formats.md`](docs/file-formats.md).
 
 All loaders are strict about required schema rules:
 

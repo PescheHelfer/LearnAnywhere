@@ -527,6 +527,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 1.1.0.
   aboutVersion1100,
 
+  /// About page version history entry for 1.2.0.
+  aboutVersion1200,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -1994,6 +1997,11 @@ final class LearnAnywhereCatalog {
           'audio output before speaking (Windows); answers read aloud '
           'automatically by default; Enter on the completion view extends '
           'the session; regrouped learning options.',
+      LearnAnywhereMessage.aboutVersion1200:
+          '1.2.0 – Statistics files live in the deck\'s statistics folder; '
+          'Recent decks on File operations; Correction follows the typed '
+          'order and marks case and accents; each recent deck remembers its '
+          'unit range.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2856,6 +2864,12 @@ final class LearnAnywhereCatalog {
           'vor dem Vorlesen wecken (Windows); Antworten standardmäßig '
           'automatisch vorlesen; Enter in der Abschlussansicht erweitert die '
           'Sitzung; neu gegliederte Lernoptionen.',
+      LearnAnywhereMessage.aboutVersion1200:
+          '1.2.0 – Statistikdateien liegen im Ordner statistics der '
+          'Lern-Datei; Zuletzt verwendete Lern-Dateien unter '
+          'Dateioperationen; Korrektur folgt der Eingabereihenfolge und '
+          'markiert Groß-/Kleinschreibung und Akzente; jede zuletzt '
+          'verwendete Lern-Datei merkt sich ihren Einheitenbereich.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

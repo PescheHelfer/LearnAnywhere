@@ -251,10 +251,26 @@ stay portable and round-trip losslessly across desktop and Android.
 }
 ```
 
-- **Auto-load:** when opening `francais1.vok`, if the option is on, look for `francais1.sta` and load it.
-- **Auto-save:** when the option is on, write the `.sta` automatically on any operation that
-  leaves the current deck (app exit, open another deck, create a new deck, load a new mask).
-  Use the deck's path/name with `.sta`, unless the stats were already saved manually under another name.
+The binding on-disk contract (current version, per-unit `hash`, `scope` marker,
+`learningSeconds`) is [`file-formats.md`](file-formats.md); the example above shows only the
+shape.
+
+- **Location (desktop):** every statistics file lives in the deck's **statistics folder** — the
+  subfolder `statistics` beside the deck, lower case and never translated
+  ([ADR-0007](adr/0007-statistics-live-in-a-statistics-folder.md)). For
+  `French/francais1.vok` that is `French/statistics/`. It is the only place the desktop reads
+  statistics from: there is no fallback to a `.sta` beside the deck and no migration. The folder
+  is created by the first write, never by a read.
+- **Two kinds of file per deck:** timestamped **session files**
+  (`statistics/francais1_YYYYMMDD_HHMMSS.sta`, the working record) and the **lifetime record**
+  (`statistics/francais1_alltime.sta`, `"scope": "allTime"`, updated on every answer).
+- **Auto-load:** when opening `francais1.vok`, if the option is on, look in its statistics
+  folder for the most recent matching session file and offer to load it (never silently).
+- **Auto-save:** when the option is on and no statistics file is associated with the deck yet,
+  the first session creates a session file named after the deck and the session's start time in
+  the statistics folder; progress is then written to it as the user answers. A bounded number of
+  session files is kept per deck (oldest deleted first; `0` keeps all).
+- **Load / Save as** dialogs open in the deck's statistics folder when it exists.
 
 ### 4.7 Validation
 
@@ -309,6 +325,21 @@ For a unit + active direction:
 5. **Scoring is all-or-nothing per unit:** the attempt is *correct* iff **every checked answer**
    matches; otherwise *incorrect*. Individual fields may be shown right/wrong in the UI, but the
    unit's statistic is a single correct/incorrect.
+6. **Correction marking and the reveal view.** The reveal offers three views: **Correction**
+   (the entry with its differences marked), **Solution** (the stored text) and **Your answer**
+   (the entry unmarked).
+   - Correction shows each entered row against its **paired** solution field (step 3), so an
+     equal group appears in the order the user typed it; **Solution always keeps the stored
+     order**.
+   - Correction marks **every** character in which the entry differs from its paired stored
+     text, including case and accent differences that did not make the answer wrong because
+     the case- or accent-sensitive option is off ("Le lapin" against "le lapin" marks the `L`).
+     Leading and trailing whitespace is never marked.
+   - A correct answer opens on **Solution** only when it is **verbatim** (step 3), and the view
+     cycle then leaves Correction out: there is nothing to mark. Every other answer opens on
+     Correction — every wrong and Almost answer, a correct answer whose equal-group rows were
+     swapped (shown in typed order, with no marks), and one that differs only in case or
+     accents.
 
 ### 5.2 Post-answer rating (manual override) — applies to BOTH apps
 
@@ -336,8 +367,8 @@ answer can be downgraded so it stays in the Super-query loop.
 ### 5.3 Query session engine
 
 A session has: a **direction selection** (`1`, `2`, or `both`), an optional **unit range**
-(`startIndex..endIndex`, default = all units), an **input mode** (with input / think-only), and a
-**mode**:
+(`startIndex..endIndex`, default = all units; desktop remembers it per deck, §6.4), an
+**input mode** (with input / think-only), and a **mode**:
 
 - **Practice (endless random):** repeatedly pick a random unit (and, if direction = `both`, a
   random direction per pick); never removes units. Optional "each unit exactly once" toggle to
@@ -504,7 +535,18 @@ repo and exactly what to preserve vs. modernize from each.
 A single, unified **Practice** screen (the modern consolidation of the legacy per-direction
 menu items). Before starting, the user picks:
 - **Direction:** Direction 1 · Direction 2 · Both (labels come from the mask).
-- **Range:** all units (default) or start/end indices.
+- **Range:** start/end units; a **Use all units ({count})** button sets the whole deck in one
+  click. Each deck on the recent-decks list **remembers its range across restarts** (in the
+  settings file, keyed by deck path): opening the deck from disk (**Load deck...**, a
+  recent-decks link) and **Update deck from new version...** restore it for the setup screen
+  and **Learn with last settings**; **Save deck as...** carries it to the new path. An
+  end at the deck's last unit **follows the deck** as it grows (editor, **Add/merge deck...**,
+  update), also after a restart, whether it was typed or already there; an end before the last
+  unit stays put and is only clamped if the deck shrinks below it. A start past the last unit
+  falls back to the full range. A new deck, **Load mask...**, a deck
+  built from Lexicon results and a deck with nothing remembered start at the full range; a
+  deck that drops off the recent list forgets its range. (Android does not remember ranges:
+  its setup starts at the full range on every open.)
 - **Input mode:** with answer input, or think-only.
 - **Mode:** Practice (endless random; optional "each once") or **Super-query** (mastery loop).
 - (When Super-query) the **required super status** threshold (default 40%) and the optional
@@ -516,8 +558,9 @@ Session flow:
   if a time limit is set, sound a warning tone after N seconds (N=0 = off).
 - **With input:** the user types the answer (A) fields and confirms (Enter / F10). The engine
   evaluates (§5.1).
-- **Reveal screen** (unified, §5.2): show the correct solution and remark (R) fields; allow
-  toggling between the user's entry and the correct solution; show the **inline rating** with the
+- **Reveal screen** (unified, §5.2): show the correct solution and remark (R) fields; cycle the
+  answer area through Correction, Solution and Your answer with `F9`, opening on the view
+  §5.1 step 6 picks; show the **inline rating** with the
   correct default pre-selected. The user advances with **Enter / F3 / the Continue button**
   (accepting the default), or first picks an override. One action records the result and advances.
 - **Think-only mode:** no input. The user reveals with Next, sees solution + remarks, then the
@@ -602,7 +645,8 @@ no keyboard shortcuts. **Learning only — no creation, no editing, no mask edit
 - **Interrupt & resume:** leaving and returning to a session keeps statistics; on completion show
   the congratulations message (§5.3), with the option to extend by range/threshold.
 - Reuse the **same `core` engine** (random/super-query, statistics, rating) and the `ui_kit`
-  rich-text renderer. Persist statistics to the `.sta` sidecar like desktop.
+  rich-text renderer. Persist statistics as a `.sta` in the same format as desktop, kept in the
+  app's private library; the desktop statistics folder (§4.6) does not apply on Android.
 
 ---
 
