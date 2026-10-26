@@ -1,0 +1,965 @@
+{
+  "format": "learn-anywhere/mask",
+  "version": 1,
+  "maskId": "m_new_292043fc-4c15-47d0-9f3f-0780a97c3967",
+  "revision": 2,
+  "name": "Englisch 2",
+  "direction1Label": "DEUTSCH - ENGLISCH",
+  "direction2Label": "ENGLISCH - DEUTSCH",
+  "categories": [
+    {
+      "id": 0,
+      "name": "1 Zeile",
+      "fields": [
+        {
+          "id": 0,
+          "name": "DEUTSCH",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 1,
+          "name": "ENGLISCH",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 2,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 3,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 4,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "2 Zeilen",
+      "fields": [
+        {
+          "id": 5,
+          "name": "DEUTSCH 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 6,
+          "name": "DEUTSCH 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 7,
+          "name": "ENGLISCH 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 8,
+          "name": "ENGLISCH 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 9,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 10,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 11,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "3 Zeilen",
+      "fields": [
+        {
+          "id": 12,
+          "name": "DEUTSCH 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 13,
+          "name": "DEUTSCH 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 14,
+          "name": "DEUTSCH 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 15,
+          "name": "ENGLISCH 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 16,
+          "name": "ENGLISCH 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 17,
+          "name": "ENGLISCH 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 18,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 19,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 20,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "5 Zeilen",
+      "fields": [
+        {
+          "id": 21,
+          "name": "DEUTSCH 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 22,
+          "name": "DEUTSCH 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 23,
+          "name": "DEUTSCH 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 24,
+          "name": "DEUTSCH 4",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 25,
+          "name": "DEUTSCH 5",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 26,
+          "name": "ENGLISCH 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 27,
+          "name": "ENGLISCH 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 28,
+          "name": "ENGLISCH 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 29,
+          "name": "ENGLISCH 4",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 30,
+          "name": "ENGLISCH 5",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 31,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 32,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "2 Synonyme",
+      "fields": [
+        {
+          "id": 33,
+          "name": "DEUTSCH 1",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 34,
+          "name": "DEUTSCH 2",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 35,
+          "name": "ENGLISCH 1",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 36,
+          "name": "ENGLISCH 2",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 37,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 38,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 39,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "3 Synonyme",
+      "fields": [
+        {
+          "id": 40,
+          "name": "DEUTSCH 1",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 41,
+          "name": "DEUTSCH 2",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 42,
+          "name": "DEUTSCH 3",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 43,
+          "name": "ENGLISCH 1",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 44,
+          "name": "ENGLISCH 2",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 45,
+          "name": "ENGLISCH 3",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 46,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 47,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 48,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "5 Synonyme",
+      "fields": [
+        {
+          "id": 49,
+          "name": "DEUTSCH 1",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 50,
+          "name": "DEUTSCH 2",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 51,
+          "name": "DEUTSCH 3",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 52,
+          "name": "DEUTSCH 4",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 53,
+          "name": "DEUTSCH 5",
+          "length": 80,
+          "equalGroup": 1,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 54,
+          "name": "ENGLISCH 1",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 55,
+          "name": "ENGLISCH 2",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 56,
+          "name": "ENGLISCH 3",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 57,
+          "name": "ENGLISCH 4",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 58,
+          "name": "ENGLISCH 5",
+          "length": 80,
+          "equalGroup": 2,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 59,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 60,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Verb 2 Zeiten",
+      "fields": [
+        {
+          "id": 61,
+          "name": "DEUTSCH",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 62,
+          "name": "INFINITIVE",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 63,
+          "name": "PAST TENSE",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 64,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 65,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 66,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Verb 3 Zeiten",
+      "fields": [
+        {
+          "id": 67,
+          "name": "DEUTSCH",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 68,
+          "name": "INFINITIVE",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 69,
+          "name": "PAST TENSE",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 70,
+          "name": "PERFECT TENSE (I ...)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 71,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 72,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 73,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Verb alle Personen",
+      "fields": [
+        {
+          "id": 74,
+          "name": "DEUTSCH",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 75,
+          "name": "INFINITIVE",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 76,
+          "name": "1. PERSON (EZ)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 77,
+          "name": "2. PERSON (EZ)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 78,
+          "name": "3. PERSON (EZ)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 79,
+          "name": "ALLE PER. (PL)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 80,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 81,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 82,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Einzahl, Plural",
+      "fields": [
+        {
+          "id": 83,
+          "name": "DEUTSCH (EZ)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 84,
+          "name": "ENGLISCH (EZ)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 85,
+          "name": "ENGLISCH (PL)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "A",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 86,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 87,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 88,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Adjektiv, Adverb",
+      "fields": [
+        {
+          "id": 89,
+          "name": "DEUTSCH",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "Q",
+          "role2": "A",
+          "language": "de-CH",
+          "speak": true
+        },
+        {
+          "id": 90,
+          "name": "ENGLISCH (ADJ)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "Q",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 91,
+          "name": "ENGLISCH (ADV)",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "A",
+          "role2": "A",
+          "language": "en-GB",
+          "speak": true
+        },
+        {
+          "id": 92,
+          "name": "Bemerkungen 1",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 93,
+          "name": "Bemerkungen 2",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        },
+        {
+          "id": 94,
+          "name": "Bemerkungen 3",
+          "length": 80,
+          "equalGroup": 0,
+          "role1": "R",
+          "role2": "R"
+        }
+      ]
+    }
+  ]
+}

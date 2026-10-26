@@ -7,12 +7,14 @@ one from scratch.
 
 ## Installing
 
-Download it from the
-[Releases page](https://github.com/PescheHelfer/LearnAnywhere/releases/latest).
+Download the newest **desktop** release, the one whose tag starts with `desktop-v`, from
+the [Releases page](https://github.com/PescheHelfer/LearnAnywhere/releases).
 
 **Windows.** Unzip the downloaded folder anywhere you like, keeping its files
 together, and run `LearnAnywhere.exe` from inside it. The program needs no
-installation and writes nothing outside your own user profile.
+installation and writes nothing outside your own user profile. The folder also holds
+an `Examples` folder with a ready-made English deck and its mask. Copy it to where you
+keep your own files before practising it, because statistics are saved beside the deck.
 
 **Linux.** Learn Anywhere is distributed as an AppImage. Mark it executable and run it:
 
@@ -21,7 +23,8 @@ chmod +x Learn_Anywhere-*.AppImage
 ./Learn_Anywhere-*.AppImage
 ```
 
-The Android companion is not released yet.
+The Android companion is installed from the same Releases page; see
+[The Android companion](14-android-companion.md).
 
 ## The first run
 

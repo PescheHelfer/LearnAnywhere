@@ -11,6 +11,10 @@ Nothing about any subject is built in. You describe what a card looks like: its
 fields, their roles, and which way round they can be asked. After that, the program
 asks the questions and keeps track of how you do.
 
+> **New here?** The quick start for Windows takes you from download to your first
+> practised word in about 10 minutes, with a ready-made English deck:
+> **[Deutsch](QUICKSTART.de.md)** · **[English](QUICKSTART.md)**
+
 ## Why give it a try
 
 Most flashcard apps think in front and back. That is fine for word pairs. It stops
@@ -175,7 +179,9 @@ Download the newest **desktop** release — its tag is named `desktop-v*` — fr
 
 **Windows.** Unzip the downloaded folder anywhere you like, keeping its files
 together, and run `LearnAnywhere.exe` from inside it. No installer; the program
-writes only inside your own user profile.
+writes only inside your own user profile. The `Examples` folder in the ZIP holds a
+ready-made English deck and its mask. The [quick start](QUICKSTART.md)
+([Deutsch](QUICKSTART.de.md)) walks a first-time user through every step.
 
 **Linux.** Download the `.AppImage`, then:
 

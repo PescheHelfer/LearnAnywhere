@@ -34,6 +34,9 @@ passende Einheit als Liste an, aus der direkt ausgewählt werden kann, oder meld
 
 - `F8` — **Einfügen** vor der aktuellen Einheit. Hat die Maske mehr als eine Kategorie,
   werden Sie zuerst gebeten, eine **Kategorie zu wählen**.
+- `F3` — **Weiter** auf der letzten Einheit hängt eine neue Einheit dahinter an; so tippen
+  Sie am schnellsten eine Einheit nach der anderen ein. Nach der Kategorie wird genauso
+  gefragt wie bei `F8`.
 - `F7` — **Löschen** der aktuellen Einheit, nach Bestätigung — das lässt sich nicht
   rückgängig machen.
 - Ist die Lern-Datei völlig leer, zeigt der Editor statt einer Karte eine Schaltfläche

@@ -60,6 +60,19 @@ Grep for the **outgoing** version (the one being replaced), not the incoming one
 when hunting for stragglers — searching for the new number finds nothing by
 definition, which is how the AppImage version silently sat a release behind.
 
+## Releasing the Windows ZIP
+
+The release ZIP is packed by hand from `build/windows/x64/runner/Release/`, with no
+top-level folder inside it. Two steps are easy to forget:
+
+- Copy the repo's `examples/English/` into the ZIP as `Examples/English/`. The root
+  `QUICKSTART.md` / `QUICKSTART.de.md` tell first-time users to copy it from there.
+- Both quick-start files link straight to the ZIP
+  (`.../releases/download/desktop-vX.Y.Z/Learn_Anywhere-X.Y.Z-x86_64.zip`) and name the
+  version in the link text. Update both whenever the version changes. Grep for the
+  outgoing version, as above. The link breaks if the asset is renamed, so keep the file
+  name pattern.
+
 ## Keep `test/*.dart` in sync with UI drift
 
 Widget tests here find things by exact string/key, so they silently rot when the UI

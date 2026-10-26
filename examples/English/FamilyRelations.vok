@@ -1,0 +1,2344 @@
+{
+  "format": "learn-anywhere/lessons",
+  "version": 1,
+  "mask": {
+    "maskId": "m_new_292043fc-4c15-47d0-9f3f-0780a97c3967",
+    "revision": 2,
+    "name": "Englisch 2",
+    "direction1Label": "DEUTSCH - ENGLISCH",
+    "direction2Label": "ENGLISCH - DEUTSCH",
+    "categories": [
+      {
+        "id": 0,
+        "name": "1 Zeile",
+        "fields": [
+          {
+            "id": 0,
+            "name": "DEUTSCH",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 1,
+            "name": "ENGLISCH",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 2,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 3,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 4,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "name": "2 Zeilen",
+        "fields": [
+          {
+            "id": 5,
+            "name": "DEUTSCH 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 6,
+            "name": "DEUTSCH 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 7,
+            "name": "ENGLISCH 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 8,
+            "name": "ENGLISCH 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 9,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 10,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 11,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "3 Zeilen",
+        "fields": [
+          {
+            "id": 12,
+            "name": "DEUTSCH 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 13,
+            "name": "DEUTSCH 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 14,
+            "name": "DEUTSCH 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 15,
+            "name": "ENGLISCH 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 16,
+            "name": "ENGLISCH 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 17,
+            "name": "ENGLISCH 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 18,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 19,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 20,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "name": "5 Zeilen",
+        "fields": [
+          {
+            "id": 21,
+            "name": "DEUTSCH 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 22,
+            "name": "DEUTSCH 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 23,
+            "name": "DEUTSCH 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 24,
+            "name": "DEUTSCH 4",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 25,
+            "name": "DEUTSCH 5",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 26,
+            "name": "ENGLISCH 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 27,
+            "name": "ENGLISCH 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 28,
+            "name": "ENGLISCH 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 29,
+            "name": "ENGLISCH 4",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 30,
+            "name": "ENGLISCH 5",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 31,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 32,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "name": "2 Synonyme",
+        "fields": [
+          {
+            "id": 33,
+            "name": "DEUTSCH 1",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 34,
+            "name": "DEUTSCH 2",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 35,
+            "name": "ENGLISCH 1",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 36,
+            "name": "ENGLISCH 2",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 37,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 38,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 39,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "name": "3 Synonyme",
+        "fields": [
+          {
+            "id": 40,
+            "name": "DEUTSCH 1",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 41,
+            "name": "DEUTSCH 2",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 42,
+            "name": "DEUTSCH 3",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 43,
+            "name": "ENGLISCH 1",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 44,
+            "name": "ENGLISCH 2",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 45,
+            "name": "ENGLISCH 3",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 46,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 47,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 48,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "name": "5 Synonyme",
+        "fields": [
+          {
+            "id": 49,
+            "name": "DEUTSCH 1",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 50,
+            "name": "DEUTSCH 2",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 51,
+            "name": "DEUTSCH 3",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 52,
+            "name": "DEUTSCH 4",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 53,
+            "name": "DEUTSCH 5",
+            "length": 80,
+            "equalGroup": 1,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 54,
+            "name": "ENGLISCH 1",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 55,
+            "name": "ENGLISCH 2",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 56,
+            "name": "ENGLISCH 3",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 57,
+            "name": "ENGLISCH 4",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 58,
+            "name": "ENGLISCH 5",
+            "length": 80,
+            "equalGroup": 2,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 59,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 60,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "name": "Verb 2 Zeiten",
+        "fields": [
+          {
+            "id": 61,
+            "name": "DEUTSCH",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 62,
+            "name": "INFINITIVE",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 63,
+            "name": "PAST TENSE",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 64,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 65,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 66,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "name": "Verb 3 Zeiten",
+        "fields": [
+          {
+            "id": 67,
+            "name": "DEUTSCH",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 68,
+            "name": "INFINITIVE",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 69,
+            "name": "PAST TENSE",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 70,
+            "name": "PERFECT TENSE (I ...)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 71,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 72,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 73,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "name": "Verb alle Personen",
+        "fields": [
+          {
+            "id": 74,
+            "name": "DEUTSCH",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 75,
+            "name": "INFINITIVE",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 76,
+            "name": "1. PERSON (EZ)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 77,
+            "name": "2. PERSON (EZ)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 78,
+            "name": "3. PERSON (EZ)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 79,
+            "name": "ALLE PER. (PL)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 80,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 81,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 82,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "name": "Einzahl, Plural",
+        "fields": [
+          {
+            "id": 83,
+            "name": "DEUTSCH (EZ)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 84,
+            "name": "ENGLISCH (EZ)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 85,
+            "name": "ENGLISCH (PL)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "A",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 86,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 87,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 88,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Adjektiv, Adverb",
+        "fields": [
+          {
+            "id": 89,
+            "name": "DEUTSCH",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "Q",
+            "role2": "A",
+            "language": "de-CH",
+            "speak": true
+          },
+          {
+            "id": 90,
+            "name": "ENGLISCH (ADJ)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "Q",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 91,
+            "name": "ENGLISCH (ADV)",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "A",
+            "role2": "A",
+            "language": "en-GB",
+            "speak": true
+          },
+          {
+            "id": 92,
+            "name": "Bemerkungen 1",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 93,
+            "name": "Bemerkungen 2",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          },
+          {
+            "id": 94,
+            "name": "Bemerkungen 3",
+            "length": 80,
+            "equalGroup": 0,
+            "role1": "R",
+            "role2": "R"
+          }
+        ]
+      }
+    ]
+  },
+  "units": [
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Familie",
+        "1": "family",
+        "2": [
+          {
+            "text": "We're a big "
+          },
+          {
+            "text": "family",
+            "bold": true
+          },
+          {
+            "text": ": I have four brothers and sisters."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Eltern",
+        "1": "parents",
+        "2": "Your mother and father.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "parents",
+            "bold": true
+          },
+          {
+            "text": " have been married for twenty years."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Vater",
+        "1": "father",
+        "2": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "father",
+            "bold": true
+          },
+          {
+            "text": " works in a bank."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Mutter",
+        "1": "mother",
+        "2": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "mother",
+            "bold": true
+          },
+          {
+            "text": " is a teacher."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Papa",
+        "1": "dad",
+        "2": "Informal word for father.",
+        "3": [
+          {
+            "text": "Dad",
+            "bold": true
+          },
+          {
+            "text": ", can you help me with my homework?"
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Mama",
+        "1": "mum",
+        "2": "Informal word for mother.",
+        "3": [
+          {
+            "text": "Mum",
+            "bold": true
+          },
+          {
+            "text": ", where are my shoes?"
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Sohn",
+        "1": "son",
+        "2": [
+          {
+            "text": "They have one "
+          },
+          {
+            "text": "son",
+            "bold": true
+          },
+          {
+            "text": " and two daughters."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Tochter",
+        "1": "daughter",
+        "2": [
+          {
+            "text": "Their "
+          },
+          {
+            "text": "daughter",
+            "bold": true
+          },
+          {
+            "text": " is studying in London."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Kind",
+        "84": "child",
+        "85": "children",
+        "86": "A son or a daughter (of any age).",
+        "87": [
+          {
+            "text": "How many "
+          },
+          {
+            "text": "children",
+            "bold": true
+          },
+          {
+            "text": " do they have? ~ Three."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Bruder",
+        "1": "brother",
+        "2": [
+          {
+            "text": "My older "
+          },
+          {
+            "text": "brother",
+            "bold": true
+          },
+          {
+            "text": " is called Tom."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Schwester",
+        "1": "sister",
+        "2": [
+          {
+            "text": "My little "
+          },
+          {
+            "text": "sister",
+            "bold": true
+          },
+          {
+            "text": " is six years old."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Geschwister(teil)",
+        "1": "sibling",
+        "2": "A brother or a sister. 'Siblings' = Geschwister.",
+        "3": [
+          {
+            "text": "Do you have any "
+          },
+          {
+            "text": "siblings",
+            "bold": true
+          },
+          {
+            "text": "? ~ Yes, one brother."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Zwilling",
+        "1": "twin",
+        "2": "One of two children born to the same mother at the same time.",
+        "3": [
+          {
+            "text": "Anna and her "
+          },
+          {
+            "text": "twin",
+            "bold": true
+          },
+          {
+            "text": " sister look exactly the same."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Einzelkind",
+        "84": "only child",
+        "85": "only children",
+        "86": "A child who has no brothers or sisters.",
+        "87": [
+          {
+            "text": "I'm an "
+          },
+          {
+            "text": "only child",
+            "bold": true
+          },
+          {
+            "text": ", so I don't have to share my room."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Ehemann",
+        "1": "husband",
+        "2": "The man a woman (or man) is married to.",
+        "3": [
+          {
+            "text": "Her "
+          },
+          {
+            "text": "husband",
+            "bold": true
+          },
+          {
+            "text": " is a doctor."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Ehefrau",
+        "84": "wife",
+        "85": "wives",
+        "86": "The woman a man (or woman) is married to.",
+        "87": [
+          {
+            "text": "He met his "
+          },
+          {
+            "text": "wife",
+            "bold": true
+          },
+          {
+            "text": " at university."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Ehepartner/in",
+        "1": "spouse",
+        "2": "A husband or a wife. A rather formal word.",
+        "3": [
+          {
+            "text": "Please write the name of your "
+          },
+          {
+            "text": "spouse",
+            "bold": true
+          },
+          {
+            "text": " on the form."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Ex-Mann",
+        "1": "ex-husband",
+        "2": "The man someone was married to before a divorce.",
+        "3": [
+          {
+            "text": "She still gets on well with her "
+          },
+          {
+            "text": "ex-husband",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Ex-Frau",
+        "84": "ex-wife",
+        "85": "ex-wives",
+        "86": "The woman someone was married to before a divorce.",
+        "87": [
+          {
+            "text": "His "
+          },
+          {
+            "text": "ex-wife",
+            "bold": true
+          },
+          {
+            "text": " lives in Scotland now."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Verlobter",
+        "1": "fiancé",
+        "2": "The man someone has promised to marry.",
+        "3": [
+          {
+            "text": "This is Mark, my "
+          },
+          {
+            "text": "fiancé",
+            "bold": true
+          },
+          {
+            "text": ". We're getting married in June."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Verlobte",
+        "1": "fiancée",
+        "2": "The woman someone has promised to marry.",
+        "3": [
+          {
+            "text": "He introduced his "
+          },
+          {
+            "text": "fiancée",
+            "bold": true
+          },
+          {
+            "text": " to his parents."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Witwe",
+        "1": "widow",
+        "2": "A woman whose husband has died.",
+        "3": [
+          {
+            "text": "My grandmother has been a "
+          },
+          {
+            "text": "widow",
+            "bold": true
+          },
+          {
+            "text": " for ten years."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Witwer",
+        "1": "widower",
+        "2": "A man whose wife has died.",
+        "3": [
+          {
+            "text": "After his wife died, he lived alone as a "
+          },
+          {
+            "text": "widower",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Grosseltern",
+        "1": "grandparents",
+        "2": "The parents of your mother or father.",
+        "3": [
+          {
+            "text": "I spend every summer with my "
+          },
+          {
+            "text": "grandparents",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 5,
+      "fields": {
+        "40": "Grossmutter / Oma",
+        "43": "grandmother",
+        "44": "grandma",
+        "45": "granny",
+        "46": "Your mother's or father's mother.",
+        "47": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "grandma",
+            "bold": true
+          },
+          {
+            "text": " makes the best cakes."
+          }
+        ],
+        "48": "grandma and granny are informal."
+      }
+    },
+    {
+      "categoryId": 5,
+      "fields": {
+        "40": "Grossvater / Opa",
+        "43": "grandfather",
+        "44": "grandpa",
+        "45": "granddad",
+        "46": "Your mother's or father's father.",
+        "47": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "grandfather",
+            "bold": true
+          },
+          {
+            "text": " was born in 1950."
+          }
+        ],
+        "48": "grandpa and granddad are informal."
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Enkel",
+        "1": "grandson",
+        "2": "The son of your son or daughter.",
+        "3": [
+          {
+            "text": "Their "
+          },
+          {
+            "text": "grandson",
+            "bold": true
+          },
+          {
+            "text": " visits them every Sunday."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Enkelin",
+        "1": "granddaughter",
+        "2": "The daughter of your son or daughter.",
+        "3": [
+          {
+            "text": "She bought a present for her "
+          },
+          {
+            "text": "granddaughter",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Enkelkind",
+        "84": "grandchild",
+        "85": "grandchildren",
+        "86": "The child of your son or daughter.",
+        "87": [
+          {
+            "text": "They have five "
+          },
+          {
+            "text": "grandchildren",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Urgrossvater",
+        "1": "great-grandfather",
+        "2": "The father of your grandmother or grandfather.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "great-grandfather",
+            "bold": true
+          },
+          {
+            "text": " came to England in 1920."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Urgrossmutter",
+        "1": "great-grandmother",
+        "2": "The mother of your grandmother or grandfather.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "great-grandmother",
+            "bold": true
+          },
+          {
+            "text": " is 98 years old."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Urenkel(in)",
+        "84": "great-grandchild",
+        "85": "great-grandchildren",
+        "86": "The grandchild of your son or daughter.",
+        "87": [
+          {
+            "text": "She has ten grandchildren and two "
+          },
+          {
+            "text": "great-grandchildren",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 4,
+      "fields": {
+        "33": "Verwandte(r)",
+        "35": "relative",
+        "36": "relation",
+        "37": "A member of your family (also aunts, cousins etc.).",
+        "38": [
+          {
+            "text": "We're visiting "
+          },
+          {
+            "text": "relatives",
+            "bold": true
+          },
+          {
+            "text": " in Ireland at Christmas."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Grossfamilie",
+        "1": "extended family",
+        "2": "All your relatives: also grandparents, aunts, uncles, cousins etc.",
+        "3": [
+          {
+            "text": "My whole "
+          },
+          {
+            "text": "extended family",
+            "bold": true
+          },
+          {
+            "text": " came to the wedding."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Onkel",
+        "1": "uncle",
+        "2": "The brother of your mother or father, or your aunt's husband.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "uncle",
+            "bold": true
+          },
+          {
+            "text": " lives in Australia."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Tante",
+        "1": "aunt",
+        "2": "The sister of your mother or father, or your uncle's wife.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "aunt",
+            "bold": true
+          },
+          {
+            "text": " always sends me a birthday card."
+          }
+        ],
+        "4": "Informal: auntie"
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Grossonkel",
+        "1": "great-uncle",
+        "2": "The uncle of your mother or father (= your grandparent's brother).",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "great-uncle",
+            "bold": true
+          },
+          {
+            "text": " fought in the Second World War."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Grosstante",
+        "1": "great-aunt",
+        "2": "The aunt of your mother or father (= your grandparent's sister).",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "great-aunt",
+            "bold": true
+          },
+          {
+            "text": " still lives in the village where she was born."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Cousin / Cousine",
+        "1": "cousin",
+        "2": "The child of your aunt or uncle.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "cousin",
+            "bold": true
+          },
+          {
+            "text": " Emma is the same age as me."
+          }
+        ],
+        "4": "English uses one word for both Cousin and Cousine."
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Cousin / Cousine zweiten Grades",
+        "1": "second cousin",
+        "2": "The child of your mother's or father's cousin.",
+        "3": [
+          {
+            "text": "I met my "
+          },
+          {
+            "text": "second cousin",
+            "bold": true
+          },
+          {
+            "text": " for the first time at the wedding."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Neffe",
+        "1": "nephew",
+        "2": "The son of your brother or sister.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "nephew",
+            "bold": true
+          },
+          {
+            "text": " is starting school next year."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Nichte",
+        "1": "niece",
+        "2": "The daughter of your brother or sister.",
+        "3": [
+          {
+            "text": "I'm taking my "
+          },
+          {
+            "text": "niece",
+            "bold": true
+          },
+          {
+            "text": " to the cinema on Saturday."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Halbbruder",
+        "1": "half-brother",
+        "2": "A brother who has only ONE parent the same as you.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "half-brother",
+            "bold": true
+          },
+          {
+            "text": " and I have the same father."
+          }
+        ],
+        "4": "half = related by blood; step = related only by a parent's marriage"
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Halbschwester",
+        "1": "half-sister",
+        "2": "A sister who has only ONE parent the same as you.",
+        "3": [
+          {
+            "text": "My mum had my "
+          },
+          {
+            "text": "half-sister",
+            "bold": true
+          },
+          {
+            "text": " with her second husband."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Stiefvater",
+        "1": "stepfather",
+        "2": "Your mother's husband, who is not your real father.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "stepfather",
+            "bold": true
+          },
+          {
+            "text": " married my mum when I was five."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Stiefmutter",
+        "1": "stepmother",
+        "2": "Your father's wife, who is not your real mother.",
+        "3": [
+          {
+            "text": "Cinderella had a cruel "
+          },
+          {
+            "text": "stepmother",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Stiefbruder",
+        "1": "stepbrother",
+        "2": "The son of your stepfather or stepmother (no parent the same).",
+        "3": [
+          {
+            "text": "When my dad remarried, I got two "
+          },
+          {
+            "text": "stepbrothers",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Stiefschwester",
+        "1": "stepsister",
+        "2": "The daughter of your stepfather or stepmother (no parent the same).",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "stepsister",
+            "bold": true
+          },
+          {
+            "text": " and I are in the same class."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Stiefsohn",
+        "1": "stepson",
+        "2": "The son of your husband or wife from an earlier relationship.",
+        "3": [
+          {
+            "text": "He gets on very well with his "
+          },
+          {
+            "text": "stepson",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Stieftochter",
+        "1": "stepdaughter",
+        "2": "The daughter of your husband or wife from an earlier relationship.",
+        "3": [
+          {
+            "text": "She taught her "
+          },
+          {
+            "text": "stepdaughter",
+            "bold": true
+          },
+          {
+            "text": " to ride a bike."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Stiefkind",
+        "84": "stepchild",
+        "85": "stepchildren",
+        "86": "The child of your husband or wife from an earlier relationship.",
+        "87": [
+          {
+            "text": "She has two children and three "
+          },
+          {
+            "text": "stepchildren",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 4,
+      "fields": {
+        "33": "Schwiegereltern",
+        "35": "in-laws",
+        "36": "parents-in-law",
+        "37": "The parents of your husband or wife.",
+        "38": [
+          {
+            "text": "We're having lunch with my "
+          },
+          {
+            "text": "in-laws",
+            "bold": true
+          },
+          {
+            "text": " on Sunday."
+          }
+        ],
+        "39": "'in-laws' can also mean all the relatives of your husband or wife."
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Schwiegervater",
+        "1": "father-in-law",
+        "2": "The father of your husband or wife.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "father-in-law",
+            "bold": true
+          },
+          {
+            "text": " helped us paint the house."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Schwiegermutter",
+        "1": "mother-in-law",
+        "2": "The mother of your husband or wife.",
+        "3": [
+          {
+            "text": "Her "
+          },
+          {
+            "text": "mother-in-law",
+            "bold": true
+          },
+          {
+            "text": " looks after the baby on Mondays."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Schwiegersohn",
+        "84": "son-in-law",
+        "85": "sons-in-law",
+        "86": "The husband of your daughter.",
+        "87": [
+          {
+            "text": "They really like their new "
+          },
+          {
+            "text": "son-in-law",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ],
+        "88": "Plural: the -s goes on the first word."
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Schwiegertochter",
+        "84": "daughter-in-law",
+        "85": "daughters-in-law",
+        "86": "The wife of your son.",
+        "87": [
+          {
+            "text": "Their "
+          },
+          {
+            "text": "daughter-in-law",
+            "bold": true
+          },
+          {
+            "text": " is from Spain."
+          }
+        ],
+        "88": "Plural: the -s goes on the first word."
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Schwager",
+        "84": "brother-in-law",
+        "85": "brothers-in-law",
+        "86": "Your husband's or wife's brother, or your sister's husband.",
+        "87": [
+          {
+            "text": "My sister's husband, my "
+          },
+          {
+            "text": "brother-in-law",
+            "bold": true
+          },
+          {
+            "text": ", is a pilot."
+          }
+        ],
+        "88": "Plural: the -s goes on the first word."
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Schwägerin",
+        "84": "sister-in-law",
+        "85": "sisters-in-law",
+        "86": "Your husband's or wife's sister, or your brother's wife.",
+        "87": [
+          {
+            "text": "My brother's wife, my "
+          },
+          {
+            "text": "sister-in-law",
+            "bold": true
+          },
+          {
+            "text": ", is very funny."
+          }
+        ],
+        "88": "Plural: the -s goes on the first word."
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Paten",
+        "1": "godparents",
+        "2": "People who promise at a baptism to help guide a child through life.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "godparents",
+            "bold": true
+          },
+          {
+            "text": " always give me a present on my birthday."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Pate / Patenonkel / Götti",
+        "1": "godfather",
+        "2": "A male godparent.",
+        "3": [
+          {
+            "text": "My uncle is also my "
+          },
+          {
+            "text": "godfather",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Patin / Patentante / Gotti",
+        "1": "godmother",
+        "2": "A female godparent.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "godmother",
+            "bold": true
+          },
+          {
+            "text": " took me to Paris for my birthday."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 10,
+      "fields": {
+        "83": "Patenkind / Göttikind",
+        "84": "godchild",
+        "85": "godchildren",
+        "86": "A child someone is godparent to.",
+        "87": [
+          {
+            "text": "She has three "
+          },
+          {
+            "text": "godchildren",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Patensohn",
+        "1": "godson",
+        "2": "A boy someone is godparent to.",
+        "3": [
+          {
+            "text": "He bought his "
+          },
+          {
+            "text": "godson",
+            "bold": true
+          },
+          {
+            "text": " a football."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Patentochter",
+        "1": "goddaughter",
+        "2": "A girl someone is godparent to.",
+        "3": [
+          {
+            "text": "I'm going to my "
+          },
+          {
+            "text": "goddaughter",
+            "bold": true
+          },
+          {
+            "text": "'s school concert tonight."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Adoptiveltern",
+        "1": "adoptive parents",
+        "2": "Parents who have legally made someone else's child their own.",
+        "3": [
+          {
+            "text": "She was raised by loving "
+          },
+          {
+            "text": "adoptive parents",
+            "bold": true
+          },
+          {
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Pflegeeltern",
+        "1": "foster parents",
+        "2": "Parents who look after someone else's child for a time (not legally).",
+        "3": [
+          {
+            "text": "He lived with "
+          },
+          {
+            "text": "foster parents",
+            "bold": true
+          },
+          {
+            "text": " for two years."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Vorfahre",
+        "1": "ancestor",
+        "2": "A family member who lived a long time before you.",
+        "3": [
+          {
+            "text": "My "
+          },
+          {
+            "text": "ancestors",
+            "bold": true
+          },
+          {
+            "text": " came from Italy."
+          }
+        ]
+      }
+    },
+    {
+      "categoryId": 0,
+      "fields": {
+        "0": "Nachkomme",
+        "1": "descendant",
+        "2": "A person in your family who lives after you (child, grandchild...).",
+        "3": [
+          {
+            "text": "She is a "
+          },
+          {
+            "text": "descendant",
+            "bold": true
+          },
+          {
+            "text": " of Queen Victoria."
+          }
+        ]
+      }
+    }
+  ]
+}

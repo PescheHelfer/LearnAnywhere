@@ -32,6 +32,8 @@ matches.
 
 - `F8` — **Insert before** the current unit. If the mask has more than one category,
   you are asked to **choose a category** for the new unit first.
+- `F3` — **Next** on the last unit adds a new unit after it, the quickest way to type in
+  one unit after another. The category is asked for the same way as with `F8`.
 - `F7` — **Delete** the current unit, after confirming — this cannot be undone.
 - If the deck is completely empty, the editor shows an **Insert unit** button instead of
   a card; there is nothing to navigate until you add the first one.

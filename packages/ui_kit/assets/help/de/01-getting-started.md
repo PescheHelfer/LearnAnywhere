@@ -7,13 +7,15 @@ zeigen [Der Mask Editor](05-mask-editor.md) und
 
 ## Installation
 
-Laden Sie es von der
-[Releases-Seite](https://github.com/PescheHelfer/LearnAnywhere/releases/latest) herunter.
+Laden Sie die neueste **Desktop**-Version, deren Tag mit `desktop-v` beginnt, von der
+[Releases-Seite](https://github.com/PescheHelfer/LearnAnywhere/releases) herunter.
 
 **Windows.** Entpacken Sie den heruntergeladenen Ordner an einen beliebigen Ort — die
 Dateien darin gehören zusammen — und starten Sie `LearnAnywhere.exe` aus diesem Ordner
 heraus. Das Programm braucht keine Installation und schreibt nichts außerhalb Ihres
-eigenen Benutzerprofils.
+eigenen Benutzerprofils. Im Ordner liegt auch ein Ordner `Examples` mit einer fertigen
+Englisch-Lern-Datei und ihrer Maske. Kopieren Sie ihn vor dem Üben dorthin, wo Sie Ihre
+eigenen Dateien aufbewahren, denn die Statistik wird neben der Lern-Datei gespeichert.
 
 **Linux.** Learn Anywhere wird als AppImage ausgeliefert. Machen Sie es ausführbar und
 starten Sie es:
@@ -23,7 +25,8 @@ chmod +x Learn_Anywhere-*.AppImage
 ./Learn_Anywhere-*.AppImage
 ```
 
-Die Android-Begleit-App ist noch nicht veröffentlicht.
+Die Android-Begleit-App wird von derselben Releases-Seite installiert; siehe
+[Die Android-Begleit-App](14-android-companion.md).
 
 ## Der erste Start
 
