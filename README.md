@@ -183,6 +183,13 @@ writes only inside your own user profile. The `Examples` folder in the ZIP holds
 ready-made English deck and its mask. The [quick start](QUICKSTART.md)
 ([Deutsch](QUICKSTART.de.md)) walks a first-time user through every step.
 
+**Windows 11 Smart App Control.** The program is not code-signed. Where Smart App Control
+is active, Windows blocks it with no **Run anyway** and no per-app exception, so the only
+way to run it is to turn the feature off for the whole computer. Microsoft Defender keeps
+working, but Windows may warn that turning the feature back on needs a reset or reinstall.
+[Step 6 of the quick start](QUICKSTART.md#6-start-learn-anywhere)
+([Deutsch](QUICKSTART.de.md#6-learn-anywhere-starten)) has the steps and the consequences.
+
 **Linux.** Download the `.AppImage`, then:
 
 ```sh

@@ -16,6 +16,23 @@ installation and writes nothing outside your own user profile. The folder also h
 an `Examples` folder with a ready-made English deck and its mask. Copy it to where you
 keep your own files before practising it, because statistics are saved beside the deck.
 
+Learn Anywhere is free and is not signed with a paid certificate, so Windows may object
+the first time you start it. The blue **Windows protected your PC** window is harmless:
+choose **More info**, then **Run anyway**.
+
+**Smart App Control.** On some Windows 11 computers a stricter feature blocks the program
+outright and offers no **Run anyway**. Smart App Control stops every program unless it is
+signed or Microsoft already knows it, so the message does not mean a virus was found. It
+allows no exceptions for single programs: the only way to run Learn Anywhere is to turn
+the feature off for the whole computer, under **Windows Security ▸ App & browser control
+▸ Smart App Control settings ▸ Off**. The computer stays protected, because Microsoft
+Defender and the blue warning keep working; what you give up is the extra check that
+stops unknown programs before they start, on every program on that computer, so ask the
+owner first if it is not yours. Windows may warn that the feature can only be turned on
+again by resetting or reinstalling Windows, in which case the decision is one for good.
+Recent versions of Windows 11 no longer have this limit, but turning the feature back on
+blocks Learn Anywhere again.
+
 **Linux.** Learn Anywhere is distributed as an AppImage. Mark it executable and run it:
 
 ```

@@ -117,6 +117,37 @@ Windows geschützt**.
 
 [<img src="screenshots/quickstart/04-runanyway.png" width="500" alt="Programm trotzdem ausführen">](screenshots/quickstart/04-runanyway.png)
 
+Auf manchen Computern mit Windows 11 erscheint stattdessen eine andere Meldung. Sie nennt
+**Smart App Control** (oder **Intelligente App-Steuerung**), und es gibt kein **Trotzdem
+ausführen**.
+
+> [!IMPORTANT]
+> Smart App Control ist eine Funktion von Windows 11. Sie stoppt jedes Programm, das weder
+> mit einem kostenpflichtigen Zertifikat signiert ist noch Microsoft schon bekannt ist. Die
+> Meldung bedeutet nicht, dass ein Virus gefunden wurde. Ausnahmen gibt es nicht, du kannst
+> also nicht nur Learn Anywhere erlauben. Das Programm läuft nur, wenn du die Funktion für
+> den ganzen Computer ausschaltest:
+>
+> 1. Öffne **Windows-Sicherheit** über das Startmenü.
+> 2. Klick auf **App- & Browsersteuerung** und dann auf die Einstellungen für Smart App
+>    Control.
+> 3. Schalte die Funktion aus und bestätige.
+> 4. Doppelklick wieder auf das Symbol auf deinem Desktop. Erscheint das blaue Fenster,
+>    mach weiter wie oben beschrieben.
+>
+> **Was das für deinen Computer bedeutet:**
+>
+> - Er bleibt geschützt. Microsoft Defender und die blaue Warnung arbeiten weiter. Es fällt
+>   nur die zusätzliche Prüfung weg, die unbekannte Programme vor dem Start stoppt. Pass
+>   also auf, was du herunterlädst.
+> - Die Einstellung gilt für alle Programme. Gehört der Computer nicht dir, frag zuerst
+>   die Person, der er gehört.
+> - Windows warnt vielleicht, dass sich die Funktion nur durch Zurücksetzen oder
+>   Neuinstallieren von Windows wieder einschalten lässt. Siehst du diese Warnung, gilt
+>   deine Entscheidung also auf Dauer. Neuere Versionen von Windows 11 haben diese
+>   Einschränkung nicht mehr, aber sobald die Funktion wieder an ist, blockiert sie Learn
+>   Anywhere erneut.
+
 *Das Programm öffnet sich und zeigt **No file loaded**.*
 
 Das Programm startet auf Englisch. Stell es auf Deutsch um: Wähle **Options ▸ Language ▸

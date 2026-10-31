@@ -113,6 +113,32 @@ The first time, Windows may show a blue window: **Windows protected your PC**.
 
 [<img src="screenshots/quickstart/04-runanyway.png" width="500" alt="Run the program anyway">](screenshots/quickstart/04-runanyway.png)
 
+On some Windows 11 computers you see a different message instead. It names **Smart App
+Control**, and there is no **Run anyway**.
+
+> [!IMPORTANT]
+> Smart App Control is a Windows 11 feature that stops every program unless it is signed
+> with a paid certificate or Microsoft already knows it. The message doesn't mean a virus
+> was found. There are no exceptions, so you can't allow just Learn Anywhere. The only way
+> to run the program is to turn the feature off for the whole computer:
+>
+> 1. Open **Windows Security** from the Start menu.
+> 2. Click **App & browser control**, then **Smart App Control settings**.
+> 3. Choose **Off** and confirm.
+> 4. Double-click the icon on your desktop again. If the blue window appears, continue as
+>    described above.
+>
+> **What this means for your computer:**
+>
+> - It stays protected. Microsoft Defender and the blue warning keep working. What's gone
+>   is the extra check that stops unknown programs before they start, so be careful what
+>   you download.
+> - The setting applies to every program. If the computer isn't yours, ask its owner first.
+> - Windows may warn that the feature can only be turned on again by resetting or
+>   reinstalling Windows. If you see that warning, treat this as a decision for good.
+>   Recent versions of Windows 11 no longer have this limit, but turning the feature back
+>   on blocks Learn Anywhere again.
+
 *The program opens and shows **No file loaded**.*
 
 ### 7. Open the example deck

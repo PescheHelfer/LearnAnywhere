@@ -17,6 +17,26 @@ eigenen Benutzerprofils. Im Ordner liegt auch ein Ordner `Examples` mit einer fe
 Englisch-Lern-Datei und ihrer Maske. Kopieren Sie ihn vor dem Üben dorthin, wo Sie Ihre
 eigenen Dateien aufbewahren, denn die Statistik wird neben der Lern-Datei gespeichert.
 
+Learn Anywhere ist kostenlos und nicht mit einem kostenpflichtigen Zertifikat signiert,
+daher kann Windows sich beim ersten Start melden. Das blaue Fenster **Der Computer wurde
+durch Windows geschützt** ist harmlos: Wählen Sie **Weitere Informationen** und dann
+**Trotzdem ausführen**.
+
+**Smart App Control.** Auf manchen Computern mit Windows 11 blockiert eine strengere
+Funktion das Programm ganz und bietet kein **Trotzdem ausführen** an. Smart App Control
+(auch **Intelligente App-Steuerung** genannt) stoppt jedes Programm, das weder signiert
+noch Microsoft schon bekannt ist; die Meldung bedeutet also nicht, dass ein Virus gefunden
+wurde. Ausnahmen für einzelne Programme gibt es nicht: Learn Anywhere läuft nur, wenn Sie
+die Funktion für den ganzen Computer ausschalten, und zwar unter **Windows-Sicherheit ▸
+App- & Browsersteuerung** in den Einstellungen für Smart App Control. Der Computer bleibt
+geschützt, denn Microsoft Defender und die blaue Warnung arbeiten weiter. Es fällt nur die
+zusätzliche Prüfung weg, die unbekannte Programme vor dem Start stoppt, und zwar für alle
+Programme auf diesem Computer. Gehört er nicht Ihnen, fragen Sie also zuerst die Person,
+der er gehört. Windows warnt vielleicht, dass sich die Funktion nur durch Zurücksetzen
+oder Neuinstallieren von Windows wieder einschalten lässt; dann gilt die Entscheidung auf
+Dauer. Neuere Versionen von Windows 11 haben diese Einschränkung nicht mehr, aber sobald
+die Funktion wieder an ist, blockiert sie Learn Anywhere erneut.
+
 **Linux.** Learn Anywhere wird als AppImage ausgeliefert. Machen Sie es ausführbar und
 starten Sie es:
 
