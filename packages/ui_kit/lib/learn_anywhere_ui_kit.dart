@@ -16,6 +16,7 @@ export 'src/rich_text/learn_anywhere_rich_text.dart';
 export 'src/rich_text/learn_anywhere_rich_text_editing_controller.dart';
 export 'src/speech/flutter_tts_engine.dart';
 export 'src/speech/speaker_button.dart';
+export 'src/speech/speech_dispatcher_engine.dart';
 export 'src/theme/learn_anywhere_theme.dart';
 export 'src/theme/learn_anywhere_tokens.dart';
 export 'src/theme/learn_anywhere_zoom.dart';

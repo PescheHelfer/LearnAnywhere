@@ -9,6 +9,7 @@ export 'i18n/i18n.dart';
 export 'models/local_timestamp.dart';
 export 'models/models.dart';
 export 'paths/deck_paths.dart';
+export 'paths/speech_socket_path.dart';
 export 'rich_text/rich_text_ops.dart';
 export 'serialization/serialization.dart';
 export 'settings/settings.dart';
