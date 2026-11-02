@@ -1,9 +1,11 @@
-/// Says one sample per language through Speech Dispatcher, logging everything.
+/// Lists Speech Dispatcher's voices and says one sample per language, logging
+/// everything.
 ///
 /// The first thing to run on a Linux machine when speech is silent, because it
 /// explains a failure without a debugger: every line sent and received is
-/// printed, using the same client the program speaks through. From the
-/// repository root:
+/// printed, using the same client, the same voice list and the same voice
+/// choice as the program, so each sample is said by the voice **Automatic**
+/// would pick. From the repository root:
 ///
 ///     dart run packages/ui_kit/tool/ssip_diagnostic.dart
 ///
@@ -14,6 +16,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:learn_anywhere_core/core.dart';
+import 'package:learn_anywhere_ui_kit/src/speech/speech_dispatcher_voices.dart';
 import 'package:learn_anywhere_ui_kit/src/speech/ssip_client.dart';
 
 const Map<String, String> _samples = <String, String>{
@@ -34,10 +37,12 @@ Future<void> main() async {
   exitCode = worked ? 0 : 1;
 }
 
-/// Speaks the samples through [connect], passing every line to [log].
+/// Lists the voices and speaks the samples through [connect], passing every
+/// line to [log].
 ///
-/// Returns whether each sample was said to its end in its own language, waiting
-/// at most [sampleLimit] for each. Never throws: a failure is what this reports.
+/// Returns whether each sample was said to its end by a voice for its own
+/// language, waiting at most [sampleLimit] for each. Never throws: a failure
+/// is what this reports.
 Future<bool> runSsipDiagnostic(
   SsipConnector connect,
   void Function(String line) log, {
@@ -65,14 +70,40 @@ Future<bool> runSsipDiagnostic(
   });
   bool allSpoken = true;
   try {
+    // Before anything sets a module, as the engine asks it.
+    final String? defaultModule = await readDefaultOutputModule(client);
+    log('Default module: ${defaultModule ?? 'not reported'}');
+    final List<SpeechDispatcherModule> modules = await listOutputModules(
+      client,
+      defaultModule: defaultModule,
+    );
+    final List<SpeechVoice> voices = speechVoicesOf(modules);
+    _logModules(modules, log);
+    _logVoicesByLanguage(voices, log);
     for (final MapEntry<String, String> sample in _samples.entries) {
-      final SsipReply language = await client.command(
-        'SET self LANGUAGE ${sample.key}',
-      );
-      if (!language.isSuccess) {
-        // Still spoken: hearing what comes out instead is worth knowing.
-        log('Language ${sample.key} was refused: $language');
+      final SpeechVoice? voice = resolveSpeechVoice(sample.key, voices);
+      final SpeechDispatcherVoice? chosen = voice == null
+          ? null
+          : SpeechDispatcherVoice.of(voice);
+      final List<String> selection;
+      if (chosen == null) {
+        // Still spoken: hearing what the daemon makes of it is worth knowing.
+        log(
+          'No voice for ${sample.key}, said by the module set last, only the language set',
+        );
         allSpoken = false;
+        selection = <String>['SET self LANGUAGE ${sample.key}'];
+      } else {
+        log('${sample.key}: ${chosen.asSpeechVoice.name} (${chosen.language})');
+        selection = chosen.selection;
+      }
+      for (final String command in selection) {
+        final SsipReply reply = await client.command(command);
+        if (!reply.isSuccess) {
+          // Still spoken, for the same reason.
+          log('Refused "$command": $reply');
+          allSpoken = false;
+        }
       }
       final int id = await client.speak(sample.value);
       final DateTime deadline = DateTime.now().add(sampleLimit);
@@ -91,4 +122,41 @@ Future<bool> runSsipDiagnostic(
   await events.cancel();
   client.close();
   return allSpoken;
+}
+
+/// One line per module, in the order the engine lists them.
+void _logModules(
+  List<SpeechDispatcherModule> modules,
+  void Function(String line) log,
+) {
+  if (modules.isEmpty) {
+    log('No output modules');
+  }
+  for (final SpeechDispatcherModule module in modules) {
+    final int count = module.voices.length;
+    final SsipReply? refusal = module.refusal;
+    log(
+      refusal != null
+          ? 'Module ${module.name}: no voices, $refusal'
+          : 'Module ${module.name}: $count ${count == 1 ? 'voice' : 'voices'}',
+    );
+  }
+}
+
+/// Each reported language, sorted, with its voices in list order beneath it.
+void _logVoicesByLanguage(
+  List<SpeechVoice> voices,
+  void Function(String line) log,
+) {
+  final Map<String, List<SpeechVoice>> byLanguage =
+      <String, List<SpeechVoice>>{};
+  for (final SpeechVoice voice in voices) {
+    (byLanguage[voice.language] ??= <SpeechVoice>[]).add(voice);
+  }
+  for (final String language in byLanguage.keys.toList()..sort()) {
+    log('Voices for $language:');
+    for (final SpeechVoice voice in byLanguage[language]!) {
+      log('  ${voice.name}');
+    }
+  }
 }

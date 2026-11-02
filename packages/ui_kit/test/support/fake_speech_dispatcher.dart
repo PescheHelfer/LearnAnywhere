@@ -39,6 +39,22 @@ final class FakeSpeechDispatcher {
   final List<Socket> _connections = <Socket>[];
   final Map<String, String> _scriptedReplies = <String, String>{};
   final Set<String> _ignored = <String>{};
+  final Map<Socket, String?> _moduleOf = <Socket, String?>{};
+
+  /// The output modules, in the order the daemon reports them, each with the
+  /// data lines of its voice list: `name<TAB>language<TAB>variant`.
+  ///
+  /// A module that is listed here only through [failingModules] reports no
+  /// voice list at all.
+  final Map<String, List<String>> modules = <String, List<String>>{};
+
+  /// Modules listed among the output modules whose voice list is refused.
+  final Set<String> failingModules = <String>{};
+
+  /// The module a connection uses until it sets one, which is what
+  /// `GET OUTPUT_MODULE` reports until then. Afterwards it reports the module
+  /// the connection set, as the real daemon does.
+  String? defaultModule;
 
   /// Every line received, in order: commands, text lines and the closing dot.
   final List<String> received = <String>[];
@@ -130,6 +146,7 @@ final class FakeSpeechDispatcher {
 
   void _accept(Socket connection) {
     _connections.add(connection);
+    _moduleOf[connection] = defaultModule;
     final List<int> line = <int>[];
     connection.listen((Uint8List chunk) {
       _bytes.add(chunk);
@@ -177,10 +194,44 @@ final class FakeSpeechDispatcher {
     if (command == 'SPEAK') {
       _readingText = true;
     }
-    connection.add(utf8.encode(_documentedReply(command)));
+    const String setModule = 'SET self OUTPUT_MODULE ';
+    if (command.startsWith(setModule)) {
+      _moduleOf[connection] = command.substring(setModule.length);
+    }
+    connection.add(
+      utf8.encode(_documentedReply(command, _moduleOf[connection])),
+    );
   }
 
-  static String _documentedReply(String command) {
+  String _documentedReply(String command, String? module) {
+    switch (command) {
+      case 'GET OUTPUT_MODULE':
+        return module == null
+            ? '300 ERR UNKNOWN\r\n'
+            : '251-$module\r\n251 OK GET RETURNED\r\n';
+      case 'LIST OUTPUT_MODULES':
+        return <String>[
+          for (final String name in <String>{
+            ...modules.keys,
+            ...failingModules,
+          })
+            '250-$name\r\n',
+          '250 OK MODULE LIST SENT\r\n',
+        ].join();
+      case 'LIST SYNTHESIS_VOICES':
+        final List<String>? voices = modules[module];
+        if (voices == null || failingModules.contains(module)) {
+          return '411 ERR CANT REPORT VOICES\r\n';
+        }
+        return <String>[
+          for (final String voice in voices) '249-$voice\r\n',
+          '249 OK VOICE LIST SENT\r\n',
+        ].join();
+    }
+    return _documentedSetting(command);
+  }
+
+  static String _documentedSetting(String command) {
     final List<String> words = command.split(' ');
     return switch ((words.first, words.length > 2 ? words[2] : '')) {
       ('SPEAK', _) => '230 OK RECEIVING DATA\r\n',

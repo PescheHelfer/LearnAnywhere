@@ -31,8 +31,9 @@ void main() {
   late FakeSpeechDispatcher daemon;
   late SpeechDispatcherEngine engine;
 
-  /// What the daemon received after the handshake.
-  List<String> commandsAfterHandshake() => daemon.commands.skip(4).toList();
+  /// What the daemon received after the handshake and the question for its
+  /// default module.
+  List<String> commandsAfterHandshake() => daemon.commands.skip(5).toList();
 
   /// Whether [future] has finished, after giving it a moment to.
   Future<bool> isOver(Future<void> future) async {
@@ -286,6 +287,228 @@ void main() {
       expect(daemon.received, isNot(contains('une')));
       daemon.sendEnd(id);
       await second;
+    });
+  });
+
+  group('voices', () {
+    setUp(() {
+      daemon.modules['espeak-ng'] = <String>[
+        'French (France)\tfr\tnone',
+        'German\tde\tnone',
+      ];
+      daemon.modules['rhvoice'] = <String>['Anna\tru\tnone'];
+      daemon.defaultModule = 'rhvoice';
+    });
+
+    test('lists the default module first, then every other', () async {
+      expect(await engine.voices(), const <SpeechVoice>[
+        SpeechVoice(id: 'rhvoice:Anna', name: 'rhvoice: Anna', language: 'ru'),
+        SpeechVoice(
+          id: 'espeak-ng:French (France)',
+          name: 'espeak-ng: French (France)',
+          language: 'fr',
+        ),
+        SpeechVoice(
+          id: 'espeak-ng:German',
+          name: 'espeak-ng: German',
+          language: 'de',
+        ),
+      ]);
+    });
+
+    test('a voice name holding a colon round-trips', () async {
+      daemon.modules['generic'] = <String>['piper:thorsten\tde-DE\tnone'];
+
+      final SpeechVoice voice = (await engine.voices()).singleWhere(
+        (SpeechVoice v) => v.language == 'de-DE',
+      );
+      expect(voice.name, 'generic: piper:thorsten');
+      unawaited(engine.speak(_say('Haus', voice: voice)));
+      await daemon.untilQueued(1);
+
+      expect(
+        daemon.commands,
+        containsAllInOrder(<String>[
+          'SET self OUTPUT_MODULE generic',
+          'SET self LANGUAGE de-DE',
+          'SET self SYNTHESIS_VOICE piper:thorsten',
+          'SPEAK',
+        ]),
+      );
+    });
+
+    test('a failing module is skipped and the others are listed', () async {
+      daemon.failingModules.add('rhvoice');
+
+      expect((await engine.voices()).map((SpeechVoice v) => v.id), <String>[
+        'espeak-ng:French (France)',
+        'espeak-ng:German',
+      ]);
+    });
+
+    test('a module that cannot be selected is skipped', () async {
+      daemon.replyTo(
+        'SET self OUTPUT_MODULE espeak-ng',
+        '305 ERR COULDNT SET OUTPUT MODULE\r\n',
+      );
+
+      expect((await engine.voices()).map((SpeechVoice v) => v.id), <String>[
+        'rhvoice:Anna',
+      ]);
+    });
+
+    test('an unanswered default module keeps the reported order', () async {
+      daemon.replyTo('GET OUTPUT_MODULE', '300 ERR UNKNOWN COMMAND\r\n');
+
+      expect((await engine.voices()).map((SpeechVoice v) => v.id), <String>[
+        'espeak-ng:French (France)',
+        'espeak-ng:German',
+        'rhvoice:Anna',
+      ]);
+    });
+
+    test('the default is the one before anything was said', () async {
+      // Saying a word sets a module, and from then on the daemon reports
+      // that one when asked for the default.
+      final Future<void> speaking = engine.speak(_say('maison'));
+      daemon.sendEnd(await daemon.untilQueued(1));
+      await speaking;
+
+      expect((await engine.voices()).first.id, 'rhvoice:Anna');
+    });
+
+    test('empty list replies give an empty list', () async {
+      daemon.modules
+        ..clear()
+        ..['dummy'] = <String>[];
+
+      expect(await engine.voices(), isEmpty);
+
+      daemon.modules.clear();
+      expect(await engine.voices(), isEmpty);
+    });
+
+    test('a voice reporting no language is left out', () async {
+      daemon.modules['espeak-ng'] = <String>[
+        'Mystery\t\tnone',
+        'Unknown\tnone\tnone',
+        'Nameless',
+        'German\tde\tnone',
+      ];
+
+      expect((await engine.voices()).map((SpeechVoice v) => v.id), <String>[
+        'rhvoice:Anna',
+        'espeak-ng:German',
+      ]);
+    });
+
+    test('no daemon gives no voices', () async {
+      final SpeechDispatcherEngine alone = SpeechDispatcherEngine(
+        connect: () => throw const SocketException('nobody home'),
+      );
+
+      expect(await alone.voices(), isEmpty);
+    });
+
+    test('a reported language serves a regional field', () async {
+      final List<SpeechVoice> voices = await engine.voices();
+
+      expect(
+        resolveSpeechVoice('fr-FR', voices)?.id,
+        'espeak-ng:French (France)',
+      );
+    });
+
+    test('Automatic prefers the default module', () async {
+      daemon.modules['rhvoice']!.add('Natalie\tfr\tnone');
+
+      expect(
+        resolveSpeechVoice('fr', await engine.voices())?.id,
+        'rhvoice:Natalie',
+      );
+    });
+
+    test('a listing never lands among a word\'s settings', () async {
+      daemon.ignore('SET self LANGUAGE');
+      final Future<void> speaking = engine.speak(_say('maison'));
+      await daemon.untilReceived('SET self LANGUAGE fr');
+
+      final Future<List<SpeechVoice>> listing = engine.voices();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      daemon.send('201 OK LANGUAGE SET\r\n');
+      final int id = await daemon.untilQueued(1);
+      daemon.sendEnd(id);
+      await speaking;
+      expect(await listing, hasLength(3));
+
+      final List<String> commands = commandsAfterHandshake();
+      expect(
+        commands.sublist(0, commands.indexOf('SPEAK') + 1),
+        everyElement(isNot(startsWith('LIST'))),
+      );
+    });
+
+    test(
+      'a new word cuts off the old at once, even during a listing',
+      () async {
+        final Future<void> first = engine.speak(_say('une'));
+        await daemon.untilQueued(1);
+        daemon.ignore('LIST SYNTHESIS_VOICES');
+        final Future<List<SpeechVoice>> listing = engine.voices();
+        await daemon.untilReceived('LIST SYNTHESIS_VOICES');
+
+        final Future<void> second = engine.speak(_say('maison'));
+        daemon.send('249-Anna\tru\tnone\r\n249 OK VOICE LIST SENT\r\n');
+
+        await first;
+        await daemon.untilCommands('LIST SYNTHESIS_VOICES', 2);
+        daemon.send('249 OK VOICE LIST SENT\r\n');
+        await listing;
+        daemon.sendEnd(await daemon.untilQueued(2));
+        await second;
+
+        // The cancel went out behind the pending list, not behind the
+        // whole listing.
+        final List<String> commands = daemon.commands;
+        expect(
+          commands.lastIndexOf('CANCEL self'),
+          lessThan(commands.lastIndexOf('LIST SYNTHESIS_VOICES')),
+        );
+      },
+    );
+
+    test('a word never lands inside a listing', () async {
+      // A voice list is the current module's, so a word setting another
+      // module in between would have one module's voices listed as another's.
+      const SpeechVoice anna = SpeechVoice(
+        id: 'rhvoice:Anna',
+        name: 'rhvoice: Anna',
+        language: 'ru',
+      );
+      daemon.ignore('LIST SYNTHESIS_VOICES');
+      final Future<List<SpeechVoice>> listing = engine.voices();
+      await daemon.untilReceived('LIST SYNTHESIS_VOICES');
+
+      final Future<void> speaking = engine.speak(_say('da', voice: anna));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      daemon.send('249-Anna\tru\tnone\r\n249 OK VOICE LIST SENT\r\n');
+      await daemon.untilCommands('LIST SYNTHESIS_VOICES', 2);
+      daemon.send('249 OK VOICE LIST SENT\r\n');
+      await listing;
+      daemon.sendEnd(await daemon.untilQueued(1));
+      await speaking;
+
+      final List<String> commands = daemon.commands;
+      expect(
+        <String>[
+          for (int i = 1; i < commands.length; i++)
+            if (commands[i] == 'LIST SYNTHESIS_VOICES') commands[i - 1],
+        ],
+        <String>[
+          'SET self OUTPUT_MODULE rhvoice',
+          'SET self OUTPUT_MODULE espeak-ng',
+        ],
+      );
     });
   });
 
