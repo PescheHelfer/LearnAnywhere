@@ -16,6 +16,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:learn_anywhere_core/core.dart';
+import 'package:learn_anywhere_ui_kit/src/speech/speech_dispatcher_service.dart';
 import 'package:learn_anywhere_ui_kit/src/speech/speech_dispatcher_voices.dart';
 import 'package:learn_anywhere_ui_kit/src/speech/ssip_client.dart';
 
@@ -40,17 +41,29 @@ Future<void> main() async {
 /// Lists the voices and speaks the samples through [connect], passing every
 /// line to [log].
 ///
+/// When nothing answers, the service is started through [start] and tried
+/// once more, as the program does, so a service that is installed but not
+/// running is not reported missing.
+///
 /// Returns whether each sample was said to its end by a voice for its own
 /// language, waiting at most [sampleLimit] for each. Never throws: a failure
 /// is what this reports.
 Future<bool> runSsipDiagnostic(
   SsipConnector connect,
   void Function(String line) log, {
+  SpeechDispatcherStarter start = startSpeechDispatcher,
   Duration sampleLimit = const Duration(seconds: 30),
 }) async {
   final SsipClient client;
   try {
-    client = await SsipClient.open(connect, onTraffic: log);
+    client = await openSpeechDispatcher(
+      connect,
+      start: () {
+        log('Nothing answered, starting speech-dispatcher');
+        return start();
+      },
+      onTraffic: log,
+    );
   } on IOException catch (error) {
     log('No connection: $error');
     return false;

@@ -27,6 +27,10 @@ SpeechUtterance _say(
   leadIn: leadIn,
 );
 
+/// Starts nothing, so no test can launch a real `speech-dispatcher` on a
+/// machine that has one.
+Future<void> _noStart() async {}
+
 void main() {
   late FakeSpeechDispatcher daemon;
   late SpeechDispatcherEngine engine;
@@ -45,7 +49,7 @@ void main() {
 
   setUp(() async {
     daemon = await FakeSpeechDispatcher.start();
-    engine = SpeechDispatcherEngine(connect: daemon.connect);
+    engine = SpeechDispatcherEngine(connect: daemon.connect, start: _noStart);
   });
 
   tearDown(() => daemon.close());
@@ -73,6 +77,7 @@ void main() {
     test('a daemon that cannot be reached is silence', () async {
       final SpeechDispatcherEngine alone = SpeechDispatcherEngine(
         connect: () => throw const SocketException('nobody home'),
+        start: _noStart,
       );
 
       await alone.speak(_say('maison'));
@@ -154,6 +159,7 @@ void main() {
     test('completes at the limit when no report ever comes', () async {
       final SpeechDispatcherEngine limited = SpeechDispatcherEngine(
         connect: daemon.connect,
+        start: _noStart,
         utteranceLimit: const Duration(milliseconds: 50),
       );
 
@@ -183,6 +189,7 @@ void main() {
       addTearDown(other.close);
       final SpeechDispatcherEngine withLeadIn = SpeechDispatcherEngine(
         connect: other.connect,
+        start: _noStart,
       );
 
       unawaited(engine.speak(_say('maison')));
@@ -405,6 +412,7 @@ void main() {
     test('no daemon gives no voices', () async {
       final SpeechDispatcherEngine alone = SpeechDispatcherEngine(
         connect: () => throw const SocketException('nobody home'),
+        start: _noStart,
       );
 
       expect(await alone.voices(), isEmpty);
@@ -512,6 +520,127 @@ void main() {
     });
   });
 
+  group('finding the service', () {
+    test('nothing connects until the first call', () async {
+      int starts = 0;
+      SpeechDispatcherEngine(
+        connect: daemon.connect,
+        start: () async => starts++,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(daemon.received, isEmpty);
+      expect(starts, 0);
+    });
+
+    test('a service not running is started once, then reached', () async {
+      int starts = 0;
+      final SpeechDispatcherEngine starting = SpeechDispatcherEngine(
+        connect: () => starts == 0
+            ? throw const SocketException('nobody home')
+            : daemon.connect(),
+        start: () async => starts++,
+      );
+      daemon.modules['espeak-ng'] = <String>['German\tde\tnone'];
+
+      expect(await starting.voices(), hasLength(1));
+      expect(starts, 1);
+    });
+
+    test('a service that will not come is started once per call', () async {
+      int connects = 0;
+      int starts = 0;
+      final SpeechDispatcherEngine alone = SpeechDispatcherEngine(
+        connect: () {
+          connects++;
+          throw const SocketException('nobody home');
+        },
+        start: () async => starts++,
+      );
+
+      expect(await alone.voices(), isEmpty);
+      expect((starts, connects), (1, 2));
+
+      await alone.speak(_say('maison'));
+      expect((starts, connects), (2, 4));
+    });
+
+    test('a missing binary is no service, not an exception', () async {
+      final SpeechDispatcherEngine alone = SpeechDispatcherEngine(
+        connect: () => throw const SocketException('nobody home'),
+        start: () => throw const ProcessException(
+          'speech-dispatcher',
+          <String>[],
+          'No such file or directory',
+          2,
+        ),
+      );
+
+      expect(alone.isAvailable, isTrue);
+      expect(await alone.voices(), isEmpty);
+      await alone.speak(_say('maison'));
+      await alone.stop();
+    });
+
+    test('a service installed later is found by the next call', () async {
+      bool installed = false;
+      final SpeechDispatcherEngine engine = SpeechDispatcherEngine(
+        connect: () => installed
+            ? daemon.connect()
+            : throw const SocketException('nobody home'),
+        start: _noStart,
+      );
+      daemon.modules['espeak-ng'] = <String>['German\tde\tnone'];
+      expect(await engine.voices(), isEmpty);
+
+      installed = true;
+
+      expect(await engine.voices(), hasLength(1));
+    });
+  });
+
+  group('healing', () {
+    test('a connection dropped mid-speech ends the wait', () async {
+      final Future<void> speaking = engine.speak(_say('maison'));
+      await daemon.untilQueued(1);
+
+      daemon.dropConnections();
+
+      expect(await isOver(speaking), isTrue);
+    });
+
+    test('a later call reconnects after a drop', () async {
+      final Future<void> speaking = engine.speak(_say('une'));
+      await daemon.untilQueued(1);
+      daemon.dropConnections();
+      await speaking;
+
+      final Future<void> again = engine.speak(_say('maison'));
+      final int id = await daemon.untilQueued(2);
+      daemon.sendEnd(id);
+      await again;
+
+      expect(daemon.connectionCount, 2);
+    });
+
+    test('a connection closed over an unanswered command heals', () async {
+      final SpeechDispatcherEngine impatient = SpeechDispatcherEngine(
+        connect: daemon.connect,
+        start: _noStart,
+        commandTimeout: const Duration(milliseconds: 50),
+      );
+      daemon.ignore('SET self RATE 50');
+      await impatient.speak(_say('vite', rate: 1.5));
+      expect(daemon.received, isNot(contains('vite')));
+
+      final Future<void> again = impatient.speak(_say('maison'));
+      daemon.sendEnd(await daemon.untilQueued(1));
+      await again;
+
+      expect(daemon.connectionCount, 2);
+    });
+  });
+
   group('stopping', () {
     test('sends CANCEL self and ends the wait', () async {
       final Future<void> speaking = engine.speak(_say('maison'));
@@ -530,6 +659,25 @@ void main() {
       await engine.stop();
 
       expect(await isOver(speaking), isTrue);
+    });
+
+    test('ends the wait at once while the service is being started', () async {
+      final Completer<void> starting = Completer<void>();
+      final SpeechDispatcherEngine slow = SpeechDispatcherEngine(
+        connect: () => starting.isCompleted
+            ? daemon.connect()
+            : throw const SocketException('nobody home'),
+        start: () => starting.future,
+      );
+      final Future<void> speaking = slow.speak(_say('maison'));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      unawaited(slow.stop());
+
+      expect(await isOver(speaking), isTrue);
+      starting.complete();
+      await slow.voices();
+      expect(daemon.received, isNot(contains('maison')));
     });
 
     test('with nothing ever said it opens no connection', () async {

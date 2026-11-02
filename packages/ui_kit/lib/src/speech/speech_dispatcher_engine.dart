@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:learn_anywhere_core/core.dart';
 
+import 'speech_dispatcher_service.dart';
 import 'speech_dispatcher_voices.dart';
 import 'ssip_client.dart';
 
@@ -16,16 +16,21 @@ import 'ssip_client.dart';
 /// [SpeechUtterance.leadIn] is ignored: nothing has shown that a Linux output
 /// needs waking.
 final class SpeechDispatcherEngine implements TtsEngine {
-  /// Creates an engine that reaches the service through [connect].
+  /// Creates an engine that reaches the service through [connect], and runs
+  /// [start] once when nothing answers there.
   ///
   /// Nothing connects until the first word or the first look at the voices.
-  /// [utteranceLimit] exists for tests;
-  /// anything else leaves it at [defaultUtteranceLimit].
+  /// [utteranceLimit] and [commandTimeout] exist for tests; anything else
+  /// leaves them at [defaultUtteranceLimit] and the client's own default.
   SpeechDispatcherEngine({
     SsipConnector connect = connectToSpeechDispatcher,
+    SpeechDispatcherStarter start = startSpeechDispatcher,
     Duration utteranceLimit = defaultUtteranceLimit,
+    Duration commandTimeout = SsipClient.defaultCommandTimeout,
   }) : _connect = connect,
-       _utteranceLimit = utteranceLimit;
+       _start = start,
+       _utteranceLimit = utteranceLimit,
+       _commandTimeout = commandTimeout;
 
   /// How long an utterance may run before it is given up on.
   ///
@@ -35,10 +40,13 @@ final class SpeechDispatcherEngine implements TtsEngine {
   static const Duration defaultUtteranceLimit = Duration(seconds: 60);
 
   final SsipConnector _connect;
+  final SpeechDispatcherStarter _start;
   final Duration _utteranceLimit;
+  final Duration _commandTimeout;
 
-  /// The connection, once one was asked for. Held as a future so that two
-  /// words arriving together share one connection.
+  /// The connection, once one was asked for, and null again once it failed or
+  /// ended. Held as a future so that two words arriving together share one
+  /// connection.
   Future<_Connection?>? _connection;
 
   /// The end of whatever is using the connection's settings, which the next
@@ -46,11 +54,16 @@ final class SpeechDispatcherEngine implements TtsEngine {
   /// every module in turn. A word setting its module in between would have
   /// one module's voices listed under another's name, and a listing landing
   /// among a word's settings would have the word said by the wrong module.
+  /// Kept by the engine rather than the connection, so a step still running
+  /// on a connection that dropped is waited for by the next one's.
   Future<void> _settingsFree = Future<void>.value();
 
   /// The utterance being said, or null when it is saying nothing.
   _SpokenRequest? _current;
 
+  /// True with or without a service. A learner can install the service, so
+  /// its absence shows as no voices, which the existing "no voice" messages
+  /// explain, rather than as speech that is not there at all.
   @override
   bool get isAvailable => true;
 
@@ -61,7 +74,7 @@ final class SpeechDispatcherEngine implements TtsEngine {
   @override
   Future<List<SpeechVoice>> voices() async {
     try {
-      final _Connection? connection = await (_connection ??= _open());
+      final _Connection? connection = await _connected();
       if (connection == null) {
         return const <SpeechVoice>[];
       }
@@ -90,7 +103,15 @@ final class SpeechDispatcherEngine implements TtsEngine {
     _current?.finish();
     _current = request;
     try {
-      if (await _queue(request, utterance, voice)) {
+      // Raced against the request's end, because getting the word to the
+      // daemon can mean waiting for the service to be started, and a word
+      // stopped or replaced meanwhile must not keep its caller waiting. The
+      // set-up left running sees that it lost and queues nothing.
+      final bool queued = await Future.any(<Future<bool>>[
+        _queue(request, utterance, voice),
+        request.done.then((_) => false),
+      ]);
+      if (queued) {
         await request.done.timeout(_utteranceLimit);
       }
     } on TimeoutException {
@@ -110,6 +131,10 @@ final class SpeechDispatcherEngine implements TtsEngine {
   Future<void> stop() async {
     final _SpokenRequest? request = _current;
     _current = null;
+    // Ended here and first, not left to the daemon's own cancel report: with
+    // nothing queued there is none, and a connection still being opened (the
+    // service perhaps being started) would keep the caller waiting on silence.
+    request?.finish();
     try {
       // Never opens one: without a connection there is nothing to stop. Only
       // ever `self`, since `all` would silence a screen reader as well.
@@ -117,10 +142,6 @@ final class SpeechDispatcherEngine implements TtsEngine {
       await connection?.client.command(_cancelOwnSpeech);
     } on SsipException {
       // Nothing left to stop, then.
-    } finally {
-      // Not left to the daemon's own cancel report: with nothing queued there
-      // is none, and a caller would be left waiting on silence.
-      request?.finish();
     }
   }
 
@@ -140,7 +161,7 @@ final class SpeechDispatcherEngine implements TtsEngine {
     if (spoken == null) {
       return false;
     }
-    final _Connection? connection = await (_connection ??= _open());
+    final _Connection? connection = await _connected();
     if (connection == null) {
       return false;
     }
@@ -176,19 +197,59 @@ final class SpeechDispatcherEngine implements TtsEngine {
     return result;
   }
 
-  Future<_Connection?> _open() async {
+  /// The connection, opening one when there is none.
+  ///
+  /// One that cannot be opened, or that ends later, is forgotten, so the next
+  /// call tries afresh: a service installed or restarted meanwhile is found
+  /// the way a newly installed Windows voice is.
+  Future<_Connection?> _connected() {
+    final Future<_Connection?>? open = _connection;
+    if (open != null) {
+      return open;
+    }
+    late final Future<_Connection?> opening;
+    // Only ever called after [_open]'s first await, so [opening] is set. The
+    // check keeps a late report from forgetting a newer connection.
+    void forget() {
+      if (identical(_connection, opening)) {
+        _connection = null;
+      }
+    }
+
+    opening = _open(forget);
+    return _connection = opening;
+  }
+
+  /// Connects, starting the service once if nothing answers, and calls
+  /// [forget] when that fails or the connection later ends.
+  ///
+  /// A voice listing cut short by a drop is not retried on a new connection:
+  /// a module that hung once would most likely hang again, and the learner
+  /// would wait twice for the same empty list. The next call tries afresh.
+  Future<_Connection?> _open(void Function() forget) async {
     try {
-      final SsipClient client = await SsipClient.open(_connect);
-      client.events.listen((SsipEvent event) {
-        _current?.messageOver(event.messageId);
-      });
+      final SsipClient client = await openSpeechDispatcher(
+        _connect,
+        start: _start,
+        commandTimeout: _commandTimeout,
+      );
+      client.events.listen(
+        (SsipEvent event) => _current?.messageOver(event.messageId),
+        // Dropped by the daemon, or closed here after a command went
+        // unanswered. No end report can come now, so nobody waits for one.
+        onDone: () {
+          forget();
+          _current?.finish();
+        },
+      );
       // Asked before anything here sets a module, since afterwards the
       // daemon reports this client's own choice instead.
       return _Connection(client, await readDefaultOutputModule(client));
-    } on IOException {
-      _connection = null;
-    } on SsipException {
-      _connection = null;
+    } on Exception {
+      // Whatever kept the service away, a socket, a refused handshake or a
+      // binary that is not installed, the answer is the same: no service
+      // this time. A failure must never reach the session.
+      forget();
     }
     return null;
   }

@@ -172,10 +172,26 @@ void main() {
     final bool worked = await runSsipDiagnostic(
       () => throw const SocketException('nobody home'),
       log.add,
+      start: () async {},
     );
 
     expect(worked, isFalse);
     expect(log.last, contains('nobody home'));
+  });
+
+  test('a service not running is started, as the program does', () async {
+    bool started = false;
+
+    final bool worked = await runSsipDiagnostic(
+      () => started
+          ? daemon.connect()
+          : throw const SocketException('nobody home'),
+      log.add,
+      start: () async => started = true,
+    );
+
+    expect(worked, isTrue);
+    expect(log.first, 'Nothing answered, starting speech-dispatcher');
   });
 
   test('a refused handshake is a report, not an exception', () async {

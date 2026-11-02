@@ -136,6 +136,17 @@ final class FakeSpeechDispatcher {
     return queuedMessages[count - 1];
   }
 
+  /// Drops every connection, as a daemon that crashed and was started again
+  /// would, and keeps accepting new ones.
+  void dropConnections() {
+    for (final Socket connection in _connections) {
+      connection.destroy();
+    }
+  }
+
+  /// How many connections were accepted so far.
+  int get connectionCount => _connections.length;
+
   /// Shuts the daemon down and drops every connection.
   Future<void> close() async {
     for (final Socket connection in _connections) {

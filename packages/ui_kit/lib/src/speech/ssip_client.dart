@@ -114,7 +114,7 @@ final class SsipClient {
   /// diagnostic.
   static Future<SsipClient> open(
     SsipConnector connect, {
-    Duration commandTimeout = _defaultCommandTimeout,
+    Duration commandTimeout = defaultCommandTimeout,
     void Function(String line)? onTraffic,
   }) async {
     final SsipClient client = SsipClient._(
@@ -135,7 +135,7 @@ final class SsipClient {
 
   /// How long a command may go unanswered. Long, because a daemon may be
   /// loading a speech module, and nothing waits on it but the word itself.
-  static const Duration _defaultCommandTimeout = Duration(seconds: 10);
+  static const Duration defaultCommandTimeout = Duration(seconds: 10);
 
   /// Who this client is, what it wants reported, and that its speech queues
   /// behind other applications' rather than interrupting them.
@@ -177,6 +177,9 @@ final class SsipClient {
   String? _closedBecause;
 
   /// What became of each message, as the daemon reports it.
+  ///
+  /// Ends when the connection does, however it ends: dropped by the daemon,
+  /// closed after a command went unanswered, or closed by [close].
   Stream<SsipEvent> get events => _events.stream;
 
   /// Sends [command] and waits for the reply, however it reads.
