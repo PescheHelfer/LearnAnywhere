@@ -119,6 +119,7 @@ void main() {
         prefs: prefs,
         filePicker: picker,
         settingsPath: p.join(temp.path, 'settings.json'),
+        speechEngine: const UnavailableTtsEngine(),
       ),
     );
     await settleAfterIo(tester);

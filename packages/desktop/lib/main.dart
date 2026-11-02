@@ -106,16 +106,20 @@ final class _LearnAnywhereDesktopAppState
   // route through [_DesktopHome].
   late bool _contentFrameEnabled;
   final WindowGeometryService _geometryService = WindowGeometryService();
-  // Speech is INJECTED rather than reached for. The plugin behind
-  // FlutterTtsEngine carries a Windows implementation and no Linux one, so
-  // Linux is handed the engine that reports itself unavailable: no session
-  // there ever calls a plugin that is not registered, no speaker icon is
-  // offered for something the host cannot do, and the Speech screen that
-  // would choose between its voices is not in the menu at all.
+  // Speech is INJECTED rather than reached for, one engine per host. Windows
+  // speaks through the plugin behind FlutterTtsEngine, which has no Linux
+  // implementation; Linux speaks through Speech Dispatcher, the desktop's own
+  // speech service. A Linux machine without that service still gets the
+  // engine: it reports no voices, so speaker icons and the Speech screen stay
+  // and the "no voice" messages say what is missing. Any other host is handed
+  // the engine that reports itself unavailable, so nothing there offers
+  // speech it cannot make. See `docs/adr/0008-linux-speaks-through-speech-dispatcher.md`.
   late final TtsEngine _speechEngine =
       widget.speechEngine ??
       (Platform.isWindows
           ? FlutterTtsEngine()
+          : Platform.isLinux
+          ? SpeechDispatcherEngine()
           : const UnavailableTtsEngine());
 
   ThemeData get _lightTheme => _appTheme == _AppTheme.lightBlue
@@ -1776,7 +1780,9 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
           ),
           // Absent, not disabled, on a host that cannot speak: a screen for
           // choosing between voices a machine does not have would offer
-          // nothing, and the whole feature is hidden there already.
+          // nothing, and the whole feature is hidden there already. Linux
+          // without Speech Dispatcher is not such a host: its rows say each
+          // language has no voice, which is what tells the learner to install it.
           if (widget.speechEngine.isAvailable)
             MenuItemButton(
               onPressed: () => _selectRoute(_DesktopRoute.speechSettings),
@@ -3042,6 +3048,10 @@ final class _DesktopHomeState extends State<_DesktopHome> with WindowListener {
         engine: widget.speechEngine,
         deck: _document.deck,
         settings: _settings.speech,
+        // Speech Dispatcher makes no lead-in. Decided by the engine in use
+        // rather than the platform, and without widening TtsEngine, so the
+        // screen offers exactly what that engine does.
+        offerWakeAudio: widget.speechEngine is! SpeechDispatcherEngine,
         onChanged: (SpeechSettings value) {
           setState(() => _settings = _settings.copyWith(speech: value));
           unawaited(_saveSettings());

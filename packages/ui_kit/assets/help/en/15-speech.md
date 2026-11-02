@@ -9,8 +9,8 @@ learning session reads it aloud — see [Hearing a field](#hearing-a-field). Wit
 speech, which is on from the start, the answer reads itself out at every reveal, with `F4` to hear it
 again — see [Reading the answer automatically](#reading-the-answer-automatically). What
 decides the *voice* is your computer, not your deck, and you pick which of its voices to
-use under [Choosing a voice](#choosing-a-voice). Not everything is here yet: see
-[What is not there yet](#what-is-not-there-yet).
+use under [Choosing a voice](#choosing-a-voice). Which computers speak, and what Linux
+needs first, is under [Where speech runs](#where-speech-runs).
 
 ## Where speech is set
 
@@ -164,7 +164,9 @@ like a field nobody enabled speech for, and you would have no way to tell which 
 **Options ▸ Speech...** says the same thing before a session starts, and for every
 language at once: a row reading **"This computer has no voice for it-IT"** is that
 language telling you in advance that it will be silent.
-[Installing a voice on Windows](#installing-a-voice-on-windows) is how to change that.
+[Installing a voice on Windows](#installing-a-voice-on-windows) is how to change that on
+Windows. On Linux, that sentence on *every* row usually means the speech service itself
+is missing, and [Installing speech on Linux](#installing-speech-on-linux) is the cure.
 
 ## When the first syllable is missing
 
@@ -178,6 +180,9 @@ the cure, and it is on from the start: before each read the program plays a tent
 second of silence, which wakes the output before the word begins. Only the first field of
 an answer gets it; the fields after it follow too closely for the output to doze off again.
 If you only ever listen through speakers, you can switch it off and lose that short delay.
+
+On **Linux** the checkbox is not offered. The program does not play that silence there, so
+a switch for it would do nothing.
 
 ## Installing a voice on Windows
 
@@ -208,6 +213,44 @@ A newly installed voice is picked up the next time you open a learning session o
 **Options ▸ Speech...** screen. Nothing needs restarting, and nothing needs setting up
 inside Learn Anywhere for a new voice to be found.
 
+## Installing speech on Linux
+
+On Linux, Learn Anywhere speaks through **Speech Dispatcher**, the speech service of the
+Linux desktop, with whichever voices it offers. It may already be installed on your
+computer, together with the **eSpeak NG** voices. When it is missing, speaker icons still
+appear, and using one tells you that no voice speaks the field's language;
+**Options ▸ Speech...** shows the same sentence on every row.
+
+Speech Dispatcher comes with your distribution. Install it from a terminal:
+
+**Ubuntu, Linux Mint, Zorin OS and other Debian-based systems:**
+
+```
+sudo apt install speech-dispatcher speech-dispatcher-espeak-ng
+```
+
+**Fedora, Nobara and other Fedora-based systems:**
+
+```
+sudo dnf install speech-dispatcher speech-dispatcher-espeak-ng speech-dispatcher-utils
+```
+
+To check that the service speaks at all, run `spd-say "Hello"` in the same terminal: you
+should hear it. Then open a learning session or **Options ▸ Speech...** again. The program
+finds the service by itself, and starts it if it is not running yet. Nothing needs
+restarting, and nothing needs setting up inside Learn Anywhere.
+
+When Learn Anywhere stops a word, it stops only its own: a screen reader or another
+program speaking at the time is not cut off by it.
+
+**Better voices.** eSpeak NG speaks a great many languages, and sounds robotic doing it.
+Speech Dispatcher can speak through other voices installed on the system, and every one it
+offers is listed under **Options ▸ Speech...**, with the name of the module it comes from in
+front of the voice — Learn Anywhere needs no change to use them. The most natural-sounding
+free voices today are **Piper** voices. Making them available to Speech Dispatcher is
+done by hand and is beyond this guide; the voices themselves, and Piper's own
+instructions, are at [the Piper project](https://github.com/OHF-Voice/piper1-gpl).
+
 ## Choosing a voice
 
 **Options ▸ Speech...** is where you decide *which* of your computer's voices speaks
@@ -219,7 +262,8 @@ you switch it off, it is remembered between sessions, and what it does is descri
 
 **Wake the audio output before speaking** sits just below it, and is on from the start
 too. It plays a moment of silence before each read so that the start of the word is not
-lost — see [When the first syllable is missing](#when-the-first-syllable-is-missing).
+lost — see [When the first syllable is missing](#when-the-first-syllable-is-missing). It is
+not offered on Linux.
 
 The screen lists one row per language: every language the open deck's mask uses, plus
 any language you have already chosen a voice for — so a choice made for another deck is
@@ -251,9 +295,10 @@ Uninstalling a voice you had chosen breaks nothing. That row falls back to
 **"Automatic"** and the field is spoken by whatever else fits, exactly as if you had
 never chosen at all.
 
-The whole entry is missing on a machine that cannot speak — **Linux** today — rather
-than present and empty. A screen for choosing between voices a machine does not have
-would offer nothing.
+On Linux the entry is there even before Speech Dispatcher is installed. Every row then
+says it has no voice, which is the cue for
+[Installing speech on Linux](#installing-speech-on-linux) — a missing entry would give
+you nothing to find.
 
 ## What travels with the deck, and what does not
 
@@ -267,9 +312,15 @@ Which *voice* speaks a language is deliberately not stored in the deck. A voice 
 to the machine it is installed on, and a deck carrying one machine's voice names to
 another machine would be carrying something meaningless.
 
-## What is not there yet
+## Where speech runs
 
-Speech runs on **Windows** and on the **Android companion** — see its own chapter,
-[The Android companion](14-android-companion.md#speech). **Linux** has none — no
-speaker icons appear there at all, rather than icons that would do nothing when
-clicked, and **Options ▸ Speech...** is not in the menu.
+Speech runs on **Windows**, on **Linux** and on the **Android companion** — see its own
+chapter, [The Android companion](14-android-companion.md#speech). Each uses the voices its
+system already has: on Windows those that come with its language features (see
+[Installing a voice on Windows](#installing-a-voice-on-windows)), on Linux those of
+Speech Dispatcher (see [Installing speech on Linux](#installing-speech-on-linux)).
+
+Linux differs in two details. **Wake the audio output before speaking** is not offered
+there. And a Linux machine without Speech Dispatcher keeps its speaker icons and its
+**Options ▸ Speech...** entry, so that both can tell you what is missing instead of
+quietly leaving speech out.

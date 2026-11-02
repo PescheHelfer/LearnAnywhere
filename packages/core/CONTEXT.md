@@ -157,11 +157,15 @@ one language, and a language may resolve to no voice at all, which is silence wi
 explanation rather than an error.
 
 **Speech engine** — what actually makes sound: the seam (`TtsEngine`) core describes and
-a shell injects an implementation of. Which engine is present is a fact about the host,
-so a host with none is handed one that reports itself unavailable rather than none at all
-(see [ADR-0004](../../docs/adr/0004-flutter-tts-first-linux-mute.md)). It is not the
-voice it speaks with, and it decides nothing about *what* is said — that is the policy's
-business, and the engine keeps no state between two utterances.
+a shell injects an implementation of. Which engine is present is a fact about the host:
+Windows and Android get `FlutterTtsEngine`, Linux gets `SpeechDispatcherEngine`, and any
+other host is handed one that reports itself unavailable rather than none at all (see
+[ADR-0004](../../docs/adr/0004-flutter-tts-first-linux-mute.md) and
+[ADR-0008](../../docs/adr/0008-linux-speaks-through-speech-dispatcher.md)). An engine
+whose service is missing — Linux without Speech Dispatcher — is still available and
+reports **no voices**, so the learner is told what to install instead of seeing no speech
+at all. It is not the voice it speaks with, and it decides nothing about *what* is said —
+that is the policy's business, and the engine keeps no state between two utterances.
 
 Speech is **presentation only**. Hearing a field is not an *attempt*: it moves no counter
 in either record, and touches neither mastery nor the Level-Learning ladder.

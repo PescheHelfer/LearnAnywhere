@@ -118,6 +118,41 @@ locally between builds.
    `AppDir/lib/libapp.so` symlink the recipe's `script:` step creates is missing —
    check that step in `AppImageBuilder.yml` hasn't been edited out.
 
+## Verifying speech
+
+Linux speaks through Speech Dispatcher, over its socket, in pure Dart (see
+[ADR-0008](../../docs/adr/0008-linux-speaks-through-speech-dispatcher.md)). The automated
+tests drive a fake daemon on loopback TCP and never hear a word, so a release that changes
+speech is checked by ear, on each distro, before it counts as supported there. A pass on
+one distro says nothing about the other.
+
+The diagnostic below talks to the real daemon with the same client the program uses,
+lists what it finds, says one sample per language, and logs every line on the wire. It
+needs only the Dart SDK that comes with Flutter. Run it from the repository root:
+
+```bash
+dart run packages/ui_kit/tool/ssip_diagnostic.dart
+```
+
+It exits with 1 when anything failed, including no service at all.
+
+1. Note whether `speech-dispatcher` is preinstalled. Then run the program **without** it:
+   speaker icons still show, `F4` names the language with no voice, and every row under
+   **Options ▸ Speech...** says the computer has no voice for it.
+2. Install it with the `apt` or `dnf` line from the user guide's *Installing speech on
+   Linux* section, confirming the package names on this distro, and check that
+   `spd-say "Hello"` is audible.
+3. Run the diagnostic: voices are listed with their languages, the default module is
+   reported, and the `en`, `de`, `fr` and `it` samples are all audible, accents included.
+4. From the **AppImage**, not a debug build: a speaker icon, `F4`, a multi-field answer read
+   field by field in order, and the sample button under **Options ▸ Speech...**.
+5. Hold `Enter` through several units and press `F4` repeatedly: words never stack. Leaving
+   a session stops speech. Audio from other applications is not cut off. A change of
+   **Speech rate** is audible.
+6. Listen for a lost first syllable after a pause in typing, through headphones as well as
+   speakers. That decides whether **Wake the audio output before speaking** comes back on
+   Linux, and how.
+
 ## Publishing
 
 The `.AppImage` is a build artifact, not source — don't commit it. Attach it to a

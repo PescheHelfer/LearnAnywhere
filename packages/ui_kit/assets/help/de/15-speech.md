@@ -13,8 +13,8 @@ sie erneut aus — siehe
 [Die Antwort automatisch vorlesen](#die-antwort-automatisch-vorlesen). Welche *Stimme*
 spricht, entscheidet
 Ihr Rechner, nicht Ihre Lern-Datei; welche seiner Stimmen es sein soll, wählen Sie unter
-[Eine Stimme aussuchen](#eine-stimme-aussuchen). Noch ist nicht alles da: siehe
-[Was noch fehlt](#was-noch-fehlt).
+[Eine Stimme aussuchen](#eine-stimme-aussuchen). Welche Rechner sprechen und was Linux
+zuerst braucht, steht unter [Wo es Sprachausgabe gibt](#wo-es-sprachausgabe-gibt).
 
 ## Wo die Sprachausgabe eingestellt wird
 
@@ -178,7 +178,10 @@ Vorlesen eingeschaltet hat, und Sie könnten die beiden Fälle nicht unterscheid
 Sprachen auf einmal: Eine Zeile mit **"Dieser Computer hat keine Stimme für it-IT"** ist
 diese Sprache, die Ihnen vorab mitteilt, dass sie stumm bleiben wird.
 [Eine Stimme unter Windows installieren](#eine-stimme-unter-windows-installieren) sagt,
-wie Sie das ändern.
+wie Sie das unter Windows ändern. Steht dieser Satz unter Linux in *jeder* Zeile, fehlt
+meist der Sprachdienst selbst, und
+[Sprachausgabe unter Linux installieren](#sprachausgabe-unter-linux-installieren) schafft
+Abhilfe.
 
 ## Wenn die erste Silbe fehlt
 
@@ -194,6 +197,9 @@ eine Zehntelsekunde Stille ab, die die Ausgabe weckt, bevor das Wort beginnt. Nu
 Feld einer Antwort bekommt sie; die folgenden kommen zu dicht danach, als dass die Ausgabe
 wieder einschlafen könnte. Hören Sie nur über Lautsprecher, können Sie es ausschalten und
 sparen die kurze Verzögerung.
+
+Unter **Linux** wird das Häkchen nicht angeboten. Das Programm spielt dort keine solche
+Stille ab, ein Schalter dafür täte also nichts.
 
 ## Eine Stimme unter Windows installieren
 
@@ -224,6 +230,47 @@ Eine neu installierte Stimme wird gefunden, sobald Sie das nächste Mal eine Ler
 oder den Bildschirm **Optionen ▸ Sprachausgabe...** öffnen. Nichts muss neu gestartet
 werden, und in Learn Anywhere ist für eine neue Stimme nichts einzurichten.
 
+## Sprachausgabe unter Linux installieren
+
+Unter Linux spricht Learn Anywhere über **Speech Dispatcher**, den Sprachdienst des
+Linux-Desktops, mit den Stimmen, die er anbietet. Vielleicht ist er auf Ihrem Rechner
+schon installiert, zusammen mit den Stimmen von **eSpeak NG**. Fehlt er, erscheinen die
+Lautsprecher-Symbole trotzdem, und ein Klick darauf sagt Ihnen, dass keine Stimme die
+Sprache des Feldes spricht; **Optionen ▸ Sprachausgabe...** zeigt denselben Satz in jeder
+Zeile.
+
+Speech Dispatcher gehört zu Ihrer Distribution. Installieren Sie ihn in einem Terminal:
+
+**Ubuntu, Linux Mint, Zorin OS und andere Debian-basierte Systeme:**
+
+```
+sudo apt install speech-dispatcher speech-dispatcher-espeak-ng
+```
+
+**Fedora, Nobara und andere Fedora-basierte Systeme:**
+
+```
+sudo dnf install speech-dispatcher speech-dispatcher-espeak-ng speech-dispatcher-utils
+```
+
+Ob der Dienst überhaupt spricht, prüfen Sie im selben Terminal mit `spd-say "Hallo"`:
+Sie sollten es hören. Öffnen Sie danach erneut eine Lernsitzung oder
+**Optionen ▸ Sprachausgabe...**. Das Programm findet den Dienst von selbst und startet
+ihn, falls er noch nicht läuft. Nichts muss neu gestartet werden, und in Learn Anywhere
+ist nichts einzurichten.
+
+Hält Learn Anywhere ein Wort an, hält es nur sein eigenes an: Ein Bildschirmleser oder ein
+anderes Programm, das gerade spricht, wird davon nicht unterbrochen.
+
+**Bessere Stimmen.** eSpeak NG spricht sehr viele Sprachen und klingt dabei roboterhaft.
+Speech Dispatcher kann auch über andere Stimmen sprechen, die auf dem System installiert
+sind, und jede davon erscheint unter **Optionen ▸ Sprachausgabe...**, mit dem Namen des
+Moduls, aus dem sie stammt, vor der Stimme — Learn Anywhere muss dafür nicht geändert
+werden. Die natürlichsten freien Stimmen sind heute die von **Piper**. Sie Speech
+Dispatcher zugänglich zu machen, ist Handarbeit und geht über dieses Handbuch hinaus; die
+Stimmen selbst und die Anleitungen von Piper finden Sie beim
+[Piper-Projekt](https://github.com/OHF-Voice/piper1-gpl).
+
 ## Eine Stimme aussuchen
 
 Unter **Optionen ▸ Sprachausgabe...** entscheiden Sie, *welche* Stimme Ihres Computers
@@ -237,6 +284,7 @@ es ausschalten, es wird über Sitzungen hinweg gemerkt, und was es tut, steht un
 **Audioausgabe vor dem Vorlesen wecken** steht gleich darunter und ist ebenfalls von
 Anfang an eingeschaltet. Es spielt vor jedem Vorlesen einen Moment Stille ab, damit der
 Wortanfang nicht verloren geht — siehe [Wenn die erste Silbe fehlt](#wenn-die-erste-silbe-fehlt).
+Unter Linux wird es nicht angeboten.
 
 Der Bildschirm zeigt eine Zeile je Sprache: jede Sprache, die die Maske der geöffneten
 Lern-Datei verwendet, sowie jede, für die Sie bereits eine Stimme gewählt haben — eine
@@ -271,9 +319,10 @@ Wird eine gewählte Stimme später deinstalliert, geht nichts kaputt: Die Zeile 
 **"Automatisch"** zurück, und das Feld wird von dem gesprochen, was sonst passt — genau
 so, als hätten Sie nie gewählt.
 
-Auf einem Rechner, der nicht sprechen kann — heute **Linux** —, fehlt der Menüpunkt
-ganz, statt leer dazustehen. Ein Bildschirm zur Wahl zwischen Stimmen, die ein Rechner
-nicht hat, böte nichts.
+Unter Linux ist der Menüpunkt auch da, bevor Speech Dispatcher installiert ist. Jede
+Zeile sagt dann, dass sie keine Stimme hat — das Zeichen für
+[Sprachausgabe unter Linux installieren](#sprachausgabe-unter-linux-installieren). Ein
+fehlender Menüpunkt gäbe Ihnen nichts, wonach Sie suchen könnten.
 
 ## Was mitreist und was nicht
 
@@ -288,9 +337,17 @@ gehört zu dem Rechner, auf dem sie installiert ist; eine Lern-Datei, die die
 Stimmennamen des einen Rechners auf einen anderen trägt, trüge etwas Bedeutungsloses mit
 sich herum.
 
-## Was noch fehlt
+## Wo es Sprachausgabe gibt
 
-Die Sprachausgabe läuft unter **Windows** und in der **Android-Begleit-App** — siehe
-deren eigenes Kapitel, [Die Android-Begleit-App](14-android-companion.md#sprachausgabe).
-**Linux** hat keine — dort erscheint gar kein Lautsprecher-Symbol, statt eines, das beim
-Klicken nichts täte, und **Optionen ▸ Sprachausgabe...** steht nicht im Menü.
+Die Sprachausgabe läuft unter **Windows**, unter **Linux** und in der
+**Android-Begleit-App** — siehe deren eigenes Kapitel,
+[Die Android-Begleit-App](14-android-companion.md#sprachausgabe). Jede nutzt die Stimmen,
+die ihr System schon hat: Windows jene, die mit seinen Sprachfunktionen kommen (siehe
+[Eine Stimme unter Windows installieren](#eine-stimme-unter-windows-installieren)), Linux
+jene von Speech Dispatcher (siehe
+[Sprachausgabe unter Linux installieren](#sprachausgabe-unter-linux-installieren)).
+
+Linux unterscheidet sich in zwei Einzelheiten. **Audioausgabe vor dem Vorlesen wecken**
+wird dort nicht angeboten. Und ein Linux-Rechner ohne Speech Dispatcher behält seine
+Lautsprecher-Symbole und den Menüpunkt **Optionen ▸ Sprachausgabe...**, damit beide Ihnen
+sagen können, was fehlt, statt die Sprachausgabe stillschweigend wegzulassen.

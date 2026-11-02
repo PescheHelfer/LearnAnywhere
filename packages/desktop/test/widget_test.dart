@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,7 +21,12 @@ void main() {
   testWidgets('desktop shell launches with navigation chrome', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Learn Anywhere'), findsOneWidget);
@@ -33,7 +40,12 @@ void main() {
   testWidgets('desktop shell routes from top-level menu buttons', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Edit'));
@@ -52,7 +64,12 @@ void main() {
   testWidgets('help about shows legacy and conversion credits', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.drag(
@@ -83,7 +100,12 @@ void main() {
   testWidgets('help user guide opens with a contents list and search', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.drag(
@@ -108,7 +130,12 @@ void main() {
   testWidgets('F1 opens the user guide from the home screen', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.f1);
@@ -120,7 +147,12 @@ void main() {
   testWidgets('F1 opens the guide over the editor and leaves it intact', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Edit'));
@@ -150,7 +182,12 @@ void main() {
   testWidgets('editor inserts units and edits length-limited fields', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Edit'));
@@ -186,7 +223,12 @@ void main() {
   testWidgets('editor search shows selectable all-match results', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Edit'));
@@ -236,7 +278,12 @@ void main() {
   testWidgets('re-entering the unit editor opens on the last unit', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Edit'));
@@ -275,7 +322,12 @@ void main() {
   testWidgets('query options route exposes learning toggles', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Options'));
@@ -314,6 +366,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Speech rate'), findsOneWidget);
     expect(find.text('Read the answer aloud automatically'), findsOneWidget);
+    expect(find.text('Wake the audio output before speaking'), findsOneWidget);
     // The screen scrolls: on the test surface the Close button sits below the
     // language rows and is not built until it is scrolled to.
     await tester.drag(find.byType(ListView), const Offset(0, -400));
@@ -336,6 +389,34 @@ void main() {
     expect(find.text('Speech...'), findsNothing);
   });
 
+  testWidgets('Speech Dispatcher gets the Speech screen without wake audio', (
+    WidgetTester tester,
+  ) async {
+    // The engine Linux is given, over a connection that is always refused and
+    // a start that does nothing: no test reaches a real daemon.
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: SpeechDispatcherEngine(
+          connect: () async => throw const SocketException('no daemon'),
+          start: () async {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Options'));
+    await tester.pumpAndSettle();
+    // No service is not no speech: the learner can install it.
+    expect(find.text('Speech...'), findsOneWidget);
+
+    await tester.tap(find.text('Speech...').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Speech rate'), findsOneWidget);
+    expect(find.text('Read the answer aloud automatically'), findsOneWidget);
+    // This engine makes no lead-in, so there is nothing to switch.
+    expect(find.text('Wake the audio output before speaking'), findsNothing);
+  });
+
   testWidgets('learn session checks answers and records live accuracy', (
     WidgetTester tester,
   ) async {
@@ -346,7 +427,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     // Endless mode serves its one unit again, so the session — and its live
     // readouts — are still on screen after the answer.
@@ -364,7 +450,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await answerOneQuestion(tester);
 
@@ -421,7 +512,12 @@ void main() {
   testWidgets('mask editor edits mask metadata and adds schema items', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Edit'));
@@ -452,7 +548,12 @@ void main() {
   testWidgets(
     'file menu clear units asks for confirmation then a mask choice',
     (WidgetTester tester) async {
-      await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+      await tester.pumpWidget(
+        LearnAnywhereDesktopApp(
+          prefs: prefs,
+          speechEngine: const UnavailableTtsEngine(),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('File'));
@@ -479,7 +580,12 @@ void main() {
   testWidgets('the zoom submenu offers every level and marks the current one', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await openZoomMenu(tester);
@@ -504,7 +610,12 @@ void main() {
   testWidgets('the zoom level survives a relaunch', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await openZoomMenu(tester);
     await tester.tap(find.text('175%'));
@@ -517,6 +628,7 @@ void main() {
     await tester.pumpWidget(
       LearnAnywhereDesktopApp(
         prefs: DesktopPrefs(await SharedPreferences.getInstance()),
+        speechEngine: const UnavailableTtsEngine(),
       ),
     );
     await tester.pumpAndSettle();
@@ -527,7 +639,12 @@ void main() {
 
   testWidgets('every zoom key steps the level, including the keyboardless ones',
       (WidgetTester tester) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Straight from launch, with nothing clicked and nothing focused.
@@ -583,7 +700,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     final Size plainMenu = tester.getSize(find.text('File'));
     final Size plainTitle = tester.getSize(find.text('Learn Anywhere'));
@@ -606,7 +728,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Statistics'));
     await tester.pumpAndSettle();
@@ -646,7 +773,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await openEditorWithOneUnit(tester);
 
@@ -705,7 +837,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+      await tester.pumpWidget(
+        LearnAnywhereDesktopApp(
+          prefs: prefs,
+          speechEngine: const UnavailableTtsEngine(),
+        ),
+      );
       await tester.pumpAndSettle();
       await openEditorWithOneUnit(tester);
 
@@ -737,7 +874,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     // The workspace is a few left-aligned status lines; centring them leaves
     // text adrift in an empty screen, so it keeps the corner whatever the
@@ -781,7 +923,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await openEditorWithOneUnit(tester);
     // Off without anyone asking: the full-width layout, flush to the left.
@@ -796,7 +943,12 @@ void main() {
 
     // Relaunch against the same preference store.
     await tester.pumpWidget(Container());
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await openEditorWithOneUnit(tester);
     expect(tester.getRect(find.byType(FieldRowGrid)).left, greaterThan(0));
@@ -816,7 +968,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(await contentFrameChecked(tester), isFalse);
 
@@ -855,7 +1012,12 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     prefs.setContentFrameEnabled(true);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await openEditorWithOneUnit(tester);
 
@@ -885,7 +1047,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: zoomed));
+      await tester.pumpWidget(
+        LearnAnywhereDesktopApp(
+          prefs: zoomed,
+          speechEngine: const UnavailableTtsEngine(),
+        ),
+      );
       await tester.pumpAndSettle();
       await openEditorWithOneUnit(tester);
 
@@ -927,7 +1094,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await openEditorWithOneUnit(tester);
 
@@ -967,7 +1139,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await openEditorWithOneUnit(tester);
     final Rect before = tester.getRect(editorPage(SingleChildScrollView));
@@ -993,7 +1170,12 @@ void main() {
     // width and, per ADR-0002, a discrete setting quietly made continuous.
     // One pump, not pumpAndSettle: the point is that no intermediate state
     // exists to settle.
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Measured at the workspace heading — a plain Text on the page. NOT inside
@@ -1024,7 +1206,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
     await startOneQuestionSession(tester);
 
@@ -1046,7 +1233,12 @@ void main() {
   testWidgets('desktop shell switches language at runtime', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(LearnAnywhereDesktopApp(prefs: prefs));
+    await tester.pumpWidget(
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.drag(

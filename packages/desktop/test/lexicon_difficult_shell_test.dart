@@ -153,6 +153,7 @@ void main() {
             saveTo: savedPath,
           ),
           settingsPath: p.join(temp.path, 'settings.json'),
+          speechEngine: const UnavailableTtsEngine(),
         ),
       );
       await settleAfterIo(tester);

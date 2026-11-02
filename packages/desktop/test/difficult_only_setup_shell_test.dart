@@ -88,6 +88,7 @@ void main() {
         prefs: prefs,
         filePicker: picker,
         settingsPath: settingsPath,
+        speechEngine: const UnavailableTtsEngine(),
       ),
     );
     await settleAfterIo(tester);

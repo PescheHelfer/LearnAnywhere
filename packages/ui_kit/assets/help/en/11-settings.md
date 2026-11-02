@@ -150,7 +150,7 @@ what it plays and when.
 **Wake the audio output before speaking** plays a moment of silence before each read, so
 headphones that dozed off while you typed do not lose the first syllable. It is on from the
 start, and [When the first syllable is missing](15-speech.md#when-the-first-syllable-is-missing)
-explains when you would switch it off.
+explains when you would switch it off. It is not offered on Linux.
 
 **Speech rate** applies to every single thing the program says — the sample phrases on this
 screen included — and is the setting worth reaching for first in a language you barely know.
@@ -159,8 +159,9 @@ Voice choices are stored **per machine and never in the deck**: your deck says a
 French, and each computer decides which of its French voices says it. Copy a deck to another
 computer and it carries no voice names with it.
 
-The entry is absent on a machine that cannot speak at all — **Linux** today — rather than
-present and doing nothing.
+On Linux the entry is there even before the speech service is installed: every row then
+says it has no voice, and [Installing speech on Linux](15-speech.md#installing-speech-on-linux)
+gives the steps.
 
 ## Statistics options
 

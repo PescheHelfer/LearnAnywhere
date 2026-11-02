@@ -89,7 +89,11 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      LearnAnywhereDesktopApp(prefs: prefs, filePicker: picker),
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        filePicker: picker,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
     );
     await settle(tester);
   }

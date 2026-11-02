@@ -39,8 +39,9 @@ with several steps. Learn Anywhere was made for this kind of material.
   the format and your preferences. You get a ready `.vok` file back, which saves a lot
   of typing. The same works for extending or cleaning up a deck you already have.
 - **It reads your cards aloud, offline.** Speech uses the voices your operating system
-  already has, so nothing is uploaded and nothing costs extra. This works on Windows
-  and Android. Linux has no speech yet.
+  already has, so nothing is uploaded and nothing costs extra. This works on Windows,
+  Linux and Android. On Linux it speaks through Speech Dispatcher, the desktop's own
+  speech service.
 - **Practise on your phone without sync trouble.** The Android companion imports your
   decks and asks each card with two taps. It never changes a deck, so there is nothing
   to sync back. Your desktop files stay the master copy.
@@ -75,7 +76,7 @@ with several steps. Learn Anywhere was made for this kind of material.
   speaker icon beside the field reads it out through the voices the operating system
   already has, and the answer is read aloud on its own unless you switch that off.
   It all stays local and offline: nothing is uploaded and nothing is downloaded.
-  Windows and the Android companion; Linux ships mute.
+  Windows, Linux (through Speech Dispatcher) and the Android companion.
 - **A lexicon.** Search the units in memory, or sweep a whole folder tree of decks on disk.
 - **Rich text in fields.** Bold, italic, underline, colour and highlight, stored portably.
 - **English and German** interface and user guide, five themes, a zoom level from 75 % to 200 %, optional centring of the content on a wide screen, and full keyboard operation including ALT menu mnemonics.
@@ -196,6 +197,19 @@ working, but Windows may warn that turning the feature back on needs a reset or 
 chmod +x Learn_Anywhere-*.AppImage
 ./Learn_Anywhere-*.AppImage
 ```
+
+For speech, Linux needs **Speech Dispatcher** with the eSpeak NG voices. It may already
+be installed. If it is not, install it with one of these, at any time; the program finds
+it without being reinstalled:
+
+```sh
+sudo apt install speech-dispatcher speech-dispatcher-espeak-ng   # Ubuntu, Mint, Zorin OS
+sudo dnf install speech-dispatcher speech-dispatcher-espeak-ng speech-dispatcher-utils   # Fedora, Nobara
+```
+
+Without it the program runs normally and stays silent; each speaker icon then says that
+no voice is installed. The user guide's **Speech** chapter (`F1`) has the details,
+including better voices than eSpeak NG.
 
 Build details for the AppImage are in [`packaging/linux/README.md`](packaging/linux/README.md).
 

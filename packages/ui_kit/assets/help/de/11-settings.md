@@ -163,7 +163,7 @@ beschreibt, was wann vorgelesen wird.
 damit Kopfhörer, die beim Tippen eingeschlafen sind, die erste Silbe nicht verschlucken. Es
 ist von Anfang an eingeschaltet, und
 [Wenn die erste Silbe fehlt](15-speech.md#wenn-die-erste-silbe-fehlt) erklärt, wann Sie es
-ausschalten.
+ausschalten. Unter Linux wird es nicht angeboten.
 
 **Sprechtempo** gilt für alles, was das Programm sagt — auch für die Beispielsätze auf
 diesem Bildschirm — und ist in einer kaum vertrauten Sprache die Einstellung, nach der man
@@ -174,8 +174,10 @@ sagt, dass ein Feld französisch ist, und jeder Computer entscheidet, welche sei
 französischen Stimmen es spricht. Kopieren Sie eine Lern-Datei auf einen anderen Computer,
 trägt sie keine Stimmennamen mit sich.
 
-Auf einem Rechner, der überhaupt nicht sprechen kann — heute **Linux** — fehlt der
-Menüpunkt ganz, statt vorhanden zu sein und nichts zu tun.
+Unter Linux ist der Menüpunkt auch da, bevor der Sprachdienst installiert ist: Jede Zeile
+sagt dann, dass sie keine Stimme hat, und
+[Sprachausgabe unter Linux installieren](15-speech.md#sprachausgabe-unter-linux-installieren)
+nennt die Schritte.
 
 ## Statistik-Optionen
 

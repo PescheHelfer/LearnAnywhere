@@ -24,6 +24,7 @@ final class SpeechSettingsPage extends StatefulWidget {
     required this.settings,
     required this.onChanged,
     this.deck,
+    this.offerWakeAudio = true,
     this.onClose,
     super.key,
   });
@@ -39,6 +40,14 @@ final class SpeechSettingsPage extends StatefulWidget {
 
   /// The machine's current speech settings.
   final SpeechSettings settings;
+
+  /// Whether **Wake the audio output before speaking** is offered here.
+  ///
+  /// The shell decides by the engine in use, not the platform: only an engine
+  /// that makes a lead-in has one to switch, and a checkbox that does nothing
+  /// is not shown.
+  /// Hidden, the stored setting is left alone for an engine that reads it.
+  final bool offerWakeAudio;
 
   /// Called with the settings after every change, for the shell to persist.
   final ValueChanged<SpeechSettings> onChanged;
@@ -149,30 +158,32 @@ final class _SpeechSettingsPageState extends State<SpeechSettingsPage> {
             messages.message(LearnAnywhereMessage.speechAutomaticHint),
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: LearnAnywhereTokens.gapMedium),
-          Row(
-            children: <Widget>[
-              Checkbox(
-                key: const Key('speechWakeAudio'),
-                value: widget.settings.wakeAudio,
-                onChanged: (bool? value) {
-                  widget.onChanged(
-                    widget.settings.copyWith(wakeAudio: value ?? false),
-                  );
-                },
-              ),
-              Expanded(
-                child: Text(
-                  messages.message(LearnAnywhereMessage.speechWakeAudioLabel),
-                  style: Theme.of(context).textTheme.titleMedium,
+          if (widget.offerWakeAudio) ...<Widget>[
+            const SizedBox(height: LearnAnywhereTokens.gapMedium),
+            Row(
+              children: <Widget>[
+                Checkbox(
+                  key: const Key('speechWakeAudio'),
+                  value: widget.settings.wakeAudio,
+                  onChanged: (bool? value) {
+                    widget.onChanged(
+                      widget.settings.copyWith(wakeAudio: value ?? false),
+                    );
+                  },
                 ),
-              ),
-            ],
-          ),
-          Text(
-            messages.message(LearnAnywhereMessage.speechWakeAudioHint),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+                Expanded(
+                  child: Text(
+                    messages.message(LearnAnywhereMessage.speechWakeAudioLabel),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              messages.message(LearnAnywhereMessage.speechWakeAudioHint),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
           const SizedBox(height: LearnAnywhereTokens.gapLarge),
           _RateControl(
             rate: widget.settings.rate,

@@ -72,6 +72,7 @@ void main() {
     SpeechSettings initial = const SpeechSettings(),
     int zoomPercent = 100,
     Size surface = const Size(1400, 1000),
+    bool offerWakeAudio = true,
   }) async {
     SpeechSettings current = initial;
     tester.view.physicalSize = surface;
@@ -90,6 +91,7 @@ void main() {
                 engine: engine,
                 deck: withDeck,
                 settings: current,
+                offerWakeAudio: offerWakeAudio,
                 onChanged: (SpeechSettings value) {
                   setState(() => current = value);
                 },
@@ -324,6 +326,24 @@ void main() {
     // Nothing else on the screen moves with it.
     expect(settings().automatic, isTrue);
     expect(settings().rate, kDefaultSpeechRate);
+  });
+
+  testWidgets('wake audio is neither shown nor played where it is not '
+      'offered', (WidgetTester tester) async {
+    final _RecordingTtsEngine engine = _RecordingTtsEngine(
+      const <SpeechVoice>[hortense],
+    );
+    await pumpScreen(tester, engine: engine, offerWakeAudio: false);
+
+    expect(find.byKey(const Key('speechWakeAudio')), findsNothing);
+    expect(find.text('Wake the audio output before speaking'), findsNothing);
+    expect(
+      find.textContaining('first syllable', findRichText: true),
+      findsNothing,
+    );
+    // The rest of the screen is all there.
+    expect(find.byKey(const Key('speechAutomatic')), findsOneWidget);
+    expect(find.byKey(const Key('speechRate')), findsOneWidget);
   });
 
   testWidgets('the test button plays the lead-in exactly when it is '

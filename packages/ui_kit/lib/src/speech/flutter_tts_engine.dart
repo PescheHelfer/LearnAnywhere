@@ -7,13 +7,14 @@ import 'package:learn_anywhere_core/core.dart';
 
 /// Speaks through the voices the operating system already has.
 ///
-/// The one concrete engine both shells use, kept here rather than in a shell
-/// so Windows and Android speak through exactly the same code. It is a thin
+/// The engine both shells use on Windows and Android, kept here rather than in
+/// a shell so those two speak through exactly the same code. It is a thin
 /// adapter and nothing more: what to say, in which language and in which
 /// voice, was already decided by the pure policy in core.
 ///
 /// It is never constructed on a host the plugin has no implementation for —
-/// the shell selects [UnavailableTtsEngine] there instead.
+/// the desktop shell selects `SpeechDispatcherEngine` on Linux and
+/// [UnavailableTtsEngine] anywhere else instead.
 final class FlutterTtsEngine implements TtsEngine {
   /// Creates an engine over [tts], or over a fresh `FlutterTts`.
   ///

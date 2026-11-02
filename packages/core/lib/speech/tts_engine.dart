@@ -139,9 +139,10 @@ abstract interface class TtsEngine {
 
 /// The engine for a host that cannot speak.
 ///
-/// Not a test double: it is what the desktop shell selects away from Windows,
-/// so Linux is handed something inert instead of reaching a plugin that has no
-/// implementation there.
+/// Not a test double: it is what the desktop shell selects on a host that is
+/// neither Windows nor Linux, so such a host is handed something inert instead
+/// of reaching a plugin or a service it does not have. It is also the default
+/// for any page not handed an engine.
 final class UnavailableTtsEngine implements TtsEngine {
   /// Creates the inert engine.
   const UnavailableTtsEngine();

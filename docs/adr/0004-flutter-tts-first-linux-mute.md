@@ -1,6 +1,7 @@
 # ADR-0004 — `flutter_tts` ships first, behind an interface, and Linux ships mute
 
-**Status:** accepted (2026-09-05)
+**Status:** accepted (2026-09-05); for Linux, superseded by
+[ADR-0008](0008-linux-speaks-through-speech-dispatcher.md) (2026-11-02)
 **Scope:** system-wide — `packages/core` owns the `TtsEngine` seam and
 `UnavailableTtsEngine`, `packages/ui_kit` owns the one concrete engine, each shell picks
 which engine it injects. `packages/desktop` is the shell where the platform gap is

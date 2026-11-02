@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learn_anywhere_core/core.dart';
 import 'package:learn_anywhere_desktop/main.dart';
 import 'package:learn_anywhere_desktop/src/file_operations/desktop_file_picker.dart';
 import 'package:learn_anywhere_desktop/src/preferences/desktop_prefs.dart';
@@ -99,7 +100,11 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      LearnAnywhereDesktopApp(prefs: prefs, filePicker: picker),
+      LearnAnywhereDesktopApp(
+        prefs: prefs,
+        filePicker: picker,
+        speechEngine: const UnavailableTtsEngine(),
+      ),
     );
     await tester.pumpAndSettle();
   }
