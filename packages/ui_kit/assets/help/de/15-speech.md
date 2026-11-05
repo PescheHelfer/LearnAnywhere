@@ -266,10 +266,80 @@ anderes Programm, das gerade spricht, wird davon nicht unterbrochen.
 Speech Dispatcher kann auch über andere Stimmen sprechen, die auf dem System installiert
 sind, und jede davon erscheint unter **Optionen ▸ Sprachausgabe...**, mit dem Namen des
 Moduls, aus dem sie stammt, vor der Stimme — Learn Anywhere muss dafür nicht geändert
-werden. Die natürlichsten freien Stimmen sind heute die von **Piper**. Sie Speech
-Dispatcher zugänglich zu machen, ist Handarbeit und geht über dieses Handbuch hinaus; die
-Stimmen selbst und die Anleitungen von Piper finden Sie beim
-[Piper-Projekt](https://github.com/OHF-Voice/piper1-gpl).
+werden. Die natürlichsten freien Stimmen sind heute die von **Piper**, herunterzuladen
+vom [Piper-Projekt](https://github.com/OHF-Voice/piper1-gpl) — jede Stimme ist ein Paar
+Dateien, `<name>.onnx` und `<name>.onnx.json`. Speech Dispatcher kann Piper nicht von sich
+aus; es erreicht Piper über sein **generisches Modul** (`sd_generic`), das einen selbst
+geschriebenen Befehl ausführt. In groben Schritten:
+
+1. Installieren Sie das Programm `piper` selbst (ein Release-Binary oder
+   `pipx install piper-tts`) und laden Sie die gewünschten Stimmen in einen Ordner Ihrer
+   Wahl.
+2. Schreiben Sie eine Moduldatei — üblich ist
+   `~/.config/speech-dispatcher/modules/piper.conf` —, deren Zeile `GenericExecuteSynth`
+   den Text, den Speech Dispatcher übergibt, durch `piper` und weiter in einen
+   Audio-Player (`paplay`, `pw-play` oder `aplay`, je nach System) leitet, mit einer
+   `AddVoice`-Zeile je Stimme und einer `DefaultVoice`-Zeile.
+3. Tragen Sie es in `speechd.conf` ein mit `AddModule "piper" "sd_generic" "piper.conf"`,
+   und starten Sie Speech Dispatcher neu.
+
+Richtig eingerichtet, zeigt **Optionen ▸ Sprachausgabe...** die neuen Stimmen unter dem
+Modulnamen `piper`, direkt neben denen von eSpeak NG. Die meisten Piper-Stimmen spielen mit
+22050 Hz, eine mit `-low` im Namen mit 16000 Hz — die falsche Rate in der Moduldatei macht
+Piper-Audio zu schnell oder zu langsam statt stumm. Die genauen Befehle hängen von Ihrer
+Distribution und Ihrem Audiosystem ab; Pipers eigene Anleitung, oben verlinkt, ist dafür
+die massgebliche Quelle.
+
+**Wenn Piper langsam zu sprechen beginnt.** Zwei verschiedene Dinge können je ein paar
+Sekunden kosten, bevor eine Piper-Stimme zu hören ist, und beides lässt sich beheben,
+ohne Learn Anywhere anzufassen — beides liegt vollständig in Speech Dispatchers eigenem
+Modul.
+
+Das erste ist, dass der Befehl `piper` sein Stimmmodell bei jedem Sprechen neu von der
+Platte lädt, was für sich allein schon mehrere Sekunden dauert, ganz unabhängig davon,
+wie kurz der Satz ist. Pipers eigenes `piper.http_server` hält das Modell einer Stimme
+zwischen Anfragen im Speicher und macht eine wiederholte Anfrage dadurch zur Sache eines
+Sekundenbruchteils; richten Sie `GenericExecuteSynth` darauf aus (ein kleiner
+`curl`-Aufruf) statt `piper` jedes Mal direkt aufzurufen, und starten Sie den Server
+einmal als `systemd --user`-Dienst, damit er schon bereitsteht, wenn Sie ihn brauchen.
+
+Die zweite, unabhängige Ursache betrifft speziell PipeWire: Für jede Äusserung eine neue
+Audioverbindung zu öffnen — was passiert, wenn `GenericExecuteSynth` jedes Mal in einem
+frischen `pw-play` (oder `aplay`) endet — kann auf manchen Systemen selbst ein paar
+Sekunden dauern, egal wie schnell die Stimme an sich schon ist. eSpeak NG hat dieses
+Problem nicht, weil sein eigenes Modul eine einzige Audioverbindung über seine gesamte
+Lebenszeit offen hält, statt pro Satz eine neue zu öffnen. Die entsprechende Lösung für
+ein `sd_generic`-Modul ist, ebenfalls einen dauerhaft laufenden Wiedergabeprozess zu
+betreiben, der aus einer named pipe (`mkfifo`) liest, an die `GenericExecuteSynth` rohes
+Audio anhängt, statt jedes Mal einen eigenen Player zu starten — ein solcher Player pro
+Abtastrate, die Ihre installierten Stimmen verwenden, da ein Player mit einer festen Rate
+gestartet wird.
+
+Das hat seinen Preis: Speech Dispatchers eigenes "anhalten und das nächste Wort lesen"
+funktioniert, indem es den von `GenericExecuteSynth` gestarteten Prozess tötet, und bei
+einem geteilten, dauerhaft laufenden Player ist dieser Prozess nicht mehr derjenige, der
+den Ton tatsächlich erzeugt — ein Wort kann also über den Punkt hinaus weiterspielen, an
+dem ein neues beginnt, statt abgeschnitten zu werden. Wägen Sie das gegen ab, wie sehr
+Sie die Verzögerung stört.
+
+**Die guten Stimmen nach vorne holen.** Sowohl welche Stimme **Optionen ▸
+Sprachausgabe...** für *jede* Sprache zuerst anbietet als auch welche Stimme
+**Automatisch** wählt, kommt von einer einzigen Speech-Dispatcher-Einstellung:
+`DefaultModule` in `speechd.conf`. Welches Modul dort genannt wird, steht zuerst in der
+Liste; eSpeak NGs Dutzende Einträge drängen sonst ein Modul wie `piper` — das pro Sprache
+vielleicht nur ein oder zwei Stimmen hat — ans Ende jeder Liste. `DefaultModule piper` zu
+setzen (oder welches Modul auch immer Ihre besseren Stimmen enthält) behebt beides auf
+einen Schlag, ohne dass sich an Learn Anywhere selbst etwas ändert.
+
+**Eine Stimme, die ungewöhnlich schnell oder langsam ist.** Learn Anywheres eigener
+Regler **Sprechtempo** gilt für jede Stimme gleich und kann daher eine einzelne Stimme
+nicht ausgleichen, die merklich schneller oder langsamer ist als die anderen — manche
+Piper-Stimmen sind das einfach, unabhängig von der Qualität. Piper entnimmt sein eigenes
+Standardtempo dem Wert `length_scale` in der Datei `<name>.onnx.json` dieser Stimme,
+unter `"inference"`: ihn zu erhöhen verlangsamt diese eine Stimme, ihn zu verkleinern
+beschleunigt sie, und `1.0` bedeutet "wie trainiert". Bearbeiten Sie nur die Datei dieser
+einen Stimme — das wirkt sich nicht auf Learn Anywheres Regler aus und auf keine andere
+Stimme.
 
 ## Eine Stimme aussuchen
 

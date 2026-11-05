@@ -247,9 +247,71 @@ program speaking at the time is not cut off by it.
 Speech Dispatcher can speak through other voices installed on the system, and every one it
 offers is listed under **Options ▸ Speech...**, with the name of the module it comes from in
 front of the voice — Learn Anywhere needs no change to use them. The most natural-sounding
-free voices today are **Piper** voices. Making them available to Speech Dispatcher is
-done by hand and is beyond this guide; the voices themselves, and Piper's own
-instructions, are at [the Piper project](https://github.com/OHF-Voice/piper1-gpl).
+free voices today are **Piper** voices, downloaded from
+[the Piper project](https://github.com/OHF-Voice/piper1-gpl) — each voice is a pair of files,
+`<name>.onnx` and `<name>.onnx.json`. Speech Dispatcher has no Piper support of its own; it
+reaches Piper through its **generic module** (`sd_generic`), which runs a command you write
+yourself. In outline:
+
+1. Install the `piper` program itself (a release binary, or `pipx install piper-tts`) and
+   download the voices you want into a folder of your choosing.
+2. Write a module file — commonly `~/.config/speech-dispatcher/modules/piper.conf` — whose
+   `GenericExecuteSynth` line pipes the text Speech Dispatcher hands it through `piper` and
+   into an audio player (`paplay`, `pw-play` or `aplay`, depending on your system), with one
+   `AddVoice` line per voice and a `DefaultVoice` line.
+3. Register it in `speechd.conf` with `AddModule "piper" "sd_generic" "piper.conf"`, and
+   restart Speech Dispatcher.
+
+Done correctly, **Options ▸ Speech...** lists the new voices under the module name `piper`,
+right beside eSpeak NG's. Most Piper voices play at 22050 Hz; one with `-low` in its name
+plays at 16000 Hz, and using the wrong rate in the module file is what makes Piper audio
+sound sped-up or slowed-down rather than silent. The exact commands depend on your
+distribution and audio server, so Piper's own instructions, linked above, are the authority
+on the details.
+
+**If Piper feels slow to start speaking.** Two different things can each cost a few
+seconds before a Piper voice is heard, and fixing them never touches Learn Anywhere —
+both live entirely in Speech Dispatcher's own module.
+
+The first is the `piper` command loading its voice model straight from disk every time it
+is asked to speak, which alone takes several seconds regardless of how short the sentence
+is. Piper's own `piper.http_server` keeps a voice's model in memory between requests,
+cutting a repeat request to a fraction of a second; point `GenericExecuteSynth` at it (a
+small `curl` call) instead of invoking `piper` directly each time, and start the server
+once as a `systemd --user` service so it is already warm by the time you need it.
+
+The second, independent cost is specific to PipeWire: opening a brand-new audio
+connection for every utterance — which is what a `GenericExecuteSynth` command does if it
+ends in a fresh `pw-play` (or `aplay`) each time — can itself take a couple of seconds on
+some systems, no matter how fast the voice already is. eSpeak NG does not have this
+problem because its own module keeps one audio connection open for its whole lifetime
+instead of opening a new one per sentence. The matching fix for a `sd_generic` module is
+to keep one playback process running permanently too, reading from a named pipe
+(`mkfifo`) that `GenericExecuteSynth` appends raw audio to rather than spawning a player
+of its own each time — one such player per sample rate your installed voices use, since a
+player is started at a fixed rate.
+
+This has a real cost: Speech Dispatcher's own "stop and read the next word" works by
+killing the process `GenericExecuteSynth` started, and with a shared, long-running player
+that process is no longer the one actually producing sound — so a word can keep playing
+past the point a new one starts, instead of being cut off. Weigh that against how much
+the delay bothers you.
+
+**Putting the good voices first.** Both the voice **Options ▸ Speech...** offers first
+for *every* language and which voice **Automatic** chooses come from one Speech
+Dispatcher setting: `DefaultModule` in `speechd.conf`. Whichever module is named there is
+listed first; eSpeak NG's dozens of entries otherwise push a module like `piper` — which
+may hold only one or two voices per language — to the bottom of every list.
+`DefaultModule piper` (or whichever module holds your better voices) fixes both at once,
+with no change to Learn Anywhere itself.
+
+**A voice that is unusually fast or slow.** Learn Anywhere's own **Speech rate** slider
+applies to every voice equally, so it cannot correct one voice that is markedly faster or
+slower than the rest — some Piper voices simply are, independently of quality. Piper
+reads its own default pace from `length_scale` in that voice's `<name>.onnx.json` file,
+under `"inference"`: raising it slows that one voice down, lowering it speeds it up, and
+`1.0` is "as trained." Edit only that voice's file — it has no effect on Learn Anywhere's
+slider, and none on any other voice.
 
 ## Choosing a voice
 
