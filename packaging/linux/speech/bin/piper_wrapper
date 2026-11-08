@@ -1,0 +1,54 @@
+#!/bin/sh
+# Called by Speech Dispatcher's sd_generic module (see
+# ~/.config/speech-dispatcher/modules/piper.conf). Arguments, in order:
+#   $1 DATA   the text to speak
+#   $2 VOICE  the .onnx file name chosen by AddVoice/DefaultVoice
+set -eu
+
+DATA=$1
+VOICE=$2
+VOICE_ID=$(printf '%s' "$VOICE" | sed 's/\.onnx$//')
+
+VOICES_DIR="$HOME/.local/share/piper/voices"
+SERVER_URL="http://127.0.0.1:5050/synthesize"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+# piper-server (systemd --user) keeps voices loaded in memory, so a request
+# after the first one for a given voice takes well under a second instead of
+# the multi-second cold start of loading the ONNX model fresh every time.
+JSON=$(python3 -c '
+import json, sys
+print(json.dumps({"text": sys.argv[1], "voice": sys.argv[2]}))
+' "$DATA" "$VOICE_ID")
+
+WAV=$(mktemp --suffix=.wav)
+trap 'rm -f "$WAV"' EXIT
+
+if ! curl -sS --max-time 10 -X POST "$SERVER_URL" \
+     -H "Content-Type: application/json" -d "$JSON" -o "$WAV" \
+   || [ ! -s "$WAV" ]; then
+  # Fall back to a cold, one-shot piper run if the warm server is down.
+  MODEL="$VOICES_DIR/$VOICE"
+  RATE=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['audio']['sample_rate'])" "$MODEL.json")
+  printf '%s' "$DATA" | piper --model "$MODEL" --output-raw 2>/dev/null \
+    | pw-play --rate="$RATE" --channels=1 --format=s16 -
+  exit 0
+fi
+
+# piper-audio-player@<rate> (systemd --user) keeps one PipeWire connection
+# per sample rate open and reads raw PCM from its FIFO, so playback skips
+# PipeWire's own multi-second per-connection startup cost. Each installed
+# voice's own rate (not a fixed assumption) picks the matching FIFO.
+RATE=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['audio']['sample_rate'])" "$VOICES_DIR/$VOICE.json")
+FIFO="$RUNTIME_DIR/piper_audio_$RATE.fifo"
+
+if [ -p "$FIFO" ] && timeout 5 sh -c "python3 -c \"
+import sys, wave
+with wave.open('$WAV', 'rb') as w:
+    sys.stdout.buffer.write(w.readframes(w.getnframes()))
+\" >> '$FIFO'"; then
+  : # played via the persistent, warm PipeWire stream
+else
+  # No matching persistent player (or it's down); play this one directly.
+  pw-play "$WAV"
+fi

@@ -1,0 +1,11 @@
+[Unit]
+Description=Keeps the Piper audio FIFO for %i Hz open so its reader never sees EOF between utterances
+
+[Service]
+ExecStartPre=/bin/sh -c 'test -p %t/piper_audio_%i.fifo || mkfifo %t/piper_audio_%i.fifo'
+ExecStart=/bin/sh -c 'exec 9>%t/piper_audio_%i.fifo; exec sleep infinity'
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=default.target

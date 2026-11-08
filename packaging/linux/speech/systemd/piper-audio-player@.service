@@ -1,0 +1,12 @@
+[Unit]
+Description=Persistent audio player for Piper speech at %i Hz, reading raw PCM from the shared FIFO
+Requires=piper-audio-holder@%i.service
+After=piper-audio-holder@%i.service
+
+[Service]
+ExecStart=/bin/sh -c 'exec pw-play --rate=%i --channels=1 --format=s16 - < %t/piper_audio_%i.fifo'
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=default.target

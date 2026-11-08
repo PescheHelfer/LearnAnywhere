@@ -1,0 +1,48 @@
+Debug 0
+
+GenericExecuteSynth "{{HOME}}/.local/bin/piper_wrapper \"$DATA\" $VOICE"
+
+GenericCmdDependency "piper_wrapper"
+
+GenericLanguage "en" "en_US" "utf-8"
+GenericLanguage "en-us" "en_US" "utf-8"
+GenericLanguage "en-GB" "en_GB" "utf-8"
+GenericLanguage "en-gb" "en_GB" "utf-8"
+GenericLanguage "de" "de_DE" "utf-8"
+GenericLanguage "de-de" "de_DE" "utf-8"
+GenericLanguage "it" "it_IT" "utf-8"
+GenericLanguage "it-IT" "it_IT" "utf-8"
+GenericLanguage "it-it" "it_IT" "utf-8"
+GenericLanguage "fr" "fr_FR" "utf-8"
+GenericLanguage "fr-FR" "fr_FR" "utf-8"
+GenericLanguage "fr-fr" "fr_FR" "utf-8"
+
+# British English preferred first, so it is the one offered as "Automatic".
+# Edit this whole block to match whichever voices you actually downloaded —
+# see ../voices.md. Every voice referenced here must exist in
+# {{HOME}}/.local/share/piper/voices/, or sd_generic will log an error and
+# the module may fail to start (it only needs ONE voice to succeed, so a
+# missing file here does not take the whole module down, but that voice
+# will not be offered).
+AddVoice "en-GB" "MALE1"   "en_GB-alan-medium.onnx"
+AddVoice "en-GB" "FEMALE1" "en_GB-jenny_dioco-medium.onnx"
+AddVoice "en-US" "FEMALE1" "en_US-amy-medium.onnx"
+AddVoice "en"    "MALE1"   "en_GB-alan-medium.onnx"
+AddVoice "en"    "FEMALE1" "en_GB-jenny_dioco-medium.onnx"
+
+AddVoice "de-DE" "MALE1"   "de_DE-thorsten-medium.onnx"
+AddVoice "de-DE" "FEMALE1" "de_DE-kerstin-low.onnx"
+AddVoice "de"    "MALE1"   "de_DE-thorsten-medium.onnx"
+AddVoice "de"    "FEMALE1" "de_DE-kerstin-low.onnx"
+
+AddVoice "it-IT" "MALE1"   "it_IT-riccardo-x_low.onnx"
+AddVoice "it-IT" "FEMALE1" "it_IT-paola-medium.onnx"
+AddVoice "it"    "MALE1"   "it_IT-riccardo-x_low.onnx"
+AddVoice "it"    "FEMALE1" "it_IT-paola-medium.onnx"
+
+AddVoice "fr-FR" "MALE1"   "fr_FR-tom-medium.onnx"
+AddVoice "fr-FR" "FEMALE1" "fr_FR-siwis-medium.onnx"
+AddVoice "fr"    "MALE1"   "fr_FR-tom-medium.onnx"
+AddVoice "fr"    "FEMALE1" "fr_FR-siwis-medium.onnx"
+
+DefaultVoice "en_GB-alan-medium.onnx"

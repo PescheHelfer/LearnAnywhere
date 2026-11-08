@@ -1,0 +1,48 @@
+# Lines to merge into ~/.config/speech-dispatcher/speechd.conf — NOT a
+# complete file. See the README's "Creating the user speechd.conf safely"
+# step for why this must be merged, not dropped in whole, and why you
+# should not run `spd-conf -u` after piper.conf already exists.
+#
+# ---------------------------------------------------------------------
+# GOTCHA: speech-dispatcher auto-detects and silently loads whichever
+# modules it finds working when NO explicit AddModule line is present
+# anywhere in speechd.conf. The moment you add ONE explicit AddModule
+# line (for piper), that autodetection turns off entirely and ONLY the
+# modules you listed explicitly will load. If you were relying on
+# espeak-ng (or anything else) working before, and you only add the
+# piper line below, you will SILENTLY LOSE every other voice the user
+# had. Always add explicit AddModule lines for every module you want,
+# not just the new one.
+# ---------------------------------------------------------------------
+
+# Keep (uncomment, or add) whatever the target already had working.
+# espeak-ng ships with speech-dispatcher's own package on every distro
+# tested so far (Ubuntu/Zorin, and presumably Fedora/Nobara); the dummy
+# fallback module is likewise always present and should always stay.
+AddModule "espeak-ng" "sd_espeak-ng" "espeak-ng.conf"
+AddModule "dummy"     "sd_dummy"    ""
+
+# The line this runbook is actually about:
+AddModule "piper" "sd_generic" "piper.conf"
+
+# GOTCHA: openjtalk (Japanese) was present on the machine this was built
+# on, so it got added here too — but its binary is an OPTIONAL package
+# (speech-dispatcher-openjtalk or similar) that may not exist on a fresh
+# install. Before adding this line, check:
+#   ls /usr/lib/speech-dispatcher-modules/ | grep openjtalk
+# If it's not there, DO NOT add this line — a missing binary for an
+# explicitly-AddModule'd entry can be worse than a module that merely
+# fails to find voices (it may refuse to start at all), and it isn't
+# needed for Learn Anywhere's languages anyway.
+# AddModule "openjtalk" "sd_openjtalk" "openjtalk.conf"
+
+# This is what actually fixes BOTH of the following, with zero changes
+# to Learn Anywhere itself:
+#  - which voice "Automatic" picks for a language Piper also covers
+#  - which module's voices Options ▸ Speech... lists FIRST for every
+#    language (the app's listOutputModules() in
+#    packages/ui_kit/lib/src/speech/speech_dispatcher_voices.dart always
+#    puts whatever DefaultModule names at the top of the list; eSpeak
+#    NG's ~13,000 voice/language-variant entries will otherwise bury
+#    Piper's handful at the bottom of every dropdown)
+DefaultModule piper

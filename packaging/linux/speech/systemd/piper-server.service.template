@@ -1,0 +1,11 @@
+[Unit]
+Description=Piper TTS HTTP server (keeps voices warm for Speech Dispatcher)
+After=network.target
+
+[Service]
+ExecStart={{HOME}}/.local/share/pipx/venvs/piper-tts/bin/python -m piper.http_server --host 127.0.0.1 --port 5050 -m {{DEFAULT_VOICE}} --data-dir {{HOME}}/.local/share/piper/voices
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target
