@@ -530,6 +530,9 @@ enum LearnAnywhereMessage {
   /// About page version history entry for 1.2.0.
   aboutVersion1200,
 
+  /// About page version history entry for 1.3.0.
+  aboutVersion1300,
+
   /// About page bundled-font credit.
   aboutFontCredit,
 
@@ -2003,6 +2006,9 @@ final class LearnAnywhereCatalog {
           'order and marks case and accents; each recent deck remembers its '
           'unit range; new defaults: \'Almost\' and statistics auto-load and '
           'auto-save on, centred content frame off.',
+      LearnAnywhereMessage.aboutVersion1300:
+          '1.3.0 – Speech on Linux through Speech Dispatcher, listing every '
+          'installed voice.',
       LearnAnywhereMessage.aboutFontCredit:
           'Lab Mono font by Martin Wecke, licensed under OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'No learning units',
@@ -2873,6 +2879,9 @@ final class LearnAnywhereCatalog {
           'verwendete Lern-Datei merkt sich ihren Einheitenbereich; neue '
           'Standardwerte: „Fast“ sowie Statistiken automatisch laden und '
           'speichern an, zentrierter Inhaltsrahmen aus.',
+      LearnAnywhereMessage.aboutVersion1300:
+          '1.3.0 – Sprachausgabe unter Linux über Speech Dispatcher, mit '
+          'allen installierten Stimmen.',
       LearnAnywhereMessage.aboutFontCredit:
           'Schriftart Lab Mono von Martin Wecke, lizenziert unter OFL-1.1',
       LearnAnywhereMessage.editorEmptyTitle: 'Keine Lerneinheiten',

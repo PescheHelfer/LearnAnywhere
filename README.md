@@ -221,7 +221,7 @@ phones and for emulators. Open it with your file manager and allow the installat
 Android asks. Installing a newer APK over an older one keeps your library and statistics.
 
 The companion carries its own version number, independent of the desktop app's, so one
-release can pair desktop 1.2.0 with companion 0.9.0. The number in the APK's name is the
+release can pair desktop 1.3.0 with companion 0.9.0. The number in the APK's name is the
 companion's.
 
 Android refuses to install a build whose version is older than the installed one, and
@@ -280,7 +280,7 @@ One pub workspace, four packages:
 ## Status
 
 The two applications ship separately, on independent version tracks and with different
-feature sets. The desktop application is at 1.2.0; the Android companion is at 0.9.0 and
+feature sets. The desktop application is at 1.3.0; the Android companion is at 0.9.0 and
 is distributed as a sideloaded APK.
 
 ## AI-Assisted Development
