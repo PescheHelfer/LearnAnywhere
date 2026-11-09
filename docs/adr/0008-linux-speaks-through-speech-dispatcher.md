@@ -78,7 +78,10 @@ voices.
   screen hides the checkbox for this engine (asked of the engine, not the platform)
   rather than show a switch that does nothing. It comes back only if a Linux test shows
   first syllables are lost; an SSML break was considered and deferred, because a voice
-  added through the generic module may read the markup.
+  added through the generic module may read the markup. **Tested on Zorin (2026-11-09),
+  both eSpeak NG and Piper, through speakers and headphones, across several idle-then-speak
+  cycles: no clipped first syllable.** The condition for bringing it back has not been
+  met, so it stays off; re-test if a future distro or output module changes this.
 - **Only our own speech is ever stopped.** Stopping sends `CANCEL self`, never `all`, and
   words go out at `message` priority, so a screen reader is not silenced by the program.
 - **Shell tests must inject an engine.** On Linux the default engine now reaches for a
