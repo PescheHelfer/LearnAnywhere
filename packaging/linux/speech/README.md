@@ -239,6 +239,47 @@ enough background CPU/memory load on a modest machine to make an unrelated GTK a
 sluggish for a few seconds — don't go chasing an app-level performance bug if the
 symptom only showed up *during* heavy setup work and disappeared once things were idle.
 
+**One stuck module can freeze the whole daemon, silently killing every other module
+with it.** After this setup had been running for hours (including a CPU-heavy
+`appimage-builder` run in the background), `sd_espeak-ng` got stuck inside a blocking
+PulseAudio call (`pulse.c: pa_simple_new() failed: Zeitüberschreitung` / timeout in the
+log — likely PipeWire-pulse starved by the concurrent build, though the exact trigger
+wasn't pinned down). Speech Dispatcher's main process doesn't isolate that hang: it
+blocked too, `sd_generic` (Piper) died as a side effect and was never relaunched, and
+`systemctl --user stop/restart` then hung for the full default ~90s timeout instead of
+failing fast. Symptoms looked like two unrelated bugs — eSpeak NG voices present but
+silent, Piper voices gone entirely — but both came from the same wedged process. Fix
+when it happens again:
+
+```sh
+# Find the wedged main PID (status will show "deactivating" stuck for a long time,
+# or a ps listing with modules as <defunct>/zombies under it) and force it:
+kill -9 <main speech-dispatcher PID>
+systemctl --user stop speech-dispatcher.service speech-dispatcher.socket
+rm -f "$XDG_RUNTIME_DIR/speech-dispatcher/speechd.sock"   # stale-socket gotcha above
+systemctl --user reset-failed speech-dispatcher.service
+systemctl --user start speech-dispatcher.socket speech-dispatcher.service
+```
+
+To make this self-healing instead of needing the above by hand, add a small override so
+systemd caps the hang and restarts the daemon on its own:
+
+```sh
+mkdir -p ~/.config/systemd/user/speech-dispatcher.service.d
+cat > ~/.config/systemd/user/speech-dispatcher.service.d/override.conf <<'EOF'
+[Service]
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=2
+EOF
+systemctl --user daemon-reload
+```
+
+This doesn't fix the underlying PipeWire-pulse hiccup (root cause unconfirmed — it may
+simply be rare contention under heavy concurrent CPU load), but it bounds recovery to
+seconds instead of a manual `kill -9`, and restarts both `sd_espeak-ng` and `sd_generic`
+together so one dying doesn't silently strand the other.
+
 ## If you get stuck
 
 Re-run `dart run packages/ui_kit/tool/ssip_diagnostic.dart` (repo root) and read its

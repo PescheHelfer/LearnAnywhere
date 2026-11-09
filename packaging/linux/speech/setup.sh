@@ -127,6 +127,21 @@ echo "== Installing the per-sample-rate audio player units =="
 cp "$SOURCE_DIR/systemd/piper-audio-holder@.service" "$HOME_DIR/.config/systemd/user/"
 cp "$SOURCE_DIR/systemd/piper-audio-player@.service" "$HOME_DIR/.config/systemd/user/"
 
+echo "== Bounding speech-dispatcher's hang/restart time =="
+# See README.md's "One stuck module can freeze the whole daemon" gotcha: a module
+# stuck in a blocking audio call can wedge the WHOLE speech-dispatcher process, not
+# just itself, for the default ~90s stop timeout, silently stranding every other
+# module (Piper included) in the meantime. This override doesn't fix that underlying
+# hang, but bounds recovery to seconds and restarts automatically instead of needing
+# a manual `kill -9`.
+mkdir -p "$HOME_DIR/.config/systemd/user/speech-dispatcher.service.d"
+cat > "$HOME_DIR/.config/systemd/user/speech-dispatcher.service.d/override.conf" <<'EOF'
+[Service]
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=2
+EOF
+
 rates=$(for f in "$VOICES_DIR"/*.onnx.json; do
   [ -e "$f" ] || continue
   python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['audio']['sample_rate'])" "$f"
