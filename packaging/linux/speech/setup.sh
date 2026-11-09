@@ -142,6 +142,15 @@ Restart=on-failure
 RestartSec=2
 EOF
 
+echo "== Installing the audio-stack recovery script =="
+# See README.md's "Unplugging headphones can wedge PipeWire itself" gotcha - a
+# separate, unrelated PipeWire bug, not caused by this setup, but worth having
+# a one-command fix on hand for regardless.
+cp "$SOURCE_DIR/bin/restart-audio.sh" "$HOME_DIR/.local/bin/restart-audio.sh"
+chmod +x "$HOME_DIR/.local/bin/restart-audio.sh"
+echo "Installed to $HOME_DIR/.local/bin/restart-audio.sh - consider a desktop"
+echo "shortcut to it, the same way as to Learn Anywhere itself."
+
 rates=$(for f in "$VOICES_DIR"/*.onnx.json; do
   [ -e "$f" ] || continue
   python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['audio']['sample_rate'])" "$f"

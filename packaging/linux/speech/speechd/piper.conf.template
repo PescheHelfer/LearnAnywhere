@@ -1,8 +1,20 @@
 Debug 0
 
-GenericExecuteSynth "{{HOME}}/.local/bin/piper_wrapper \"$DATA\" $VOICE"
+GenericExecuteSynth "{{HOME}}/.local/bin/piper_wrapper \"$DATA\" $VOICE $RATE"
 
 GenericCmdDependency "piper_wrapper"
+
+# Learn Anywhere's Speech rate slider sends SSIP RATE -100..100 (0 = normal).
+# sd_generic normalizes that to -1.0..1.0 internally, then computes
+# $RATE = speechd_rate*Multiply + Add - but Add/Multiply are parsed as
+# INTEGERS ONLY (confirmed by probing: Multiply 0.5 silently truncates to 0,
+# so no fractional slope is expressible here at all). Multiply 100 just
+# reconstructs the original -100..100 scale losslessly; the actual
+# fractional length_scale math happens in bin/piper_wrapper, in real
+# floating point, not here. See README.md's Gotchas section.
+GenericRateAdd          0
+GenericRateMultiply     100
+GenericRateForceInteger 1
 
 GenericLanguage "en" "en_US" "utf-8"
 GenericLanguage "en-us" "en_US" "utf-8"

@@ -22,6 +22,12 @@ exist specifically to avoid them, and the reasoning is there, not repeated at ea
   so playback skips PipeWire's own multi-second per-connection cost.
 - `DefaultModule piper` in `speechd.conf`, so Piper's voices — not eSpeak NG's — are what
   **Automatic** picks and what `Options ▸ Speech...` lists first for every language.
+- Learn Anywhere's Speech rate slider working for Piper voices, not just eSpeak NG's.
+- A systemd override so a wedged `speech-dispatcher` recovers in ~10s on its own instead
+  of needing a manual `kill -9`.
+- `bin/restart-audio.sh`, a one-command fix for the separate "unplugging headphones took
+  down all audio" PipeWire issue (see Gotchas) — not something this setup causes, but
+  worth having on hand regardless.
 
 ## Distro packages (needs sudo — do this first, as yourself)
 
@@ -205,6 +211,16 @@ instead of being cut off. This was a deliberate, informed choice (the alternativ
 on a given machine, skip the persistent-player half of this setup and keep the
 per-utterance `pw-play` call; the warm HTTP server alone still saves several seconds.
 
+**That same trade-off makes the Speech rate slider look broken when it isn't, if you
+test it too fast.** Pressing the sample button under **Options ▸ Speech...**, moving the
+slider, then pressing it again *before the first sample finished playing* plays the
+TAIL of the old-rate audio already sitting in the FIFO, not the new rate — looks exactly
+like "the slider has no effect for Piper voices," especially since eSpeak NG (which
+doesn't go through this pipeline) interrupts cleanly and so doesn't show the same
+confusion. Always let one sample finish completely, in silence, before changing the
+rate and sampling again. A real learning session rarely triggers this, because
+utterances are naturally spaced out by reading time.
+
 **Which module's voices list first in Learn Anywhere, and what "Automatic" picks, is
 controlled entirely by `DefaultModule` in `speechd.conf` — not by anything in Learn
 Anywhere.** The app's own `listOutputModules()`
@@ -225,12 +241,33 @@ shortened or guessed path 404s with no redirect.** The pattern is:
 Not `.../<speaker>/<quality>.onnx` or any other shortened form. See `voices.md` for a
 working download loop.
 
-**A voice that's unusually fast or slow compared to the others can't be fixed by Learn
-Anywhere's Speech rate slider**, which applies to every voice equally. `it_IT-paola`
-specifically speaks noticeably faster than every other voice in the reference set, for
-no documented reason — just how that voice was trained. Fix it per-voice, in Piper's own
-config: raise `inference.length_scale` in that voice's `<name>.onnx.json` (default
-`1.0`; higher is slower). This only affects that one voice, nowhere else.
+**The Speech rate slider needed real wiring to reach Piper at all — it isn't automatic
+the way it is for eSpeak NG.** `sd_generic` (Piper's module type) doesn't apply Learn
+Anywhere's rate on its own; `GenericExecuteSynth` has to explicitly pass `$RATE`, which
+`piper.conf.template` now does, and `bin/piper_wrapper` converts into a length_scale
+multiplier. Two non-obvious traps while building that:
+
+- `GenericRateAdd`/`GenericRateMultiply` in `piper.conf` are parsed as **integers
+  only** — `GenericRateMultiply 0.5` silently truncates to `0`, giving a flat,
+  rate-independent result with no error anywhere. There is no way to express a
+  fractional slope in `piper.conf` itself. The fix: use `GenericRateMultiply 100` to
+  reconstruct the original value losslessly, and do the actual float math (`1.0 -
+  rate/200.0`) in the wrapper, in real Python floats.
+- `$RATE` is **not** SSIP's documented -100..100 range by the time it reaches
+  `GenericExecuteSynth` — `sd_generic` normalizes it to -1.0..1.0 first. (Confirmed by
+  probing with Speech Dispatcher's own module debug log, `Debug 1` in `piper.conf` plus
+  `~/.config/speech-dispatcher/log/piper.log` — see the exact `synth command = |...|`
+  line it prints per utterance.) `GenericRateMultiply 100` undoes that normalization
+  too, which is why both fixes are the same one-line change.
+
+**A voice that's unusually fast or slow compared to the others needs its own fix,
+independent of the rate slider.** `it_IT-paola` specifically speaks noticeably faster
+than every other voice in the reference set, for no documented reason — just how that
+voice was trained. Fix it per-voice, in Piper's own config: raise `inference.length_scale`
+in that voice's `<name>.onnx.json` (default `1.0`; higher is slower). The wrapper
+multiplies the rate slider's effect onto each voice's own base `length_scale` rather
+than replacing it, so this and the slider both apply at once, and this fix only affects
+that one voice, nowhere else.
 
 **Apparent "the whole app got sluggish" during setup was resource contention, not a
 Learn Anywhere bug.** Cold-loading several ~60 MB ONNX models back to back, plus
@@ -279,6 +316,30 @@ This doesn't fix the underlying PipeWire-pulse hiccup (root cause unconfirmed �
 simply be rare contention under heavy concurrent CPU load), but it bounds recovery to
 seconds instead of a manual `kill -9`, and restarts both `sd_espeak-ng` and `sd_generic`
 together so one dying doesn't silently strand the other.
+
+**Unplugging headphones can wedge PipeWire itself, taking down ALL audio, not just
+Learn Anywhere's.** Seen once on this machine: after a headphone unplug, *no*
+application could play sound any more — not eSpeak NG, not Piper, not a browser video.
+This is a PipeWire/WirePlumber jack-detect bug, not something this setup or Learn
+Anywhere caused, confirmed by testing a bare `pw-play` of a system sound with Piper
+completely out of the picture and finding that hung too. That said, holding three
+native PipeWire streams open continuously for hours (the persistent audio players
+above) is unusual enough that it may make this class of bug more likely to trigger or
+harder to recover from on its own — unconfirmed either way. Recovery is always the same
+three-service restart, which also needs OUR persistent players restarted afterwards
+since they were holding connections into the now-dead PipeWire session:
+
+```sh
+systemctl --user restart pipewire.service pipewire-pulse.service wireplumber.service
+systemctl --user restart \
+  piper-audio-holder@16000.service piper-audio-holder@22050.service piper-audio-holder@44100.service \
+  piper-audio-player@16000.service piper-audio-player@22050.service piper-audio-player@44100.service
+```
+
+`bin/restart-audio.sh` does both steps (adjust the sample-rate list if yours differs)
+and pops a notification when done — worth a desktop shortcut pointing at it, the same
+way the app itself gets one, since this is a "fix it myself in ten seconds" problem,
+not a "file a ticket" one.
 
 ## If you get stuck
 

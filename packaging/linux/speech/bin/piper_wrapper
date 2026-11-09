@@ -1,25 +1,47 @@
 #!/bin/sh
 # Called by Speech Dispatcher's sd_generic module (see
 # ~/.config/speech-dispatcher/modules/piper.conf). Arguments, in order:
-#   $1 DATA   the text to speak
-#   $2 VOICE  the .onnx file name chosen by AddVoice/DefaultVoice
+#   $1 DATA       the text to speak
+#   $2 VOICE      the .onnx file name chosen by AddVoice/DefaultVoice
+#   $3 RATE       Learn Anywhere's Speech rate slider, as SSIP's -100..100
+#                 (0 = normal), reconstructed losslessly by piper.conf's
+#                 GenericRateMultiply 100 (Add/Multiply there are integers
+#                 ONLY - a fractional slope can't be expressed in piper.conf
+#                 itself, so the real conversion to a length_scale
+#                 multiplier happens here, in actual floating point).
+#                 Optional, defaults to 0 (normal) for a direct manual call.
 set -eu
 
 DATA=$1
 VOICE=$2
+RATE=${3:-0}
 VOICE_ID=$(printf '%s' "$VOICE" | sed 's/\.onnx$//')
 
 VOICES_DIR="$HOME/.local/share/piper/voices"
 SERVER_URL="http://127.0.0.1:5050/synthesize"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
+# -100..100 -> a 1.5..0.5 multiplier (0 = 1.0, unchanged; Piper's
+# length_scale is inverted from speed, so a positive/faster rate needs a
+# SMALLER length_scale). Multiplied onto the VOICE's OWN base length_scale
+# (set per-voice in its .onnx.json, e.g. it_IT-paola-medium is deliberately
+# 1.25, not 1.0, because that voice reads unusually fast at the default)
+# rather than replacing it, so the rate slider and the per-voice speed fix
+# both apply at once.
+LENGTH_SCALE=$(python3 -c "
+import json, sys
+base = json.load(open(sys.argv[1])).get('inference', {}).get('length_scale', 1.0)
+rate_multiplier = 1.0 - (float(sys.argv[2]) / 200.0)
+print(base * rate_multiplier)
+" "$VOICES_DIR/$VOICE.json" "$RATE")
+
 # piper-server (systemd --user) keeps voices loaded in memory, so a request
 # after the first one for a given voice takes well under a second instead of
 # the multi-second cold start of loading the ONNX model fresh every time.
 JSON=$(python3 -c '
 import json, sys
-print(json.dumps({"text": sys.argv[1], "voice": sys.argv[2]}))
-' "$DATA" "$VOICE_ID")
+print(json.dumps({"text": sys.argv[1], "voice": sys.argv[2], "length_scale": float(sys.argv[3])}))
+' "$DATA" "$VOICE_ID" "$LENGTH_SCALE")
 
 WAV=$(mktemp --suffix=.wav)
 trap 'rm -f "$WAV"' EXIT
@@ -30,7 +52,7 @@ if ! curl -sS --max-time 10 -X POST "$SERVER_URL" \
   # Fall back to a cold, one-shot piper run if the warm server is down.
   MODEL="$VOICES_DIR/$VOICE"
   RATE=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['audio']['sample_rate'])" "$MODEL.json")
-  printf '%s' "$DATA" | piper --model "$MODEL" --output-raw 2>/dev/null \
+  printf '%s' "$DATA" | piper --model "$MODEL" --length-scale "$LENGTH_SCALE" --output-raw 2>/dev/null \
     | pw-play --rate="$RATE" --channels=1 --format=s16 -
   exit 0
 fi
