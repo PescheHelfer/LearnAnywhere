@@ -17,10 +17,10 @@ Schritt steht, was du danach sehen solltest, so weißt du immer, dass du richtig
 
 ### 1. Programm herunterladen
 
-Klick hier: **[Learn Anywhere 1.3.0 für Windows herunterladen](https://github.com/PescheHelfer/LearnAnywhere/releases/download/desktop-v1.3.0/Learn_Anywhere-1.3.0-x86_64.zip)**
+Klick hier: **[Learn Anywhere 1.2.0 für Windows herunterladen](https://github.com/PescheHelfer/LearnAnywhere/releases/download/desktop-v1.2.0/Learn_Anywhere-1.2.0-x86_64.zip)**
 (eine ZIP-Datei, etwa 13 MB).
 
-*Dein Browser speichert `Learn_Anywhere-1.3.0-x86_64.zip`, meist im Ordner
+*Dein Browser speichert `Learn_Anywhere-1.2.0-x86_64.zip`, meist im Ordner
 `Downloads`.*
 
 Falls der Link nicht funktioniert, öffne die [Releases-Seite](https://github.com/PescheHelfer/LearnAnywhere/releases), such die

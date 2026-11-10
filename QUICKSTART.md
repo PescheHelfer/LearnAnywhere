@@ -19,10 +19,10 @@ you what you should see afterwards, so you always know you're on track.
 
 ### 1. Download the program
 
-Click here: **[Download Learn Anywhere 1.3.0 for Windows](https://github.com/PescheHelfer/LearnAnywhere/releases/download/desktop-v1.3.0/Learn_Anywhere-1.3.0-x86_64.zip)**
+Click here: **[Download Learn Anywhere 1.2.0 for Windows](https://github.com/PescheHelfer/LearnAnywhere/releases/download/desktop-v1.2.0/Learn_Anywhere-1.2.0-x86_64.zip)**
 (a ZIP file, about 13 MB).
 
-*Your browser saves `Learn_Anywhere-1.3.0-x86_64.zip`, usually in your `Downloads`
+*Your browser saves `Learn_Anywhere-1.2.0-x86_64.zip`, usually in your `Downloads`
 folder.*
 
 If the link doesn't work, open the
