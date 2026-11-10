@@ -19,7 +19,9 @@ exist specifically to avoid them, and the reasoning is there, not repeated at ea
 - A background `piper.http_server` instance that keeps voice models warm in memory
   (first use of a voice is still a few seconds; every use after that is not).
 - One persistent audio-playback process **per sample rate** your installed voices use,
-  so playback skips PipeWire's own multi-second per-connection cost.
+  so playback skips PipeWire's own multi-second per-connection cost. Each waits for
+  PipeWire's default sink to be stable before connecting at login (needs `wpctl`, from
+  WirePlumber; skipped if absent) and stops within 3 s, so restarts are instant.
 - `DefaultModule piper` in `speechd.conf`, so Piper's voices — not eSpeak NG's — are what
   **Automatic** picks and what `Options ▸ Speech...` lists first for every language.
 - Learn Anywhere's Speech rate slider working for Piper voices, not just eSpeak NG's.
@@ -125,6 +127,20 @@ All samples spoken.
 `espeak-ng:`) is the signal that both the warm-start and voice-ordering fixes actually
 landed. If a sample instead resolves to `espeak-ng:`, re-check `DefaultModule` in
 `speechd.conf` (gotcha below).
+
+**After the first reboot** (autostart is the part nothing above exercises), check
+before opening the app:
+
+```sh
+spd-say -O                                         # piper must be listed
+systemctl --user is-active piper-server piper-audio-player@22050   # (each rate you use)
+journalctl --user -b -u 'piper-audio-player@*' | grep -c "no target node"   # 0 is ideal; 1 per rate is a harmless retry
+ps -eo pid,stat,cmd | grep defunct                 # no sd_generic zombie
+```
+
+`piper` missing from `spd-say -O` is the dead-module case: see the Gotcha "Piper voices missing from the app although the config is right".
+Piper silent while everything above is fine: run `bin/restart-audio.sh`, which should
+now return in a couple of seconds.
 
 Finally, open Learn Anywhere itself and check **Options ▸ Speech...**: Piper's voices
 should be the first ones listed for every language that has one, and the speaker icon /
@@ -340,6 +356,31 @@ systemctl --user restart \
 and pops a notification when done — worth a desktop shortcut pointing at it, the same
 way the app itself gets one, since this is a "fix it myself in ten seconds" problem,
 not a "file a ticket" one.
+
+**Piper silent after a reboot, or "Restart audio" seems to do nothing.** Two causes,
+both handled in `piper-audio-player@.service`:
+
+1. At login the players start in parallel with PipeWire/WirePlumber and `pw-play` dies
+   with `no target node available`. Ordering after `pipewire`/`wireplumber` is not
+   enough: WirePlumber can report a default sink and then rebuild its links a moment
+   later (seen in the journal as `si-standard-link: in/out items are not valid
+   anymore`), so a single "does a default sink exist" check passes too early. The unit's
+   `ExecStartPre` therefore waits, up to 30 s, until `wpctl inspect @DEFAULT_AUDIO_SINK@`
+   succeeds on 4 consecutive checks (about 2 s stable). `Restart=always` stays as the
+   backstop, so a rare lost race costs one second, not a silent player.
+2. A `pw-play` blocked reading its FIFO ignores SIGTERM, so every restart sat for
+   systemd's 90 s stop timeout before the kill. The unit uses `KillSignal=SIGKILL` and
+   `TimeoutStopSec=3`.
+
+After upgrading, re-run `setup.sh` (or copy the unit to `~/.config/systemd/user/`) and
+`systemctl --user daemon-reload`.
+
+**Piper voices missing from the app although the config is right.** Run `spd-say -O`.
+If `piper` is not among the output modules, the generic module died during start and
+the daemon is left with a defunct `sd_generic` child (`ps -eo pid,stat,cmd | grep
+defunct`). `systemctl --user restart speech-dispatcher.service` brings it back; then
+reopen **Options ▸ Speech...** in the app. The cause of the one observed occurrence is
+unknown; it did not recur after the next reboot.
 
 ## If you get stuck
 

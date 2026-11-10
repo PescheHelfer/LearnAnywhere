@@ -31,6 +31,9 @@ if ! command -v pw-play >/dev/null 2>&1 && ! command -v aplay >/dev/null 2>&1; t
   echo "MISSING: no pw-play or aplay found — install pipewire-utils or alsa-utils." >&2
   missing=1
 fi
+if ! command -v wpctl >/dev/null 2>&1; then
+  echo "NOTE: wpctl (WirePlumber) not found — the player units will not wait for a PipeWire sink at login; harmless on non-PipeWire systems." >&2
+fi
 if [ "$missing" -ne 0 ]; then
   echo "Install the missing commands above, then re-run this script. No sudo here." >&2
   exit 1
