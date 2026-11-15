@@ -31,9 +31,6 @@ if ! command -v pw-play >/dev/null 2>&1 && ! command -v aplay >/dev/null 2>&1; t
   echo "MISSING: no pw-play or aplay found — install pipewire-utils or alsa-utils." >&2
   missing=1
 fi
-if ! command -v wpctl >/dev/null 2>&1; then
-  echo "NOTE: wpctl (WirePlumber) not found — the player units will not wait for a PipeWire sink at login; harmless on non-PipeWire systems." >&2
-fi
 if [ "$missing" -ne 0 ]; then
   echo "Install the missing commands above, then re-run this script. No sudo here." >&2
   exit 1
@@ -126,9 +123,29 @@ sed -e "s|{{HOME}}|$HOME_DIR|g" -e "s|{{DEFAULT_VOICE}}|$default_voice|g" \
   "$SOURCE_DIR/systemd/piper-server.service.template" \
   > "$HOME_DIR/.config/systemd/user/piper-server.service"
 
-echo "== Installing the per-sample-rate audio player units =="
-cp "$SOURCE_DIR/systemd/piper-audio-holder@.service" "$HOME_DIR/.config/systemd/user/"
-cp "$SOURCE_DIR/systemd/piper-audio-player@.service" "$HOME_DIR/.config/systemd/user/"
+echo "== Removing the retired persistent audio player units (if present) =="
+# An earlier version of this setup ran permanent per-sample-rate pw-play players
+# (piper-audio-holder@/piper-audio-player@). They kept the sound card open for the
+# whole session and, on the machine this was developed on, left ALL audio dead after
+# suspend/resume - see README.md "Do not add a persistent audio player". Machines
+# set up with that version must lose them, so this is cleanup, not an optional step.
+# Disabling units that are going away is safe to do here; nothing else depends on them.
+USER_UNITS="$HOME_DIR/.config/systemd/user"
+# Instances (piper-audio-player@22050.service) are not shown by list-unit-files, so
+# gather them from the enable symlinks and from whatever is currently loaded.
+old_units=$( {
+  for f in "$USER_UNITS"/default.target.wants/piper-audio-*.service; do
+    [ -e "$f" ] || [ -L "$f" ] && basename "$f"
+  done
+  systemctl --user list-units --all --plain --no-legend 'piper-audio-*' 2>/dev/null | awk '{print $1}'
+} | sort -u | grep -v '^$' || true)
+if [ -n "$old_units" ]; then
+  # shellcheck disable=SC2086
+  systemctl --user disable --now $old_units 2>/dev/null || true
+fi
+rm -f "$USER_UNITS/piper-audio-holder@.service" "$USER_UNITS/piper-audio-player@.service"
+rm -f "$USER_UNITS"/default.target.wants/piper-audio-*.service
+rm -f "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"/piper_audio_*.fifo
 
 echo "== Bounding speech-dispatcher's hang/restart time =="
 # See README.md's "One stuck module can freeze the whole daemon" gotcha: a module
@@ -154,29 +171,17 @@ chmod +x "$HOME_DIR/.local/bin/restart-audio.sh"
 echo "Installed to $HOME_DIR/.local/bin/restart-audio.sh - consider a desktop"
 echo "shortcut to it, the same way as to Learn Anywhere itself."
 
-rates=$(for f in "$VOICES_DIR"/*.onnx.json; do
-  [ -e "$f" ] || continue
-  python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['audio']['sample_rate'])" "$f"
-done | sort -u)
-
-if [ -z "$rates" ]; then
-  echo "No voices downloaded yet, so no per-rate player units to enable." >&2
-  echo "Download voices, then re-run this script to pick up their rates." >&2
-else
-  echo
-  echo "== Done. Review the files above, then run: =="
-  echo
-  echo "  systemctl --user daemon-reload"
-  echo "  systemctl --user enable --now piper-server.service"
-  for r in $rates; do
-    echo "  systemctl --user enable --now piper-audio-holder@${r}.service piper-audio-player@${r}.service"
-  done
-  echo
-  echo "If a voice is added later at a NEW sample rate, re-run this script"
-  echo "(it is idempotent) and enable the new rate's pair the same way."
-  echo
-  echo "Then verify with (see README.md's 'Verifying it worked' for detail):"
-  echo "  spd-say \"Hello\""
-  echo "  spd-say -o piper -y $default_voice \"Hello from Piper\""
-  echo "  dart run packages/ui_kit/tool/ssip_diagnostic.dart   # from the repo root"
-fi
+echo
+echo "== Done. Review the files above, then run: =="
+echo
+echo "  systemctl --user daemon-reload"
+echo "  systemctl --user enable --now piper-server.service"
+echo "  systemctl --user restart speech-dispatcher"
+echo
+echo "That is the whole runtime: one background server (keeps voice models in memory)"
+echo "and nothing else. No audio player is kept running - see README.md."
+echo
+echo "Then verify with (see README.md's 'Verifying it worked' for detail):"
+echo "  spd-say \"Hello\""
+echo "  spd-say -o piper -y $default_voice \"Hello from Piper\""
+echo "  dart run packages/ui_kit/tool/ssip_diagnostic.dart   # from the repo root"

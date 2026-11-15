@@ -263,39 +263,29 @@ yourself. In outline:
    restart Speech Dispatcher.
 
 Done correctly, **Options ▸ Speech...** lists the new voices under the module name `piper`,
-right beside eSpeak NG's. Most Piper voices play at 22050 Hz; one with `-low` in its name
-plays at 16000 Hz, and using the wrong rate in the module file is what makes Piper audio
-sound sped-up or slowed-down rather than silent. The exact commands depend on your
+right beside eSpeak NG's. Voices differ in sample rate (most play at 22050 Hz, one with
+`-low` in its name at 16000 Hz), and giving a player the wrong rate is what makes Piper audio
+sound sped-up or slowed-down rather than silent; playing the voice's own `.wav` output
+avoids the problem, because the file states its rate. The exact commands depend on your
 distribution and audio server, so Piper's own instructions, linked above, are the authority
 on the details.
 
-**If Piper feels slow to start speaking.** Two different things can each cost a few
-seconds before a Piper voice is heard, and fixing them never touches Learn Anywhere —
-both live entirely in Speech Dispatcher's own module.
+**If Piper feels slow to start speaking.** The usual cause is the `piper` command loading
+its voice model straight from disk every time it is asked to speak, which alone takes
+several seconds however short the sentence is. Piper's own `piper.http_server` keeps a
+voice's model in memory between requests, cutting a repeat request to a fraction of a
+second; point `GenericExecuteSynth` at it (a small `curl` call) instead of invoking `piper`
+directly each time, and start the server once as a `systemd --user` service so it is
+already warm by the time you need it. The first use of each voice after the server starts
+still takes a few seconds while its model loads. None of this touches Learn Anywhere — it
+lives entirely in Speech Dispatcher's own module.
 
-The first is the `piper` command loading its voice model straight from disk every time it
-is asked to speak, which alone takes several seconds regardless of how short the sentence
-is. Piper's own `piper.http_server` keeps a voice's model in memory between requests,
-cutting a repeat request to a fraction of a second; point `GenericExecuteSynth` at it (a
-small `curl` call) instead of invoking `piper` directly each time, and start the server
-once as a `systemd --user` service so it is already warm by the time you need it.
-
-The second, independent cost is specific to PipeWire: opening a brand-new audio
-connection for every utterance — which is what a `GenericExecuteSynth` command does if it
-ends in a fresh `pw-play` (or `aplay`) each time — can itself take a couple of seconds on
-some systems, no matter how fast the voice already is. eSpeak NG does not have this
-problem because its own module keeps one audio connection open for its whole lifetime
-instead of opening a new one per sentence. The matching fix for a `sd_generic` module is
-to keep one playback process running permanently too, reading from a named pipe
-(`mkfifo`) that `GenericExecuteSynth` appends raw audio to rather than spawning a player
-of its own each time — one such player per sample rate your installed voices use, since a
-player is started at a fixed rate.
-
-This has a real cost: Speech Dispatcher's own "stop and read the next word" works by
-killing the process `GenericExecuteSynth` started, and with a shared, long-running player
-that process is no longer the one actually producing sound — so a word can keep playing
-past the point a new one starts, instead of being cut off. Weigh that against how much
-the delay bothers you.
+Play each sentence with a short-lived player (`pw-play` or `aplay`) that the module starts
+for that sentence, and do not keep an audio player running permanently to save the cost of
+opening a connection. That cost is small (about a tenth of a second on the machine this was
+measured on), and a permanently open audio stream can leave a laptop without any sound
+after it suspends and resumes. A short-lived player also keeps Speech Dispatcher's "stop and
+read the next word" working, because stopping it ends the sound.
 
 **Putting the good voices first.** Both the voice **Options ▸ Speech...** offers first
 for *every* language and which voice **Automatic** chooses come from one Speech

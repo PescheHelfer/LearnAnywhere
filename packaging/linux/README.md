@@ -124,7 +124,10 @@ Linux speaks through Speech Dispatcher, over its socket, in pure Dart (see
 [ADR-0008](../../docs/adr/0008-linux-speaks-through-speech-dispatcher.md)). For adding
 Piper voices on top of the distro's bundled eSpeak NG — and fixing the multi-second
 startup delay and voice-ordering issues a naive Piper setup has — see
-[`speech/README.md`](speech/README.md), a runbook reproduced from one working machine.
+[`speech/README.md`](speech/README.md), a runbook written for an agent (or person) setting
+up another machine. It runs one background service and deliberately keeps no audio player
+running between sentences; read its "Do not add a persistent audio player" section before
+changing the audio path.
 The automated
 tests drive a fake daemon on loopback TCP and never hear a word, so a release that changes
 speech is checked by ear, on each distro, before it counts as supported there. A pass on

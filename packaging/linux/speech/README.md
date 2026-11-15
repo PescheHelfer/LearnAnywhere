@@ -1,35 +1,65 @@
 # Setting up good Linux voices: Speech Dispatcher + Piper
 
+**Audience: an agent (or a person) setting this up on another Linux machine.** Follow it
+top to bottom; the commands are meant to be run as written.
+
 Learn Anywhere speaks on Linux through Speech Dispatcher, using whatever voices the
 *system* has (see [ADR-0008](../../../docs/adr/0008-linux-speaks-through-speech-dispatcher.md)).
-By itself that's eSpeak NG — robotic, but universal. This runbook adds
-[Piper](https://github.com/OHF-Voice/piper1-gpl) voices alongside it, and fixes the two
-things that make a naive Piper setup feel broken: multi-second startup delay, and the app
-listing eSpeak NG's ~13,000 voice/variant entries before Piper's handful. **None of this
-touches Learn Anywhere's code** — it's entirely Speech Dispatcher and system
-configuration, reproduced from one working machine (Zorin OS, PipeWire).
-
-Read this top to bottom before running anything. The **Gotchas** section at the end
-covers failures that are easy to hit and non-obvious to diagnose; several steps below
-exist specifically to avoid them, and the reasoning is there, not repeated at each step.
+By itself that is eSpeak NG — robotic, but universal. This runbook adds
+[Piper](https://github.com/OHF-Voice/piper1-gpl) voices alongside it and fixes the two
+things that make a naive Piper setup feel broken: a multi-second delay before speech, and
+the app listing eSpeak NG's ~13,000 voice/variant entries before Piper's handful. **None
+of this touches Learn Anywhere's code** — it is Speech Dispatcher and user-level systemd
+configuration only. It was worked out on one machine (Zorin OS, PipeWire, Intel SOF
+audio); the Gotchas section records what went wrong there.
 
 ## What you end up with
 
-- Speech Dispatcher's `sd_generic` module driving `piper` through a small wrapper script.
-- A background `piper.http_server` instance that keeps voice models warm in memory
-  (first use of a voice is still a few seconds; every use after that is not).
-- One persistent audio-playback process **per sample rate** your installed voices use,
-  so playback skips PipeWire's own multi-second per-connection cost. Each waits for
-  PipeWire's default sink to be stable before connecting at login (needs `wpctl`, from
-  WirePlumber; skipped if absent) and stops within 3 s, so restarts are instant.
+- Speech Dispatcher's `sd_generic` module driving Piper through a small wrapper script
+  (`bin/piper_wrapper`).
+- **One** background service, `piper-server`, that keeps voice models loaded in memory.
+  The first use of a voice is still a few seconds; later uses are not.
 - `DefaultModule piper` in `speechd.conf`, so Piper's voices — not eSpeak NG's — are what
-  **Automatic** picks and what `Options ▸ Speech...` lists first for every language.
-- Learn Anywhere's Speech rate slider working for Piper voices, not just eSpeak NG's.
-- A systemd override so a wedged `speech-dispatcher` recovers in ~10s on its own instead
-  of needing a manual `kill -9`.
-- `bin/restart-audio.sh`, a one-command fix for the separate "unplugging headphones took
-  down all audio" PipeWire issue (see Gotchas) — not something this setup causes, but
-  worth having on hand regardless.
+  **Automatic** picks and what **Options ▸ Speech...** lists first.
+- The Speech rate slider working for Piper voices, not just eSpeak NG's.
+- A systemd override so a wedged `speech-dispatcher` recovers in ~10 s by itself.
+- `bin/restart-audio.sh`, a one-command restart of the PipeWire stack for the "no sound
+  anywhere" freeze (see *When all sound stops*).
+
+That is the entire runtime: **one service, no always-on audio player.** Each spoken
+sentence is played by a fresh, short-lived `pw-play` (or `aplay`) that the wrapper starts
+and stops.
+
+## Do not add a persistent audio player
+
+An earlier version of this setup ran one permanent `pw-play` per sample rate, fed through
+a named pipe, to avoid the cost of opening an audio connection per sentence. **Do not
+re-introduce it**, and do not "optimise" this setup by keeping any audio stream open.
+
+- **What went wrong.** The permanent players kept the sound card's stream open for the
+  whole session. On the reference machine (Intel SOF DSP, kernel 7.0), sound was then
+  dead after suspend/resume: the speaker's ALSA stream sat in `PREPARED` and never ran
+  again. Restarting PipeWire, cycling the card profile, stopping the players and
+  suspending a second time did not recover it; only a reboot did. A second user account
+  without any of this setup resumed fine on the same hardware, and so did the original
+  account once the six player units were disabled (boot and resume also felt quicker).
+  The exact mechanism is not proven; the evidence is that with/without comparison.
+- **The cost it was meant to avoid is small.** A fresh `pw-play` connection measured about
+  0.1 s on that machine (0.33 s cold vs 0.24 s warm for a 0.1 s clip) — not the 2+ seconds
+  originally believed. The multi-second delay is the model load, which `piper-server`
+  already fixes.
+- **It also broke stopping.** Speech Dispatcher cancels speech by killing the process it
+  started. With a shared player that process was only the writer into a pipe, so a word
+  kept playing after "stop". The wrapper now plays in the foreground of its own process,
+  so cancelling really cuts the audio off.
+- **It needed three of everything.** A long-lived player is fixed to one sample rate,
+  and Piper voices differ (16000, 22050 and 44100 Hz all occur), so each rate needed its
+  own player plus a "holder" process to keep its pipe open — six units, plus login-race
+  workarounds for PipeWire not being ready yet. A per-utterance player reads the rate from
+  the WAV header and needs none of that.
+
+If speech ever feels too slow, look at the server and the wrapper first (see *If speech
+starts late*), not at the audio path.
 
 ## Distro packages (needs sudo — do this first, as yourself)
 
@@ -38,7 +68,6 @@ Speech Dispatcher itself, and eSpeak NG as its always-present fallback:
 ```sh
 # Debian/Ubuntu/Zorin:
 sudo apt install speech-dispatcher speech-dispatcher-espeak-ng
-
 # Fedora/Nobara:
 sudo dnf install speech-dispatcher speech-dispatcher-espeak-ng speech-dispatcher-utils
 ```
@@ -47,10 +76,8 @@ Also needed, almost certainly already present on a desktop install: `python3`, `
 and one of `pipewire-utils` (`pw-play`) or `alsa-utils` (`aplay`). `pipx` may not be:
 
 ```sh
-# Debian/Ubuntu/Zorin:
-sudo apt install pipx
-# Fedora/Nobara:
-sudo dnf install pipx
+sudo apt install pipx     # Debian/Ubuntu/Zorin
+sudo dnf install pipx     # Fedora/Nobara
 ```
 
 Confirm the daemon actually speaks before going any further:
@@ -59,58 +86,56 @@ Confirm the daemon actually speaks before going any further:
 spd-say "Hello"
 ```
 
-If nothing is heard, stop here and fix that first — nothing below will help a broken
-base install.
+If nothing is heard, stop here and fix that first — nothing below helps a broken base
+install.
 
 ## Everything else (no sudo, as the target user)
 
-1. Copy this whole `packaging/linux/speech/` directory onto the target machine (or just
-   clone the repo there).
-2. Decide which voices you want — see [`voices.md`](voices.md) for the download
-   recipe, the voice sample gallery, and the known-good reference set (one male + one
-   female per language). Download them into `~/.local/share/piper/voices/` *before*
-   running `setup.sh`, so it can see their sample rates.
-3. Edit [`speechd/piper.conf.template`](speechd/piper.conf.template)'s `AddVoice` lines
-   to match the voices you actually downloaded, if different from the reference set.
-4. Run the setup script:
+1. Copy this whole `packaging/linux/speech/` directory onto the target machine (or clone
+   the repo there).
+2. Decide which voices you want — see [`voices.md`](voices.md) for the download recipe and
+   the known-good reference set (one male and one female per language). Download them into
+   `~/.local/share/piper/voices/` *before* running `setup.sh`.
+3. Edit [`speechd/piper.conf.template`](speechd/piper.conf.template)'s `AddVoice` lines to
+   match the voices you downloaded, if different from the reference set.
+4. Run the setup script. It is idempotent — re-run it after downloading more voices or
+   editing the template:
 
    ```sh
    sh packaging/linux/speech/setup.sh
    ```
 
-   It is idempotent — re-run it after downloading more voices, or after editing the
-   template. It prints the exact `systemctl --user enable --now ...` commands to run at
-   the end, rather than running them itself, because enabling a unit to autostart at
-   login is a persistent change worth looking at first. (An agent running this under
-   Claude Code will likely be stopped and asked to get the user's confirmation at that
-   step — that is expected, not a failure.)
-5. Run those printed commands.
-6. Restart Speech Dispatcher so it picks up the new `speechd.conf`:
+   It also **removes the retired persistent-player units** if an earlier version of this
+   setup installed them (see above), so re-running it is the upgrade path.
+5. `setup.sh` prints three commands instead of running them, because enabling a unit to
+   start at login is a persistent change the user should confirm. **An agent should ask
+   the user before running them**:
 
    ```sh
+   systemctl --user daemon-reload
+   systemctl --user enable --now piper-server.service
    systemctl --user restart speech-dispatcher
    ```
 
 ## Verifying it worked
 
 ```sh
-spd-say "Hello"                                    # should now be Piper, not eSpeak NG
+spd-say "Hello"                                     # should now be Piper, not eSpeak NG
 spd-say -o piper -y en_GB-alan-medium.onnx "Hello"  # a specific Piper voice by name
-spd-say -O                                          # lists output modules; piper should be in there
-spd-say -o piper -L                                 # lists piper's own voices with their language tags
+spd-say -O                                          # piper must be among the output modules
+spd-say -o piper -L                                 # piper's own voices, with language tags
+systemctl --user is-active piper-server             # active
 ```
 
-From the repository root, the full diagnostic the user guide points learners at for a
-silent install also doubles as a setup check — it lists every module and voice, reports
-the default module, and speaks one sample per language using the exact voice Learn
-Anywhere's own code would pick:
+From the repository root, the diagnostic the user guide points learners at doubles as a
+setup check — it lists every module and voice, reports the default module and speaks one
+sample per language using the voice Learn Anywhere's own code would pick:
 
 ```sh
 dart run packages/ui_kit/tool/ssip_diagnostic.dart
 ```
 
-On the reference machine this prints (trimmed — the `espeak-ng` line alone is ~13,000
-voices):
+On the reference machine it prints (trimmed — the `espeak-ng` line alone is ~13,000 voices):
 
 ```
 Default module: piper
@@ -123,271 +148,172 @@ it: piper: it_IT-riccardo-x_low.onnx (it)
 All samples spoken.
 ```
 
-`Default module: piper` and every sample resolving to a `piper:` voice (not
-`espeak-ng:`) is the signal that both the warm-start and voice-ordering fixes actually
-landed. If a sample instead resolves to `espeak-ng:`, re-check `DefaultModule` in
-`speechd.conf` (gotcha below).
+`Default module: piper` and every sample resolving to a `piper:` voice (not `espeak-ng:`)
+shows the voice ordering landed. If a sample resolves to `espeak-ng:`, re-check
+`DefaultModule` in `speechd.conf`.
 
-**After the first reboot** (autostart is the part nothing above exercises), check
-before opening the app:
+**After the first reboot** (autostart is the one part nothing above exercises):
 
 ```sh
-spd-say -O                                         # piper must be listed
-systemctl --user is-active piper-server piper-audio-player@22050   # (each rate you use)
-journalctl --user -b -u 'piper-audio-player@*' | grep -c "no target node"   # 0 is ideal; 1 per rate is a harmless retry
-ps -eo pid,stat,cmd | grep defunct                 # no sd_generic zombie
+spd-say -O                                  # piper must be listed
+systemctl --user is-active piper-server     # active
+ps -eo pid,stat,cmd | grep defunct          # no sd_generic zombie
+pgrep -a pw-play                            # nothing — no player runs between sentences
 ```
 
-`piper` missing from `spd-say -O` is the dead-module case: see the Gotcha "Piper voices missing from the app although the config is right".
-Piper silent while everything above is fine: run `bin/restart-audio.sh`, which should
-now return in a couple of seconds.
+**Then test suspend**, because that is what the retired design broke: play a sound, close
+the lid (or run `systemctl suspend`), resume, and play a sound again. Run this test on any
+machine you set up. Sound must come back by itself.
 
-Finally, open Learn Anywhere itself and check **Options ▸ Speech...**: Piper's voices
-should be the first ones listed for every language that has one, and the speaker icon /
-`F4` in a learning session should start speaking in well under a second on a voice
-that's already been used once this session.
+Finally open Learn Anywhere and check **Options ▸ Speech...**: Piper's voices should be
+first for every language that has one.
 
-## Gotchas — all of these were hit building this, in this order
+## If speech starts late
 
-**`spd-conf -u` deletes your custom module configs with no warning.** If you ever run
-`spd-conf -u` (Speech Dispatcher's own "create user config" tool) *after* `piper.conf`
-already exists in `~/.config/speech-dispatcher/modules/`, it silently wipes the entire
-`modules/` directory as part of "recreating" the user config — `piper.conf` included.
-This is why `setup.sh` copies `/etc/speech-dispatcher/speechd.conf` directly instead of
-calling `spd-conf -u`. If you do run it anyway for some other reason, re-run `setup.sh`
-afterward to restore `piper.conf`.
+Expect roughly a second between pressing the speaker icon and hearing a word on a voice
+already used this session; the first use of each voice after the server starts takes a few
+seconds while its model loads. If it is much slower:
 
-**Adding one `AddModule` line turns off autodetection of every other module.** With *no*
-explicit `AddModule` lines anywhere in `speechd.conf`, Speech Dispatcher auto-probes
-every module it can find and silently loads whichever ones work — this is almost
-certainly why eSpeak NG (and maybe others) "just worked" before you touched anything.
-The moment you add **one** explicit `AddModule` line for `piper`, that autodetection
-switches off completely, and *only* the modules you listed explicitly will load. Forget
-to also list `espeak-ng` and `dummy`, and you will silently lose them both. `setup.sh`
-and `speechd/speechd.conf.snippet` both add all three together for exactly this reason.
+1. `systemctl --user is-active piper-server` — if the server is down the wrapper falls
+   back to running `piper` cold, which reloads the model every time (several seconds).
+   `journalctl --user -u piper-server` shows why it stopped.
+2. Time the pieces by hand: `time sh ~/.local/bin/piper_wrapper "Hello" en_GB-alan-medium.onnx 0`.
+3. A very busy machine slows everything (see *Resource contention* below).
+
+## When all sound stops
+
+Sometimes *no* application can play sound — not Learn Anywhere, not a browser video. This
+is not necessarily caused by Piper (see above for the one way this setup once caused it).
+Two triggers have been reported on the reference machine: unplugging headphones, and
+resuming from suspend. Symptoms: `pw-play` of any file never finishes,
+`pw-top` shows a sink with a large ERR count, and the speaker's ALSA stream stays stuck:
+
+```sh
+cat /proc/asound/card0/pcm0p/sub0/status     # "state: PREPARED", hw_ptr stays 0
+```
+
+Try, in this order, stopping at the first that works:
+
+1. `bin/restart-audio.sh` (installed as `~/.local/bin/restart-audio.sh`; worth a desktop
+   shortcut). It restarts `pipewire`, `pipewire-pulse` and `wireplumber`. Nothing of
+   Learn Anywhere's needs restarting afterwards. This clears a PipeWire-level freeze.
+2. Reboot. When the sound card's DSP itself is stuck (the `PREPARED` state above), a
+   PipeWire restart does not help, and neither did suspending and resuming again; on the
+   reference machine only a reboot recovered it. Reloading the audio driver
+   (`snd_sof_pci_intel_cnl` there) is the untested alternative.
+
+If this happens on every suspend, the cause is the machine's audio driver or firmware, not
+this setup: confirm by testing in a second user account that has none of this installed,
+and look for a newer kernel or SOF firmware.
+
+## Gotchas
+
+**`spd-conf -u` deletes your custom module configs with no warning.** Run *after*
+`piper.conf` exists in `~/.config/speech-dispatcher/modules/`, it silently wipes the whole
+`modules/` directory, `piper.conf` included. That is why `setup.sh` copies
+`/etc/speech-dispatcher/speechd.conf` instead of calling it. If you run it anyway, re-run
+`setup.sh` afterwards.
+
+**Adding one `AddModule` line turns off autodetection of every other module.** With no
+explicit `AddModule` lines, Speech Dispatcher probes and loads every module it can find —
+which is why eSpeak NG "just worked" before. Add **one** explicit line for `piper` and only
+modules listed explicitly load. Forget `espeak-ng` and `dummy` and you silently lose them.
+`setup.sh` and `speechd/speechd.conf.snippet` add all three together for this reason.
 
 **A module in your `AddModule` list whose binary doesn't exist can break the whole
-service, not just that module.** The reference machine also had `sd_openjtalk`
-installed and working, so an earlier draft of this setup added it unconditionally.
-Don't copy that line onto a machine that hasn't confirmed the binary exists:
+service.** The reference machine also had `sd_openjtalk` installed, so an earlier draft
+added it unconditionally. Don't copy that line onto a machine that hasn't confirmed the
+binary exists (`ls /usr/lib/speech-dispatcher-modules/ | grep openjtalk`); it isn't needed
+for any of Learn Anywhere's languages.
 
-```sh
-ls /usr/lib/speech-dispatcher-modules/ | grep openjtalk
-```
-
-If it's not there, leave that `AddModule` line out — it isn't needed for any of Learn
-Anywhere's languages anyway.
-
-**`pw-play` has no `--raw` flag**, despite several setup guides online using one. Pass
-`--rate`, `--channels` and `--format` directly; `pw-play` infers raw PCM input from
-those flags alone. Using `--raw` fails with "Unbekannte Option" / "unknown option" and
-nothing plays.
-
-**Not every Piper voice shares a sample rate**, even within "medium" quality — on the
-reference set, `fr_FR-tom-medium` is 44100 Hz while every other `medium` voice here is
-22050 Hz, and the two `low`/`x_low` voices are 16000 Hz. A persistent audio player
-started at a fixed rate makes every other-rate voice sound wrong (pitch-shifted, too
-fast or too slow) — never hardcode one rate. Read `audio.sample_rate` out of each
-voice's own `.onnx.json` and run one persistent player per **distinct** rate actually
-present (`piper-audio-holder@<rate>` / `piper-audio-player@<rate>` in this runbook);
-`setup.sh` derives the rate list from whatever is in `~/.local/share/piper/voices/`
-rather than assuming any fixed set.
+**`pw-play` has no `--raw` flag**, despite several guides using one. For raw PCM pass
+`--rate`, `--channels` and `--format`; it infers raw input from those. `--raw` fails with
+"unknown option" and nothing plays. (The wrapper only streams raw PCM in its cold fallback;
+the normal path plays a WAV file, whose header carries the rate.)
 
 **`piper.http_server` needs Flask, and `pipx install piper-tts` does not pull it in.**
-Running it straight after a plain install fails with
-`ModuleNotFoundError: No module named 'flask'`. Fix: `pipx inject piper-tts flask`.
-`setup.sh` does this automatically.
+Without it the server dies with `ModuleNotFoundError: No module named 'flask'`. Fix:
+`pipx inject piper-tts flask`. `setup.sh` does this.
 
-**The multi-second delay has two separate, unrelated causes — fixing one without the
-other still feels slow.**
-1. `piper` reloads its ONNX model from disk on every single invocation, which alone
-   costs several seconds regardless of sentence length. `piper.http_server` keeps
-   voices loaded in memory between requests once they've been used once — fixes this
-   half.
-2. Independently, opening a *brand-new* audio connection per utterance — which is what
-   a naive `GenericExecuteSynth` command does if it ends in a fresh `pw-play` (or
-   `aplay`) every time — itself costs roughly 1.8-2.7 seconds **on this machine**,
-   regardless of which player binary is used (`pw-play`, `aplay` and `pw-cat` were all
-   equally slow in testing: this is PipeWire connection/negotiation overhead, not a
-   player-specific problem). Fixing #1 alone leaves this cost in place and the delay
-   still feels like "a couple of seconds," just not four. The FIFO-fed persistent player
-   in this runbook fixes this half.
+**Each `piper` invocation reloads its ONNX model from disk**, which alone costs several
+seconds. That is the reason `piper-server` exists: it keeps loaded voices in memory. The
+wrapper falls back to a cold one-shot `piper` run only if the server is unreachable.
 
-**The persistent player has a real, accepted trade-off: it breaks "stop and read the
-next word" interrupting mid-playback.** Speech Dispatcher's own cancel mechanism works
-by killing the process `GenericExecuteSynth` started. With a short-lived
-one-player-per-utterance design, that process *is* the thing making sound, so killing
-it genuinely stops the audio. With the shared persistent player here, the process
-Speech Dispatcher can kill is just the wrapper script that *wrote into a pipe* — by the
-time a "stop" arrives, that write likely already finished, and the shared player will
-keep playing what it already received. In practice: revealing a new unit in Learn
-Anywhere while a previous word is still being read may let that previous word finish
-instead of being cut off. This was a deliberate, informed choice (the alternative is the
-2-3 second delay above on every single utterance) — if that trade-off isn't acceptable
-on a given machine, skip the persistent-player half of this setup and keep the
-per-utterance `pw-play` call; the warm HTTP server alone still saves several seconds.
+**Which module's voices list first, and what "Automatic" picks, is controlled entirely by
+`DefaultModule` in `speechd.conf` — not by Learn Anywhere.** The app's
+`listOutputModules()` (`packages/ui_kit/lib/src/speech/speech_dispatcher_voices.dart`)
+puts whichever module `DefaultModule` names first, by design. Leave it at the distro
+default (usually `espeak-ng`) and eSpeak NG's huge catalog buries Piper's handful at the
+bottom of every dropdown even though Piper works.
 
-**That same trade-off makes the Speech rate slider look broken when it isn't, if you
-test it too fast.** Pressing the sample button under **Options ▸ Speech...**, moving the
-slider, then pressing it again *before the first sample finished playing* plays the
-TAIL of the old-rate audio already sitting in the FIFO, not the new rate — looks exactly
-like "the slider has no effect for Piper voices," especially since eSpeak NG (which
-doesn't go through this pipeline) interrupts cleanly and so doesn't show the same
-confusion. Always let one sample finish completely, in silence, before changing the
-rate and sampling again. A real learning session rarely triggers this, because
-utterances are naturally spaced out by reading time.
-
-**Which module's voices list first in Learn Anywhere, and what "Automatic" picks, is
-controlled entirely by `DefaultModule` in `speechd.conf` — not by anything in Learn
-Anywhere.** The app's own `listOutputModules()`
-(`packages/ui_kit/lib/src/speech/speech_dispatcher_voices.dart`) always puts whichever
-module `DefaultModule` names first, by design, so "Automatic" matches how the machine
-itself is configured. Forget this line (or leave it at its distro default, usually
-`espeak-ng`), and eSpeak NG's huge voice catalog will bury Piper's handful at the bottom
-of every per-language dropdown even though Piper is fully working. No code touches this
-— it's one line in `speechd.conf`.
-
-**Hugging Face's voice-file URLs repeat the locale-speaker-quality triple in full — a
-shortened or guessed path 404s with no redirect.** The pattern is:
+**Hugging Face's voice-file URLs repeat the locale-speaker-quality triple in full** — a
+shortened or guessed path 404s with no redirect:
 
 ```
 .../resolve/main/<lang>/<locale>/<speaker>/<quality>/<locale>-<speaker>-<quality>.onnx
 ```
 
-Not `.../<speaker>/<quality>.onnx` or any other shortened form. See `voices.md` for a
-working download loop.
+`voices.md` has a working download loop.
 
-**The Speech rate slider needed real wiring to reach Piper at all — it isn't automatic
-the way it is for eSpeak NG.** `sd_generic` (Piper's module type) doesn't apply Learn
-Anywhere's rate on its own; `GenericExecuteSynth` has to explicitly pass `$RATE`, which
-`piper.conf.template` now does, and `bin/piper_wrapper` converts into a length_scale
-multiplier. Two non-obvious traps while building that:
+**The Speech rate slider needs explicit wiring to reach Piper.** `sd_generic` doesn't apply
+Learn Anywhere's rate by itself; `GenericExecuteSynth` must pass `$RATE`, which
+`piper.conf.template` does and `bin/piper_wrapper` turns into a `length_scale` multiplier.
+Two traps:
 
-- `GenericRateAdd`/`GenericRateMultiply` in `piper.conf` are parsed as **integers
-  only** — `GenericRateMultiply 0.5` silently truncates to `0`, giving a flat,
-  rate-independent result with no error anywhere. There is no way to express a
-  fractional slope in `piper.conf` itself. The fix: use `GenericRateMultiply 100` to
-  reconstruct the original value losslessly, and do the actual float math (`1.0 -
-  rate/200.0`) in the wrapper, in real Python floats.
-- `$RATE` is **not** SSIP's documented -100..100 range by the time it reaches
-  `GenericExecuteSynth` — `sd_generic` normalizes it to -1.0..1.0 first. (Confirmed by
-  probing with Speech Dispatcher's own module debug log, `Debug 1` in `piper.conf` plus
-  `~/.config/speech-dispatcher/log/piper.log` — see the exact `synth command = |...|`
-  line it prints per utterance.) `GenericRateMultiply 100` undoes that normalization
-  too, which is why both fixes are the same one-line change.
+- `GenericRateAdd`/`GenericRateMultiply` are parsed as **integers only** —
+  `GenericRateMultiply 0.5` silently truncates to `0`, giving a flat result with no error.
+  Use `GenericRateMultiply 100` to reconstruct the original value losslessly and do the
+  float math (`1.0 - rate/200.0`) in the wrapper.
+- `$RATE` is **not** SSIP's documented -100..100 by the time it reaches
+  `GenericExecuteSynth`; `sd_generic` normalises it to -1.0..1.0 first.
+  `GenericRateMultiply 100` undoes that too, so both fixes are one line. (Confirmed with
+  `Debug 1` in `piper.conf` and `~/.config/speech-dispatcher/log/piper.log`, which prints
+  the `synth command = |...|` line per utterance.)
 
-**A voice that's unusually fast or slow compared to the others needs its own fix,
-independent of the rate slider.** `it_IT-paola` specifically speaks noticeably faster
-than every other voice in the reference set, for no documented reason — just how that
-voice was trained. Fix it per-voice, in Piper's own config: raise `inference.length_scale`
-in that voice's `<name>.onnx.json` (default `1.0`; higher is slower). The wrapper
-multiplies the rate slider's effect onto each voice's own base `length_scale` rather
-than replacing it, so this and the slider both apply at once, and this fix only affects
-that one voice, nowhere else.
+**A voice that is unusually fast or slow needs its own fix, independent of the slider.**
+`it_IT-paola` speaks noticeably faster than the rest of the reference set. Raise
+`inference.length_scale` in that voice's `<name>.onnx.json` (default `1.0`; higher is
+slower). The wrapper multiplies the slider's effect onto each voice's own base value, so
+both apply, and the change touches only that voice.
 
-**Apparent "the whole app got sluggish" during setup was resource contention, not a
-Learn Anywhere bug.** Cold-loading several ~60 MB ONNX models back to back, plus
-repeatedly restarting `speech-dispatcher`, plus stress-testing the HTTP server, is
-enough background CPU/memory load on a modest machine to make an unrelated GTK app feel
-sluggish for a few seconds — don't go chasing an app-level performance bug if the
-symptom only showed up *during* heavy setup work and disappeared once things were idle.
+**Resource contention is not a Learn Anywhere bug.** Cold-loading several ~60 MB models
+back to back, restarting `speech-dispatcher` repeatedly and stress-testing the server is
+enough load on a modest machine to make an unrelated GTK app feel sluggish for a few
+seconds. If the symptom appeared only during heavy setup work, don't chase it.
 
-**One stuck module can freeze the whole daemon, silently killing every other module
-with it.** After this setup had been running for hours (including a CPU-heavy
-`appimage-builder` run in the background), `sd_espeak-ng` got stuck inside a blocking
-PulseAudio call (`pulse.c: pa_simple_new() failed: Zeitüberschreitung` / timeout in the
-log — likely PipeWire-pulse starved by the concurrent build, though the exact trigger
-wasn't pinned down). Speech Dispatcher's main process doesn't isolate that hang: it
-blocked too, `sd_generic` (Piper) died as a side effect and was never relaunched, and
-`systemctl --user stop/restart` then hung for the full default ~90s timeout instead of
-failing fast. Symptoms looked like two unrelated bugs — eSpeak NG voices present but
-silent, Piper voices gone entirely — but both came from the same wedged process. Fix
-when it happens again:
+**One stuck module can freeze the whole daemon and silence every other module.** After
+hours of uptime (with a CPU-heavy build running), `sd_espeak-ng` got stuck in a blocking
+PulseAudio call (`pa_simple_new() failed: Zeitüberschreitung` in the log). Speech
+Dispatcher didn't isolate that: its main process blocked, `sd_generic` (Piper) died and
+was never relaunched, and `systemctl --user stop/restart` hung for the default ~90 s.
+Symptoms looked like two bugs — eSpeak NG voices present but silent, Piper voices gone —
+from one wedged process. Recovery:
 
 ```sh
-# Find the wedged main PID (status will show "deactivating" stuck for a long time,
-# or a ps listing with modules as <defunct>/zombies under it) and force it:
-kill -9 <main speech-dispatcher PID>
+kill -9 <main speech-dispatcher PID>      # status shows "deactivating" for a long time
 systemctl --user stop speech-dispatcher.service speech-dispatcher.socket
-rm -f "$XDG_RUNTIME_DIR/speech-dispatcher/speechd.sock"   # stale-socket gotcha above
+rm -f "$XDG_RUNTIME_DIR/speech-dispatcher/speechd.sock"
 systemctl --user reset-failed speech-dispatcher.service
 systemctl --user start speech-dispatcher.socket speech-dispatcher.service
 ```
 
-To make this self-healing instead of needing the above by hand, add a small override so
-systemd caps the hang and restarts the daemon on its own:
+`setup.sh` installs a small override (`TimeoutStopSec=10`, `Restart=on-failure`,
+`RestartSec=2`) so systemd caps the hang and restarts the daemon, bringing back
+`sd_espeak-ng` and `sd_generic` together. The underlying PulseAudio hiccup's root cause is
+unconfirmed.
 
-```sh
-mkdir -p ~/.config/systemd/user/speech-dispatcher.service.d
-cat > ~/.config/systemd/user/speech-dispatcher.service.d/override.conf <<'EOF'
-[Service]
-TimeoutStopSec=10
-Restart=on-failure
-RestartSec=2
-EOF
-systemctl --user daemon-reload
-```
-
-This doesn't fix the underlying PipeWire-pulse hiccup (root cause unconfirmed — it may
-simply be rare contention under heavy concurrent CPU load), but it bounds recovery to
-seconds instead of a manual `kill -9`, and restarts both `sd_espeak-ng` and `sd_generic`
-together so one dying doesn't silently strand the other.
-
-**Unplugging headphones can wedge PipeWire itself, taking down ALL audio, not just
-Learn Anywhere's.** Seen once on this machine: after a headphone unplug, *no*
-application could play sound any more — not eSpeak NG, not Piper, not a browser video.
-This is a PipeWire/WirePlumber jack-detect bug, not something this setup or Learn
-Anywhere caused, confirmed by testing a bare `pw-play` of a system sound with Piper
-completely out of the picture and finding that hung too. That said, holding three
-native PipeWire streams open continuously for hours (the persistent audio players
-above) is unusual enough that it may make this class of bug more likely to trigger or
-harder to recover from on its own — unconfirmed either way. Recovery is always the same
-three-service restart, which also needs OUR persistent players restarted afterwards
-since they were holding connections into the now-dead PipeWire session:
-
-```sh
-systemctl --user restart pipewire.service pipewire-pulse.service wireplumber.service
-systemctl --user restart \
-  piper-audio-holder@16000.service piper-audio-holder@22050.service piper-audio-holder@44100.service \
-  piper-audio-player@16000.service piper-audio-player@22050.service piper-audio-player@44100.service
-```
-
-`bin/restart-audio.sh` does both steps (adjust the sample-rate list if yours differs)
-and pops a notification when done — worth a desktop shortcut pointing at it, the same
-way the app itself gets one, since this is a "fix it myself in ten seconds" problem,
-not a "file a ticket" one.
-
-**Piper silent after a reboot, or "Restart audio" seems to do nothing.** Two causes,
-both handled in `piper-audio-player@.service`:
-
-1. At login the players start in parallel with PipeWire/WirePlumber and `pw-play` dies
-   with `no target node available`. Ordering after `pipewire`/`wireplumber` is not
-   enough: WirePlumber can report a default sink and then rebuild its links a moment
-   later (seen in the journal as `si-standard-link: in/out items are not valid
-   anymore`), so a single "does a default sink exist" check passes too early. The unit's
-   `ExecStartPre` therefore waits, up to 30 s, until `wpctl inspect @DEFAULT_AUDIO_SINK@`
-   succeeds on 4 consecutive checks (about 2 s stable). `Restart=always` stays as the
-   backstop, so a rare lost race costs one second, not a silent player.
-2. A `pw-play` blocked reading its FIFO ignores SIGTERM, so every restart sat for
-   systemd's 90 s stop timeout before the kill. The unit uses `KillSignal=SIGKILL` and
-   `TimeoutStopSec=3`.
-
-After upgrading, re-run `setup.sh` (or copy the unit to `~/.config/systemd/user/`) and
-`systemctl --user daemon-reload`.
-
-**Piper voices missing from the app although the config is right.** Run `spd-say -O`.
-If `piper` is not among the output modules, the generic module died during start and
-the daemon is left with a defunct `sd_generic` child (`ps -eo pid,stat,cmd | grep
-defunct`). `systemctl --user restart speech-dispatcher.service` brings it back; then
-reopen **Options ▸ Speech...** in the app. The cause of the one observed occurrence is
-unknown; it did not recur after the next reboot.
+**Piper voices missing from the app although the config is right.** Run `spd-say -O`. If
+`piper` isn't listed, the generic module died during start and left a defunct `sd_generic`
+child (`ps -eo pid,stat,cmd | grep defunct`). `systemctl --user restart
+speech-dispatcher.service` brings it back; reopen **Options ▸ Speech...**. The cause of the
+one observed occurrence is unknown; it did not recur after a reboot.
 
 ## If you get stuck
 
 Re-run `dart run packages/ui_kit/tool/ssip_diagnostic.dart` (repo root) and read its
-module/voice listing closely — it shows you exactly what Learn Anywhere's own code sees,
-using the same client. If `piper` isn't in the module list at all, the problem is in
-`speechd.conf`/`piper.conf`, not in Learn Anywhere. If it's there but has 0 voices,
+module/voice listing closely — it shows exactly what Learn Anywhere's code sees, using the
+same client. If `piper` isn't in the module list, the problem is in `speechd.conf` or
+`piper.conf`, not in Learn Anywhere. If it is there with 0 voices,
 `journalctl --user -u speech-dispatcher` and the module's own log
-(`$XDG_RUNTIME_DIR/speech-dispatcher/log/piper.log`, created after the module has been
-selected at least once) will show why `sd_generic` refused the voice list.
+(`$XDG_RUNTIME_DIR/speech-dispatcher/log/piper.log`, created once the module has been
+selected) show why `sd_generic` refused the voice list.

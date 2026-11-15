@@ -284,43 +284,32 @@ geschriebenen Befehl ausführt. In groben Schritten:
    und starten Sie Speech Dispatcher neu.
 
 Richtig eingerichtet, zeigt **Optionen ▸ Sprachausgabe...** die neuen Stimmen unter dem
-Modulnamen `piper`, direkt neben denen von eSpeak NG. Die meisten Piper-Stimmen spielen mit
-22050 Hz, eine mit `-low` im Namen mit 16000 Hz — die falsche Rate in der Moduldatei macht
-Piper-Audio zu schnell oder zu langsam statt stumm. Die genauen Befehle hängen von Ihrer
+Modulnamen `piper`, direkt neben denen von eSpeak NG. Die Stimmen unterscheiden sich in der
+Abtastrate (die meisten spielen mit 22050 Hz, eine mit `-low` im Namen mit 16000 Hz), und
+eine falsche Rate für den Player macht Piper-Audio zu schnell oder zu langsam statt stumm;
+gibt man die `.wav`-Ausgabe der Stimme selbst wieder, entfällt das Problem, weil die Datei
+ihre Rate angibt. Die genauen Befehle hängen von Ihrer
 Distribution und Ihrem Audiosystem ab; Pipers eigene Anleitung, oben verlinkt, ist dafür
 die massgebliche Quelle.
 
-**Wenn Piper langsam zu sprechen beginnt.** Zwei verschiedene Dinge können je ein paar
-Sekunden kosten, bevor eine Piper-Stimme zu hören ist, und beides lässt sich beheben,
-ohne Learn Anywhere anzufassen — beides liegt vollständig in Speech Dispatchers eigenem
-Modul.
+**Wenn Piper langsam zu sprechen beginnt.** Die übliche Ursache ist, dass der Befehl
+`piper` sein Stimmmodell bei jedem Sprechen neu von der Platte lädt, was für sich allein
+schon mehrere Sekunden dauert, ganz unabhängig davon, wie kurz der Satz ist. Pipers eigenes
+`piper.http_server` hält das Modell einer Stimme zwischen Anfragen im Speicher und macht
+eine wiederholte Anfrage dadurch zur Sache eines Sekundenbruchteils; richten Sie
+`GenericExecuteSynth` darauf aus (ein kleiner `curl`-Aufruf) statt `piper` jedes Mal direkt
+aufzurufen, und starten Sie den Server einmal als `systemd --user`-Dienst, damit er schon
+bereitsteht, wenn Sie ihn brauchen. Die erste Verwendung jeder Stimme nach dem Start des
+Servers dauert weiterhin ein paar Sekunden, solange das Modell geladen wird. Nichts davon
+berührt Learn Anywhere — es liegt vollständig in Speech Dispatchers eigenem Modul.
 
-Das erste ist, dass der Befehl `piper` sein Stimmmodell bei jedem Sprechen neu von der
-Platte lädt, was für sich allein schon mehrere Sekunden dauert, ganz unabhängig davon,
-wie kurz der Satz ist. Pipers eigenes `piper.http_server` hält das Modell einer Stimme
-zwischen Anfragen im Speicher und macht eine wiederholte Anfrage dadurch zur Sache eines
-Sekundenbruchteils; richten Sie `GenericExecuteSynth` darauf aus (ein kleiner
-`curl`-Aufruf) statt `piper` jedes Mal direkt aufzurufen, und starten Sie den Server
-einmal als `systemd --user`-Dienst, damit er schon bereitsteht, wenn Sie ihn brauchen.
-
-Die zweite, unabhängige Ursache betrifft speziell PipeWire: Für jede Äusserung eine neue
-Audioverbindung zu öffnen — was passiert, wenn `GenericExecuteSynth` jedes Mal in einem
-frischen `pw-play` (oder `aplay`) endet — kann auf manchen Systemen selbst ein paar
-Sekunden dauern, egal wie schnell die Stimme an sich schon ist. eSpeak NG hat dieses
-Problem nicht, weil sein eigenes Modul eine einzige Audioverbindung über seine gesamte
-Lebenszeit offen hält, statt pro Satz eine neue zu öffnen. Die entsprechende Lösung für
-ein `sd_generic`-Modul ist, ebenfalls einen dauerhaft laufenden Wiedergabeprozess zu
-betreiben, der aus einer named pipe (`mkfifo`) liest, an die `GenericExecuteSynth` rohes
-Audio anhängt, statt jedes Mal einen eigenen Player zu starten — ein solcher Player pro
-Abtastrate, die Ihre installierten Stimmen verwenden, da ein Player mit einer festen Rate
-gestartet wird.
-
-Das hat seinen Preis: Speech Dispatchers eigenes "anhalten und das nächste Wort lesen"
-funktioniert, indem es den von `GenericExecuteSynth` gestarteten Prozess tötet, und bei
-einem geteilten, dauerhaft laufenden Player ist dieser Prozess nicht mehr derjenige, der
-den Ton tatsächlich erzeugt — ein Wort kann also über den Punkt hinaus weiterspielen, an
-dem ein neues beginnt, statt abgeschnitten zu werden. Wägen Sie das gegen ab, wie sehr
-Sie die Verzögerung stört.
+Spielen Sie jeden Satz mit einem kurzlebigen Player (`pw-play` oder `aplay`) ab, den das
+Modul für diesen Satz startet, und lassen Sie keinen Audio-Player dauerhaft laufen, nur um
+das Öffnen einer Verbindung zu sparen. Dieser Aufwand ist klein (etwa eine Zehntelsekunde
+auf dem Rechner, auf dem er gemessen wurde), und ein dauerhaft geöffneter Audiostrom kann
+einen Laptop nach dem Ruhezustand ohne jeden Ton zurücklassen. Ein kurzlebiger Player
+hält ausserdem Speech Dispatchers "anhalten und das nächste Wort lesen" funktionsfähig,
+weil das Beenden des Players den Ton beendet.
 
 **Die guten Stimmen nach vorne holen.** Sowohl welche Stimme **Optionen ▸
 Sprachausgabe...** für *jede* Sprache zuerst anbietet als auch welche Stimme

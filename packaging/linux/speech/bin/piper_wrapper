@@ -19,7 +19,6 @@ VOICE_ID=$(printf '%s' "$VOICE" | sed 's/\.onnx$//')
 
 VOICES_DIR="$HOME/.local/share/piper/voices"
 SERVER_URL="http://127.0.0.1:5050/synthesize"
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
 # -100..100 -> a 1.5..0.5 multiplier (0 = 1.0, unchanged; Piper's
 # length_scale is inverted from speed, so a positive/faster rate needs a
@@ -57,20 +56,28 @@ if ! curl -sS --max-time 10 -X POST "$SERVER_URL" \
   exit 0
 fi
 
-# piper-audio-player@<rate> (systemd --user) keeps one PipeWire connection
-# per sample rate open and reads raw PCM from its FIFO, so playback skips
-# PipeWire's own multi-second per-connection startup cost. Each installed
-# voice's own rate (not a fixed assumption) picks the matching FIFO.
-RATE=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['audio']['sample_rate'])" "$VOICES_DIR/$VOICE.json")
-FIFO="$RUNTIME_DIR/piper_audio_$RATE.fifo"
-
-if [ -p "$FIFO" ] && timeout 5 sh -c "python3 -c \"
-import sys, wave
-with wave.open('$WAV', 'rb') as w:
-    sys.stdout.buffer.write(w.readframes(w.getnframes()))
-\" >> '$FIFO'"; then
-  : # played via the persistent, warm PipeWire stream
+# Play the WAV with a short-lived player, one per utterance. Deliberately NOT a
+# long-lived player fed through a pipe: that would keep a PipeWire stream (and so
+# the sound card) permanently open, which on one machine left audio dead after
+# suspend/resume. See README.md "Do not add a persistent audio player".
+#
+# The player runs in the background and is killed when this wrapper is, because
+# Speech Dispatcher cancels speech by terminating the process it started - this
+# is what makes "stop and read the next word" cut the old word off.
+#
+# The WAV is opened and deleted BEFORE playing, and the player reads it through the
+# open descriptor (/dev/fd/3). Speech Dispatcher cancels with a hard kill, which
+# skips any cleanup trap, so deleting afterwards would leak one temp file per
+# cancelled sentence.
+exec 3<"$WAV"
+rm -f "$WAV"
+if command -v pw-play >/dev/null 2>&1; then
+  pw-play /dev/fd/3 &
 else
-  # No matching persistent player (or it's down); play this one directly.
-  pw-play "$WAV"
+  aplay -q /dev/fd/3 &
 fi
+player=$!
+# "|| true": under `set -e` a failing kill (the player already finished, the normal
+# case) would abort this trap and make the wrapper exit 1.
+trap 'kill "$player" 2>/dev/null || true' EXIT INT TERM
+wait "$player"
